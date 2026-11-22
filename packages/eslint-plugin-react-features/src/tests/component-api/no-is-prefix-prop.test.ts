@@ -24,15 +24,18 @@ describe('no-is-prefix-prop', () => {
   ruleTester.run('no-is-prefix-prop', noIsPrefixProp, {
     valid: [
       {
-        name: "a union of boolean and string is not a boolean prop",
-        code: "interface Props { isLooped: boolean | string; }",
+        name: 'a union of boolean and string is not a boolean prop',
+        code: 'interface Props { isLooped: boolean | string; }',
       },
       {
-        name: "an is-prefixed prop that is not boolean",
-        code: "interface Props { isLooped: string | undefined; }",
+        name: 'an is-prefixed prop that is not boolean',
+        code: 'interface Props { isLooped: string | undefined; }',
       },
       // Boolean without `is` prefix
-      { name: 'the same prop without the prefix', code: `interface Props { looped: boolean; }` },
+      {
+        name: 'the same prop without the prefix',
+        code: `interface Props { looped: boolean; }`,
+      },
       // Non-boolean type — even with `is` prefix, not flagged
       { code: `interface Props { isLooped: string; }` },
       {
@@ -43,28 +46,44 @@ describe('no-is-prefix-prop', () => {
       { code: `interface Props { disabled: boolean; loading: boolean; }` },
       // Property is a function — not a flagged shape
       { code: `interface Props { isOpen: () => boolean; }` },
+      // #1556: a data interface mapped into JSX elsewhere is not a props
+      // type — R8 applies to component props, not to every interface.
+      {
+        name: 'a boolean field of a non-Props-named data interface is not a component prop',
+        code: `interface FunnelStep { id: string; isGoal?: boolean }`,
+      },
+      {
+        name: 'a boolean field of a non-Props-named type alias is not a component prop',
+        code: `type FunnelStep = { id: string; isGoal?: boolean };`,
+      },
     ],
     invalid: [
       {
-        name: "a quoted is-prefixed boolean key",
+        name: 'a quoted is-prefixed boolean key',
         code: "interface Props { 'isLooped': boolean; }",
         errors: [
           {
             messageId: 'isPrefix',
             suggestions: [
-              { messageId: 'renameSuggestion', output: "interface Props { looped: boolean; }" },
+              {
+                messageId: 'renameSuggestion',
+                output: 'interface Props { looped: boolean; }',
+              },
             ],
           },
         ],
       },
       {
-        name: "an is-prefixed prop typed boolean | undefined",
-        code: "type Props = { isLooped?: boolean | undefined };",
+        name: 'an is-prefixed prop typed boolean | undefined',
+        code: 'type Props = { isLooped?: boolean | undefined };',
         errors: [
           {
             messageId: 'isPrefix',
             suggestions: [
-              { messageId: 'renameSuggestion', output: "type Props = { looped?: boolean | undefined };" },
+              {
+                messageId: 'renameSuggestion',
+                output: 'type Props = { looped?: boolean | undefined };',
+              },
             ],
           },
         ],

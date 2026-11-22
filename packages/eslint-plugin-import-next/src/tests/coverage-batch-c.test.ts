@@ -52,6 +52,17 @@ const ruleTester = new RuleTester({
 // ---------------------------------------------------------------------------
 const fixtureRoot = fs.mkdtempSync(path.join(tmpdir(), 'import-next-cov-'));
 
+/**
+ * A file beside installed copies of the packages the invalid cases import: a
+ * dependency is checked once it resolves, as in eslint-plugin-import.
+ */
+const installedFile = path.join(fixtureRoot, 'installed', 'src', 'file.ts');
+for (const name of ['unknown-pkg', 'pkg-dev', 'totally-unknown-pkg']) {
+  const pkgDir = path.join(fixtureRoot, 'installed', 'node_modules', name);
+  fs.mkdirSync(pkgDir, { recursive: true });
+  fs.writeFileSync(path.join(pkgDir, 'index.js'), '');
+}
+
 const explicitPkgJson = path.join(fixtureRoot, 'explicit-package.json');
 fs.writeFileSync(
   explicitPkgJson,
@@ -128,10 +139,6 @@ ruleTester.run('no-default-export (coverage)', noDefaultExport, {
 });
 
 describe('no-default-export — Layer 2', () => {
-  const fixer = {
-    replaceText: (_n: unknown, text: string) => ({ text }),
-  } as unknown as TSESLint.RuleFixer;
-
   function runExportDefault(sourceText: string, declaration: unknown) {
     const { listeners, reports } = createWithMockContext(noDefaultExport, {
       sourceText,
@@ -153,8 +160,11 @@ describe('no-default-export — Layer 2', () => {
       type: 'FunctionDeclaration',
       id: null,
     });
-    expect(report.data.example).toBe('// Convert to: export { defaultFunction };');
-    expect(report.fix(fixer)).toMatchObject({ text: 'export function() {}' });
+    expect(report.data.example).toBe(
+      '// Convert to: export { defaultFunction };',
+    );
+    // The rewrite itself (`export function() {}` was invalid syntax, #1540) is
+    // asserted against real source in no-default-export.autofix-safety.test.ts.
   });
 
   it('anonymous default class suggests a generated name', () => {
@@ -163,7 +173,6 @@ describe('no-default-export — Layer 2', () => {
       id: null,
     });
     expect(report.data.example).toBe('// Convert to: export { DefaultClass };');
-    expect(report.fix(fixer)).toMatchObject({ text: 'export class {}' });
   });
 
   it('reports even when the filename is empty', () => {
@@ -391,7 +400,10 @@ ruleTester.run(
         name: 'workspace strategy allows workspace-scoped packages',
         code: `import u from '@workspace/utils';`,
         options: [
-          { packageJson: { dependencies: {} }, resolutionStrategy: 'workspace' },
+          {
+            packageJson: { dependencies: {} },
+            resolutionStrategy: 'workspace',
+          },
         ],
       },
       {
@@ -420,9 +432,13 @@ ruleTester.run(
     invalid: [
       {
         name: 'workspace strategy still flags unknown packages',
+        filename: installedFile,
         code: `import u from 'totally-unknown-pkg';`,
         options: [
-          { packageJson: { dependencies: {} }, resolutionStrategy: 'workspace' },
+          {
+            packageJson: { dependencies: {} },
+            resolutionStrategy: 'workspace',
+          },
         ],
         errors: [
           {
@@ -442,6 +458,7 @@ ruleTester.run(
       },
       {
         name: 'more than five allowed packages elides the list',
+        filename: installedFile,
         code: `import u from 'unknown-pkg';`,
         options: [
           {
@@ -475,6 +492,7 @@ ruleTester.run(
       },
       {
         name: 'dev dependency in production code with suggestion',
+        filename: installedFile,
         code: `import d from 'pkg-dev';`,
         options: [
           {
@@ -496,6 +514,7 @@ ruleTester.run(
       },
       {
         name: 'missing dependency suggestions insert TODO comments',
+        filename: installedFile,
         code: `import u from 'unknown-pkg';`,
         options: [{ packageJson: { dependencies: {} } }],
         errors: [
@@ -530,7 +549,10 @@ describe('no-extraneous-dependencies — Layer 2', () => {
   it('suggestion fixes fall back to the reported node without a parent chain', () => {
     const { listeners, reports } = createWithMockContext(
       noExtraneousDependencies,
-      { options: [{ packageJson: { dependencies: {} } }] },
+      {
+        filename: installedFile,
+        options: [{ packageJson: { dependencies: {} } }],
+      },
     );
     (listeners.ImportDeclaration as (n: unknown) => void)({
       type: 'ImportDeclaration',
@@ -556,6 +578,7 @@ describe('no-extraneous-dependencies — Layer 2', () => {
     const { listeners, reports } = createWithMockContext(
       noExtraneousDependencies,
       {
+        filename: installedFile,
         options: [
           {
             packageJson: { devDependencies: { 'pkg-dev': '1.0.0' } },

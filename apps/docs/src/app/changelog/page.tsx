@@ -7,6 +7,8 @@ import { ChangelogFilters } from '@/components/changelog/changelog-filters';
 import { ChangelogPagination } from '@/components/changelog/changelog-pagination';
 import { ReleaseList } from '@/components/changelog/release-list';
 import { getChangelogPage } from '@/lib/changelog-data';
+import { JsonLd } from '@/components/json-ld';
+import { topLevelJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-static';
 
@@ -60,6 +62,7 @@ export default async function ChangelogPage({
 
   return (
     <Section spacing="comfortable" container="wide" id="changelog">
+      <JsonLd data={topLevelJsonLd('Changelog', '/changelog')} />
       <SectionHeader
         as="h1"
         align="start"

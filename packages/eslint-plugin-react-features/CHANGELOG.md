@@ -5,6 +5,111 @@ All notable changes to `eslint-plugin-react-features` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — false positives in react-a11y label/anchor rules and react-features prop/runtime rules
+
+  - `control-has-associated-label` no longer reports a hidden input
+    (`<input type="hidden">`) or any control with a spread attribute
+    (`<input {...props} />`), whose label the call site cannot see.
+  - `no-missing-aria-labels` no longer reports a spread-prop input for the
+    same reason.
+  - `label-has-associated-control` no longer reports a spread-prop label
+    (`<label {...props} />`).
+  - `anchor-has-content` and `control-has-associated-label` no longer report
+    an element passed as a render-prop/`asChild` value
+    (`<Button render={<a href="/docs" />}>`), which is not rendered as
+    written.
+  - `no-is-prefix-prop` (R8) no longer reports `isXxx: boolean` fields on a
+    plain data interface/type alias that is never a component's props —
+    only a type whose own name ends in `Props`.
+  - `react-in-jsx-scope` now also reads `settings.react.runtime: 'automatic'`
+    as a project-wide opt-out, not only a per-file `@jsxRuntime automatic`
+    comment.
+
+## 2.1.1
+
+### Patch Changes
+
+- **📚 Docs** — Getting Started now leads each plugin README, with the ESLint install line and a flat config that loads
+
+  The install block was below the Description and the doctrine, and on 17 of the 31 plugins there was no flat-config snippet on the page at all. `eslint-plugin-secure-coding`'s README showed `...securePlugin.configs.recommended`, which throws `TypeError: ... is not iterable` when pasted, because `configs.recommended` is one object. Every plugin README now opens with `npm install --save-dev eslint <plugin>` and `import { configs } from '<plugin>'` and `export default [configs.recommended]` in an `eslint.config.mjs`, then the Description. A test now loads that snippet in ESLint for every plugin.
+
+  The star banner above the first heading, the footer block with the star counter and the Dev.to ask are replaced by one `## Support` paragraph at the end: report a false positive, or star the repo if the plugin helped.
+
+  `eslint-plugin-import-next` opens with its drop-in grade, read from the newest `benchmarks/results/ilb-import-parity` result with its date: passes 2,035 of 2,135 (95.3%) of eslint-plugin-import 2.32.0's own test cases, measured 2026-11-19.
+
+  Eight taglines now say what the plugin flags instead of "security rules for X" (secure-coding, node-security, browser-security, nestjs-security, express-security, vercel-ai-security, react-a11y, import-next). `eslint-plugin-node-security` adds one proof line: the public repositories that list it, with the date they were checked.
+
+## 2.1.0
+
+### Minor Changes
+
+- **✨ Feature** — four JSX scope rules, eslint-plugin-react's option shapes, and `settings.react`
+
+  Phase 1 of drop-in parity with `eslint-plugin-react`, graded by that plugin's own test cases
+  (7.37.5, its recommended set). Four rules are new, the option schemas that rejected an upstream
+  config now accept it, and the rules read the settings a shared `settings.react` block sets.
+
+  **New rules** (flat names and `react/` names, as `eslint-plugin-react` exports them):
+  `jsx-uses-react`, `jsx-uses-vars`, `jsx-no-undef` (option `allowGlobals`) and
+  `jsx-no-comment-textnodes`. The two `jsx-uses-*` rules never report: they mark a variable as used
+  so the core `no-unused-vars` leaves `React` and component imports alone.
+
+  **Options now accepted, with their behaviour:**
+
+  - `display-name`: `ignoreTranspilerName` (a name taken from the surrounding code does not count;
+    an explicit `displayName` is required) and `checkContextObjects` (`createContext()` needs a
+    `displayName`).
+  - `no-children-prop`: `allowFunctions`.
+  - `jsx-key`: `checkKeyMustBeforeSpread`, `checkFragmentShorthand` and `warnOnDuplicates`. It also
+    reports an element with no `key` in an array literal, and no longer reports inside
+    `Children.toArray(...)`.
+  - `no-string-refs`: `noTemplateLiterals`.
+  - `no-unescaped-entities`: `forbid` (with `alternatives` as suggestions).
+  - `no-unknown-property`: `ignore` and `requireDataLowercase`.
+
+  **`settings.react` is read** (`version`, including `'detect'`, `pragma`, `fragment`, `createClass`,
+  `defaultVersion`) and top-level `settings.linkComponents` / `formComponents`. `version: 'detect'`
+  resolves the installed `react` from the linted file's directory through `context.filename`, so it
+  works on ESLint 10, where `eslint-plugin-react`'s own detection throws (`context.getFilename` was
+  removed in v9); with no `react` installed it falls back to `defaultVersion`, then to the newest
+  version, and never throws. `no-deprecated`, `no-unsafe`, `no-render-return-value` and
+  `no-string-refs` now follow the configured version; `react-in-jsx-scope`, `jsx-key`, `display-name`
+  and `no-deprecated` follow the pragma; `jsx-no-target-blank` checks the configured link and form
+  components.
+
+  **Behaviour changes to know about**, all to match `eslint-plugin-react`:
+
+  - `no-string-refs` no longer reports a template literal ref (``ref={`name`}``) unless
+    `noTemplateLiterals` is set, and reports `this.refs` only on `settings.react.version` below
+    18.3.0. With no version configured the newest React is assumed, as in `eslint-plugin-react`, so
+    `this.refs` is no longer reported by default.
+  - `jsx-key` now reports a keyless element in an array literal (`[<App />]`).
+  - `no-unescaped-entities` with `forbid` replaces the default set and reports every occurrence.
+
+## 2.0.4
+
+### Patch Changes
+
+- **🐛 Fix** — `hooks-exhaustive-deps` reports the same thing whatever order files are linted in
+
+  The rule walked callback bodies through a per-node-type table of child keys that it built from the first node of each type it met, keeping a key only when that node had an object under it. The first `if` without an `else` dropped `alternate` for the rest of the run, so a dependency used only inside an `else` branch was never reported, and the count on one commit changed between runs (Shopify/cli: 12, 14, 12). It now walks the parser's visitor keys. Expect a few findings to appear (an `else` branch is now read) and a few to disappear (a stale table also hid the reads that made a listed dependency necessary).
+
+- **🐛 Fix** — no-unknown-property recognises Capture-phase event handlers
+
+  React gives every known event handler a capture-phase twin (`onFocus` → `onFocusCapture`, `onClick` → `onClickCapture`), but the rule's known-DOM-property list only had the bubble-phase name, so `onFocusCapture`/`onClickCapture` were reported as unknown. A `...Capture` suffix is now accepted whenever its bubble-phase base is a known handler; an unknown base (`onBogusHandlerCapture`) still reports.
+
+## 2.0.3
+
+### Patch Changes
+
+- **📚 Docs** — ship an AGENTS.md that tells AI assistants how to enable the plugin and what each preset catches
+
+  Generated from the package's own presets and rules, so it cannot drift. `eslint-plugin-secure-coding`: the README no longer shows `...configs.recommended` spread into an array, which threw "not iterable".
+
 ## 2.0.2
 
 ### Patch Changes

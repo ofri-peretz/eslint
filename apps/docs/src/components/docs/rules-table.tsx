@@ -5,6 +5,7 @@
  * Uses the same parsing logic as the archive's ReadmeRulesTable.
  */
 
+import { PLUGINS_BY_SLUG } from '@/lib/plugins';
 import Link from 'next/link';
 import rulesManifest from '@/data/rules-manifest.json';
 import { Briefcase, Wrench, Lightbulb, AlertTriangle, Brain, ExternalLink } from 'lucide-react';
@@ -62,6 +63,11 @@ interface ParsedRule {
  * Determine the category path for a plugin
  */
 function getPluginCategory(plugin: string): 'security' | 'quality' {
+  // Registry first: it names the directory the pages live in. The hand list
+  // below missed jwt-security and postgresql-security, so their rules tables
+  // linked every rule under /docs/quality/ — 404s.
+  const pillar = PLUGINS_BY_SLUG[plugin]?.pillar;
+  if (pillar) return pillar;
   return SECURITY_PLUGINS.has(plugin) ? 'security' : 'quality';
 }
 
@@ -169,6 +175,11 @@ function stripMarkdown(text: string): string {
  */
 function parseRulesFromReadme(markdown: string, plugin: string, category: 'security' | 'quality'): ParsedRule[] {
   const rules: ParsedRule[] = [];
+  const pluginRuleIds = new Set(
+    (rulesManifest as { rules: { prefix: string; rule: string }[] }).rules
+      .filter((r) => r.prefix === plugin)
+      .map((r) => r.rule),
+  );
   
   // Find markdown tables with Rule column
   const tableRegex = /(\|[^\n]+\|)\n(\|[-:\s|]+\|)\n((?:\|[^\n]+\|\n?)+)/g;
@@ -204,6 +215,13 @@ function parseRulesFromReadme(markdown: string, plugin: string, category: 'secur
       const ruleName = (ruleNameMatch ? ruleNameMatch[1] : ruleCell).replace(/[`*~]/g, '');
 
       if (!ruleName || ruleName.includes('|') || ruleName.length < 2) continue;
+      // A "Rule" column in some other README table (an OWASP mapping, a
+      // comparison with another plugin) holds comma lists, foreign rule ids
+      // or notes like "(ours)". Linking those produced URLs such as
+      // `/rules/no-duplicates, export` — 404s. Keep only real rule ids of
+      // this plugin.
+      if (!/^[a-z0-9-]+$/.test(ruleName)) continue;
+      if (pluginRuleIds.size > 0 && !pluginRuleIds.has(ruleName)) continue;
 
       const typeCell = typeIdx !== -1 ? cells[typeIdx] : '';
       const typeAwareness: TypeAwareness = typeCell.includes('🟡')

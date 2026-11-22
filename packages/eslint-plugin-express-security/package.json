@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-express-security",
-  "version": "4.0.3",
+  "version": "4.3.2",
   "description": "ESLint Express security rules — detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production.",
   "type": "commonjs",
   "sideEffects": false,

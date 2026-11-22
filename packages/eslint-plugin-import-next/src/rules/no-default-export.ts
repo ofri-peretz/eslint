@@ -156,6 +156,162 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
       return `// Convert to: export { ${suggestedName} };`;
     }
 
+    const sourceCodeOf = (): Readonly<TSESLint.SourceCode> =>
+      context.sourceCode;
+
+    /**
+     * Every name this module already declares or publishes, plus every global
+     * it reads. A name outside this set can be introduced at module scope
+     * without capturing a reference or clashing with a declaration or an
+     * export.
+     */
+    function takenNames(node: TSESTree.ExportDefaultDeclaration): Set<string> {
+      const sourceCode = sourceCodeOf();
+      const taken = new Set<string>();
+      for (
+        let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+        scope;
+        scope = scope.upper
+      ) {
+        for (const variable of scope.variables) taken.add(variable.name);
+        // A name the code reads but nobody declares is a global; a binding of
+        // the same name would capture it.
+        for (const reference of scope.through) {
+          taken.add(reference.identifier.name);
+        }
+      }
+      for (const name of publishedNames()) taken.add(name);
+      return taken;
+    }
+
+    /** The names this module already exports (`export default` excluded). */
+    function publishedNames(): Set<string> {
+      const sourceCode = sourceCodeOf();
+      const names = new Set<string>();
+      for (const statement of sourceCode.ast.body) {
+        if (statement.type === 'ExportAllDeclaration' && statement.exported) {
+          names.add(nameOf(statement.exported));
+        } else if (statement.type === 'ExportNamedDeclaration') {
+          for (const specifier of statement.specifiers) {
+            names.add(nameOf(specifier.exported));
+          }
+          if (statement.declaration) {
+            for (const variable of sourceCode.getDeclaredVariables(
+              statement.declaration,
+            )) {
+              names.add(variable.name);
+            }
+          }
+        }
+      }
+      return names;
+    }
+
+    function nameOf(
+      node: TSESTree.Identifier | TSESTree.StringLiteral,
+    ): string {
+      return node.type === 'Identifier' ? node.name : node.value;
+    }
+
+    /** `base`, or `base2`, `base3`, … — the first name nothing already uses. */
+    function freshName(
+      base: string,
+      node: TSESTree.ExportDefaultDeclaration,
+    ): string {
+      const taken = takenNames(node);
+      let name = base;
+      for (let n = 2; taken.has(name); n++) name = `${base}${n}`;
+      return name;
+    }
+
+    /**
+     * The rewrite, or `null` where there is no safe one.
+     *
+     * Only three shapes keep the module's meaning under a plain rename:
+     *
+     * - `export default foo;` becomes `export { foo };`;
+     * - `export default function foo() {}`, `class Foo {}` and
+     *   `interface Foo {}` lose the word `default`;
+     * - any other EXPRESSION is bound to a fresh name and exported by it.
+     *
+     * An anonymous function or class declaration is given a fresh name where it
+     * stands. Every other declaration form (an overload signature, a decorated
+     * anonymous class) is reported without a fix: the old code stripped
+     * `default` from all of them and wrote `export function () {}` and
+     * `export { port: 3000 } satisfies T` to disk (#1540).
+     */
+    function buildFix(
+      node: TSESTree.ExportDefaultDeclaration,
+      fixer: TSESLint.RuleFixer,
+    ): TSESLint.RuleFix | TSESLint.RuleFix[] | null {
+      const sourceCode = sourceCodeOf();
+      const declaration = node.declaration;
+      const defaultToken = sourceCode.getFirstToken(node, { skip: 1 })!;
+      const published = publishedNames();
+
+      /** `export default` becomes `export`; the declaration stays as written. */
+      const dropDefault = fixer.replaceTextRange(
+        [node.range[0], defaultToken.range[1]],
+        'export',
+      );
+
+      if (declaration.type === 'Identifier') {
+        // `export { foo }` would publish a name the module already publishes.
+        if (published.has(declaration.name)) return null;
+        return fixer.replaceText(node, `export { ${declaration.name} };`);
+      }
+
+      if (
+        declaration.type === 'FunctionDeclaration' ||
+        declaration.type === 'ClassDeclaration' ||
+        declaration.type === 'TSInterfaceDeclaration'
+      ) {
+        if (declaration.id) {
+          return published.has(declaration.id.name) ? null : dropDefault;
+        }
+        // Anonymous, so a function or a class (an interface always has a
+        // name). A decorator sits outside the span the rewrite reads.
+        if (
+          declaration.type === 'ClassDeclaration' &&
+          // espree has no `decorators` field at all; only the TS parser sets it.
+          (declaration.decorators?.length ?? 0) > 0
+        ) {
+          return null;
+        }
+        const isClass = declaration.type === 'ClassDeclaration';
+        let keyword = sourceCode.getFirstToken(declaration)!;
+        while (keyword.value !== (isClass ? 'class' : 'function')) {
+          keyword = sourceCode.getTokenAfter(keyword)!;
+        }
+        const star = isClass ? null : sourceCode.getTokenAfter(keyword);
+        const after = star?.value === '*' ? star : keyword;
+        const name = freshName(
+          isClass ? 'DefaultClass' : 'defaultFunction',
+          node,
+        );
+        return [dropDefault, fixer.insertTextAfter(after, ` ${name}`)];
+      }
+
+      // An overload signature has no body to name or expression to bind: no fix.
+      if (declaration.type === 'TSDeclareFunction') return null;
+
+      // An expression. Its text is read from `default` onward, not
+      // from the node: a parenthesised `(a, b)` loses its parentheses in the
+      // node's range, and `const x = a, b;` is not what it said.
+      let last = sourceCode.getLastToken(node)!;
+      if (last.value === ';' && last.range[0] >= declaration.range[1]) {
+        last = sourceCode.getTokenBefore(last)!;
+      }
+      const text = sourceCode.text
+        .slice(defaultToken.range[1], last.range[1])
+        .trim();
+      const name = freshName('defaultExport', node);
+      return fixer.replaceText(
+        node,
+        `const ${name} = ${text};\nexport { ${name} };`,
+      );
+    }
+
     return {
       before() {
         const [options] = context.options;
@@ -183,31 +339,7 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
             example: suggestion,
           },
           fix(fixer: TSESLint.RuleFixer) {
-            const declaration = node.declaration;
-            const sourceCode = context.sourceCode;
-
-            if (declaration.type === 'Identifier') {
-              // export default foo; -> export { foo };
-              return fixer.replaceText(node, `export { ${declaration.name} };`);
-            } else if (
-              declaration.type === 'Literal' ||
-              declaration.type === 'ObjectExpression' ||
-              declaration.type === 'ArrayExpression' ||
-              declaration.type === 'ArrowFunctionExpression' ||
-              declaration.type === 'CallExpression' ||
-              declaration.type === 'NewExpression'
-            ) {
-              // export default value; -> const defaultExport = value; export { defaultExport };
-              const exprText = sourceCode.getText(declaration);
-              // Use a heuristic to handle potential semicolons or multiline
-              const namedExport = `const defaultExport = ${exprText};\nexport { defaultExport };`;
-              return fixer.replaceText(node, namedExport);
-            } else {
-              // For FunctionDeclaration and ClassDeclaration, replace 'export default' with 'export'
-              const nodeText = sourceCode.getText(node);
-              const namedExport = nodeText.replace(/^export default/, 'export');
-              return fixer.replaceText(node, namedExport);
-            }
+            return buildFix(node, fixer);
           },
         });
       },

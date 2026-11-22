@@ -168,6 +168,30 @@ function upstreamProps(options: readonly unknown[]): UpstreamProps {
 /** `@scope/name` — eslint-plugin-import's `isScoped`. */
 const SCOPED = /^@[^/]+\/?[^/]+/;
 
+/** The extensions TypeScript writes in a specifier for each source extension. */
+const EMIT_SOURCE_EXTENSIONS: Readonly<Record<string, readonly string[]>> = {
+  '.js': ['.ts', '.tsx'],
+  '.jsx': ['.tsx'],
+  '.mjs': ['.mts'],
+  '.cjs': ['.cts'],
+};
+
+/**
+ * Is `specifier` the emit spelling of the TypeScript source `resolved`?
+ * `./a.js` of `a.ts`, `./a.js` of `a.d.ts`, `./App.jsx` of `App.tsx`: the same
+ * stem, and the written extension is what the compiler emits for the real one.
+ */
+function isEmitExtensionOfSource(specifier: string, resolved: string): boolean {
+  const written = path.extname(specifier);
+  const sources = EMIT_SOURCE_EXTENSIONS[written];
+  if (!sources) return false;
+  const stem = path.basename(specifier, written);
+  const file = path.basename(resolved);
+  return sources.some(
+    (source) => file === stem + source || file === `${stem}.d${source}`,
+  );
+}
+
 export const extensions = createRule<Options, MessageIds>({
   name: 'extensions',
   meta: {
@@ -289,7 +313,19 @@ export const extensions = createRule<Options, MessageIds>({
         context.filename,
         context.settings,
       );
-      const extension = path.extname(resolved ?? importPath).slice(1);
+      // The extension of the file the specifier names, unless that file is the
+      // SOURCE of the written one: `./a.js` resolving to `a.ts` (or `./App.jsx` to
+      // `App.tsx`, `./a.js` to `a.d.ts`) is TypeScript's ESM spelling, the emit
+      // extension, and the extension to judge is the one written.
+      // eslint-plugin-import's node resolver maps none of these, so there the
+      // specifier is unresolved and is judged by what it says; judging the
+      // resolved `.ts` here reported 95 "Missing file extension" findings on
+      // apollo-server that the incumbent does not make.
+      const writtenIsEmitExtension =
+        resolved !== null && isEmitExtensionOfSource(importPath, resolved);
+      const extension = writtenIsEmitExtension
+        ? path.extname(importPath).slice(1)
+        : path.extname(resolved ?? importPath).slice(1);
       const modifier = props.pattern[extension] ?? props.defaultConfig;
       if (!extension || !importPath.endsWith(`.${extension}`)) {
         if (

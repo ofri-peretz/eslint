@@ -8,6 +8,7 @@ import { ThemeTimeSync } from '@/components/theme-time-sync';
 import { Analytics } from '@vercel/analytics/next';
 import { PostHogProvider } from '@/components/posthog-provider';
 import { PostHogPageviewTracker } from '@/components/posthog-pageview-tracker';
+import { ConversionTracker } from '@/components/conversion-tracker';
 import { SITE_ORIGIN } from '@/lib/site-config';
 import { THEME_TIME_INLINE_SCRIPT } from '@/lib/theme-time';
 
@@ -120,6 +121,7 @@ export default function Layout({ children }: LayoutProps<'/'>) {
             subsequent visits. */}
         <PostHogProvider>
           <PostHogPageviewTracker />
+          <ConversionTracker />
           <RootProvider theme={{ defaultTheme: 'dark' }}>
             <ThemeTimeSync />
             <TooltipProvider delay={250}>{children}</TooltipProvider>

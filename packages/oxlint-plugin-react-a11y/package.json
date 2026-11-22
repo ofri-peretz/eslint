@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-react-a11y",
-  "version": "3.0.2",
+  "version": "3.0.6",
   "description": "Oxlint React a11y rules for React accessibility — WCAG 2.1 rules for ARIA, alt text, keyboard interaction, and focus management, with auto-fixes. Same rules and rule IDs as eslint-plugin-react-a11y, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
@@ -80,6 +80,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-react-a11y": "3.0.2"
+    "eslint-plugin-react-a11y": "3.0.6"
   }
 }

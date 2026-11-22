@@ -19,7 +19,10 @@ import {
   statSync,
 } from '@interlace/eslint-devkit';
 import { getDirname } from '@interlace/eslint-devkit';
-import { resolveWithSettings } from '../utils/settings-resolver';
+import {
+  namesUnmodelledResolver,
+  resolveWithSettings,
+} from '../utils/settings-resolver';
 
 type MessageIds =
   | 'extraneousDependency'
@@ -244,6 +247,11 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
         'Forbid the use of extraneous packages not listed in package.json',
     },
     hasSuggestions: true,
+    // The reported messages are one line naming the package and the
+    // package.json it belongs in, as eslint-plugin-import's are
+    // (`'zod' should be listed in the project's dependencies.`): a drop-in
+    // rule's output is read beside the incumbent's, so it is not
+    // formatLLMMessage's two-line, icon-and-severity shape.
     messages: {
       extraneousDependency: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -254,24 +262,10 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-extraneous-dependencies.md',
       }),
-      missingDependency: formatLLMMessage({
-        icon: MessageIcons.WARNING,
-        issueName: 'Missing Dependency',
-        description: 'Package used but not in package.json',
-        severity: 'HIGH',
-        fix: 'Add package to appropriate section in package.json',
-        documentationLink:
-          'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-extraneous-dependencies.md',
-      }),
-      devDependencyInProduction: formatLLMMessage({
-        icon: MessageIcons.WARNING,
-        issueName: 'Dev Dependency in Production',
-        description: 'Dev dependency used in production code',
-        severity: 'MEDIUM',
-        fix: 'Move to dependencies or ensure this is only used in development',
-        documentationLink:
-          'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-extraneous-dependencies.md',
-      }),
+      missingDependency:
+        "'{{packageName}}' should be listed in the dependencies of {{manifest}}. Run 'npm i -S {{packageName}}' to add it.",
+      devDependencyInProduction:
+        "'{{packageName}}' should be listed in the dependencies of {{manifest}}, not devDependencies.",
       addToDependencies: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,
         issueName: 'Add to Dependencies',
@@ -290,26 +284,10 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-extraneous-dependencies.md',
       }),
-      packageJsonNotFound: formatLLMMessage({
-        icon: MessageIcons.WARNING,
-        issueName: 'package.json Not Found',
-        description:
-          'The package.json file named by packageDir could not be found',
-        severity: 'HIGH',
-        fix: 'Point packageDir at a folder that contains package.json',
-        documentationLink:
-          'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-extraneous-dependencies.md',
-      }),
-      packageJsonUnparsable: formatLLMMessage({
-        icon: MessageIcons.WARNING,
-        issueName: 'package.json Not Parsable',
-        description:
-          'The package.json file named by packageDir could not be parsed',
-        severity: 'HIGH',
-        fix: 'Fix the JSON syntax of package.json',
-        documentationLink:
-          'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-extraneous-dependencies.md',
-      }),
+      packageJsonNotFound:
+        'The package.json file named by packageDir could not be found: {{manifest}}.',
+      packageJsonUnparsable:
+        'The package.json file named by packageDir could not be parsed: {{manifest}}.',
       moveToDependencies: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,
         issueName: 'Move to Dependencies',
@@ -409,6 +387,9 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
     let coreModules: unknown[];
     let resolvedPackageJson: PackageJson | null;
     let allowedPackages: Set<string>;
+    /** The package.json the dependencies were read from, for the message. */
+    let manifest: string;
+    const shown = (file: string) => path.relative(context.cwd, file);
 
     /**
      * eslint-plugin-import's "internal" module: a bare specifier the project
@@ -418,7 +399,8 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
      * (`node_modules`, or the `import/external-module-folders` setting).
      * A file outside the linted file's package is external
      * (eslint-plugin-import's `isExternalPath`), and so is one that does not
-     * resolve: an unresolved package is still checked.
+     * resolve here; `notAPackageToDeclare` then skips it, as
+     * eslint-plugin-import does once `resolve()` comes back empty.
      */
     function isInternal(
       importPath: string,
@@ -590,10 +572,18 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
       };
       /**
        * Asked last, since it costs a resolution that only a specifier about
-       * to be reported needs: is it the project's own code (internal), or a
-       * file of another package, declared under that package's name?
+       * to be reported needs: is it the project's own code (internal), does
+       * it resolve to nothing (eslint-plugin-import checks a dependency only
+       * once it resolves: docusaurus' `@theme/*` and `@docusaurus/*` virtual
+       * modules), or is it a file of another package, declared under that
+       * package's name?
+       *
+       * "Resolves to nothing" is concluded only when every configured
+       * resolver is one this plugin models. Under webpack's, a specifier none
+       * of ours resolves (`alias/chai`) may still be a package, so it is
+       * checked.
        */
-      const ownCodeOrDeclared = () => {
+      const notAPackageToDeclare = () => {
         let resolved: string | null | undefined;
         const resolve = () =>
           resolved === undefined
@@ -604,6 +594,8 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
               ))
             : resolved;
         if (skipInternal && isInternal(importPath, resolve)) return true;
+        if (resolve() === null && !namesUnmodelledResolver(context.settings))
+          return true;
         const realName = realPackageName(resolve());
         return (
           realName !== undefined &&
@@ -615,7 +607,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
         );
       };
 
-      if (shouldCheckDependency(packageName) && !ownCodeOrDeclared()) {
+      if (shouldCheckDependency(packageName) && !notAPackageToDeclare()) {
         // Check if it's in devDependencies but we're in production code
         const isInDevDeps =
           resolvedPackageJson?.devDependencies &&
@@ -627,6 +619,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
             messageId: 'devDependencyInProduction',
             data: {
               packageName,
+              manifest,
               importPath,
               suggestion:
                 'Move to dependencies if used in production, or ensure this code is only executed in development',
@@ -664,6 +657,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
             messageId: 'missingDependency',
             data: {
               packageName,
+              manifest,
               importPath,
               allowedPackages:
                 Array.from(allowedPackages).slice(0, 5).join(', ') +
@@ -751,11 +745,13 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
 
         // Use provided package.json if available (for testing)
         resolvedPackageJson = null;
+        manifest = 'package.json';
         if (packageJson) {
           // Use directly provided package.json (for testing)
           resolvedPackageJson = packageJson;
         } else if (packageJsonPath) {
           // Use specified package.json file
+          manifest = shown(packageJsonPath);
           resolvedPackageJson = readManifest(packageJsonPath);
           if (!resolvedPackageJson) {
             // Invalid package.json - skip
@@ -770,12 +766,17 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
             .concat(o.packageDir)
             .map((dir) => path.join(path.resolve(dir), 'package.json'));
           const read = manifests.map(readManifest);
+          manifest = manifests
+            .filter((_, i) => read[i])
+            .map(shown)
+            .join(', ');
           if (manifests.length === 1 && !read[0]) {
             context.report({
               loc: { line: 1, column: 0 },
               messageId: statSync(manifests[0])
                 ? 'packageJsonUnparsable'
                 : 'packageJsonNotFound',
+              data: { manifest: shown(manifests[0]) },
             });
             return false;
           }
@@ -792,6 +793,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
           }
 
           // Read and parse package.json
+          manifest = shown(packageJsonFile);
           resolvedPackageJson = readManifest(packageJsonFile);
           if (!resolvedPackageJson) {
             // Invalid package.json - skip

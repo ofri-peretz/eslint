@@ -16,6 +16,7 @@ import { createRule } from '@interlace/eslint-devkit';
 import {
   attributeValue,
   findAttribute,
+  hasSpreadAttribute,
   intrinsicName,
 } from '../utils/jsx-static';
 
@@ -204,6 +205,10 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
             !!attr.value,
         );
         if (hasAriaLabel) return;
+
+        // htmlFor, a control to nest, or the label's own text may all arrive
+        // through a spread the call site cannot see into (#1563).
+        if (hasSpreadAttribute(openingElement)) return;
 
         // htmlFor associates the label whatever its value, dynamic included;
         // only a value that renders nothing ({undefined}) does not. A

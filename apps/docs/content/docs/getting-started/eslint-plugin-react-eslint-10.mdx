@@ -1,0 +1,87 @@
+---
+title: 'eslint-plugin-react on ESLint 10: getFilename is not a function'
+description: "ESLint 10 breaks eslint-plugin-react 7.37.5 with 'contextOrFilename.getFilename is not a function' under settings.react.version 'detect'. Pin the version, or move to @eslint-react or react-x."
+icon: Wrench
+---
+
+After upgrading to ESLint 10, linting stops with `Error while loading rule 'react/display-name': contextOrFilename.getFilename is not a function`. The cause is `eslint-plugin-react` 7.37.5, still the latest release (2025-04-03): its version lookup calls `context.getFilename()`, which ESLint 10 removed. The lookup only runs when `settings.react.version` is `"detect"`, so pinning the version avoids the crash for the `recommended` rules. If you want to leave the plugin, `@eslint-react/eslint-plugin` and `eslint-plugin-react-x` support ESLint 10, at the price of renaming rules.
+
+**Covers ESLint 10 with flat config. Everything marked as run was run on 2026-11-20 with ESLint 10.14.0, `eslint-plugin-react` 7.37.5, npm 11.6.2 and Node 24.12.0. Last updated 2026-11-20.** We publish `eslint-plugin-react-features`, a different plugin; this page does not recommend it, and why is at the end.
+
+## The error
+
+```text
+TypeError: Error while loading rule 'react/display-name': contextOrFilename.getFilename is not a function
+```
+
+It is tracked upstream as [vercel/next.js#89764](https://github.com/vercel/next.js/issues/89764) (open) and under [jsx-eslint/eslint-plugin-react#3977, "ESLint v10 compatibility"](https://github.com/jsx-eslint/eslint-plugin-react/issues/3977) (open, locked). A pull request that completes ESLint 10 support, [#4022](https://github.com/jsx-eslint/eslint-plugin-react/pull/4022), was still open when this page was written.
+
+The install itself fails first if you use npm's default resolver, because 7.37.5 declares `eslint` peer `^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7`. Most people pass `--legacy-peer-deps` or add an `overrides` entry and then meet the crash above.
+
+## Which rules crash
+
+We loaded each of the 103 rules of 7.37.5 alone, at `error`, and linted a small file with a class component and a `forwardRef` component:
+
+| `settings.react.version`        | Rules that throw | In `recommended`?             |
+| :------------------------------ | :--------------- | :---------------------------- |
+| `"detect"`                      | 37 of 103        | yes, including `display-name` |
+| `"18.3"` (any explicit version) | 6 of 103         | none                          |
+
+With an explicit version the six that still throw are `forward-ref-uses-ref`, `jsx-curly-spacing`, `jsx-equals-spacing`, `jsx-filename-extension`, `jsx-one-expression-per-line` and `jsx-tag-spacing`. This is a smoke test with one input file: a throw means the rule cannot run on ESLint 10, and a rule that did not throw has not been shown correct.
+
+## Workaround: pin the React version
+
+Most shared configs set `version: "detect"`. Override it with the React version you ship:
+
+```js title="eslint.config.js"
+import react from 'eslint-plugin-react';
+
+export default [
+  react.configs.flat.recommended,
+  {
+    settings: {
+      react: { version: '18.3' }, // not 'detect'
+    },
+  },
+];
+```
+
+We ran this configuration with `react.configs.flat.recommended` on ESLint 10.14.0: with `version: "detect"` it throws the error above, with `version: "18.3"` it lints without throwing. If a shared config such as `eslint-config-next` sets `detect` for you, your own `settings` object placed after it in the array wins, because flat config merges later objects over earlier ones. Do not enable the six rules listed above until a release fixes them.
+
+Installing next to ESLint 10 needs a peer override:
+
+```bash
+npm install --save-dev eslint@10 eslint-plugin-react@7.37.5 --legacy-peer-deps
+```
+
+This is a workaround for an unreleased fix, not a fix: we found no announced release date, and the latest release still declares no ESLint 10 support in its peer range.
+
+## Alternatives, honestly
+
+| Option                                                                                                                                                     | ESLint 10                                                          | Keeps `react/*` names and `settings.react`?                                                                         | Pick it when                                                                           |
+| :--------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------- |
+| Stay on `eslint-plugin-react` 7.37.5 with the version pinned                                                                                               | `recommended` runs, six rules throw                                | Yes                                                                                                                 | You cannot rename rules and can wait for a release. The cheapest change.               |
+| [`@eslint-react/eslint-plugin`](https://github.com/Rel1cx/eslint-react) and [`eslint-plugin-react-x`](https://www.npmjs.com/package/eslint-plugin-react-x) | Yes. Version 5.30.5 requires Node 20.19 or newer, peer `eslint: *` | No. Rules are renamed and split, and legacy class and `propTypes` rules are marked as legacy in its migration guide | New or modern code with function components and TypeScript, and you accept a rename    |
+| [`eslint-plugin-react-hooks`](https://www.npmjs.com/package/eslint-plugin-react-hooks) 7.1.1                                                               | Yes, peer includes `^10.0.0`                                       | Not applicable: hooks rules only                                                                                    | You only need `rules-of-hooks` and `exhaustive-deps`; it sits next to any choice above |
+| oxlint's built-in `react` plugin                                                                                                                           | Not an ESLint plugin                                               | A subset by name; no `settings.react`                                                                               | You are already moving off ESLint and the rules you use are covered                    |
+
+`@eslint-react/eslint-plugin` and `eslint-plugin-react-x` are two packages from the same project and release line. They are not a drop-in replacement: the project's own guide maps each old rule to one or more new ones, and some old rules have no counterpart. Do not choose them to stay on ESLint 9, because version 5 expects ESLint 10.
+
+## What about eslint-plugin-react-features?
+
+`eslint-plugin-react-features` is ours. We have not graded it against `eslint-plugin-react`'s test cases, so we make no claim about how close it is, and we do not suggest it as a replacement. If you try it, treat every difference from `eslint-plugin-react` as a question for us in [our issue tracker](https://github.com/ofri-peretz/eslint/issues).
+
+## Related
+
+- [Flat config migration](/docs/getting-started/flat-config) covers moving off `.eslintrc`.
+
+{/* FAQ JSON-LD (suggested; each answer must match the page text when it is generated)
+Q: What does "contextOrFilename.getFilename is not a function" mean in ESLint 10?
+A: eslint-plugin-react 7.37.5 calls context.getFilename(), which ESLint 10 removed. It happens when settings.react.version is "detect".
+Q: How do I fix eslint-plugin-react on ESLint 10?
+A: Set settings.react.version to an explicit version such as "18.3". With that, the recommended rules ran without throwing on ESLint 10.14.0; six rules still throw.
+Q: Does eslint-plugin-react support ESLint 10?
+A: Not in a release. The latest release, 7.37.5 from 2025-04-03, declares eslint peer ^9.7 at most.
+Q: What replaces eslint-plugin-react on ESLint 10?
+A: @eslint-react/eslint-plugin or eslint-plugin-react-x, which require ESLint 10 and rename the rules, or oxlint's react plugin for a subset.
+*/}

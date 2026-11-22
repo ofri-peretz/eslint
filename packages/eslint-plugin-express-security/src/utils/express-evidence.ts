@@ -5,7 +5,7 @@
  */
 
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, propertyName } from '@interlace/eslint-devkit';
 
 /**
  * Packages that put an Express application in a file.
@@ -167,6 +167,228 @@ function hasMiddlewareSignature(node: TSESTree.Node): boolean {
   );
 }
 
+/** The verbs a Connect-style router registers a path handler with. */
+const ROUTE_REGISTRARS: ReadonlySet<string> = new Set([
+  'get',
+  'post',
+  'put',
+  'patch',
+  'delete',
+  'head',
+  'options',
+  'all',
+  'use',
+]);
+
+/**
+ * `app.get('/path', guard, (req, res) => …)`: a handler registered against a
+ * literal path, with the Express `(req, res)` parameter pair.
+ *
+ * This is the shape of the route modules that receive `app` from their caller
+ * (`module.exports = (app, db) => { app.get(...) }`) and so import nothing, and
+ * it is the same two-argument handler the middleware arm refuses on its own
+ * because `node:http` and Next.js share it. What makes it evidence here is the
+ * registration around it: a path string starting with `/` followed by handler
+ * arguments is the router contract, and the `req`/`res` pair names the
+ * Express-shaped request and response. `cache.get('/key', fn)` has no
+ * `(req, res)` handler, and Fastify (`request, reply`) and Koa (`ctx`) name
+ * their handlers differently, so none of them opens the gate.
+ */
+function isRouteRegistration(node: TSESTree.Node): boolean {
+  if (
+    node.type !== AST_NODE_TYPES.CallExpression ||
+    node.callee.type !== AST_NODE_TYPES.MemberExpression
+  ) {
+    return false;
+  }
+  const verb = propertyName(node.callee);
+  if (verb === null || !ROUTE_REGISTRARS.has(verb)) return false;
+  const [path, ...handlers] = node.arguments;
+  if (
+    path?.type !== AST_NODE_TYPES.Literal ||
+    typeof path.value !== 'string' ||
+    !path.value.startsWith('/')
+  ) {
+    return false;
+  }
+  return handlers.some((handler) => {
+    if (
+      handler.type !== AST_NODE_TYPES.FunctionExpression &&
+      handler.type !== AST_NODE_TYPES.ArrowFunctionExpression
+    ) {
+      return false;
+    }
+    const [first, second] = handler.params;
+    return (
+      first?.type === AST_NODE_TYPES.Identifier &&
+      second?.type === AST_NODE_TYPES.Identifier &&
+      REQ_NAMES.has(first.name) &&
+      RES_NAMES.has(second.name)
+    );
+  });
+}
+
+/**
+ * Response methods that exist on Express's `res` and on neither `node:http`'s
+ * `ServerResponse` nor Fastify's `reply` nor Koa's `ctx`.
+ *
+ * `redirect` is shared with Next.js API routes (and `render`/`sendFile` are not),
+ * which is why the arm below also refuses a default export, the one way a Next.js
+ * route is written.
+ */
+const EXPRESS_RESPONSE_METHODS: ReadonlySet<string> = new Set([
+  'redirect',
+  'render',
+  'sendStatus',
+  'sendFile',
+]);
+
+function isFunctionNode(
+  node: TSESTree.Node | null | undefined,
+): node is
+  | TSESTree.FunctionDeclaration
+  | TSESTree.FunctionExpression
+  | TSESTree.ArrowFunctionExpression {
+  return (
+    node?.type === AST_NODE_TYPES.FunctionDeclaration ||
+    node?.type === AST_NODE_TYPES.FunctionExpression ||
+    node?.type === AST_NODE_TYPES.ArrowFunctionExpression
+  );
+}
+
+/**
+ * `module.exports` or `exports.name`: the CommonJS export slots. A bare
+ * `exports = fn` rebinds the local and exports nothing, so it is not one.
+ */
+function isCommonJsExportTarget(node: TSESTree.Node): boolean {
+  const isId = (n: TSESTree.Node, name: string) =>
+    n.type === AST_NODE_TYPES.Identifier && n.name === name;
+  if (node.type !== AST_NODE_TYPES.MemberExpression) return false;
+  if (isId(node.object, 'exports')) return true;
+  if (isId(node.object, 'module') && propertyName(node) === 'exports') {
+    return true;
+  }
+  return (
+    node.object.type === AST_NODE_TYPES.MemberExpression &&
+    isId(node.object.object, 'module') &&
+    propertyName(node.object) === 'exports'
+  );
+}
+
+/**
+ * Is this function exported for another module to register?
+ *
+ *   module.exports.redirect = function (req, res) { … }
+ *   exports.redirect = (req, res) => { … }
+ *   module.exports = { redirect: function (req, res) { … } }
+ *   export function redirect(req, res) { … }
+ *   export const redirect = (req, res) => { … }
+ *
+ * A default export is deliberately NOT accepted: `export default function handler(req,
+ * res)` is how a Next.js API route is written, and Next's `res` also has `redirect`.
+ */
+function isExportedFunction(
+  node: TSESTree.Node,
+  ancestors: readonly TSESTree.Node[],
+): boolean {
+  // Read from the walk's own stack, not `node.parent`: this probe runs on any
+  // AST handed to it, and the parser only sets `parent` once a rule traversal has.
+  // A function is never the Program, so the stack always has at least one entry.
+  const parent = ancestors[ancestors.length - 1] as TSESTree.Node;
+  const grandparent = ancestors[ancestors.length - 2];
+  if (node.type === AST_NODE_TYPES.FunctionDeclaration) {
+    return parent.type === AST_NODE_TYPES.ExportNamedDeclaration;
+  }
+  if (
+    parent.type === AST_NODE_TYPES.AssignmentExpression &&
+    parent.right === node
+  ) {
+    return isCommonJsExportTarget(parent.left);
+  }
+  if (
+    parent.type === AST_NODE_TYPES.VariableDeclarator &&
+    parent.init === node
+  ) {
+    return (
+      ancestors[ancestors.length - 3]?.type ===
+      AST_NODE_TYPES.ExportNamedDeclaration
+    );
+  }
+  if (
+    parent.type === AST_NODE_TYPES.Property &&
+    parent.value === node &&
+    grandparent?.type === AST_NODE_TYPES.ObjectExpression
+  ) {
+    const holder = ancestors[ancestors.length - 3];
+    return (
+      holder?.type === AST_NODE_TYPES.AssignmentExpression &&
+      holder.right === grandparent &&
+      isCommonJsExportTarget(holder.left)
+    );
+  }
+  return false;
+}
+
+/**
+ * `exports.x = function (req, res) { res.redirect(req.query.url) }`: an exported
+ * two-parameter handler that drives its second parameter with an Express-only
+ * response method.
+ *
+ * This is the shape of a controller module, where the handlers are defined in one
+ * file and registered in another (`router.get('/redirect', handlers.redirect)`),
+ * so the file has no `express` import and no `app.get('/x', (req, res) => …)` of
+ * its own. Three things have to hold together, and each closes a lookalike:
+ *
+ * - the function is **exported**, so a bare `function f(req, res)` helper (or a
+ *   `node:http` listener passed straight to `createServer`) is not it;
+ * - the pair is named `req`/`res`, so Fastify (`request, reply`) and Koa (`ctx`)
+ *   are not it;
+ * - the body calls `res.redirect / render / sendStatus / sendFile`, which
+ *   `node:http` has no equivalent of. `res.end()`, `res.writeHead()` and
+ *   `res.json()` are not evidence: the first two are plain Node and the third is
+ *   shared with Next.js.
+ */
+function isExportedResponseHandler(
+  node: TSESTree.Node,
+  ancestors: readonly TSESTree.Node[],
+): boolean {
+  if (!isFunctionNode(node) || node.params.length !== 2) return false;
+  const [first, second] = node.params;
+  if (
+    first.type !== AST_NODE_TYPES.Identifier ||
+    second.type !== AST_NODE_TYPES.Identifier ||
+    !REQ_NAMES.has(first.name) ||
+    !RES_NAMES.has(second.name) ||
+    !isExportedFunction(node, ancestors)
+  ) {
+    return false;
+  }
+  const responseName = second.name;
+  let found = false;
+  const visit = (n: unknown): void => {
+    if (found || n === null || typeof n !== 'object') return;
+    if (Array.isArray(n)) return void n.forEach(visit);
+    const candidate = n as TSESTree.Node;
+    if (typeof candidate.type !== 'string') return;
+    if (
+      candidate.type === AST_NODE_TYPES.CallExpression &&
+      candidate.callee.type === AST_NODE_TYPES.MemberExpression &&
+      candidate.callee.object.type === AST_NODE_TYPES.Identifier &&
+      candidate.callee.object.name === responseName &&
+      EXPRESS_RESPONSE_METHODS.has(propertyName(candidate.callee) ?? '')
+    ) {
+      found = true;
+      return;
+    }
+    for (const key of Object.keys(candidate)) {
+      if (key === 'parent') continue;
+      visit((candidate as unknown as Record<string, unknown>)[key]);
+    }
+  };
+  visit(node.body);
+  return found;
+}
+
 /**
  * One evidence scan per file, not one per rule.
  *
@@ -189,8 +411,11 @@ const cache = new WeakMap<TSESTree.Program, boolean>();
  * function (60%) import no `express` — route modules routinely receive `app` or
  * `router` from their caller.
  *
- * So: an `express` import / `require` / dynamic `import()`, or a
- * `(req, res, next)` middleware signature. Both are local to the file — nothing
+ * So: an `express` import / `require` / dynamic `import()`, a
+ * `(req, res, next)` middleware signature, a `(req, res)` handler registered
+ * against a literal path (`app.get('/x', (req, res) => …)`), or an exported
+ * `(req, res)` handler that calls `res.redirect` / `render` / `sendStatus` /
+ * `sendFile`. Each is local to the file — nothing
  * is read from `package.json` and nothing is resolved across files, so there is
  * no project state to go stale and no dependency on lint order.
  */
@@ -204,6 +429,7 @@ export function fileUsesExpress(ast: TSESTree.Program): boolean {
 
 function computeUsesExpress(ast: TSESTree.Program): boolean {
   let found = false;
+  const ancestors: TSESTree.Node[] = [];
 
   const visit = (node: TSESTree.Node, requireIsShadowed: boolean): void => {
     if (
@@ -220,13 +446,21 @@ function computeUsesExpress(ast: TSESTree.Program): boolean {
     if (
       isImportEqualsLoad(node) ||
       isExpressDynamicLoad(node, requireIsShadowed) ||
-      hasMiddlewareSignature(node)
+      hasMiddlewareSignature(node) ||
+      isRouteRegistration(node) ||
+      isExportedResponseHandler(node, ancestors)
     ) {
       found = true;
       return;
     }
     // Everything below this node is inside any scope it introduces.
     const shadowedHere = requireIsShadowed || bindsRequire(node);
+    ancestors.push(node);
+    visitChildren(node, shadowedHere);
+    ancestors.pop();
+  };
+
+  const visitChildren = (node: TSESTree.Node, shadowedHere: boolean): void => {
     for (const key of Object.keys(node)) {
       if (key === 'parent') continue;
       const value = (node as unknown as Record<string, unknown>)[key];

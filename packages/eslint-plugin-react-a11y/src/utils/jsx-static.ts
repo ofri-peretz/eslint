@@ -107,6 +107,37 @@ export function intrinsicName(node: TSESTree.JSXOpeningElement): string | null {
 }
 
 /**
+ * Whether an opening element spreads an object into its props
+ * (`<input {...props} />`). The label/control/aria-label rules this is used
+ * by can only see the attributes written at the call site; a spread may carry
+ * the very prop (`label`, `aria-label`, `htmlFor`, children-equivalents) whose
+ * absence they would otherwise report, so none of them can prove it missing.
+ * Upstream jsx-a11y skips an element with a spread attribute for the same
+ * reason (#1563).
+ */
+export function hasSpreadAttribute(node: TSESTree.JSXOpeningElement): boolean {
+  return node.attributes.some(
+    (attr) => attr.type === AST_NODE_TYPES.JSXSpreadAttribute,
+  );
+}
+
+/**
+ * Whether a JSX element is passed as the VALUE of a JSX attribute
+ * (`<Button render={<a href="/docs" />}>`, an `asChild` slot). Such an
+ * element is a prop the parent component may clone with its own children —
+ * base-ui/Radix's `render`/`asChild` pattern — so it is not rendered as
+ * written, and a rule checking its content/label would be checking an
+ * element the DOM never actually sees in that shape (#1562).
+ */
+export function isJsxAttributeValue(node: TSESTree.JSXElement): boolean {
+  const parent = node.parent;
+  return (
+    parent?.type === AST_NODE_TYPES.JSXExpressionContainer &&
+    parent.parent?.type === AST_NODE_TYPES.JSXAttribute
+  );
+}
+
+/**
  * Whether an attribute gives a value: a dynamic value counts (the file cannot
  * prove it empty), a static one must be non-blank, `{undefined}` gives none.
  * A bare string attribute (`<iframe title />`) gives none either: React does

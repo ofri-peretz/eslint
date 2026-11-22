@@ -9,7 +9,10 @@
  *
  * This lock pins the funnel's load-bearing markers on the surfaces THIS repo owns:
  *   - the root README carries the star/follow CTA + a live GitHub-stars badge,
- *   - every published eslint-plugin-* README carries the INTERLACE:STAR_CTA block.
+ *   - every published eslint-plugin-* README carries the INTERLACE:STAR_CTA block,
+ *     which is ONE short `## Support` paragraph at the end, and no star banner
+ *     above the first heading (README audit 2026-11-20: an ask made before the
+ *     reader had installed anything, beside a counter reading 20).
  *
  * The growth strategy itself (the "why") lives in the agents repo at
  * footprint/strategy/growth-philosophy.md — not here.
@@ -56,14 +59,15 @@ describe('growth conversion lock', () => {
     // its /stats is a different (personal) surface — a reader clicking
     // "Live metrics" from an ESLint README expects THIS ecosystem's numbers.
     it('routes the growth CTA to eslint.interlace.tools, not ofriperetz.dev', () => {
-      const cta = readme.split('<!-- INTERLACE:GROWTH_CTA -->')[1]?.split('---')[0] ?? '';
+      const cta =
+        readme.split('<!-- INTERLACE:GROWTH_CTA -->')[1]?.split('---')[0] ?? '';
       expect(cta).toContain('https://eslint.interlace.tools/articles');
       expect(cta).toContain('https://eslint.interlace.tools/stats');
       expect(cta).not.toContain('ofriperetz.dev');
     });
   });
 
-  describe('every eslint-plugin-* README carries the star/follow CTA', () => {
+  describe('every eslint-plugin-* README carries one star line, at the end', () => {
     const readmes = pluginReadmes();
 
     it('discovers the plugin READMEs', () => {
@@ -71,9 +75,30 @@ describe('growth conversion lock', () => {
     });
 
     it.each(readmes.map((p) => [p.split('/packages/')[1], p] as const))(
-      '%s has the INTERLACE:STAR_CTA block',
+      '%s has the INTERLACE:STAR_CTA block, as a short Support paragraph',
       (_label, path) => {
-        expect(readFileSync(path, 'utf-8')).toContain(STAR_CTA_MARKER);
+        const text = readFileSync(path, 'utf-8');
+        expect(text).toContain(STAR_CTA_MARKER);
+        const block =
+          text
+            .split(STAR_CTA_MARKER)[1]
+            ?.split('<!-- INTERLACE:STAR_CTA:END -->')[0] ?? '';
+        expect(block).toContain('## Support');
+        expect(block).toContain('/issues');
+        expect(block).toMatch(/star/i);
+        // One ask: no counter badge, no second call to action.
+        expect(block).not.toContain('img.shields.io/github/stars');
+        expect(block).not.toContain('dev.to');
+      },
+    );
+
+    it.each(readmes.map((p) => [p.split('/packages/')[1], p] as const))(
+      '%s has no star banner above its first heading',
+      (_label, path) => {
+        const text = readFileSync(path, 'utf-8');
+        const firstHeading = text.search(/^## /m);
+        expect(text.slice(0, firstHeading)).not.toMatch(/star the repo/i);
+        expect(text).not.toMatch(/^> ⭐/m);
       },
     );
   });

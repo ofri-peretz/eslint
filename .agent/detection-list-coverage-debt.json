@@ -177,8 +177,6 @@
     "sign-up",
     "signout",
     "signup",
-    "sso",
-    "verify",
     "verify-email"
   ],
   "packages/eslint-plugin-nestjs-security/src/rules/require-throttler/index.ts#SENSITIVE_ROUTE_TOKENS": [
@@ -342,10 +340,8 @@
     "uservar"
   ],
   "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-credentials/index.ts#DEFAULT_PLACEHOLDER_WORDS": [
-    "dummy",
     "notreal",
     "redacted",
-    "replaceme",
     "tbd",
     "todo",
     "yours"

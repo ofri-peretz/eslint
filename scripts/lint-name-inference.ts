@@ -492,6 +492,18 @@ const REGISTERED: RegistryEntry[] = [
       'Host-vs-component by /^[a-z]/ and custom elements by a hyphen. Both are the language and HTML specs, not a vocabulary.',
   },
   {
+    file: 'eslint-plugin-react-features/src/rules/react/display-name.ts',
+    direction: 'report',
+    reason:
+      'With `ignoreTranspilerName`, an object method is a component when its key is PascalCase and it returns JSX. The JSX convention, as in eslint-plugin-react.',
+  },
+  {
+    file: 'eslint-plugin-react-features/src/rules/react/jsx-no-undef.ts',
+    direction: 'suppress',
+    reason:
+      'An intrinsic element (<div />) is told from a component by /^[a-z]/: the JSX spec, which compiles it to a string rather than a binding.',
+  },
+  {
     file: 'eslint-plugin-react-features/src/rules/react/require-optimization.ts',
     direction: 'suppress',
     reason: 'Component-ness from /^[A-Z]/. The JSX convention.',

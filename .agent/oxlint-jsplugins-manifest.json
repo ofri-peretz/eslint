@@ -1,10 +1,10 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-11-18",
+  "generatedAt": "2026-11-20",
   "totalPlugins": 32,
-  "totalRules": 503,
-  "oxlintCompatible": 503,
+  "totalRules": 507,
+  "oxlintCompatible": 507,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1462,7 +1462,7 @@
           "name": "prefer-at",
           "portability": "compatible",
           "blockers": [],
-          "isTypeAware": false
+          "isTypeAware": true
         },
         {
           "name": "prefer-event-target",
@@ -2425,7 +2425,7 @@
       "short": "react-features",
       "shim": "tools/oxlint-plugins/interlace-react-features.cjs",
       "subpath": "eslint-plugin-react-features/oxlint",
-      "ruleCount": 61,
+      "ruleCount": 65,
       "rules": [
         {
           "name": "component-api/no-arbitrary-token-class",
@@ -2548,6 +2548,12 @@
           "isTypeAware": false
         },
         {
+          "name": "react/jsx-no-comment-textnodes",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "react/jsx-no-duplicate-props",
           "portability": "compatible",
           "blockers": [],
@@ -2567,6 +2573,24 @@
         },
         {
           "name": "react/jsx-no-target-blank",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-no-undef",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-uses-react",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-uses-vars",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3765,10 +3789,14 @@
       "jsx-key",
       "jsx-max-depth",
       "jsx-no-bind",
+      "jsx-no-comment-textnodes",
       "jsx-no-duplicate-props",
       "jsx-no-literals",
       "jsx-no-script-url",
       "jsx-no-target-blank",
+      "jsx-no-undef",
+      "jsx-uses-react",
+      "jsx-uses-vars",
       "migration/react-class-to-hooks",
       "no-access-state-in-setstate",
       "no-adjacent-inline-elements",
@@ -3821,10 +3849,14 @@
       "react/jsx-key",
       "react/jsx-max-depth",
       "react/jsx-no-bind",
+      "react/jsx-no-comment-textnodes",
       "react/jsx-no-duplicate-props",
       "react/jsx-no-literals",
       "react/jsx-no-script-url",
       "react/jsx-no-target-blank",
+      "react/jsx-no-undef",
+      "react/jsx-uses-react",
+      "react/jsx-uses-vars",
       "react/no-access-state-in-setstate",
       "react/no-adjacent-inline-elements",
       "react/no-arrow-function-lifecycle",

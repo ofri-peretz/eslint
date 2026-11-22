@@ -27,8 +27,14 @@ describe('anchor-has-content', () => {
   describe('Valid Code - Accessible Anchors', () => {
     ruleTester.run('valid - anchors with content', anchorHasContent, {
       valid: [
-        { name: 'a static string child is content', code: '<a href="/x">{"Docs"}</a>' },
-        { name: 'a visible element beside a hidden one is content', code: '<a href="/x"><span aria-hidden="true">x</span>Docs</a>' },
+        {
+          name: 'a static string child is content',
+          code: '<a href="/x">{"Docs"}</a>',
+        },
+        {
+          name: 'a visible element beside a hidden one is content',
+          code: '<a href="/x"><span aria-hidden="true">x</span>Docs</a>',
+        },
         // Text content
         { name: 'an anchor with text', code: '<a href="#">Click here</a>' },
         { code: '<a href="/home">Home</a>' },
@@ -41,7 +47,9 @@ describe('anchor-has-content', () => {
         // Children prop
         { code: '<a href="#" children="Content" />' },
         // dangerouslySetInnerHTML (has content)
-        { code: '<a href="#" dangerouslySetInnerHTML={{ __html: "content" }} />' },
+        {
+          code: '<a href="#" dangerouslySetInnerHTML={{ __html: "content" }} />',
+        },
         // JSX expression children
         { code: '<a href="#">{text}</a>' },
         // Multiple children
@@ -50,6 +58,12 @@ describe('anchor-has-content', () => {
         {
           code: '<Link href="#">Click</Link>',
           options: [{ components: ['Link'] }],
+        },
+        // #1562: a render-prop/asChild element is not rendered as written —
+        // the parent clones it with its own content.
+        {
+          name: 'an empty anchor passed as a render prop is not rendered as written',
+          code: '<Button render={<a href="/docs" />}>Read the docs</Button>',
         },
       ],
       invalid: [],
@@ -60,9 +74,21 @@ describe('anchor-has-content', () => {
     ruleTester.run('invalid - empty anchors', anchorHasContent, {
       valid: [],
       invalid: [
-        { /* @found fidelity model react-a11y/anchor_has_content */ name: 'FN: an aria-hidden child is not announced', code: '<a href="/x"><span aria-hidden="true">x</span></a>', errors: [{ messageId: 'missingContent' }] },
-        { /* @found fidelity model react-a11y/anchor_has_content */ name: 'FN: {undefined} renders no content', code: '<a href="/x">{undefined}</a>', errors: [{ messageId: 'missingContent' }] },
-        { /* @found fidelity model react-a11y/anchor_has_content */ name: 'FN: whitespace-only text is no content', code: '<a href="/x"> </a>', errors: [{ messageId: 'missingContent' }] },
+        {
+          /* @found fidelity model react-a11y/anchor_has_content */ name: 'FN: an aria-hidden child is not announced',
+          code: '<a href="/x"><span aria-hidden="true">x</span></a>',
+          errors: [{ messageId: 'missingContent' }],
+        },
+        {
+          /* @found fidelity model react-a11y/anchor_has_content */ name: 'FN: {undefined} renders no content',
+          code: '<a href="/x">{undefined}</a>',
+          errors: [{ messageId: 'missingContent' }],
+        },
+        {
+          /* @found fidelity model react-a11y/anchor_has_content */ name: 'FN: whitespace-only text is no content',
+          code: '<a href="/x"> </a>',
+          errors: [{ messageId: 'missingContent' }],
+        },
         // Empty anchor
         {
           name: 'an anchor with nothing inside it',
@@ -115,15 +141,19 @@ describe('anchor-has-content', () => {
   });
 
   describe('FN Protection - Known Attack Patterns', () => {
-    ruleTester.run('FN protection - must catch inaccessible patterns', anchorHasContent, {
-      valid: [],
-      invalid: [
-        // Empty with only href
-        {
-          code: '<a href="https://example.com"></a>',
-          errors: [{ messageId: 'missingContent' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'FN protection - must catch inaccessible patterns',
+      anchorHasContent,
+      {
+        valid: [],
+        invalid: [
+          // Empty with only href
+          {
+            code: '<a href="https://example.com"></a>',
+            errors: [{ messageId: 'missingContent' }],
+          },
+        ],
+      },
+    );
   });
 });

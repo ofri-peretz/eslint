@@ -1,0 +1,128 @@
+---
+title: eslint-plugin-security alternatives
+description: "A neutral comparison of eslint-plugin-security, no-unsanitized, eslint-plugin-n, secure-coding, node-security, Semgrep and CodeQL: coverage, release dates, and which to combine."
+icon: Puzzle
+---
+
+eslint-plugin-security is maintained (latest release 2026-10-30), so the usual alternative is a second tool next to it, not a swap: `eslint-plugin-no-unsanitized` for DOM sinks, `eslint-plugin-secure-coding` and `eslint-plugin-node-security` (both ours) for more Node and general rules, and Semgrep or CodeQL outside ESLint for cross-file analysis. This page compares them and ends with combinations, not a winner.
+
+**Covers ESLint 9 and 10 (flat config). Dates are from the npm registry and the GitHub API, read on 2026-11-19. Last updated 2026-11-19.**
+
+The smallest change keeps `eslint-plugin-security` and adds the DOM rules it lacks. On 2026-11-19 the two plugins reported different statements on a test file, with no line reported twice, on ESLint 9.39.4 and 10.15.0:
+
+{/* VERIFY: run on ESLint 9 and 10 */}
+```js title="eslint.config.js"
+import security from 'eslint-plugin-security';
+import noUnsanitized from 'eslint-plugin-no-unsanitized';
+
+export default [
+  security.configs.recommended,
+  noUnsanitized.configs.recommended,
+];
+```
+
+```bash
+npm install --save-dev eslint-plugin-security eslint-plugin-no-unsanitized
+```
+
+To add ours as well, read [Security plugins in one flat config](/docs/getting-started/security-plugins-one-flat-config) first. Several of our rules and `eslint-plugin-security` rules report the same line.
+
+## The tools at a glance
+
+We maintain `secure-coding` and `node-security`. Treat the rows for them as claims by an interested party and check the sources.
+
+| Tool                                                                    | Kind                    | Rules                          | Latest release                                    | First on npm | ESLint peer range            | Node engines                      | License       |
+| :---------------------------------------------------------------------- | :---------------------- | :----------------------------- | :------------------------------------------------ | :----------- | :--------------------------- | :-------------------------------- | :------------ |
+| [eslint-plugin-security](https://www.npmjs.com/package/eslint-plugin-security) | ESLint plugin           | 15                             | 4.2.1, 2026-10-30                                 | 2015-11-15   | none declared                | `^18.18.0 \|\| ^20.9.0 \|\| >=21.1.0` | Apache-2.0    |
+| [eslint-plugin-no-unsanitized](https://www.npmjs.com/package/eslint-plugin-no-unsanitized) | ESLint plugin           | 2                              | 4.1.5, 2026-02-19                                 | 2017-05-09   | `^9 \|\| ^10`                | none declared                     | MPL-2.0       |
+| [eslint-plugin-n](https://www.npmjs.com/package/eslint-plugin-n)        | ESLint plugin           | 45 rows in the README table    | 18.5.0, 2026-10-18                                | 2021-12-17   | `>=8.57.1`                   | `^20.19.0 \|\| ^22.13.0 \|\| >=24`    | MIT           |
+| [eslint-plugin-secure-coding](/docs/security/plugin-secure-coding) (ours) | ESLint plugin           | 35                             | 6.1.2, 2026-11-19                                 | 2025-12-08   | `^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0` | `>=22.13.0`                       | MIT           |
+| [eslint-plugin-node-security](/docs/security/plugin-node-security) (ours) | ESLint plugin           | 43                             | 6.0.6, 2026-11-19                                 | 2026-02-02   | `^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0` | `>=22.13.0`                       | MIT           |
+| [Semgrep](https://github.com/semgrep/semgrep)                           | Standalone scanner      | rules come from a registry     | v1.186.0, GitHub release 2026-11-18               | not on npm   | not ESLint                   | not applicable                    | LGPL-2.1 (engine) |
+| [CodeQL](https://github.com/github/codeql)                              | Standalone, builds a database | queries in a repository  | CLI 2.27.5, 2026-11-19                            | not on npm   | not ESLint                   | not applicable                    | queries MIT; CLI under GitHub's CodeQL terms |
+
+How the numbers were obtained: rule counts for `eslint-plugin-security` are from its 4.2.1 `index.js`; for `secure-coding` and `node-security` they count the entries in `src/index.ts` on `main` (commit `80e7983`); for `eslint-plugin-n` they count rows in its 18.5.0 README. None was run. Our two plugins also depend on `@interlace/eslint-devkit`, and `secure-coding` has an optional peer dependency on `recheck`.
+
+Release cadence differs. `secure-coding` has published 92 versions and `node-security` 70 since their first releases; `eslint-plugin-security` has published 19 since 2015. Our presets have changed rule severities between minor versions (the comments in `node-security`'s `src/index.ts` record several), so pin versions and read the changelog when you update.
+
+## What each one covers
+
+A cell says whether a rule for that topic exists in the tool, judged from rule names and docs. It says nothing about how well the rule works.
+
+| Topic                                   | security | no-unsanitized | n         | secure-coding (ours) | node-security (ours) |
+| :-------------------------------------- | :------- | :------------- | :-------- | :------------------- | :------------------- |
+| DOM XSS sinks (`innerHTML`, `document.write`) | no, measured | yes            | no        | no                   | no                   |
+| `eval` and dynamic code                 | yes      | no             | no        | partial (deserialization rule also reports `eval`) | yes      |
+| `child_process` and shell commands      | yes      | no             | no        | no                   | yes                  |
+| Non-literal `fs` paths and path traversal | yes    | no             | no        | no                   | yes                  |
+| Non-literal `require`                   | yes      | no             | no        | no                   | yes                  |
+| Regular expressions (ReDoS, non-literal) | yes     | no             | no        | yes                  | no                   |
+| Timing-unsafe comparison                | yes      | no             | no        | `no-insecure-comparison`, not in `recommended` | yes   |
+| `Buffer` misuse                         | yes      | no             | partial (`no-deprecated-api`) | no       | yes                  |
+| Object injection                        | yes      | no             | no        | yes, not in `recommended` | no              |
+| SQL, LDAP, XPath, XXE injection         | no       | no             | no        | yes                  | no                   |
+| Hardcoded credentials                   | no       | no             | no        | yes                  | no                   |
+| Weak crypto (hash, cipher, IV)          | one rule (`detect-pseudoRandomBytes`) | no | no | no         | yes                  |
+| Node version and ESM compatibility      | no       | no             | yes       | no                   | no                   |
+
+For DOM sinks in our family, see [`eslint-plugin-browser-security`](/docs/security/plugin-browser-security) and [Detect XSS with ESLint flat config](/docs/getting-started/detect-xss-eslint-flat-config). `eslint-plugin-n` is a Node compatibility plugin. The only rule in it that touches security is `n/no-deprecated-api`, whose source includes the deprecated `Buffer` constructor; we did not run it.
+
+Rule pages for the overlapping ground: [`detect-eval-with-expression`](/docs/security/plugin-node-security/rules/detect-eval-with-expression), [`detect-child-process`](/docs/security/plugin-node-security/rules/detect-child-process), [`detect-non-literal-fs-filename`](/docs/security/plugin-node-security/rules/detect-non-literal-fs-filename), [`no-unsafe-dynamic-require`](/docs/security/plugin-node-security/rules/no-unsafe-dynamic-require), [`no-timing-unsafe-compare`](/docs/security/plugin-node-security/rules/no-timing-unsafe-compare), [`no-deprecated-buffer`](/docs/security/plugin-node-security/rules/no-deprecated-buffer), [`no-redos-vulnerable-regex`](/docs/security/plugin-secure-coding/rules/no-redos-vulnerable-regex), [`detect-non-literal-regexp`](/docs/security/plugin-secure-coding/rules/detect-non-literal-regexp) and [`detect-object-injection`](/docs/security/plugin-secure-coding/rules/detect-object-injection).
+
+## Notes on each tool
+
+**eslint-plugin-security.** All 15 rules are in its `recommended` config at `warn`. Its README says the plugin finds many false positives that need human triage. `detect-object-injection` reports every `obj[key]` access it cannot prove safe; it reported `obj[key] = 1` in our test file. It reported none of the DOM sink statements we tried (see the link above). It declares no ESLint peer range, so a package manager will not warn you about an incompatible ESLint.
+
+**eslint-plugin-no-unsanitized.** Two rules, both for DOM sinks. It is a Mozilla project with a narrow scope and is the neutral choice for that scope. It needs ESLint 9 or later. It accepts only `escapeHTML` tagged templates and `.setHTML()` by default, and DOMPurify must be listed in its options.
+
+**eslint-plugin-n.** Not a security plugin; include it because it is often installed beside one. It does not replace any security rule above.
+
+**eslint-plugin-secure-coding and eslint-plugin-node-security (ours).** More rule categories than `eslint-plugin-security`, with messages that carry a CWE. Costs: Node 22.13 or later, a faster release cadence, and several rules that report the same line as an `eslint-plugin-security` rule or as each other. Some of our rules attribute a value to a request before reporting, so they stay silent on a bare function parameter where `eslint-plugin-security` reports (measured on a 3-file fixture, 2026-11-19). `secure-coding` documents `no-disabled-template-escaping` and `no-invisible-characters` as drop-ins for `detect-disable-mustache-escape` and `detect-invisible-characters`, and has a `no-bidi-characters` rule for the topic of `detect-bidi-characters` (not compared line by line).
+
+**Semgrep.** A standalone scanner for many languages. Its open-source Community Edition analyzes within a single function, and cross-function and cross-file analysis belong to Semgrep Code, per Semgrep's documentation. Its rules repository has JavaScript browser rules whose file names cover `innerHTML`, `eval`, insecure `document` methods, `postMessage` origins and open redirects. We did not run it for this page.
+
+**CodeQL.** A standalone analyzer that builds a database of the code, then runs queries over it. The `github/codeql` repository has JavaScript queries for reflected, stored and DOM-based XSS under `javascript/ql/src/Security/CWE-079`. Its CLI is covered by the GitHub CodeQL Terms and Conditions unless you have a GitHub Enterprise license; read them before using it on private code. We did not run it for this page.
+
+## What was measured, and what was not
+
+One corpus run compares three of these. It was run 2026-11-15 on ESLint 10.14.0 over 45 CWEs, with 100 vulnerable and 96 safe samples. **We wrote the corpus**, so it shows what our rules were built for more than how often each tool is right on your code.
+
+| Tool                                                      | Vulnerable found (of 100) | Safe flagged (of 96) |
+| :-------------------------------------------------------- | ------------------------: | -------------------: |
+| eslint-plugin-security 4.2.1                              |                        15 |                   12 |
+| eslint-plugin-no-unsanitized 4.1.5                        |                         4 |                    1 |
+| Interlace: every one of our security plugins' `recommended` presets together |                        88 |                    0 |
+
+The last row is not `secure-coding` plus `node-security`. Those two found 18 and 19 samples respectively (a sample can be counted by both); the rest came from our other plugins, listed on [Use alongside eslint-plugin-security](/docs/getting-started/with-eslint-plugin-security). `no-unsanitized` covers DOM sinks only, so a low count against a 45-CWE corpus says little about it. Our 0 of 96 does not carry over to real code: on 20 open-source projects (3.04M lines), 28.6% of Interlace's `recommended` findings and 13.0% of `eslint-plugin-security`'s were right, from 24 sampled findings per side. See [benchmarks](/docs/benchmarks).
+
+A second run, on three vulnerable training apps and graded against their documented flaws, is on [eslint-plugin-security alternative: measured on NodeGoat, DVNA and Juice Shop](/docs/getting-started/security-alternative-benchmark).
+
+Unmeasured, and so without numbers here: `eslint-plugin-n`, Semgrep and CodeQL on any corpus; the run time of any tool; false-positive rates of any tool on your repository. The comparison with CodeQL and Semgrep as categories is on [Interlace vs CodeQL vs Semgrep vs Snyk Code](/docs/getting-started/concepts/compare).
+
+## Combinations
+
+Pick by what you ship, not by a ranking.
+
+- **Server code, already on `eslint-plugin-security`.** Keep it. Add `node-security` if you want the Node rules it lacks; accept or remove the duplicate reports as described in [one flat config](/docs/getting-started/security-plugins-one-flat-config).
+- **Browser code.** `eslint-plugin-no-unsanitized` alone, or `eslint-plugin-browser-security` alone, or both with the duplicates removed. Neither follows a value across files.
+- **Full-stack monorepo.** `eslint-plugin-security` on server globs, `no-unsanitized` or `browser-security` on client globs, scoped with `files`. The [one flat config](/docs/getting-started/security-plugins-one-flat-config) page has a tested file.
+- **Injection and secrets beyond Node built-ins.** Add `secure-coding` (ours) to any of the above.
+- **A value that crosses files or functions.** Add CodeQL, or Semgrep with its cross-file analysis, in CI. They run alongside ESLint; neither replaces the lint rules in your editor.
+- **Node compatibility only.** `eslint-plugin-n`, with no security plugin implied.
+
+A project with little Node built-in usage and no DOM code may reasonably stay on `eslint-plugin-security` alone.
+
+{/* FAQ JSON-LD (suggested; each answer must match the page text when it is generated)
+Q: What are alternatives to eslint-plugin-security?
+A: eslint-plugin-no-unsanitized for DOM sinks, eslint-plugin-secure-coding and eslint-plugin-node-security (ours) for more Node and general rules, and Semgrep or CodeQL outside ESLint. Most are used next to it, not instead of it.
+Q: Is eslint-plugin-security still maintained?
+A: Version 4.2.1 was published on npm on 2026-10-30, and the repository's last push was the same day.
+Q: Does eslint-plugin-security detect XSS?
+A: Not DOM XSS. In a 2026-11-19 run its recommended config reported none of the innerHTML or document.write statements.
+Q: Can I run eslint-plugin-security and eslint-plugin-node-security together?
+A: Yes. Several of their rules report the same line, so turn one side off; the one-flat-config page lists which.
+Q: Is eslint-plugin-n a security plugin?
+A: No. It checks Node.js compatibility; its only security-adjacent rule is no-deprecated-api.
+Q: Should I use Semgrep or CodeQL instead of ESLint security plugins?
+A: They answer different questions. Semgrep Code and CodeQL can follow values across files; ESLint rules run per file in the editor. They can run together.
+*/}

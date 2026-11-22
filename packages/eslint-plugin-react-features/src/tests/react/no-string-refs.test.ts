@@ -32,6 +32,19 @@ describe('no-string-refs', () => {
     ruleTester.run('no-string-refs validation', noStringRefs, {
       valid: [
         {
+          name: 'this.refs is writable from React 18.3',
+          settings: { react: { version: '18.3.0' } },
+          code: 'import { Component } from "react"; class A extends Component { m() { return this.refs.input; } }',
+        },
+        {
+          name: 'this.refs with no version configured: the newest React is assumed',
+          code: 'import { Component } from "react"; class A extends Component { m() { return this.refs.input; } }',
+        },
+        {
+          name: 'a template literal ref is not reported unless noTemplateLiterals is set',
+          code: '<div ref={`ref-${id}`} />',
+        },
+        {
           name: 'this.refs in a class that is not a React component',
           code: 'class Graph { m() { return this.refs.input; } }',
         },
@@ -92,8 +105,9 @@ describe('no-string-refs', () => {
           errors: [{ messageId: 'noStringRefs' }],
         },
         {
-          name: 'this["refs"] read in a React class component',
+          name: 'this["refs"] read in a React class component, React before 18.3',
           code: 'import { Component } from "react"; class A extends Component { m() { return this["refs"].input; } }',
+          settings: { react: { version: '18.2.0' } },
           errors: [{ messageId: 'noStringRefs' }],
         },
         // String ref usage
@@ -280,6 +294,8 @@ describe('no-string-refs', () => {
       invalid: [
         // String refs that need migration
         {
+          name: 'this.refs and a string ref in one class, React before 18.3',
+          settings: { react: { version: '18.2.0' } },
           code: `
             class OldComponent extends React.Component {
               componentDidMount() {
@@ -363,6 +379,8 @@ describe('no-string-refs', () => {
         },
         // ref prop with template literal
         {
+          name: 'a template literal ref with noTemplateLiterals',
+          options: [{ noTemplateLiterals: true }],
           code: '<div ref={`ref-${id}`} />',
           errors: [
             {

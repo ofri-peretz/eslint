@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-maintainability",
-  "version": "4.0.2",
+  "version": "4.0.4",
   "description": "ESLint maintainability rules — limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors.",
   "type": "commonjs",
   "sideEffects": false,
@@ -30,7 +30,8 @@
     "dist/",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "AGENTS.md"
   ],
   "keywords": [
     "eslint",

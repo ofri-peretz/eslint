@@ -1,0 +1,190 @@
+---
+title: Security plugins in one flat config
+description: "One eslint.config.js that runs eslint-plugin-security, no-unsanitized and the Interlace security plugins together on ESLint 9 and 10, with overlapping rules turned off."
+icon: Layers
+---
+
+To run `eslint-plugin-security`, `eslint-plugin-no-unsanitized` and the Interlace security plugins in one flat config, scope each preset to the files it fits with `files`, then turn off the `eslint-plugin-security` rules that another preset already reports. The file below does both. Edit the three glob constants at the top to match your folders.
+
+**Covers ESLint 9 and 10 (flat config). Last updated 2026-11-19.** ESLint 8 is out of scope because `eslint-plugin-no-unsanitized` 4.x requires ESLint 9 or later. The Interlace plugins (ours) need Node 22.13 or later.
+
+{/* VERIFY: run on ESLint 9 and 10 */}
+```js title="eslint.config.js"
+import security from 'eslint-plugin-security';
+import noUnsanitized from 'eslint-plugin-no-unsanitized';
+import browserSecurity from 'eslint-plugin-browser-security';
+import nodeSecurity from 'eslint-plugin-node-security';
+import secureCoding from 'eslint-plugin-secure-coding';
+
+const client = ['src/client/**/*.{js,jsx,ts,tsx}'];
+const server = ['src/server/**/*.{js,ts}'];
+const tests = ['**/*.{test,spec}.{js,jsx,ts,tsx}'];
+
+// Apply a preset to some files, and keep it off test files.
+const scope = (config, files, extra = {}) => ({
+  ...config,
+  files,
+  ignores: tests,
+  ...extra,
+});
+
+export default [
+  // Browser code
+  scope(browserSecurity.configs.recommended, client),
+  scope(noUnsanitized.configs.recommended, client, {
+    rules: {
+      // browser-security/no-innerhtml already reports these sinks.
+      'no-unsanitized/property': 'off',
+      // Keep only the two sinks browser-security does not cover.
+      'no-unsanitized/method': [
+        'error',
+        { defaultDisable: true },
+        { import: { properties: [0] }, setHTMLUnsafe: { properties: [0] } },
+      ],
+    },
+  }),
+
+  // Node code
+  scope(security.configs.recommended, server),
+  scope(nodeSecurity.configs.recommended, server),
+
+  // Both
+  scope(secureCoding.configs.recommended, [...client, ...server]),
+
+  // Overlaps. This block must come after the presets it edits.
+  {
+    files: server,
+    ignores: tests,
+    rules: {
+      // Each of these is also reported by a node-security or secure-coding rule.
+      'security/detect-eval-with-expression': 'off',
+      'security/detect-child-process': 'off',
+      'security/detect-non-literal-require': 'off',
+      'security/detect-new-buffer': 'off',
+      'security/detect-unsafe-regex': 'off',
+      'security/detect-possible-timing-attacks': 'off',
+      'node-security/no-timing-unsafe-compare': [
+        'warn',
+        { reportLiteralComparands: true },
+      ],
+      // eslint-plugin-security reports every non-literal here; these two
+      // report a subset of the same call sites.
+      'secure-coding/no-unsafe-regex-construction': 'off',
+      'node-security/detect-non-literal-fs-filename': 'off',
+    },
+  },
+  {
+    files: [...client, ...server],
+    ignores: tests,
+    rules: {
+      // The rule's default list minus eval(): eval is already reported by
+      // browser-security/no-eval and node-security/detect-eval-with-expression.
+      'secure-coding/no-unsafe-deserialization': [
+        'warn',
+        {
+          dangerousFunctions: [
+            'Function',
+            'setTimeout',
+            'setInterval',
+            'unserialize',
+            'deserialize',
+            'parseUnsafe',
+          ],
+        },
+      ],
+    },
+  },
+];
+```
+
+```bash
+npm install --save-dev eslint-plugin-security eslint-plugin-no-unsanitized \
+  eslint-plugin-browser-security eslint-plugin-node-security eslint-plugin-secure-coding
+```
+
+TypeScript files need a parser (`typescript-eslint`) configured before these objects. This file was run on `.js` samples only.
+
+## What was run
+
+On 2026-11-19 this file was run on ESLint 9.39.4 and 10.15.0 with `eslint-plugin-security` 4.2.1, `eslint-plugin-no-unsanitized` 4.1.5, `eslint-plugin-browser-security` 3.0.2, `eslint-plugin-node-security` 6.0.4 and `eslint-plugin-secure-coding` 6.1.1. The latest npm versions of our three are 3.1.0, 6.0.6 and 6.1.2; the run has not been repeated on them. Both ESLint versions gave identical results.
+
+The test input was three small files written to contain one statement per overlapping rule, not real code; two more small files checked the timing and `eval` rows. With the five `recommended` presets applied to every file and nothing turned off, they produced 44 messages. With the file above, they produced 25. That count says the config removes repeats on constructed input. It says nothing about the number of findings or the precision on your repository, which we have not measured on real projects.
+
+## Which rules to turn off, and why
+
+`eslint-plugin-security`'s rules and ours are separate rules with separate names, so ESLint reports each one. When two of them match the same call you get two messages on one line. The table lists what was observed in the 44-message run, and what the config does.
+
+| Code                                                  | Rules that reported it with nothing turned off                                                                                          | What the config does                                                                                     |
+| :---------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------- |
+| `eval(req.body.code)` in server code                  | `security/detect-eval-with-expression`, `browser-security/no-eval`, `node-security/detect-eval-with-expression`, `secure-coding/no-unsafe-deserialization` | Turns off the `security` rule, runs `browser-security` only on client globs, drops `eval` from the `secure-coding` list |
+| `exec('ls ' + req.query.dir)`                         | `security/detect-child-process`, `node-security/detect-child-process`, `node-security/no-shell-injection`                               | Turns off the `security` rule                                                                            |
+| `require(req.query.name)`                             | `security/detect-non-literal-require`, `node-security/no-unsafe-dynamic-require`                                                         | Turns off the `security` rule                                                                            |
+| `token === req.query.token`                           | `security/detect-possible-timing-attacks`, `node-security/no-timing-unsafe-compare`, and `browser-security/no-client-side-auth-logic`    | Turns off the `security` rule; scoping keeps the browser rule off server code                            |
+| `new Buffer(req.query.size)`                          | `security/detect-new-buffer`, `node-security/no-deprecated-buffer`, `node-security/no-unsafe-buffer-alloc`, `secure-coding/no-unlimited-resource-allocation` | Turns off the `security` rule                                                                            |
+| `/(a+)+$/`                                            | `security/detect-unsafe-regex`, `secure-coding/no-redos-vulnerable-regex`                                                                | Turns off the `security` rule                                                                            |
+| `new RegExp(req.query.pattern)`                       | `security/detect-non-literal-regexp`, `secure-coding/no-unsafe-regex-construction`                                                       | Turns off the `secure-coding` rule                                                                       |
+| `fs.readFileSync(req.query.file)`                     | `security/detect-non-literal-fs-filename`, `node-security/detect-non-literal-fs-filename`, `node-security/no-arbitrary-file-access`, `secure-coding/no-unlimited-resource-allocation` | Turns off the `node-security` filename rule                                                              |
+| `el.innerHTML = userInput` in browser code            | `no-unsanitized/property`, `browser-security/no-innerhtml`                                                                               | Turns off `no-unsanitized/property`, limits `no-unsanitized/method` to `import()` and `setHTMLUnsafe`     |
+
+The reasons, one per choice:
+
+- **Same pattern, a rule in our plugin reports it.** For the first six rows the other rule reports the same call, so one owner is enough. The config keeps ours because `eslint-plugin-security`'s preset sets all fifteen rules to `warn`, while five of these six are `error` in ours. The choice is open: you can turn off the `node-security` or `secure-coding` side instead and keep `security`. What matters is that exactly one side is on.
+- **Timing comparison.** By default `node-security/no-timing-unsafe-compare` skips a comparison against a string literal, which `security/detect-possible-timing-attacks` reports. Without `reportLiteralComparands: true`, turning off the `security` rule lost `token === 'abc123'` in our test. The option is documented on the [rule page](/docs/security/plugin-node-security/rules/no-timing-unsafe-compare) and the test above confirms it.
+- **Non-literal `RegExp` and `fs` paths.** Here `eslint-plugin-security` reports every non-literal argument, including a bare function parameter. `secure-coding/no-unsafe-regex-construction` and `node-security/detect-non-literal-fs-filename` report only values they can trace to a request, so they never reported something `security` missed. We turned off the narrower side. If you want CWE-tagged messages instead of coverage of bare parameters, reverse that: turn off the two `security` rules and accept that bare parameters go unreported.
+- **DOM sinks.** The two DOM plugins report the same `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write` and `createContextualFragment` statements. See [Detect XSS with ESLint flat config](/docs/getting-started/detect-xss-eslint-flat-config) for the per-sink table and the `defaultDisable` spelling.
+- **`eval` and `secure-coding/no-unsafe-deserialization`.** That rule's default list includes `eval`, which made a fourth report on the same line. Setting `dangerousFunctions` replaces the default list, so the config lists the defaults except `eval`. Dropping `Function`, `setTimeout` and `setInterval` as well removed coverage of string-argument `setTimeout` in server files in our test, so they stay.
+
+Rules left on because the test input showed no overlap: `security/detect-non-literal-fs-filename` and `security/detect-non-literal-regexp` on bare parameters, `security/detect-object-injection`, `detect-buffer-noassert`, `detect-pseudoRandomBytes`, `detect-no-csrf-before-method-override`, and the three character and escaping rules (`detect-bidi-characters`, `detect-invisible-characters`, `detect-disable-mustache-escape`). The test input did not contain a statement for every one of them. `detect-object-injection` reports every `obj[key]` access it cannot prove safe. Whether to turn it off is a question about your code. Add `'security/detect-object-injection': 'off'` to the overlap block to do so; `secure-coding/detect-object-injection` is not in `recommended`.
+
+Rule pages: [`detect-eval-with-expression`](/docs/security/plugin-node-security/rules/detect-eval-with-expression), [`detect-child-process`](/docs/security/plugin-node-security/rules/detect-child-process), [`no-unsafe-dynamic-require`](/docs/security/plugin-node-security/rules/no-unsafe-dynamic-require), [`no-timing-unsafe-compare`](/docs/security/plugin-node-security/rules/no-timing-unsafe-compare), [`no-deprecated-buffer`](/docs/security/plugin-node-security/rules/no-deprecated-buffer), [`detect-non-literal-fs-filename`](/docs/security/plugin-node-security/rules/detect-non-literal-fs-filename), [`no-redos-vulnerable-regex`](/docs/security/plugin-secure-coding/rules/no-redos-vulnerable-regex), [`no-unsafe-regex-construction`](/docs/security/plugin-secure-coding/rules/no-unsafe-regex-construction) and [`no-eval`](/docs/security/plugin-browser-security/rules/no-eval).
+
+### Repeats that remain
+
+The file does not reach one message per line. In the 25-message run, these remain:
+
+- `exec(...)`: `node-security/detect-child-process` and `node-security/no-shell-injection`, both ours.
+- `new Buffer(n)`: `no-deprecated-buffer`, `no-unsafe-buffer-alloc` and `secure-coding/no-unlimited-resource-allocation`. The third is a different concern (resource use).
+- `fs.readFileSync(req.query.file)`: `security/detect-non-literal-fs-filename`, `node-security/no-arbitrary-file-access` and `secure-coding/no-unlimited-resource-allocation`.
+- `new Function(x)` and `setTimeout` with a string: `browser-security/no-eval` on client files, or `node-security/detect-eval-with-expression` on server files, plus `secure-coding/no-unsafe-deserialization`. The rule's `dangerousFunctions` list did not stop it reporting `new Function`.
+- A `message` handler that writes `e.data` to `innerHTML`: `require-postmessage-origin-check` and `no-postmessage-innerhtml`. These ask different questions, about the sender and about the sink.
+
+`browser-security/no-eval` has a `deferDynamicPayloads` option meant for the case where both it and `node-security` run on the same files. We did not use it because the globs keep them on different files.
+
+## Scope rules to file globs
+
+A flat config is a list. Each object applies to the files its `files` globs match, or to every file when it has none, and later objects override earlier ones. Three consequences:
+
+- **Put each preset on the code it was written for.** `browser-security` rules assume a browser. Run on server code with no scoping, `browser-security/no-client-side-auth-logic` reported `token === req.query.token` in a request handler. In the file above, `client` and `server` keep it away from Node code.
+- **A rule needs its plugin in the same match.** Setting `'secure-coding/...'` in an object that matches a file the preset object does not match fails on ESLint 9.39.4 with `could not find plugin "secure-coding"`. This happened when the presets used `ignores: tests` and the override objects did not. Every object in the file above carries the same `files` and `ignores`.
+- **Keep tests out.** The `ignores: tests` entry stops all five presets on `*.test.*` and `*.spec.*` files. A test file holding the four client statements from our fixture reported four messages without it and none with it. Some rules have their own switch instead; `browser-security/no-innerhtml` takes `allowInTests: true`.
+
+To scope by package in a monorepo, change the constants:
+
+{/* VERIFY: run on ESLint 9 and 10 */}
+```js title="eslint.config.js"
+const client = ['apps/web/**/*.{js,jsx,ts,tsx}', 'packages/ui/**/*.{js,jsx,ts,tsx}'];
+const server = ['apps/api/**/*.{js,ts}', 'packages/db/**/*.{js,ts}'];
+```
+
+Shared code that runs in both places belongs in neither list, or in both with the overlap block adjusted. A file that matches both `client` and `server` gets both sets of rules, so the overlaps in the table apply to it.
+
+Globs match paths relative to the directory holding `eslint.config.js`. To lint a single preset on everything, drop the `scope` call and spread the preset as in [Flat config migration](/docs/getting-started/flat-config).
+
+## Related
+
+- [Alternatives to eslint-plugin-security](/docs/getting-started/eslint-plugin-security-alternatives) compares these tools and Semgrep and CodeQL.
+- [Use alongside eslint-plugin-security](/docs/getting-started/with-eslint-plugin-security) has the corpus run behind the coverage claims.
+- Plugin pages: [`browser-security`](/docs/security/plugin-browser-security), [`node-security`](/docs/security/plugin-node-security), [`secure-coding`](/docs/security/plugin-secure-coding).
+
+{/* FAQ JSON-LD (suggested; each answer must match the page text when it is generated)
+Q: Can I use eslint-plugin-security and eslint-plugin-no-unsanitized in the same flat config?
+A: Yes. They reported different statements on a test file, with no line reported twice, on ESLint 9.39.4 and 10.15.0.
+Q: How do I stop duplicate security warnings from two ESLint plugins?
+A: Turn off one side of each overlapping pair in a later config object. This page lists the pairs observed, such as security/detect-child-process and node-security/detect-child-process.
+Q: How do I apply different ESLint security rules to frontend and backend code?
+A: Give each preset object a files array of globs, for example src/client and src/server, and keep tests out with ignores.
+Q: Why does ESLint say it could not find a plugin for a rule I configured?
+A: A config object that sets a plugin's rule must match files that also match an object defining the plugin. Give override objects the same files and ignores as the preset objects.
+Q: Which ESLint versions does this configuration support?
+A: ESLint 9 and 10, tested on 9.39.4 and 10.15.0. ESLint 8 is not covered because eslint-plugin-no-unsanitized 4.x requires ESLint 9 or later.
+*/}

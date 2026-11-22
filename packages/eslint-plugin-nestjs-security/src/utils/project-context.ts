@@ -134,8 +134,10 @@ const USE_CLASS_RE = /use(?:Class|Existing)\s*:\s*([A-Za-z_$][\w$]*)/;
 const NON_AUTH_GUARD = /Throttler/i;
 /** `app.useGlobalPipes(...)` in the bootstrap file. */
 const USE_GLOBAL_PIPES_RE = /useGlobalPipes\s*\(/;
-/** `app.useGlobalGuards(...)` in the bootstrap file. */
-const USE_GLOBAL_GUARDS_RE = /useGlobalGuards\s*\(/;
+/** `app.useGlobalGuards(` up to the opening paren, in the bootstrap file. */
+const USE_GLOBAL_GUARDS_RE = /useGlobalGuards\s*\(/g;
+/** A guard named inside a `useGlobalGuards(...)` argument list. */
+const GUARD_NAME_RE = /[A-Za-z_$][\w$]*Guard(?![\w$])/g;
 /** `MulterModule.register(` / `.registerAsync(`, up to the opening paren. */
 const MULTER_MODULE_RE = /MulterModule\s*\.\s*register(Async)?\s*\(/g;
 /** `import { A, B as C } from 'x'` and `export { A } from 'x'`. */
@@ -261,11 +263,49 @@ function analyzeSource(
   }
 
   if (USE_GLOBAL_PIPES_RE.test(source)) into.hasGlobalValidationPipe = true;
-  if (USE_GLOBAL_GUARDS_RE.test(source)) into.hasGlobalAuthGuard = true;
+  registerGlobalGuards(source, file, root, into);
   if (registersUploadLimit(source)) into.hasModuleUploadLimit = true;
 
   if (AUTH_IN_MODULE.test(source)) into.sawAuthInModule = true;
   collectAuthMiddlewareTargets(source, into.authMiddlewareTargets);
+}
+
+/**
+ * Fold every `app.useGlobalGuards(...)` call into the context.
+ *
+ * Which guard it registers decides what it protects: `useGlobalGuards(new
+ * ThrottlerGuard())` limits request rate and authenticates nobody, and counting
+ * it as an auth guard silenced `require-guards` on a project whose every route
+ * was open. An argument with no guard-shaped name (`app.get(X)`, a variable
+ * called `guards`) is assumed to authenticate, as a factory-provided `APP_GUARD`
+ * is.
+ */
+function registerGlobalGuards(
+  source: string,
+  file: string,
+  root: string,
+  into: MutableContext,
+): void {
+  USE_GLOBAL_GUARDS_RE.lastIndex = 0;
+  while (USE_GLOBAL_GUARDS_RE.exec(source) !== null) {
+    let depth = 1;
+    let end = USE_GLOBAL_GUARDS_RE.lastIndex;
+    for (; end < source.length && depth > 0; end++) {
+      if (source[end] === '(') depth++;
+      else if (source[end] === ')') depth--;
+    }
+    const names =
+      source.slice(USE_GLOBAL_GUARDS_RE.lastIndex, end).match(GUARD_NAME_RE) ??
+      [];
+    const throttlers = names.filter(
+      (name) =>
+        isThrottlerGuard(name, source, file, root) ?? NON_AUTH_GUARD.test(name),
+    );
+    if (throttlers.length > 0) into.hasGlobalThrottler = true;
+    if (throttlers.length < names.length || names.length === 0) {
+      into.hasGlobalAuthGuard = true;
+    }
+  }
 }
 
 /**

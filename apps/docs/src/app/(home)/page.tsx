@@ -30,6 +30,20 @@ import { HeroSection } from '@/components/home/hero-section';
 import { InstallSnippet } from '@/components/mdx/install-snippet';
 import cachedTweets from '@/data/cached-tweets.json';
 import cachedDevToArticles from '@/data/cached-devto-articles.json';
+import { JsonLd } from '@/components/json-ld';
+import { homeJsonLd } from '@/lib/seo';
+import type { Metadata } from 'next';
+
+const HOME_DESCRIPTION =
+  'ESLint plugins that find security bugs in JavaScript and TypeScript, including the bugs AI coding tools write. Free and open source.';
+
+// The home page was the one indexable URL with no canonical (audit
+// 2026-11-19). Relative to `metadataBase`, so it always names the production
+// host, whichever host served the request.
+export const metadata: Metadata = {
+  description: HOME_DESCRIPTION,
+  alternates: { canonical: '/' },
+};
 
 // Cache-aware fetchers — fall back to JSON cache when Twitter / DEV.to API
 // is rate-limited during Vercel builds (preserves the previous behavior).
@@ -57,6 +71,7 @@ export default async function HomePage() {
   // Tab sequence.
   return (
     <div id="main-content" tabIndex={-1} className="relative min-h-screen outline-hidden">
+      <JsonLd data={homeJsonLd(HOME_DESCRIPTION)} />
       {/* HERO — full-bleed; not subject to container rules (LAYOUT §2 `full`) */}
       <HeroSection githubStars={githubStars} />
 

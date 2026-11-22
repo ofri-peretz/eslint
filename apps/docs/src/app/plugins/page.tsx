@@ -8,6 +8,8 @@ import {
   getPluginFinderData,
   PLUGIN_CATEGORIES,
 } from '@/lib/plugin-finder-data';
+import { JsonLd } from '@/components/json-ld';
+import { topLevelJsonLd } from '@/lib/seo';
 
 export const dynamic = 'force-static';
 
@@ -42,6 +44,7 @@ export default function PluginsPage() {
 
   return (
     <Section spacing="comfortable" container="wide" id="plugin-finder">
+      <JsonLd data={topLevelJsonLd('Plugins', '/plugins')} />
       <SectionHeader
         as="h1"
         align="start"

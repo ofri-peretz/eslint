@@ -50,6 +50,34 @@ const isBooleanType = (ann: TSESTree.TypeNode | undefined): boolean => {
   );
 };
 
+/**
+ * Whether `node` sits inside a type declaration this rule can tell is a
+ * component's props type: an interface or type alias whose own name ends in
+ * `Props` (`Props`, `ButtonProps`, …) — the convention every real component in
+ * this codebase and its dogfooding targets follows.
+ *
+ * Without this, the rule treated every `isXxx: boolean` field in ANY
+ * interface as a component prop, including a plain data interface that is
+ * never passed to a component (`FunnelStep[]` mapped into JSX) — R8 ("boolean
+ * props default-false") does not apply to a field that is never a prop (#1556).
+ */
+const isInsidePropsType = (node: TSESTree.Node): boolean => {
+  for (
+    let current: TSESTree.Node | undefined = node;
+    current;
+    current = current.parent
+  ) {
+    if (
+      (current.type === 'TSInterfaceDeclaration' ||
+        current.type === 'TSTypeAliasDeclaration') &&
+      current.id.name.endsWith('Props')
+    ) {
+      return true;
+    }
+  }
+  return false;
+};
+
 const stripIsPrefix = (name: string): string => {
   const rest = name.slice(2);
   // A leading run of capitals is an acronym, not a word boundary, so lowering
@@ -99,6 +127,7 @@ export const noIsPrefixProp = createRule<RuleOptions, MessageIds>({
         const name = signatureKeyName(node);
         if (name === null || !/^is[A-Z]/.test(name)) return;
         if (!isBooleanType(node.typeAnnotation?.typeAnnotation)) return;
+        if (!isInsidePropsType(node)) return;
         const suggested = stripIsPrefix(name);
         const keyNode = node.key;
         context.report({

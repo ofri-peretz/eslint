@@ -5,6 +5,60 @@ All notable changes to `eslint-plugin-react-a11y` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.0.6
+
+### Patch Changes
+
+- **🐛 Fix** — false positives in react-a11y label/anchor rules and react-features prop/runtime rules
+
+  - `control-has-associated-label` no longer reports a hidden input
+    (`<input type="hidden">`) or any control with a spread attribute
+    (`<input {...props} />`), whose label the call site cannot see.
+  - `no-missing-aria-labels` no longer reports a spread-prop input for the
+    same reason.
+  - `label-has-associated-control` no longer reports a spread-prop label
+    (`<label {...props} />`).
+  - `anchor-has-content` and `control-has-associated-label` no longer report
+    an element passed as a render-prop/`asChild` value
+    (`<Button render={<a href="/docs" />}>`), which is not rendered as
+    written.
+  - `no-is-prefix-prop` (R8) no longer reports `isXxx: boolean` fields on a
+    plain data interface/type alias that is never a component's props —
+    only a type whose own name ends in `Props`.
+  - `react-in-jsx-scope` now also reads `settings.react.runtime: 'automatic'`
+    as a project-wide opt-out, not only a per-file `@jsxRuntime automatic`
+    comment.
+
+## 3.0.5
+
+### Patch Changes
+
+- **📚 Docs** — Getting Started now leads each plugin README, with the ESLint install line and a flat config that loads
+
+  The install block was below the Description and the doctrine, and on 17 of the 31 plugins there was no flat-config snippet on the page at all. `eslint-plugin-secure-coding`'s README showed `...securePlugin.configs.recommended`, which throws `TypeError: ... is not iterable` when pasted, because `configs.recommended` is one object. Every plugin README now opens with `npm install --save-dev eslint <plugin>` and `import { configs } from '<plugin>'` and `export default [configs.recommended]` in an `eslint.config.mjs`, then the Description. A test now loads that snippet in ESLint for every plugin.
+
+  The star banner above the first heading, the footer block with the star counter and the Dev.to ask are replaced by one `## Support` paragraph at the end: report a false positive, or star the repo if the plugin helped.
+
+  `eslint-plugin-import-next` opens with its drop-in grade, read from the newest `benchmarks/results/ilb-import-parity` result with its date: passes 2,035 of 2,135 (95.3%) of eslint-plugin-import 2.32.0's own test cases, measured 2026-11-19.
+
+  Eight taglines now say what the plugin flags instead of "security rules for X" (secure-coding, node-security, browser-security, nestjs-security, express-security, vercel-ai-security, react-a11y, import-next). `eslint-plugin-node-security` adds one proof line: the public repositories that list it, with the date they were checked.
+
+## 3.0.4
+
+### Patch Changes
+
+- **🐛 Fix** — click-events-have-key-events no longer reports onClick on a custom component
+
+  `<Button onClick={go}>` was reported even though `Button` is a component, not a DOM element — it may already render a native `<button>` and be keyboard-operable, and there is no way to see that from the call site. The rule now only checks intrinsic (lower-case) elements, matching upstream `jsx-a11y/click-events-have-key-events`.
+
+## 3.0.3
+
+### Patch Changes
+
+- **📚 Docs** — ship an AGENTS.md that tells AI assistants how to enable the plugin and what each preset catches
+
+  Generated from the package's own presets and rules, so it cannot drift. `eslint-plugin-secure-coding`: the README no longer shows `...configs.recommended` spread into an array, which threw "not iterable".
+
 ## 3.0.2
 
 ### Patch Changes

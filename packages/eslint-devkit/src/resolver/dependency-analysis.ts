@@ -128,9 +128,18 @@ const KNOWN_EXTERNAL_PACKAGES = new Set([
  *
  * The quoted alternatives exclude newlines so an unbalanced quote cannot
  * swallow the following lines and drop several imports at once.
+ *
+ * The clause also stops at `from '`. Without that, a file written without
+ * semicolons (`import x from 'a'` NEWLINE `import type { T } from './b'`) lets
+ * the clause swallow the first statement's `from 'a'` as a quoted segment and
+ * run on into the next, so ONE match covers two statements, starts with the
+ * value import, and makes the `import type` edge look like a runtime edge:
+ * `no-cycle` then reported cycles that exist only through types (3 on
+ * lynx-stack, which eslint-plugin-import ignores). A quoted segment is still
+ * allowed inside the braces, where `{ "a-b" as x }` needs it.
  */
 const IMPORT_REGEX =
-  /import\s+(?:(?:[\w*{}\s,]|'[^'\n]*'|"[^"\n]*")+\s+from\s+)?['"]([^'"]+)['"]/g;
+  /import\s+(?:(?:(?!\bfrom\s+['"])[\w*{}\s,]|'[^'\n]*'|"[^"\n]*")+\s+from\s+)?['"]([^'"]+)['"]/g;
 
 /**
  * Pre-compiled regex for dynamic imports

@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-typeorm-security",
-  "version": "2.0.2",
+  "version": "2.0.4",
   "description": "Oxlint TypeORM security rules — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials. Same rules and rule IDs as eslint-plugin-typeorm-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
@@ -73,6 +73,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-typeorm-security": "2.0.2"
+    "eslint-plugin-typeorm-security": "2.0.4"
   }
 }

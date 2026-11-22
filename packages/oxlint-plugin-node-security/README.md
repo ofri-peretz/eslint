@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Security-focused ESLint plugin for Node.js built-in modules (fs, child_process, vm, crypto, Buffer).
+  ESLint rules for the Node.js core APIs that flag command injection, path traversal, SSRF, zip slip and weak crypto.
 </p>
 
 <p align="center">
@@ -19,8 +19,6 @@
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
-
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
 
 ## Description
 
@@ -169,7 +167,7 @@ Install [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plu
 | [no-dynamic-algorithm-selection](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-algorithm-selection?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)       | CWE-327  | A02:2021 |      | Disallow dynamic algorithm names in Node.js crypto functions (CWE-327)                                       | 🟢  | 💼  |     |     |     |     |
 | [no-dynamic-command-string](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-command-string?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                 |  CWE-77  | A03:2021 |      | Detects dynamically assembled command strings handed to a shell flag (bash -c) or to a command-runner that…  | 🟢  | 💼  |     |     |     |     |
 | [no-dynamic-dependency-loading](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-dependency-loading?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)         | CWE-1104 |          |      | This rule detects dynamically constructed paths in require() and import() statements                         | 🟢  |     |     |     |     |     |
-| [no-dynamic-require](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-require?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                               |          |          |      | Forbid require() calls with non-literal arguments                                                            | 🟢  |     |     |     |     |     |
+| [no-dynamic-require](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-require?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                               |  CWE-94  |          |      | Forbid require() calls with non-literal arguments                                                            | 🟢  |     |     |     |     |     |
 | [no-ecb-mode](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-ecb-mode?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                                             | CWE-327  | A02:2021 |      | Disallow ECB encryption mode (use GCM or CBC instead)                                                        | 🟢  | 💼  |     |     |     |     |
 | [no-env-injection](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-env-injection?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                                   |  CWE-99  | A03:2021 |      | Detects writes to process.env under a key the caller controls, which can overwrite PATH, NODE_OPTIONS or LD… | 🟢  | 💼  |     |     |     |     |
 | [no-insecure-http-parser](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-insecure-http-parser?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                     | CWE-444  | A03:2021 |      | Disallow insecureHTTPParser true on Node HTTP servers and clients                                            | 🟢  | 💼  |     |     |     |     |
@@ -185,7 +183,7 @@ Install [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plu
 | [no-toctou-vulnerability](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-toctou-vulnerability?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                     | CWE-367  | A01:2021 |      | Detects Time-of-Check-Time-of-Use (TOCTOU) race condition vulnerabilities in file system operations.         | 🟢  | 💼  |     |     |     |     |
 | [no-unbounded-decompression](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-unbounded-decompression?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)               | CWE-409  | A05:2021 |      | Require a maxOutputLength ceiling on zlib one-shot decompression                                             | 🟢  | 💼  |     |     |     |     |
 | [no-unsafe-buffer-alloc](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-unsafe-buffer-alloc?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                       | CWE-908  | A01:2021 |      | Disallow `Buffer.allocUnsafe()` and `Buffer.allocUnsafeSlow()`, which return uninitialized memory.           | 🟢  |     | ⚠️  |     | 💡  |     |
-| [no-unsafe-dynamic-require](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-unsafe-dynamic-require?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                 | CWE-494  |          |      | Disallows dynamic require() calls with non-literal arguments that could lead to security vulnerabilities     | 🟢  | 💼  |     |     |     |     |
+| [no-unsafe-dynamic-require](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-unsafe-dynamic-require?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                 |  CWE-95  |          |      | Disallows dynamic require() calls with non-literal arguments that could lead to security vulnerabilities     | 🟢  | 💼  |     |     |     |     |
 | [no-weak-cipher-algorithm](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-weak-cipher-algorithm?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                   | CWE-327  | A02:2021 |      | Disallow weak cipher algorithms (DES, 3DES, RC4, Blowfish, RC2, IDEA)                                        | 🟢  | 💼  |     |     |     |     |
 | [no-weak-dh-parameters](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-weak-dh-parameters?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                         | CWE-326  | A04:2025 |      | Disallow Diffie-Hellman and ECDH parameters below a safe strength                                            | 🟢  | 💼  |     |     |     |     |
 | [no-weak-hash-algorithm](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-weak-hash-algorithm?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                       | CWE-327  | A02:2021 |      | Disallow weak hash algorithms (MD5, MD4, SHA-1, RIPEMD)                                                      | 🟢  | 💼  |     |     |     |     |
@@ -247,11 +245,9 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->
 
-## ⭐ Support & follow
+## Support
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
-
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 ## 📄 License
 

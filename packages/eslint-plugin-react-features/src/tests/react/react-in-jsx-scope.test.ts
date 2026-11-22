@@ -85,6 +85,16 @@ ruleTester.run('react-in-jsx-scope', reactInJsxScope, {
         export function App() { return <div>Hello</div>; }
       `,
     },
+    // #1550: settings.react.runtime is a project-wide default (the
+    // create-next-app / Vite default), so every JSX file does not need its
+    // own `@jsxRuntime automatic` comment.
+    {
+      name: 'settings.react.runtime: automatic needs no React, with no per-file pragma',
+      code: `
+        export function App() { return <div>Hello</div>; }
+      `,
+      settings: { react: { runtime: 'automatic' } },
+    },
   ],
   invalid: [
     // Invalid - JSX without React import
@@ -151,4 +161,3 @@ ruleTester.run('react-in-jsx-scope', reactInJsxScope, {
     },
   ],
 });
-

@@ -178,3 +178,58 @@ describe('isNativeCollectionHandle', () => {
     expect(isNativeCollectionHandle(receiverOfOutermostCall(code))).toBe(false);
   });
 });
+
+describe('fileUsesMongo: collection handle held in a variable', () => {
+  it.each([
+    [
+      'a DAO constructor: handle bound once, queried through the variable',
+      `const Dao = function (db) {
+         const col = db.collection('allocations');
+         this.get = (cb) => col.find({ a: 1 }).toArray(cb);
+       };`,
+    ],
+    [
+      'a direct write through the bound handle',
+      `let c = db.collection('u'); c.insertOne(doc);`,
+    ],
+    [
+      'a handle assigned after declaration',
+      `let c; c = db.collection('u'); c.updateMany({}, {});`,
+    ],
+    [
+      'a native method straight on the handle',
+      `const c = db.collection('u'); c.findOne({});`,
+    ],
+  ])('accepts %s', (_label, code) => {
+    expect(usesMongo(code)).toBe(true);
+  });
+
+  it.each([
+    [
+      'a chain rooted at `this`, not at the bound name',
+      `const c = db.collection('u'); this.items.findOne({});`,
+    ],
+    [
+      'a Firestore handle in a variable',
+      `const c = db.collection('u'); c.doc(id).get();`,
+    ],
+    [
+      'a Firestore query through the variable',
+      `const c = db.collection('u'); c.where('a', '==', 1).get();`,
+    ],
+    [
+      'a variable never bound to a collection',
+      `const c = getThing(); c.findOne({});`,
+    ],
+    [
+      'a different variable than the bound one',
+      `const c = db.collection('u'); other.findOne({});`,
+    ],
+    [
+      'a bare find through the variable (Array.find owns the name)',
+      `const c = db.collection('u'); c.find({});`,
+    ],
+  ])('rejects %s', (_label, code) => {
+    expect(usesMongo(code)).toBe(false);
+  });
+});

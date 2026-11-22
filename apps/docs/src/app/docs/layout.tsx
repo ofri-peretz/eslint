@@ -2,6 +2,8 @@ import { source } from '@/lib/source';
 import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 import { baseOptions } from '@/lib/layout.shared';
 import { Rocket, Shield, Layers, Zap } from 'lucide-react';
+import { GitHubCard } from '@/components/docs/github-card';
+import { getGitHubStars } from '@/lib/github-stars';
 
 // Define colored icons for each pillar - sized to fit sidebar tabs
 const pillarIcons: Record<string, React.ReactNode> = {
@@ -27,12 +29,17 @@ const pillarIcons: Record<string, React.ReactNode> = {
   ),
 };
 
-export default function Layout({ children }: LayoutProps<'/docs'>) {
+export default async function Layout({ children }: LayoutProps<'/docs'>) {
+  // Read at build time (hourly revalidation), never in the browser.
+  const stars = await getGitHubStars();
   return (
     <DocsLayout
       tree={source.getPageTree()}
       {...baseOptions()}
       sidebar={{
+        // The repo card sits above the page tree: above the fold on every docs
+        // page at md and up. Narrow screens get the inline variant in the page.
+        banner: <GitHubCard stars={stars} />,
         tabs: {
           transform: (option, node) => {
             // Use folder name directly from node

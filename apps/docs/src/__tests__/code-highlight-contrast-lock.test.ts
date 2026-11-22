@@ -77,6 +77,17 @@ describe('code highlight contrast lock (#1515)', () => {
     expect(failing).toEqual([]);
   });
 
+  it('the two tokens we remap clear 7:1 on every code background (axe ACT: color-contrast-enhanced)', () => {
+    const replace = CODE_COLOR_REPLACEMENTS[CODE_THEMES.light] ?? {};
+    expect(Object.keys(replace).sort()).toEqual(['#6e7781', '#8250df']);
+    const low = Object.values(replace).flatMap((fg) =>
+      BACKGROUNDS.filter((bg) => contrast(fg, bg) < 7).map(
+        (bg) => `${fg} on ${bg}: ${contrast(fg, bg).toFixed(2)}`,
+      ),
+    );
+    expect(low).toEqual([]);
+  });
+
   it('nothing renders fumadocs DynamicCodeBlock with its github-light default', () => {
     const offenders = walk(join(DOCS, 'src'))
       .filter((f) =>

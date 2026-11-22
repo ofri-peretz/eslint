@@ -198,20 +198,29 @@ describe('1. no-extraneous-dependencies: a path alias is not a package', () => {
         code: "import { m } from '@/m';",
         options: [{ packageJson: { name: 'bare' } }],
       },
-    ],
-    invalid: [
+      // Not checked, as eslint-plugin-import does not check them: it returns
+      // before the declaration check when `resolve()` comes back empty. A
+      // docusaurus `@theme/*` virtual module, or a bundler alias no
+      // configured resolver knows, is one of these.
       {
-        name: 'a package that does not resolve is still checked',
+        name: 'a package that does not resolve is not checked',
         filename: jsFile,
         code: "import n from 'not-installed';",
-        errors: [missingDep('not-installed', "import n from 'not-installed';")],
       },
       {
-        name: 'an alias that resolves to nothing is still checked',
+        name: 'an alias that resolves to nothing is not checked',
         filename: jsFile,
         code: "import u from '@/utils';",
-        errors: [missingDep('@/utils', "import u from '@/utils';")],
       },
+      {
+        // The resolver cannot read the folder's package.json, so the file
+        // does not resolve.
+        name: 'an alias into a folder whose package.json does not parse',
+        filename: innerFile,
+        code: "import { x } from '@broken/b';",
+      },
+    ],
+    invalid: [
       {
         name: 'a package installed in node_modules is still checked',
         filename: jsFile,
@@ -237,12 +246,6 @@ describe('1. no-extraneous-dependencies: a path alias is not a package', () => {
         filename: innerFile,
         code: "import { x } from '@/configs';",
         errors: [missingDep('@/configs', "import { x } from '@/configs';")],
-      },
-      {
-        name: 'an alias into a folder whose package.json does not parse',
-        filename: innerFile,
-        code: "import { x } from '@broken/b';",
-        errors: [missingDep('@broken/b', "import { x } from '@broken/b';")],
       },
       {
         name: 'includeInternal: true, and no package.json above the resolved file',

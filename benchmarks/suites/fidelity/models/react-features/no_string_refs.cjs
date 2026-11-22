@@ -26,6 +26,10 @@ module.exports = {
   domain: 8 * 2 + 4 * 4,
   traces: 600,
   filename: FILE,
+  // The model's legacy-API reading: template literals count, and React is
+  // older than 18.3, where `this.refs` is the string-ref API.
+  settings: { react: { version: '18.2.0' } },
+  config: () => ({ noTemplateLiterals: true }),
   key: keyOf('focus', 'value', 'elem', 'base', 'access'),
   code: (s) => {
     const attr = tag(s.focus) === 'Attr';

@@ -181,6 +181,74 @@ describe('require-guards consults the rest of the project scan', () => {
     ).toBe(0);
   });
 
+  describe('in a project with no authentication system, a privileged path is still reported', () => {
+    // The Nest 12 harness plants `@Controller('admin')` with a transfer and a
+    // delete route, and a manifest that declares no auth library. The project
+    // abstention swallowed it. Nobody mounts an admin controller for a public
+    // resource, so the absence of a guard there is the finding.
+    const admin = (
+      controller: string,
+      handler = `@Delete('users/:id') remove() {}`,
+    ) => `
+      ${controller}
+      class AccountsController {
+        ${handler}
+      }
+    `;
+
+    it.each([
+      ['an admin controller', admin(`@Controller('admin')`)],
+      ['a hyphenated admin controller', admin(`@Controller('admin-panel')`)],
+      ['a joined super-admin controller', admin(`@Controller('super-admin')`)],
+      [
+        'a controller mounted at several paths',
+        admin(`@Controller(['cats', 'admin'])`),
+      ],
+      [
+        'an options-object path',
+        admin(`@Controller({ path: 'admin', version: '1' })`),
+      ],
+      [
+        'an admin segment below the controller prefix',
+        admin(`@Controller('v1/admin')`),
+      ],
+      [
+        'an admin segment on the route',
+        admin(`@Controller()`, `@Delete('admin/users') remove() {}`),
+      ],
+    ])('reports %s', (_name, code) => {
+      context.hasAuthMechanism = false;
+      expect(run('require-guards', code)).toBe(1);
+    });
+
+    it.each([
+      ['an ordinary controller', admin(`@Controller('cats')`)],
+      ['a word that only contains admin', admin(`@Controller('badminton')`)],
+      [
+        'a token that is not a privileged term',
+        admin(`@Controller('administrative-area-codes')`),
+      ],
+      ['a bare controller', admin(`@Controller()`)],
+      [
+        'an admin controller path held in a constant',
+        admin(`@Controller(ADMIN_PREFIX)`),
+      ],
+      [
+        'an admin login, which is how a caller obtains a guard',
+        admin(`@Controller('admin')`, `@Post('login') login() {}`),
+      ],
+    ])('stays silent for %s', (_name, code) => {
+      context.hasAuthMechanism = false;
+      expect(run('require-guards', code)).toBe(0);
+    });
+
+    it('does not change anything where the project does authenticate', () => {
+      context.hasAuthMechanism = true;
+      expect(run('require-guards', admin(`@Controller('admin')`))).toBe(1);
+      expect(run('require-guards', admin(`@Controller('cats')`))).toBe(1);
+    });
+  });
+
   it('stays silent for a controller an auth middleware covers, by class name', () => {
     context.authMiddlewareTargets = new Set(['CatsController']);
     expect(

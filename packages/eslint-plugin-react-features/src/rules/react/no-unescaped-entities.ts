@@ -12,11 +12,15 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 'noUnescapedEntities';
+type MessageIds = 'noUnescapedEntities' | 'replaceWithAlt';
+
+/** A forbidden character, bare or with the escapes it may be replaced by. */
+type Forbidden = string | { char?: string; alternatives?: readonly string[] };
+type Options = [{ forbid?: readonly Forbidden[] }?];
 
 const UNESCAPED_ENTITIES = /[<>"]/;
 
-export const noUnescapedEntities = createRule<[], MessageIds>({
+export const noUnescapedEntities = createRule<Options, MessageIds>({
   name: 'no-unescaped-entities',
   meta: {
     interop: {
@@ -28,7 +32,9 @@ export const noUnescapedEntities = createRule<[], MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-unescaped-entities.md',
       description: 'Prevent unescaped entities',
     },
+    hasSuggestions: true,
     messages: {
+      replaceWithAlt: 'Replace with `{{alt}}`.',
       noUnescapedEntities: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Unescaped Entity',
@@ -39,12 +45,85 @@ export const noUnescapedEntities = createRule<[], MessageIds>({
           'https://react.dev/learn/javascript-in-jsx-with-curly-braces',
       }),
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          forbid: {
+            type: 'array',
+            items: {
+              anyOf: [
+                { type: 'string' },
+                {
+                  type: 'object',
+                  properties: {
+                    char: { type: 'string' },
+                    alternatives: {
+                      type: 'array',
+                      uniqueItems: true,
+                      items: { type: 'string' },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
-  defaultOptions: [],
-  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
+  defaultOptions: [{}],
+  createOnce(context: TSESLint.RuleContext<MessageIds, Options>, options) {
+    let forbid: readonly Forbidden[] | undefined;
+
+    /**
+     * `forbid` replaces the default set, as it does in eslint-plugin-react, and
+     * reports every occurrence of every listed character where it stands (the
+     * default set reports a text node once). A listed `{ char, alternatives }`
+     * also suggests each alternative.
+     */
+    function reportForbidden(
+      node: TSESTree.JSXText,
+      list: readonly Forbidden[],
+    ): void {
+      const start = node.range[0];
+      for (const entity of list) {
+        const char = typeof entity === 'string' ? entity : entity.char;
+        if (!char) continue;
+        const alternatives =
+          typeof entity === 'string' ? [] : (entity.alternatives ?? []);
+        for (let index = 0; index < node.raw.length; index++) {
+          if (node.raw[index] !== char) continue;
+          const at = start + index;
+          context.report({
+            node,
+            loc: {
+              start: context.sourceCode.getLocFromIndex(at),
+              end: context.sourceCode.getLocFromIndex(at + 1),
+            },
+            messageId: 'noUnescapedEntities',
+            suggest: alternatives.map((alt) => ({
+              messageId: 'replaceWithAlt' as const,
+              data: { alt },
+              fix: (fixer: TSESLint.RuleFixer) =>
+                fixer.replaceTextRange([at, at + 1], alt),
+            })),
+          });
+        }
+      }
+    }
+
     return {
+      before() {
+        forbid = options()[0]?.forbid;
+      },
       JSXText(node: TSESTree.JSXText) {
+        if (forbid) {
+          reportForbidden(node, forbid);
+          return;
+        }
+
         // The source as written: `value` is the decoded text, in which
         // `&quot;` and `&gt;` have already become the characters they escape.
         const text = node.raw;

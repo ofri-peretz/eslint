@@ -29,10 +29,15 @@
  *     bare specifier is looked up in after `node_modules` (NODE_PATH);
  *   - typescript (`typescript`, `eslint-import-resolver-typescript`): its
  *     `extensions`, else eslint-import-resolver-typescript's own list;
+ *   - custom-alias (`custom-alias`, `eslint-import-resolver-custom-alias`):
+ *     its `alias` prefixes rewritten to their folders (relative to the
+ *     working directory, or to the `packages` folder the file is in) before
+ *     resolving with its `extensions`, `['.js']` by default, as it does;
  *   - any other resolver (webpack, a custom one): the devkit default.
  *
  * Without settings this is the devkit resolver, unchanged.
  */
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import { resolveModule } from '@interlace/eslint-devkit';
@@ -53,14 +58,22 @@ const TYPESCRIPT_RESOLVERS = new Set([
   'eslint-import-resolver-typescript',
 ]);
 const NODE_RESOLVERS = new Set(['node', 'eslint-import-resolver-node']);
+const ALIAS_RESOLVERS = new Set([
+  'custom-alias',
+  'eslint-import-resolver-custom-alias',
+]);
 
 /** One configured resolver, as this plugin approximates it. */
 export interface ResolverStep {
-  kind: 'node' | 'typescript' | 'other';
+  kind: 'node' | 'typescript' | 'alias' | 'other';
   /** The extensions it tries, in order; absent: the caller's default. */
   extensions?: string[];
   /** node: extra directories for a bare specifier. */
   paths?: string[];
+  /** alias: prefix -> folder, in the configured order. */
+  alias?: [string, string][];
+  /** alias: globs of the workspace packages an alias folder is relative to. */
+  packages?: string[];
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -103,7 +116,81 @@ function stepOf(name: string, options: unknown): ResolverStep {
       kind: 'typescript',
       extensions: strings(config['extensions']) ?? TYPESCRIPT_EXTENSIONS,
     };
+  if (ALIAS_RESOLVERS.has(name)) {
+    const alias = isRecord(config['alias'])
+      ? Object.entries(config['alias']).filter(
+          (entry): entry is [string, string] => typeof entry[1] === 'string',
+        )
+      : [];
+    return {
+      kind: 'alias',
+      extensions: strings(config['extensions']) ?? ['.js'],
+      alias,
+      packages: strings(config['packages']) ?? [],
+    };
+  }
   return { kind: 'other' };
+}
+
+/**
+ * eslint-import-resolver-custom-alias's rewrite: the first-matching prefix
+ * (`src` matches `src` and `src/x`; an empty prefix matches any bare
+ * specifier) becomes its folder. The folder is relative to the workspace
+ * package the file is in, when `packages` names one, else to the working
+ * directory. A specifier no prefix matches is resolved as written.
+ */
+function rewriteAlias(
+  specifier: string,
+  file: string,
+  step: Required<Pick<ResolverStep, 'alias' | 'packages'>>,
+): string {
+  const roots = step.packages.flatMap((glob) => {
+    // glob-parent: the folders before the first glob segment.
+    const segments = glob.split('/');
+    const firstGlob = segments.findIndex((s) => /[*?[\]{}!]/.test(s));
+    const parent = path.resolve(
+      segments.slice(0, firstGlob < 0 ? segments.length : firstGlob).join('/'),
+    );
+    try {
+      return fs
+        .readdirSync(parent, { withFileTypes: true })
+        .filter((d) => !d.isFile())
+        .map((d) => path.join(parent, d.name));
+    } catch {
+      return [];
+    }
+  });
+  const root =
+    roots.find((r) => file.startsWith(r + path.sep)) ?? process.cwd();
+  let out = specifier;
+  for (const [prefix, folder] of step.alias) {
+    const target = path.resolve(root, folder);
+    if (
+      (prefix === '' && !/^[./]/.test(out)) ||
+      (out.startsWith(prefix) && out[prefix.length] === '/')
+    ) {
+      out = path.join(target, out.slice(prefix.length));
+    } else if (out === prefix) {
+      out = target;
+    }
+  }
+  return out;
+}
+
+/**
+ * Does the config name a resolver this plugin does not model (webpack, a
+ * custom one)? Then "none of ours resolves it" is not "it resolves to
+ * nothing": that resolver might map it.
+ */
+export function namesUnmodelledResolver(
+  settings: Readonly<Record<string, unknown>>,
+): boolean {
+  return configuredResolvers(settings).some(
+    ([name]) =>
+      !NODE_RESOLVERS.has(name) &&
+      !TYPESCRIPT_RESOLVERS.has(name) &&
+      !ALIAS_RESOLVERS.has(name),
+  );
 }
 
 /** Settings objects are shared by every file a config lints. */
@@ -134,15 +221,71 @@ export function resolverChain(
   return chain;
 }
 
+/**
+ * The conditions of the module that runs: `types` left out. A package that
+ * sends `.` and `./store` to one `types` file (svelte does) still has two
+ * runtime modules.
+ */
+export const RUNTIME_CONDITIONS = ['import', 'require', 'node', 'default'];
+
+/**
+ * What a TypeScript source file is written as in a specifier.
+ *
+ * `./App.jsx` names `App.tsx`, `./a.js` names `a.ts`, `a.tsx` or a declaration
+ * file `a.d.ts`, and `.mjs` / `.cjs` name `.mts` / `.cts` (and their `.d.*`).
+ * eslint-import-resolver-typescript maps these through `extensionAlias`; the
+ * devkit resolver knows `.js` to `.ts` and `.tsx` for a relative specifier only,
+ * so `.jsx`, a declaration file, and the same specifiers behind a `paths` alias
+ * (`@/widget.js`) came back unresolved: 268 `no-unresolved` findings on
+ * lynx-stack that the incumbent, run with the repo's typescript resolver, does
+ * not make.
+ */
+const EMIT_TO_SOURCE: Readonly<Record<string, readonly string[]>> = {
+  '.js': ['.ts', '.tsx', '.d.ts'],
+  '.jsx': ['.tsx'],
+  '.mjs': ['.mts', '.d.mts'],
+  '.cjs': ['.cts', '.d.cts'],
+};
+
+/**
+ * `specifier` with its emit extension swapped for each source extension, tried
+ * through the same resolver (so a `paths` alias still applies). Only runs after
+ * the specifier as written resolved to nothing, so a real `.js` always wins.
+ */
+function resolveEmitExtension(
+  specifier: string,
+  file: string,
+  options: { extensions?: string[]; conditionNames?: string[] },
+): string | null {
+  const emit = Object.keys(EMIT_TO_SOURCE).find((ext) =>
+    specifier.endsWith(ext),
+  );
+  if (!emit) return null;
+  const stem = specifier.slice(0, -emit.length);
+  for (const source of EMIT_TO_SOURCE[emit]) {
+    // The stem plus the full source extension, resolved as written: `./a.d.ts`
+    // is an exact file, `./a.tsx` one the extension list does not need to cover.
+    const hit = resolveModule(stem + source, file, options);
+    if (hit !== null) return hit;
+  }
+  return null;
+}
+
 /** One resolver's attempt: its extensions, then its `paths`. */
 function resolveStep(
   specifier: string,
   file: string,
   extensions: string[] | undefined,
   paths: string[] | undefined,
+  conditionNames: string[] | undefined,
 ): string | null {
-  const options = extensions ? { extensions } : {};
-  const found = resolveModule(specifier, file, options);
+  const options = {
+    ...(extensions ? { extensions } : {}),
+    ...(conditionNames ? { conditionNames } : {}),
+  };
+  const found =
+    resolveModule(specifier, file, options) ??
+    resolveEmitExtension(specifier, file, options);
   if (found !== null || /^[./]/.test(specifier)) return found;
   for (const dir of paths ?? []) {
     // Resolved as a relative specifier from inside that directory. A
@@ -165,7 +308,9 @@ function resolveStep(
  * `extensions`, when given, wins over every resolver's own list (a rule
  * option that names them). `nodeDefaults` is the list for a node resolver
  * that names none, and for a resolver this plugin does not know; absent, the
- * devkit default.
+ * devkit default. `conditionNames`, when given, are the `exports` conditions
+ * matched (`RUNTIME_CONDITIONS`: the file that runs); absent, the devkit's,
+ * `types` included.
  */
 export function resolveWithSettings(
   specifier: string,
@@ -173,13 +318,17 @@ export function resolveWithSettings(
   settings: Readonly<Record<string, unknown>>,
   extensions?: string[],
   nodeDefaults?: string[],
+  conditionNames?: string[],
 ): string | null {
   for (const step of resolverChain(settings)) {
     const found = resolveStep(
-      specifier,
+      step.kind === 'alias'
+        ? rewriteAlias(specifier, file, step as Required<ResolverStep>)
+        : specifier,
       file,
       extensions ?? step.extensions ?? nodeDefaults,
       step.paths,
+      conditionNames,
     );
     if (found !== null) return found;
   }

@@ -188,10 +188,12 @@ if (tsconfig === null) {
 //    enforces no .js next to .ts in src/). The published tarball's root IS
 //    `dist/`, so we strip the `dist/` prefix on copy.
 //
-//    AGENTS.md is deliberately NOT copied. It is contributor documentation
-//    ("context for AI coding agents working on <pkg>", with monorepo-root
-//    install steps), not consumer documentation — it was shipping to npm in 12
-//    packages, 48 kB of instructions that are wrong outside this repo.
+//    AGENTS.md IS copied, but only the generated consumer guide
+//    (scripts/generate-plugin-agents-md.ts). The hand-written contributor
+//    file it replaced ("context for AI coding agents working on <pkg>", with
+//    monorepo-root install steps) was wrong outside this repo and used to be
+//    dropped here. check-published-artifacts.ts refuses any tarball AGENTS.md
+//    that lacks the generator's marker, so the old behaviour cannot return.
 //
 //    CHANGELOG.md is not copied either. It was 225 kB across the ecosystem —
 //    6% of everything we ship — and it is the one component that grows with
@@ -465,15 +467,10 @@ const stripDistPrefix = (value: unknown): unknown => {
   return value;
 };
 
-// Packages list AGENTS.md in `files`, and an allowlist entry can out-rank
-// .npmignore. Drop it here so the two mechanisms can't disagree. `dist/` is
-// also a no-op entry — the tarball root IS dist, so it can never match.
-const DROPPED_FILE_ENTRIES = new Set([
-  'AGENTS.md',
-  'CHANGELOG.md',
-  'dist/',
-  'dist',
-]);
+// `CHANGELOG.md` is dropped for the size reason above, and `dist/` is a no-op
+// entry (the tarball root IS dist, so it can never match). AGENTS.md stays: it
+// is the generated consumer guide.
+const DROPPED_FILE_ENTRIES = new Set(['CHANGELOG.md', 'dist/', 'dist']);
 const publishedFiles = Array.isArray(pkg.files)
   ? (pkg.files as string[]).filter((f) => !DROPPED_FILE_ENTRIES.has(f))
   : pkg.files;

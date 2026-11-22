@@ -1,0 +1,15 @@
+{
+  "name": "fixture-react",
+  "private": true,
+  "type": "module",
+  "description": "Fixture: a React + Vite browser app with no ESLint config at all.",
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.0.0"
+  }
+}

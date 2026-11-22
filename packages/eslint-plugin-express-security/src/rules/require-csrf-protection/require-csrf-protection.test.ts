@@ -398,11 +398,11 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
       `,
       errors: [{ messageId: 'missingCsrf' }],
     },
-    // Cookie evidence without a session package
+    // Cookie evidence without a session package: `req.cookies` is read
     {
       code: `
         const cookieParser = require('cookie-parser');
-        app.post('/form', requireAuth, formHandler);
+        app.post('/form', requireAuth, (req, res) => { save(req.cookies.token); });
       `,
       errors: [{ messageId: 'missingCsrf' }],
     },

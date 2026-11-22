@@ -51,6 +51,63 @@ describe('no-disabled-template-escaping', () => {
         name: 'a local variable declaration named escapeMarkup is not an option',
         code: 'const escapeMarkup = false;',
       },
+      // ── Other engines: lookalikes that must stay quiet ───────────────────
+      {
+        name: 'autoescape: false in an object that is itself the callee',
+        code: '({ autoescape: false })();',
+      },
+      {
+        name: 'autoescape: false passed to a call whose callee is not a plain name',
+        code: 'makeEngine()({ autoescape: false });',
+      },
+      {
+        name: 'autoescape: false in a const that is only read, never passed',
+        code: 'const opts = { autoescape: false };\nconsole.log(opts.autoescape);',
+      },
+      {
+        name: 'autoescape: false in a const passed to a non-engine call',
+        code: 'const opts = { autoescape: false };\nrender(page, opts);',
+      },
+      {
+        name: 'autoescape: false in an object nested in an array argument',
+        code: 'swig.setDefaults([{ autoescape: false }]);',
+      },
+      {
+        name: 'swig autoescape: true keeps escaping on',
+        code: 'swig.setDefaults({ autoescape: true });',
+      },
+      {
+        name: 'swig defaults without the option',
+        code: 'swig.setDefaults({ cache: false });',
+      },
+      {
+        name: 'nunjucks configure with autoescape on',
+        code: "nunjucks.configure('views', { autoescape: true, express: app });",
+      },
+      {
+        name: 'autoescape: false on a call that is not a template engine entry point',
+        code: 'render(page, { autoescape: false });',
+      },
+      {
+        name: 'autoescape: false in a plain object that reaches no call',
+        code: 'const settings = { autoescape: false }; save(settings);',
+      },
+      {
+        name: 'handlebars noEscape: false keeps escaping on',
+        code: 'Handlebars.compile(source, { noEscape: false });',
+      },
+      {
+        name: 'noEscape: true on a call that is not Handlebars compile',
+        code: 'quote(text, { noEscape: true });',
+      },
+      {
+        name: 'a computed key that is a variable names no fixed option',
+        code: "const k = 'autoescape'; swig.setDefaults({ [k]: false });",
+      },
+      {
+        name: 'autoescape set to a non-literal value is undecidable, not reported',
+        code: 'swig.setDefaults({ autoescape: process.env.RAW === "1" ? false : true });',
+      },
     ],
     invalid: [
       // ── Ported from eslint-plugin-security (Apache-2.0) ──────────────────
@@ -79,6 +136,52 @@ describe('no-disabled-template-escaping', () => {
       {
         name: 'a TypeScript non-null receiver does not hide the assignment',
         code: 'engine!.escapeMarkup = false;',
+        errors: disabled,
+      },
+      // ── Other engines ────────────────────────────────────────────────────
+      {
+        name: 'swig.setDefaults({ autoescape: false })',
+        code: 'swig.setDefaults({ autoescape: false });',
+        errors: disabled,
+      },
+      {
+        name: 'swig constructed with autoescape off',
+        code: 'const engine = new swig.Swig({ autoescape: false });',
+        errors: disabled,
+      },
+      {
+        name: 'nunjucks.configure with autoescape off',
+        code: "nunjucks.configure('views', { autoescape: false, express: app });",
+        errors: disabled,
+      },
+      {
+        name: 'nunjucks Environment with autoescape off',
+        code: 'const env = new nunjucks.Environment(loader, { autoescape: false });',
+        errors: disabled,
+      },
+      {
+        name: 'a quoted option key is the same option',
+        code: "swig.setDefaults({ 'autoescape': false });",
+        errors: disabled,
+      },
+      {
+        name: 'options declared once, then passed to the engine',
+        code: 'const opts = { autoescape: false };\nnunjucks.configure("views", opts);',
+        errors: disabled,
+      },
+      {
+        name: 'autoescape assigned off on an engine options object',
+        code: 'env.opts.autoescape = false;',
+        errors: disabled,
+      },
+      {
+        name: 'handlebars compile with noEscape',
+        code: 'const t = Handlebars.compile(source, { noEscape: true });',
+        errors: disabled,
+      },
+      {
+        name: 'handlebars precompile with noEscape',
+        code: 'hbs.precompile(source, { noEscape: true });',
         errors: disabled,
       },
     ],

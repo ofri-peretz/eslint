@@ -73,6 +73,19 @@ write(
 );
 write('app/node_modules/extpkg/package.json', '{"name":"extpkg"}');
 write('app/node_modules/extpkg/index.js', 'module.exports = 1;\n');
+// Every package the cases import is installed: a dependency is checked once
+// it resolves, as in eslint-plugin-import (`if (!resolved) return`).
+for (const name of [
+  ...['a', 'b', 'c', 'd', 'e', 'f'].map((x) => `nope-${x}`),
+  'shadowed',
+  'other',
+  'devdep',
+  'optdep',
+  'bar',
+]) {
+  write(`node_modules/${name}/index.js`, 'module.exports = 1;\n');
+  write(`node_modules/${name}/index.d.ts`, 'export {};\n');
+}
 const pkg = path.join(dir, 'pkg');
 const other = path.join(dir, 'other');
 const missing = path.join(dir, 'missing');
@@ -278,7 +291,10 @@ describe('no-extraneous-dependencies — eslint-plugin-import options', () => {
         ),
       },
       {
-        name: 'includeInternal: false still checks a package in node_modules, and one that does not resolve',
+        // One that does not resolve is not checked: eslint-plugin-import
+        // returns before the declaration check when `resolve()` is empty, and
+        // a docusaurus `@theme/*` virtual module is one of those.
+        name: 'includeInternal: false still checks a package in node_modules, not one that does not resolve',
         filename: inApp,
         code: "import e from 'extpkg';\nimport n from 'not-installed';",
         options: [{ includeInternal: false }],
@@ -287,11 +303,6 @@ describe('no-extraneous-dependencies — eslint-plugin-import options', () => {
             'extpkg',
             "import e from 'extpkg';\nimport n from 'not-installed';",
             "import e from 'extpkg';",
-          ),
-          missingDep(
-            'not-installed',
-            "import e from 'extpkg';\nimport n from 'not-installed';",
-            "import n from 'not-installed';",
           ),
         ],
       },

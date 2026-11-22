@@ -81,6 +81,22 @@ const MANIFEST = pkg({
   bundleDependencies: ['bunalt-a'],
 });
 
+/**
+ * Every package name the specifiers use, installed, listed or not: the rule
+ * checks a specifier only once it resolves, as eslint-plugin-import does, so
+ * an undeclared package must exist to be reported. `@/nope` stays unresolved.
+ */
+const INSTALLED = Object.fromEntries(
+  [
+    ...Object.values(NAME).filter((n) => n !== 'app'),
+    '@sc/dep-b',
+    '@sc/nope-b',
+  ].flatMap((n) => [
+    [`node_modules/${n}/index.js`, 'module.exports = {};\n'],
+    [`node_modules/${n}/sub.js`, 'module.exports = {};\n'],
+  ]),
+);
+
 module.exports = {
   rule: 'no-extraneous-dependencies',
   domain: 13 * 8 * 7 + 11 * 2,
@@ -90,6 +106,7 @@ module.exports = {
   filename: (s) =>
     tag(s.shape) === 'Marker' ? 'src/esm/app.ts' : 'src/app.ts',
   files: () => ({
+    ...INSTALLED,
     'package.json': MANIFEST,
     'src/esm/package.json': '{ "type": "module" }\n',
     'src/local.ts': 'export const a = 1;\n',

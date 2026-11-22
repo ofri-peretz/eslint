@@ -20,7 +20,28 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
 
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
+## Getting Started
+
+- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-modularity?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity). 📚
+
+<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
+
+```bash
+npm install --save-dev eslint eslint-plugin-modularity
+```
+
+```js
+// eslint.config.mjs
+import { configs } from 'eslint-plugin-modularity';
+
+export default [configs.recommended];
+```
+
+`recommended` is the preset to start with. The others are listed under Configuration Presets below.
+
+Using oxlint or Vite+? Install `oxlint-plugin-modularity`: the same rules under the same `modularity/<rule>` IDs, without ESLint. Its [page](https://www.npmjs.com/package/oxlint-plugin-modularity) has the setup.
+
+<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## Description
 
@@ -41,40 +62,6 @@ That trade costs recall, and we measure it:
 · [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).
 
 <!-- AUTO-GENERATED:DOCTRINE:END -->
-
-## Getting Started
-
-- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-modularity?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity). 📚
-
-<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
-
-**oxlint / Vite+** — the same rules under the same `modularity/<rule>` IDs, without ESLint:
-
-```bash
-npm install oxlint-plugin-modularity --save-dev
-```
-
-```jsonc
-// .oxlintrc.json
-{ "jsPlugins": ["oxlint-plugin-modularity"] }
-```
-
-```ts
-// vite.config.ts
-import { defineConfig } from 'vite-plus';
-
-export default defineConfig({
-  lint: { jsPlugins: ['oxlint-plugin-modularity'] },
-});
-```
-
-**ESLint:**
-
-```bash
-npm install eslint-plugin-modularity --save-dev
-```
-
-<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## ⚙️ Configuration Presets
 | Preset        | Description                                |
@@ -205,10 +192,10 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | [ddd-anemic-domain-model](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-anemic-domain-model?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | Detects entities with only getters/setters and no business logic, enforcing the Rich Domain Model over the… | 🟢 |  | ⚠️ |  | 💡 |  |
-| [ddd-value-object-immutability](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-value-object-immutability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | ESLint Rule: ddd-value-object-immutability with LLM-optimized suggestions and auto-fix capabilities. | 🟢 | 💼 |  |  | 💡 |  |
+| [ddd-value-object-immutability](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-value-object-immutability?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | Report value-object classes whose instance fields can be reassigned after construction. | 🟢 | 💼 |  |  | 💡 |  |
 | [enforce-naming](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-naming?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | Enforce domain-specific naming conventions with business context | 🟢 |  | ⚠️ |  | 💡 |  |
-| [enforce-rest-conventions](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-rest-conventions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | ESLint Rule: enforce-rest-conventions with LLM-optimized suggestions and auto-fix capabilities. | 🟢 | 💼 |  |  | 💡 |  |
-| [no-external-api-calls-in-utils](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-external-api-calls-in-utils?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | ESLint Rule: no-external-api-calls-in-utils with LLM-optimized suggestions and auto-fix capabilities. | 🟢 | 💼 |  |  | 💡 |  |
+| [enforce-rest-conventions](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-rest-conventions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | Report route paths whose first segment is not a plural resource name. | 🟢 | 💼 |  |  | 💡 |  |
+| [no-external-api-calls-in-utils](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-external-api-calls-in-utils?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | Report network calls inside utility modules, where an HTTP client makes the helper untestable without the n… | 🟢 | 💼 |  |  | 💡 |  |
 | [no-mutable-exports](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-mutable-exports?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-modularity) |  |  |  | Disallow mutable let/var declarations on exported bindings | 🟢 |  | ⚠️ |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:START - Do not edit manually -->
@@ -260,11 +247,10 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->
 
 <!-- INTERLACE:STAR_CTA:START -->
-## ⭐ Support & follow
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+## Support
 
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 <!-- INTERLACE:STAR_CTA:END -->
 

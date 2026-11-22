@@ -225,6 +225,72 @@ describe('scanProject — global provider registration', () => {
     expect(context.hasGlobalAuthGuard).toBe(true);
   });
 
+  describe('app.useGlobalGuards() registers what it names', () => {
+    const bootstrap = (call: string, extra = ''): string =>
+      makeProject({
+        'src/main.ts': `
+          ${extra}
+          async function bootstrap() {
+            const app = await NestFactory.create(AppModule);
+            ${call}
+          }
+        `,
+      });
+
+    it('takes a ThrottlerGuard for a throttler, not for authentication', () => {
+      // It limits request rate and authenticates nobody. Reading it as an auth
+      // guard switched `require-guards` off for a project whose routes were all
+      // open.
+      const context = scanProject(
+        bootstrap(
+          `app.useGlobalGuards(new ThrottlerGuard());`,
+          `import { ThrottlerGuard } from '@nestjs/throttler';`,
+        ),
+      );
+      expect(context.hasGlobalThrottler).toBe(true);
+      expect(context.hasGlobalAuthGuard).toBe(false);
+    });
+
+    it('follows a subclass of ThrottlerGuard declared in the file', () => {
+      const context = scanProject(
+        bootstrap(
+          `app.useGlobalGuards(app.get(RateGuard));`,
+          `import { ThrottlerGuard } from '@nestjs/throttler';
+           class RateGuard extends ThrottlerGuard {}`,
+        ),
+      );
+      expect(context.hasGlobalThrottler).toBe(true);
+      expect(context.hasGlobalAuthGuard).toBe(false);
+    });
+
+    it('registers both when the call lists a throttler and an auth guard', () => {
+      const context = scanProject(
+        bootstrap(
+          `app.useGlobalGuards(new ThrottlerGuard(), new JwtAuthGuard(new Reflector()));`,
+        ),
+      );
+      expect(context.hasGlobalThrottler).toBe(true);
+      expect(context.hasGlobalAuthGuard).toBe(true);
+    });
+
+    it('takes a call whose argument names no guard for authentication', () => {
+      const context = scanProject(bootstrap(`app.useGlobalGuards(...guards);`));
+      expect(context.hasGlobalAuthGuard).toBe(true);
+      expect(context.hasGlobalThrottler).toBe(false);
+    });
+
+    it('reads every call, not only the first', () => {
+      const context = scanProject(
+        bootstrap(
+          `app.useGlobalGuards(new ThrottlerGuard());
+           app.useGlobalGuards(new JwtAuthGuard());`,
+        ),
+      );
+      expect(context.hasGlobalThrottler).toBe(true);
+      expect(context.hasGlobalAuthGuard).toBe(true);
+    });
+  });
+
   it('does not take a ThrottlerModule import for rate limiting: nothing is bound', () => {
     // awesome-nest-boilerplate, aigotools, wewe-rss: the module is configured
     // and no ThrottlerGuard is registered anywhere, so no route is throttled.

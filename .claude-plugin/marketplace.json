@@ -1,0 +1,17 @@
+{
+  "name": "interlace",
+  "description": "Skills for adding security linting to JavaScript and TypeScript projects, from the Interlace ESLint plugins.",
+  "owner": {
+    "name": "Ofri Peretz",
+    "url": "https://github.com/ofri-peretz"
+  },
+  "plugins": [
+    {
+      "name": "interlace",
+      "source": "./",
+      "description": "Adds security linting to a Node.js, TypeScript, React, NestJS or Express project: keeps eslint-plugin-security, writes an ESLint 9/10 flat config, and adds the Interlace plugins that match the stack.",
+      "category": "security",
+      "tags": ["eslint", "security", "sast", "linting", "flat-config"]
+    }
+  ]
+}

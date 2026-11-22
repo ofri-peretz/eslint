@@ -2,8 +2,11 @@
  * Lock: the docs lead with oxlint / Vite+, and the oxlint content is derived,
  * never hand-typed.
  *
- * - Every plugin page and every rule page shows both engines as tabs, oxlint
- *   first (the default) and ESLint second, deep-linkable by fragment.
+ * - Every plugin page and every rule page shows both engines as tabs, ESLint
+ *   first (the default) and oxlint second, deep-linkable by fragment. Both
+ *   panels are in the server HTML, so the flat-config snippet is readable
+ *   without JavaScript (SEO/AEO audit 2026-11-19: plugin pages shipped no
+ *   `eslint.config.js` in their HTML while oxlint was the default).
  * - `/docs/oxlint` lists every alias and the built-in overlap from data.
  * - `oxlint-plugin-security` is private until its parity gate holds; no docs
  *   page may name it.
@@ -25,22 +28,35 @@ const read = (rel: string) => readFileSync(join(APP, rel), 'utf8');
 describe('engine tabs', () => {
   const tabs = read('src/components/docs/engine-tabs.tsx');
 
-  it('puts oxlint / Vite+ first, so it is the default tab', () => {
-    expect(tabs).toMatch(/defaultValue="oxlint"/);
+  it('puts ESLint first, so it is the default tab', () => {
+    expect(tabs).toMatch(/defaultValue="eslint"/);
     expect(tabs).toMatch(
-      /<TabsTrigger value="oxlint">[\s\S]*<TabsTrigger value="eslint">/,
+      /<TabsTrigger value="eslint">[\s\S]*<TabsTrigger value="oxlint">/,
     );
     // Values carry no spaces: they become Radix ids (aria-controls).
     expect(tabs).not.toMatch(/items=\{/);
   });
 
-  it('remembers the choice and deep-links ESLint by fragment', () => {
+  it('remembers the choice and deep-links oxlint by fragment', () => {
     expect(tabs).toMatch(/groupId=\{ENGINE_GROUP\}\s+persist/);
     expect(tabs).toMatch(
-      /<TabsContent\s+value="eslint"\s+id=\{ESLINT_ANCHOR\}/,
+      /<TabsContent value="oxlint"[^>]*>\s*<span id=\{OXLINT_ANCHOR\} \/>/,
     );
-    // The default never appears in the URL: choosing oxlint strips the hash.
+    // Links written while ESLint was the second tab keep working.
+    expect(tabs).toMatch(
+      /<TabsContent value="eslint"[^>]*>\s*<span id=\{ESLINT_ANCHOR\} \/>/,
+    );
+    // The default never appears in the URL: choosing ESLint strips the hash.
     expect(tabs).toMatch(/replaceState\(null, '', pathname \+ search\)/);
+  });
+
+  it('renders both panels on the server, so the flat config is in the HTML', () => {
+    const panels = [...tabs.matchAll(/<TabsContent value="(\w+)"[^>]*>/g)];
+    expect(panels.map((m) => m[1])).toEqual(['eslint', 'oxlint']);
+    for (const [open] of panels) expect(open).toContain('forceMount');
+    // An id on TabsContent would replace Radix's own and orphan aria-controls.
+    for (const [open] of panels) expect(open).not.toMatch(/\bid=/);
+    expect(tabs).toContain("title: 'eslint.config.js'");
   });
 
   it('installs the alias on oxlint and the plugin on ESLint, through the instrumented snippet', () => {

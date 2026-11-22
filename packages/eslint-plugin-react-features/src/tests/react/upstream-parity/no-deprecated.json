@@ -1,0 +1,148 @@
+{
+  "rule": "no-deprecated",
+  "source": "eslint-plugin-react@7.37.5 tests/lib/rules/no-deprecated.js (MIT)",
+  "cases": [
+    {
+      "kind": "valid",
+      "n": 36,
+      "code": "React.createClass()\n// features: [], parser: default, settings: {\"react\":{\"version\":\"15.4.0\"}}",
+      "settings": {
+        "react": {
+          "version": "15.4.0"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 38,
+      "code": "React.createClass()\n// features: [], parser: @typescript-eslint/parser, settings: {\"react\":{\"version\":\"15.4.0\"}}",
+      "settings": {
+        "react": {
+          "version": "15.4.0"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 42,
+      "code": "\n        class Foo extends React.Component {\n          componentWillMount() {}\n          componentWillReceiveProps() {}\n          componentWillUpdate() {}\n        }\n      \n// features: [], parser: default, settings: {\"react\":{\"version\":\"16.8.0\"}}",
+      "settings": {
+        "react": {
+          "version": "16.8.0"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 44,
+      "code": "\n        class Foo extends React.Component {\n          componentWillMount() {}\n          componentWillReceiveProps() {}\n          componentWillUpdate() {}\n        }\n      \n// features: [], parser: @typescript-eslint/parser, settings: {\"react\":{\"version\":\"16.8.0\"}}",
+      "settings": {
+        "react": {
+          "version": "16.8.0"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 48,
+      "code": "\n        import { render, hydrate } from 'react-dom';\n        import { renderToNodeStream } from 'react-dom/server';\n        ReactDOM.render(element, container);\n        ReactDOM.unmountComponentAtNode(container);\n        ReactDOMServer.renderToNodeStream(element);\n      \n// features: [], parser: default, settings: {\"react\":{\"version\":\"17.999.999\"}}",
+      "settings": {
+        "react": {
+          "version": "17.999.999"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 50,
+      "code": "\n        import { render, hydrate } from 'react-dom';\n        import { renderToNodeStream } from 'react-dom/server';\n        ReactDOM.render(element, container);\n        ReactDOM.unmountComponentAtNode(container);\n        ReactDOMServer.renderToNodeStream(element);\n      \n// features: [], parser: @typescript-eslint/parser, settings: {\"react\":{\"version\":\"17.999.999\"}}",
+      "settings": {
+        "react": {
+          "version": "17.999.999"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 36,
+      "code": "Foo.createClass({});\n// features: [], parser: default, settings: {\"react\":{\"pragma\":\"Foo\"}}",
+      "errors": 1,
+      "settings": {
+        "react": {
+          "pragma": "Foo"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 38,
+      "code": "Foo.createClass({});\n// features: [], parser: @typescript-eslint/parser, settings: {\"react\":{\"pragma\":\"Foo\"}}",
+      "errors": 1,
+      "settings": {
+        "react": {
+          "pragma": "Foo"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    }
+  ]
+}

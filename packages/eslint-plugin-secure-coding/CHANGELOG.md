@@ -5,6 +5,85 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.4.1
+
+### Patch Changes
+
+- **📚 Docs** — Getting Started now leads each plugin README, with the ESLint install line and a flat config that loads
+
+  The install block was below the Description and the doctrine, and on 17 of the 31 plugins there was no flat-config snippet on the page at all. `eslint-plugin-secure-coding`'s README showed `...securePlugin.configs.recommended`, which throws `TypeError: ... is not iterable` when pasted, because `configs.recommended` is one object. Every plugin README now opens with `npm install --save-dev eslint <plugin>` and `import { configs } from '<plugin>'` and `export default [configs.recommended]` in an `eslint.config.mjs`, then the Description. A test now loads that snippet in ESLint for every plugin.
+
+  The star banner above the first heading, the footer block with the star counter and the Dev.to ask are replaced by one `## Support` paragraph at the end: report a false positive, or star the repo if the plugin helped.
+
+  `eslint-plugin-import-next` opens with its drop-in grade, read from the newest `benchmarks/results/ilb-import-parity` result with its date: passes 2,035 of 2,135 (95.3%) of eslint-plugin-import 2.32.0's own test cases, measured 2026-11-19.
+
+  Eight taglines now say what the plugin flags instead of "security rules for X" (secure-coding, node-security, browser-security, nestjs-security, express-security, vercel-ai-security, react-a11y, import-next). `eslint-plugin-node-security` adds one proof line: the public repositories that list it, with the date they were checked.
+
+## 6.4.0
+
+### Minor Changes
+
+- **✨ Feature** — `no-improper-sanitization` reports Angular's `DomSanitizer.bypassSecurityTrust*` on non-constant input
+
+  `bypassSecurityTrustHtml`, `Script`, `Style`, `Url` and `ResourceUrl` turn Angular's sanitizer off for one value (CWE-79, message `angularSanitizerBypass`). They are reported unless the argument is a literal, a template literal with no substitutions, a concatenation of literals, a `const` bound to one of those, or the output of a sanitizer (`DOMPurify.sanitize`, `sanitizer.sanitize(...)`, `escapeHtml`). Expect new findings in Angular front ends.
+
+## 6.3.0
+
+### Minor Changes
+
+- **🐛 Fix** — no-hardcoded-credentials reports a literal session secret
+
+  `session({ secret: 'keyboard cat' })` was silent: the value reads as prose, and this rule decides on the
+  value's shape. A string literal passed as `secret` to a call resolved (through the scope manager) to
+  `express-session` or `cookie-session`, as an element of that `secret` array, or in `cookie-session`'s `keys`,
+  is now reported whatever it looks like. `process.env.X`, config lookups, `process.env.X || 'dev'` defaults,
+  placeholders and `ignorePatterns` entries stay quiet, as does a local function that is merely named `session`.
+  Expect new findings wherever a session secret is written in source.
+
+### Patch Changes
+
+- **🐛 Fix** — three false positives and one crash reported by adopters
+
+  - `no-hardcoded-credentials` no longer reports a template placeholder name under a key called `token`. `Replacement.create({ token: 'unsubscribeUrl', value })` (stamhoofd/stamhoofd EmailBuilder.ts and exampleReplacements.ts, four disables) was read as a high-entropy blob because the word check rejected four consonants in a row, which `unsubscribe`, `subscribe`, `construct` and `abstract` all contain. The limit is now five. A value with digits or a real key shape under `token` still reports.
+  - `no-sensitive-data-exposure` no longer reports `` `unexpected key type: ${privateKey.type}` `` (honojs/hono `src/utils/jwt/jws.ts:110`). `type`, `algorithm`, `extractable` and `usages` are CryptoKey's own attributes and cannot carry the key; `privateKey`, `privateKey.pem` and `privateKey.value` still report.
+  - `import-next/no-default-export` no longer throws on `export default class {}` in plain JavaScript. espree gives a class no `decorators` field and the 4.1.2 autofix read its `length`.
+
+## 6.2.0
+
+### Minor Changes
+
+- **🐛 Fix** — no-unsafe-deserialization no longer reports eval() and the Function constructor
+
+  `eval(x)`, `window.eval(x)` and `new Function(x)` turn a string into running code. That is code
+  injection (CWE-95), and `node-security/detect-eval-with-expression` already reports it, so a
+  combined run reported every such line twice, once under the wrong class. This rule now leaves them
+  to the owner and keeps what is deserialization: `unserialize`, `deserialize`, node-serialize, YAML
+  loaders, and strings handed to `setTimeout` / `setInterval`.
+
+  `eval` and `Function` are removed from the default `dangerousFunctions` and are ignored if listed.
+  The `dangerousFunctionConstructor` message is gone. If you run `secure-coding` without
+  `node-security`, add `node-security/detect-eval-with-expression` to keep eval coverage.
+
+- **✨ Feature** — no-disabled-template-escaping covers swig, nunjucks and Handlebars
+
+  The rule only knew `escapeMarkup = false`. It now also reports `swig.setDefaults({ autoescape:
+false })`, `new swig.Swig({ autoescape: false })`, `nunjucks.configure(path, { autoescape: false })`,
+  `new nunjucks.Environment(loader, { autoescape: false })`, `env.opts.autoescape = false` and
+  Handlebars `compile` / `precompile` with `{ noEscape: true }`. An options object declared once as a
+  `const` and then passed to one of those calls is followed.
+
+  The option name alone does not name an engine, so the object has to reach one of those calls:
+  `render(page, { autoescape: false })` stays quiet. EJS `<%-` and Pug `!=` live inside template
+  files that ESLint never parses and are not reachable from a JavaScript rule.
+
+## 6.1.3
+
+### Patch Changes
+
+- **📚 Docs** — ship an AGENTS.md that tells AI assistants how to enable the plugin and what each preset catches
+
+  Generated from the package's own presets and rules, so it cannot drift. `eslint-plugin-secure-coding`: the README no longer shows `...configs.recommended` spread into an array, which threw "not iterable".
+
 ## 6.1.2
 
 ### Patch Changes
