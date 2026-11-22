@@ -254,7 +254,7 @@ withCanonicalDocsUrls('plugin-react-features', rules);
 export const plugin = {
   meta: {
     name: 'eslint-plugin-react-features',
-    version: '2.1.1',
+    version: '2.1.2',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

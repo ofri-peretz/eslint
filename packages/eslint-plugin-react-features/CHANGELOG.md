@@ -5,6 +5,30 @@ All notable changes to `eslint-plugin-react-features` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — false positives in react-a11y label/anchor rules and react-features prop/runtime rules
+
+  - `control-has-associated-label` no longer reports a hidden input
+    (`<input type="hidden">`) or any control with a spread attribute
+    (`<input {...props} />`), whose label the call site cannot see.
+  - `no-missing-aria-labels` no longer reports a spread-prop input for the
+    same reason.
+  - `label-has-associated-control` no longer reports a spread-prop label
+    (`<label {...props} />`).
+  - `anchor-has-content` and `control-has-associated-label` no longer report
+    an element passed as a render-prop/`asChild` value
+    (`<Button render={<a href="/docs" />}>`), which is not rendered as
+    written.
+  - `no-is-prefix-prop` (R8) no longer reports `isXxx: boolean` fields on a
+    plain data interface/type alias that is never a component's props —
+    only a type whose own name ends in `Props`.
+  - `react-in-jsx-scope` now also reads `settings.react.runtime: 'automatic'`
+    as a project-wide opt-out, not only a per-file `@jsxRuntime automatic`
+    comment.
+
 ## 2.1.1
 
 ### Patch Changes
