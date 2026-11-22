@@ -99,6 +99,6 @@ React uses camelCase for DOM attributes and has some renamed attributes (e.g., `
 - An attribute name React does not know at all (`<div foo="x">`) is not
   reported unless it is the HTML spelling of a React property: React 16+
   passes unknown attributes through to the DOM.
-- Namespaced names (`xlink:href`) are not checked.
+- Namespaced SVG names React rejects (`xlink:href`, `xml:lang`) are reported with the camelCase form (`xlinkHref`, `xmlLang`); other namespaced names are not checked.
 - Components and custom elements (`<my-widget>`) take any prop and are never
   checked.

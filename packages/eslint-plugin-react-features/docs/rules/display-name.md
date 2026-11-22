@@ -291,6 +291,10 @@ with a name is already named — there is nothing to fix and nothing to report.
 | `class Profile extends Component { ... }` | Named by the class; `static displayName` is optional. |
 | `const Row = memo(() => <div />)` | The binding names the component through the wrapper. |
 
+**Differs from eslint-plugin-react 7.37.5:** a `memo` or `forwardRef` wrapper assigned to a named variable is not
+reported (15 upstream cases). DevTools shows the variable name for memo'd components in modern React, and the pattern
+is very common.
+
 **If it fires**, React genuinely cannot name it: an anonymous `export default`, an
 anonymous class component, or `memo`/`forwardRef` with no binding to take a name from.
 Those render as `Anonymous` in DevTools and in every component stack trace.

@@ -89,6 +89,15 @@ What is not covered: `configs.recommended` and `plugin:react/recommended` still 
 `react-features/` preset, so a spread of `configs.recommended.rules` is not yet upstream-shaped. Rules upstream has
 that this package does not export are absent from `all`, and rule behaviour is unchanged. Not a drop-in claim.
 
+### Parity with eslint-plugin-react
+
+Graded by eslint-plugin-react 7.37.5's own test cases for the recommended set, run on ESLint 10: 1,828 of 2,181
+(83.8%) agree. Two differences are intentional:
+
+- `display-name` does not report a `memo` or `forwardRef` wrapper assigned to a named variable (15 upstream cases).
+  DevTools shows the variable name for memo'd components in modern React, and the pattern is very common.
+- `no-deprecated` still reports `ReactDOM.findDOMNode` (2 upstream cases), because React warns on it from 18.3.
+
 ## 📦 Compatibility
 | Package | Version |
 | :--- | :--- |
