@@ -107,6 +107,21 @@ export function intrinsicName(node: TSESTree.JSXOpeningElement): string | null {
 }
 
 /**
+ * Whether an opening element spreads an object into its props
+ * (`<input {...props} />`). The label/control/aria-label rules this is used
+ * by can only see the attributes written at the call site; a spread may carry
+ * the very prop (`label`, `aria-label`, `htmlFor`, children-equivalents) whose
+ * absence they would otherwise report, so none of them can prove it missing.
+ * Upstream jsx-a11y skips an element with a spread attribute for the same
+ * reason (#1563).
+ */
+export function hasSpreadAttribute(node: TSESTree.JSXOpeningElement): boolean {
+  return node.attributes.some(
+    (attr) => attr.type === AST_NODE_TYPES.JSXSpreadAttribute,
+  );
+}
+
+/**
  * Whether an attribute gives a value: a dynamic value counts (the file cannot
  * prove it empty), a static one must be non-blank, `{undefined}` gives none.
  * A bare string attribute (`<iframe title />`) gives none either: React does

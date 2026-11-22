@@ -13,7 +13,11 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { findAttribute, staticAttributeValue } from '../utils/jsx-static';
+import {
+  findAttribute,
+  hasSpreadAttribute,
+  staticAttributeValue,
+} from '../utils/jsx-static';
 
 type MessageIds = 'missingLabel';
 
@@ -333,6 +337,20 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
           'true'
         )
           return;
+
+        // A hidden input is never rendered, so it has no accessible name to
+        // give — upstream jsx-a11y skips `type="hidden"` for the same reason
+        // no-missing-aria-labels already does (#1563).
+        if (
+          elementName === 'input' &&
+          staticAttributeValue(findAttribute(openingElement, 'type')) ===
+            'hidden'
+        )
+          return;
+
+        // The label, aria-label, htmlFor or children this rule looks for may
+        // arrive through a spread the call site cannot see into (#1563).
+        if (hasSpreadAttribute(openingElement)) return;
 
         // Check if it has accessible text
         if (!hasAccessibleText(node, depth, labelAttributes)) {
