@@ -70,6 +70,25 @@ That trade costs recall, and we measure it:
 | :------------ | :----------------------------------------------- |
 | `recommended` | Recommended React patterns and performance rules |
 
+## Using it as an alias for eslint-plugin-react
+
+Configs that read `react.configs.flat.recommended`, `react.configs.flat['jsx-runtime']` or spread
+`react.configs['jsx-runtime'].rules` (Next.js and Expo do the second) can point at this package:
+
+```json
+{ "devDependencies": { "eslint-plugin-react": "npm:eslint-plugin-react-features" } }
+```
+
+`configs.flat.recommended`, `configs.flat.all`, `configs.flat['jsx-runtime']`, `configs.all` and
+`configs['jsx-runtime']` copy the shape and rule ids of eslint-plugin-react 7.37.5 (`react/<rule>`, 2 for error,
+0 for off). `flat.recommended` lists the same 22 rule ids; `all` lists only the rules this package exports. The
+plugin object also carries `configs`, as upstream's does. A test loads the alias through ESLint on a JSX file and
+checks findings come back as `react/*`.
+
+What is not covered: `configs.recommended` and `plugin:react/recommended` still mean this package's own
+`react-features/` preset, so a spread of `configs.recommended.rules` is not yet upstream-shaped. Rules upstream has
+that this package does not export are absent from `all`, and rule behaviour is unchanged. Not a drop-in claim.
+
 ## 📦 Compatibility
 | Package | Version |
 | :--- | :--- |
