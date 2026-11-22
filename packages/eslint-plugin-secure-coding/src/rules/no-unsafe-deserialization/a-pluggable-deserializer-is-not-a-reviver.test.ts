@@ -109,6 +109,16 @@ export function run(p) { const c = new Codec(); return c.deserialize(p); }`,
         name: 'an instance of an undeclared constructor',
         code: `export function run(p) { const c = new GlobalCodec(); return c.deserialize(p); }`,
       },
+      {
+        name: 'a private field write is a different field from the one being called',
+        code: `import serialize from 'node-serialize';
+class A { #package; constructor() { this.#package = serialize; } run(req) { return this.codec.unserialize(req.body.cookie); } }`,
+      },
+      {
+        name: 'a property that happens to be spelled like an import is not the import',
+        code: `import serialize from 'node-serialize';
+class A { constructor(local) { this.codec = local.serialize; this.other = { serialize: 1 }; } run(req) { return this.codec.unserialize(req.body.cookie); } }`,
+      },
     ],
     invalid: [
       {
@@ -190,6 +200,12 @@ class A { constructor(k) { this[k] = serialize; } run(req) { return this.codec.u
         code: `import serialize from 'node-serialize';
 class Codec {}
 export function run(req) { const c = new Codec(); c.unserialize = serialize.unserialize; return c.unserialize(req.body.cookie); }`,
+        errors: [{ messageId: 'unsafeDeserialization' }],
+      },
+      {
+        name: 'a shorthand property DOES read the import',
+        code: `import serialize from 'node-serialize';
+class A { constructor() { this.codec = { serialize }; } run(req) { return this.codec.unserialize(req.body.cookie); } }`,
         errors: [{ messageId: 'unsafeDeserialization' }],
       },
     ],

@@ -843,8 +843,25 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
     };
 
     /** Does a package (not a relative file) reach this node? */
+    const isPropertyName = (n: TSESTree.Node): boolean => {
+      const parent = n.parent;
+      return (
+        (parent?.type === 'MemberExpression' &&
+          parent.property === n &&
+          !parent.computed) ||
+        (parent?.type === 'Property' &&
+          parent.key === n &&
+          parent.value !== n &&
+          !parent.computed)
+      );
+    };
     const reachesAPackage = (n: TSESTree.Node): boolean => {
-      if (n.type === 'Identifier' || n.type === 'CallExpression') {
+      // `local.serialize` and `{ serialize: 1 }` name a property; they do not
+      // read the import that happens to be called `serialize`.
+      if (
+        (n.type === 'Identifier' && !isPropertyName(n)) ||
+        n.type === 'CallExpression'
+      ) {
         const bound = resolveModuleBinding(n, sourceCode.getScope(n));
         if (bound !== undefined && !bound.module.startsWith('.')) return true;
       }
@@ -876,8 +893,9 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           n.left.type === 'MemberExpression' &&
           n.left.object.type === 'ThisExpression' &&
           // `this[k] = serialize` writes a field the rule cannot name, so it
-          // may be this one.
-          [field, null].includes(propertyName(n.left)) &&
+          // may be this one. A private `this.#x` is a different field.
+          (propertyName(n.left) === field ||
+            (n.left.computed && propertyName(n.left) === null)) &&
           reachesAPackage(n.right)
         ) {
           return true;

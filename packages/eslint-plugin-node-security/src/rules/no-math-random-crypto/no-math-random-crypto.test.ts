@@ -116,6 +116,7 @@ describe('no-math-random-crypto', () => {
       },
       // Crypto-named object property
       {
+        name: 'a Math.random value stored under an apiKey property is a predictable credential',
         code: 'const config = { apiKey: Math.random().toString(36) };',
         errors: [{ messageId: 'mathRandomCrypto' }],
       },

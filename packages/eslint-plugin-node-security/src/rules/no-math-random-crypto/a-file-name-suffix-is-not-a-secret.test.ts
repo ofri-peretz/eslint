@@ -87,6 +87,18 @@ ruleTester.run(
         name: 'a required fs module',
         code: "const fs = require('fs'); const key = Math.random().toString(36).slice(2); fs.writeFileSync(`${key}.tmp`, data);",
       },
+      {
+        name: 'an fs module imported under another name keeps fs rules for its first argument',
+        code: "import files from 'node:fs'; const key = Math.random().toString(36).slice(2); files.writeFileSync(`${key}.tmp`, data);",
+      },
+      {
+        name: 'a path module imported under another name is still path',
+        code: "import p from 'node:path'; const key = Math.random().toString(36).slice(2); p.join('/tmp', key);",
+      },
+      {
+        name: 'fs/promises is fs',
+        code: "import fsp from 'node:fs/promises'; const key = Math.random().toString(36).slice(2); await fsp.writeFile(`${key}.tmp`, data);",
+      },
     ],
     invalid: [
       {
@@ -177,6 +189,11 @@ ruleTester.run(
       {
         name: 'a path module that is not the Node one',
         code: "import path from 'some-path-lib'; const key = Math.random().toString(36); path.join(dir, key);",
+        errors: weak,
+      },
+      {
+        name: 'a local name `path` bound to node:fs is fs, so its second argument is file content',
+        code: "import path from 'node:fs'; const key = Math.random().toString(36); path.writeFileSync('credential.key', key);",
         errors: weak,
       },
     ],

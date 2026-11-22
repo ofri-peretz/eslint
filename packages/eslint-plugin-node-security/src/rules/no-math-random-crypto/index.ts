@@ -1026,23 +1026,32 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
      * @vocabulary Node.js fs API (rename, copyFile, cp, link, symlink and their
      * Sync variants) — defined by the runtime.
      */
-    const NODE_FILE_MODULES = new Set(['path', 'fs', 'fs/promises']);
     const TWO_PATH_METHODS = /^(rename|copyFile|cp|link|symlink)(Sync)?$/;
     /** A binding that holds a file name or path, by what it is called. */
     const FILE_BINDING_NAME = /(file|path|dir|name)$/i;
 
     /**
-     * Is this `path` / `fs` identifier Node's module, not an object the file
-     * defines under that name? An undeclared name is taken at its word (a
-     * snippet, or a global); a declared one must resolve to the module.
+     * What kind of file API is this `path` / `fs` receiver? Decided by the
+     * module it RESOLVES to when the file declares it (so `import path from
+     * 'node:fs'` is `fs`, whatever it is called, and a local object is neither),
+     * and by its spelling only when the name is undeclared (a snippet, a global).
      */
-    function isNodeModule(identifier: TSESTree.Identifier): boolean {
-      if (!findVariable(context.sourceCode, identifier)) return true;
-      const bound = resolveModuleBinding(
-        identifier,
-        context.sourceCode.getScope(identifier),
-      );
-      return bound !== undefined && NODE_FILE_MODULES.has(bound.module);
+    function fileApiKind(
+      identifier: TSESTree.Identifier,
+    ): 'path' | 'fs' | null {
+      if (findVariable(context.sourceCode, identifier)) {
+        const bound = resolveModuleBinding(
+          identifier,
+          context.sourceCode.getScope(identifier),
+        );
+        if (bound === undefined) return null;
+        if (bound.module === 'path') return 'path';
+        return bound.module === 'fs' || bound.module === 'fs/promises'
+          ? 'fs'
+          : null;
+      }
+      if (PATH_MODULES.has(identifier.name)) return 'path';
+      return FS_MODULES.has(identifier.name) ? 'fs' : null;
     }
 
     /**
@@ -1066,10 +1075,9 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         receiver = receiver.object;
       }
       if (receiver.type !== AST_NODE_TYPES.Identifier) return false;
-      const owner = receiver.name;
-      if (!isNodeModule(receiver)) return false;
-      if (PATH_MODULES.has(owner)) return true;
-      if (!FS_MODULES.has(owner)) return false;
+      const kind = fileApiKind(receiver);
+      if (kind === null) return false;
+      if (kind === 'path') return true;
       const index = call.arguments.indexOf(
         argument as TSESTree.CallExpressionArgument,
       );

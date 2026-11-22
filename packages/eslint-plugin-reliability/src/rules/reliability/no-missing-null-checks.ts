@@ -1168,8 +1168,7 @@ function isNullCheckForObject(
  * Platform methods that miss with `null` only.
  *
  * @vocabulary ECMAScript / DOM (exec, match, getElementById, querySelector,
- * closest, getAttribute, getNamedItem) — defined by the platform. The rest of
- * NULLABLE_RETURNS (find, findLast, pop, shift) miss with `undefined` only.
+ * closest, getAttribute, getNamedItem) — defined by the platform.
  */
 const NULL_ONLY_RETURNS: ReadonlySet<string> = new Set([
   'exec',
@@ -1182,29 +1181,27 @@ const NULL_ONLY_RETURNS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Which single nullish value does the producer of this binding yield on a miss?
- * `exec()` yields `null` and `find()` yields `undefined`, so for each one a
- * single strict check excludes everything it can return.
+ * Does the producer of this binding yield `null`, and nothing else nullish, on
+ * every path? `exec()` returns a match or `null`, so one `!== null` excludes all
+ * of it. `find()` / `pop()` / `shift()` miss with `undefined`, but a SUCCESSFUL
+ * result can itself be a `null` element, so they are not here: they need both
+ * strict checks (or `!= null`).
  */
-function producerMisses(
+function producerMissesWithNullOnly(
   object: TSESTree.Expression,
   sourceCode: TSESLint.SourceCode,
-): 'null' | 'undefined' | null {
+): boolean {
   const variable = rootBinding(object, sourceCode);
   const def = variable?.defs[0];
-  if (variable?.defs.length !== 1 || def?.type !== 'Variable') return null;
+  if (variable?.defs.length !== 1 || def?.type !== 'Variable') return false;
   const init = assignedValue((def.node as TSESTree.VariableDeclarator).init);
   if (
     init?.type !== 'CallExpression' ||
     init.callee.type !== 'MemberExpression'
   ) {
-    return null;
+    return false;
   }
-  // Only a NULLABLE_RETURNS producer gives the binding evidence at all, and
-  // every one of them is in exactly one of the two sets.
-  return namesOneOf(propertyName(init.callee), NULL_ONLY_RETURNS)
-    ? 'null'
-    : 'undefined';
+  return namesOneOf(propertyName(init.callee), NULL_ONLY_RETURNS);
 }
 
 /** `a && b && c` as `[a, b, c]`. */
@@ -1224,9 +1221,8 @@ function andOperands(expr: TSESTree.Expression): TSESTree.Expression[] {
  * - `x === null` and `x == null` are the OPPOSITE of a guard;
  * - `x !== null` alone does not exclude `undefined`, which is what `find()`,
  *   `pop()` and `shift()` produce, and `x !== undefined` alone does not exclude
- *   `null`. Only the pair does, or the one check that matches the only value
- *   the producer can miss with (`exec()` misses with `null`); `x != null`
- *   covers both on its own.
+ *   `null`. Only the pair does, or `!== null` when the producer yields `null`
+ *   and nothing else nullish (`exec()`); `x != null` covers both on its own.
  */
 function conjunctGuards(
   test: TSESTree.Expression,
@@ -1264,11 +1260,8 @@ function conjunctGuards(
     if (isNullCheckForObject(operand, object, sourceCode)) return true;
   }
   if (notNull && notUndefined) return true;
-  // One strict check is complete when the producer can only miss one way.
-  const misses = producerMisses(object, sourceCode);
-  return (
-    (notNull && misses === 'null') || (notUndefined && misses === 'undefined')
-  );
+  // One strict `!== null` is complete when the producer yields only null.
+  return notNull && producerMissesWithNullOnly(object, sourceCode);
 }
 
 /**

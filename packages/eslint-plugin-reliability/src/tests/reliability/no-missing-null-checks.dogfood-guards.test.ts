@@ -280,11 +280,6 @@ while (m != null) { use(m[1]); break; }`,
       code: `${PRELUDE}const m = /a/.exec(s);
 const index = m !== null && m.index;`,
     },
-    {
-      name: '`w !== undefined` is complete for find(), which misses with undefined only',
-      code: `${PRELUDE}const w = xs.find((r) => r);
-const z = w !== undefined && w.id;`,
-    },
   ],
   invalid: [
     {
@@ -620,6 +615,13 @@ if (q.length) { q.length--; const n = q.pop(); n.x; }`,
       code: `${PRELUDE}declare const ok: boolean;
 const w = ok ? xs.find((r) => r) : null;
 const z = w !== null && w.id;`,
+      errors: miss,
+    },
+    {
+      name: '`w !== undefined` alone is not complete for find(): a matching element can be null',
+      code: `const xs = [null];
+const w = xs.find(() => true);
+const z = w !== undefined && w.id;`,
       errors: miss,
     },
   ],

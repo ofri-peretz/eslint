@@ -175,6 +175,7 @@ describe('no-unsafe-deserialization', () => {
         },
         // REGRESSION LOCK — the named-import form js-yaml's own v4 README uses.
         {
+          name: 'a named js-yaml load import fed a request body is unsafe deserialization',
           code: 'import { load } from "js-yaml"; export const obj = load(req.body.doc);',
           errors: [{ messageId: 'unsafeDeserialization' }],
         },
