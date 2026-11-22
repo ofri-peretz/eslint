@@ -137,6 +137,22 @@ describe('no-sensitive-data-exposure - a DI token is not a credential', () => {
           'logger.warn(`using ${tokenBag.value}`)',
         ].join('\n'),
       },
+      {
+        name: 'a hand-off through a member call is not a function this file defines',
+        code: [
+          'const tokenBag = { value: 0 }',
+          'helpers.hash(tokenBag)',
+          'logger.warn(`using ${tokenBag.value}`)',
+        ].join('\n'),
+      },
+      {
+        name: 'a hand-off to a function this file does NOT define may not change the object',
+        code: [
+          'const tokenBag = { value: 0 }',
+          'hash(tokenBag)',
+          'logger.warn(`using ${tokenBag.value}`)',
+        ].join('\n'),
+      },
     ],
     invalid: [
       {
@@ -341,6 +357,43 @@ describe('no-sensitive-data-exposure - a DI token is not a credential', () => {
         code: [
           'const token = new di.InjectionToken(password)',
           'logger.error(`bad ${String(token)}`)',
+        ].join('\n'),
+        errors: exposure,
+      },
+      {
+        name: 'an object handed to a function this file defines may be written by it',
+        code: [
+          'function fill(target) { target.value = accessToken }',
+          'const tokenBag = { value: 0 }',
+          'fill(tokenBag)',
+          'logger.warn(`using ${tokenBag.value}`)',
+        ].join('\n'),
+        errors: exposure,
+      },
+      {
+        name: 'the same through an arrow function bound to a variable',
+        code: [
+          'const fill = (target) => { target.value = accessToken }',
+          'const tokenBag = { value: 0 }',
+          'fill(tokenBag)',
+          'logger.warn(`using ${tokenBag.value}`)',
+        ].join('\n'),
+        errors: exposure,
+      },
+      {
+        name: 'a duplicate key: the LAST definition is the one the object holds',
+        code: [
+          'const tokenBag = { value: 0, value: accessToken }',
+          'void tokenBag',
+          'logger.warn(`using ${tokenBag.value}`)',
+        ].join('\n'),
+        errors: exposure,
+      },
+      {
+        name: 'a value that reads itself is not known to be safe, and must not recurse forever',
+        code: [
+          'var tokenRecord = { value: tokenRecord?.value }',
+          'logger.warn(`using ${tokenRecord.value}`)',
         ].join('\n'),
         errors: exposure,
       },

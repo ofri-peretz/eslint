@@ -25,9 +25,13 @@
  * understanding cannot become a blanket silence.
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
+import { Linter } from 'eslint';
 import parser from '@typescript-eslint/parser';
-import { noMissingNullChecks } from '../../rules/reliability/no-missing-null-checks';
+import {
+  noMissingNullChecks,
+  hasNullCheck,
+} from '../../rules/reliability/no-missing-null-checks';
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -270,6 +274,16 @@ const v = s.length && m && m[1];`,
       name: 'a loop test of `!= null` guards its body',
       code: `${PRELUDE}const m = /a(b)/.exec(s);
 while (m != null) { use(m[1]); break; }`,
+    },
+    {
+      name: '`m !== null` is complete for exec(), which misses with null only',
+      code: `${PRELUDE}const m = /a/.exec(s);
+const index = m !== null && m.index;`,
+    },
+    {
+      name: '`w !== undefined` is complete for find(), which misses with undefined only',
+      code: `${PRELUDE}const w = xs.find((r) => r);
+const z = w !== undefined && w.id;`,
     },
   ],
   invalid: [
@@ -601,5 +615,54 @@ if (q.length) { q = []; const n = q.pop(); n.x; }`,
 if (q.length) { q.length--; const n = q.pop(); n.x; }`,
       errors: miss,
     },
+    {
+      name: 'a binding that is not a plain producer result gets no single-check shortcut',
+      code: `${PRELUDE}declare const ok: boolean;
+const w = ok ? xs.find((r) => r) : null;
+const z = w !== null && w.id;`,
+      errors: miss,
+    },
   ],
+});
+
+describe('hasNullCheck on a name the file never declares', () => {
+  // The rule's listeners only call hasNullCheck for a binding that carries
+  // nullability evidence, but the helper is exported: a strict inequality on an
+  // unresolvable name must answer "no single-check shortcut", not throw.
+  const verdicts = (code: string): boolean[] => {
+    const seen: boolean[] = [];
+    new Linter({ configType: 'flat' }).verify(
+      code,
+      [
+        {
+          files: ['**/*.ts'],
+          languageOptions: { parser },
+          plugins: {
+            probe: {
+              rules: {
+                run: {
+                  create: (ctx) => ({
+                    MemberExpression: (node) => {
+                      seen.push(hasNullCheck(node, ctx.sourceCode));
+                    },
+                  }),
+                },
+              },
+            },
+          },
+          rules: { 'probe/run': 'error' },
+        },
+      ],
+      { filename: 'a.ts' },
+    );
+    return seen;
+  };
+
+  it('does not treat `u !== null` as a complete guard when u has no producer', () => {
+    expect(verdicts('const z = u !== null && u.id;')).toEqual([false]);
+  });
+
+  it('still accepts `u != null`', () => {
+    expect(verdicts('const z = u != null && u.id;')).toEqual([true]);
+  });
 });

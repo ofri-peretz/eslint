@@ -169,6 +169,7 @@ describe('no-unsafe-deserialization', () => {
         // required the binding to be spelled `yaml` was reading a variable name,
         // not an interface, and this line was silent.
         {
+          name: 'js-yaml load of a request body document is unsafe deserialization',
           code: 'import jsyaml from "js-yaml"; export const obj = jsyaml.load(req.body.doc);',
           errors: [{ messageId: 'unsafeYamlParsing' }],
         },

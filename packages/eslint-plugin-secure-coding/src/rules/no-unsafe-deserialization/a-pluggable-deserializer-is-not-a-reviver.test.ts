@@ -179,6 +179,19 @@ export function run(req) { const c = new Codec(); return c.unserialize(req.body.
 export function run(req) { const c = new Foo(); return c.deserialize(req.body); }`,
         errors: [{ messageId: 'unsafeDeserialization' }],
       },
+      {
+        name: 'a computed field write of a package may fill the field being called',
+        code: `import serialize from 'node-serialize';
+class A { constructor(k) { this[k] = serialize; } run(req) { return this.codec.unserialize(req.body.cookie); } }`,
+        errors: [{ messageId: 'unsafeDeserialization' }],
+      },
+      {
+        name: 'a member write that plants a package sink on a constructed instance',
+        code: `import serialize from 'node-serialize';
+class Codec {}
+export function run(req) { const c = new Codec(); c.unserialize = serialize.unserialize; return c.unserialize(req.body.cookie); }`,
+        errors: [{ messageId: 'unsafeDeserialization' }],
+      },
     ],
   },
 );

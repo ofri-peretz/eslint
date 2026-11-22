@@ -160,6 +160,7 @@ describe('no-sensitive-data-exposure', () => {
             errors: [{ messageId: 'sensitiveDataExposure' }],
           },
           {
+            name: 'a password read off a user object and logged is exposed',
             code: 'console.log(`got ${user.password} back`);',
             errors: [{ messageId: 'sensitiveDataExposure' }],
           },

@@ -108,6 +108,7 @@ describe('no-math-random-crypto', () => {
       },
       // Benchmark TP lock: vuln_random_session
       {
+        name: 'a Math.random value returned from a session-named function is a predictable credential',
         code: `export function vuln_random_session() {
   return "session_" + Math.floor(Math.random() * 1000000);
 }`,

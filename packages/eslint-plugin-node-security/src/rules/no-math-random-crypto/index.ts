@@ -25,6 +25,7 @@ import {
   isTestFilePath,
   memberPropertyName,
   propertyName,
+  resolveModuleBinding,
   objectKeyName,
   staticString,
 } from '@interlace/eslint-devkit';
@@ -1025,9 +1026,24 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
      * @vocabulary Node.js fs API (rename, copyFile, cp, link, symlink and their
      * Sync variants) — defined by the runtime.
      */
+    const NODE_FILE_MODULES = new Set(['path', 'fs', 'fs/promises']);
     const TWO_PATH_METHODS = /^(rename|copyFile|cp|link|symlink)(Sync)?$/;
     /** A binding that holds a file name or path, by what it is called. */
     const FILE_BINDING_NAME = /(file|path|dir|name)$/i;
+
+    /**
+     * Is this `path` / `fs` identifier Node's module, not an object the file
+     * defines under that name? An undeclared name is taken at its word (a
+     * snippet, or a global); a declared one must resolve to the module.
+     */
+    function isNodeModule(identifier: TSESTree.Identifier): boolean {
+      if (!findVariable(context.sourceCode, identifier)) return true;
+      const bound = resolveModuleBinding(
+        identifier,
+        context.sourceCode.getScope(identifier),
+      );
+      return bound !== undefined && NODE_FILE_MODULES.has(bound.module);
+    }
 
     /**
      * Is `argument` a PATH argument of this `path.*` / `fs.*` call? Every `path`
@@ -1039,13 +1055,19 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       call: TSESTree.CallExpression,
       argument: TSESTree.Node,
     ): boolean {
+      if (call.callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+      // `path.posix.join(...)` / `path.win32.join(...)` are `path` too.
+      let receiver = call.callee.object;
       if (
-        call.callee.type !== AST_NODE_TYPES.MemberExpression ||
-        call.callee.object.type !== AST_NODE_TYPES.Identifier
+        receiver.type === AST_NODE_TYPES.MemberExpression &&
+        (propertyName(receiver) === 'posix' ||
+          propertyName(receiver) === 'win32')
       ) {
-        return false;
+        receiver = receiver.object;
       }
-      const owner = call.callee.object.name;
+      if (receiver.type !== AST_NODE_TYPES.Identifier) return false;
+      const owner = receiver.name;
+      if (!isNodeModule(receiver)) return false;
       if (PATH_MODULES.has(owner)) return true;
       if (!FS_MODULES.has(owner)) return false;
       const index = call.arguments.indexOf(

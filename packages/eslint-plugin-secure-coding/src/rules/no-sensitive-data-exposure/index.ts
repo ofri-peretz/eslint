@@ -812,6 +812,25 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
      * member reads, with nothing writing through the binding afterwards? Then
      * the field's own name is the evidence, not the receiver's.
      */
+    const declaringKeys = new Set<TSESTree.Node>();
+
+    /** A function this file defines: it can change an object it is handed. */
+    function isLocalFunction(callee: TSESTree.Node): boolean {
+      const definition =
+        callee.type === AST_NODE_TYPES.Identifier
+          ? findBinding(callee)?.defs[0]
+          : undefined;
+      if (definition?.type === 'FunctionName') return true;
+      const init =
+        definition?.type === 'Variable'
+          ? (definition.node as TSESTree.VariableDeclarator).init
+          : null;
+      return (
+        init?.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+        init?.type === AST_NODE_TYPES.FunctionExpression
+      );
+    }
+
     function receiverDeclaresKey(member: TSESTree.MemberExpression): boolean {
       if (member.object.type !== AST_NODE_TYPES.Identifier) return false;
       const key = propertyName(member);
@@ -827,15 +846,27 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
       ) {
         return false;
       }
-      const declared = init.properties.find(
-        (property) => objectKeyName(property as TSESTree.Property) === key,
-      ) as TSESTree.Property | undefined;
+      // The LAST definition of a key is the one the object holds.
+      const declared = [...init.properties]
+        .reverse()
+        .find(
+          (property) => objectKeyName(property as TSESTree.Property) === key,
+        ) as TSESTree.Property | undefined;
       if (!declared) return false;
       // The receiver's name is set aside only when what the key holds is not
       // itself named like a secret: `{ value: accessToken }` read through
       // `tokenBag.value` is still a token, whether or not the object is aliased
       // or handed to other code.
-      if (namedValueExposure(declared.value)) return false;
+      // `var record = { value: record?.value }` reads itself: a value whose
+      // provenance is cyclic is not known to be safe, so decline the exemption
+      // instead of recursing.
+      if (declaringKeys.has(declared)) return false;
+      declaringKeys.add(declared);
+      try {
+        if (namedValueExposure(declared.value)) return false;
+      } finally {
+        declaringKeys.delete(declared);
+      }
       const variable = findBinding(member.object) as TSESLint.Scope.Variable;
       // Handing the object to other code is allowed (it is how it gets hashed
       // or serialized); writing a property through the binding is not.
@@ -845,7 +876,11 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
           parent.type !== AST_NODE_TYPES.MemberExpression ||
           parent.object !== reference.identifier
         ) {
-          return true;
+          // Handed to a function this file defines, whose body can write to it.
+          return !(
+            parent.type === AST_NODE_TYPES.CallExpression &&
+            isLocalFunction(parent.callee)
+          );
         }
         const use = parent.parent as TSESTree.Node;
         return !(

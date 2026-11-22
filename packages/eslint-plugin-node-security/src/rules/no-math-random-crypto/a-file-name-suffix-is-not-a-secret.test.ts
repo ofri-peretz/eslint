@@ -71,6 +71,22 @@ ruleTester.run(
         name: 'a template that is a conditional arm assigned to a file-named binding',
         code: 'declare const ok: boolean; const key = Math.random().toString(36).slice(2); const tempFileName = ok ? `${key}.a` : `${key}.b`;',
       },
+      {
+        name: 'path.posix.join is path too',
+        code: "const key = Math.random().toString(36).slice(2); path.posix.join('/tmp', key);",
+      },
+      {
+        name: 'path.win32.join is path too',
+        code: "const key = Math.random().toString(36).slice(2); path.win32.join('C:/tmp', key);",
+      },
+      {
+        name: 'an imported path module',
+        code: "import path from 'node:path'; const key = Math.random().toString(36).slice(2); path.join('/tmp', key);",
+      },
+      {
+        name: 'a required fs module',
+        code: "const fs = require('fs'); const key = Math.random().toString(36).slice(2); fs.writeFileSync(`${key}.tmp`, data);",
+      },
     ],
     invalid: [
       {
@@ -141,6 +157,26 @@ ruleTester.run(
       {
         name: 'a read passed through a nested member callee',
         code: 'const key = Math.random().toString(36); client.api.send(key);',
+        errors: weak,
+      },
+      {
+        name: 'a local object named path is not Node path',
+        code: 'const path = { store(value) { credentials.password = value; } }; const key = Math.random().toString(36); path.store(key);',
+        errors: weak,
+      },
+      {
+        name: 'a local object named fs is not Node fs',
+        code: 'const fs = { writeFileSync(f, v) { vault.set(f, v); } }; const key = Math.random().toString(36); fs.writeFileSync(key, data);',
+        errors: weak,
+      },
+      {
+        name: 'a nested member that is not posix or win32 is not path',
+        code: 'const key = Math.random().toString(36); path.custom.join(dir, key);',
+        errors: weak,
+      },
+      {
+        name: 'a path module that is not the Node one',
+        code: "import path from 'some-path-lib'; const key = Math.random().toString(36); path.join(dir, key);",
         errors: weak,
       },
     ],

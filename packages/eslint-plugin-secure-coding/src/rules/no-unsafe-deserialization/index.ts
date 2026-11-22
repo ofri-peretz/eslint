@@ -875,7 +875,9 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           n.type === 'AssignmentExpression' &&
           n.left.type === 'MemberExpression' &&
           n.left.object.type === 'ThisExpression' &&
-          propertyName(n.left) === field &&
+          // `this[k] = serialize` writes a field the rule cannot name, so it
+          // may be this one.
+          [field, null].includes(propertyName(n.left)) &&
           reachesAPackage(n.right)
         ) {
           return true;
@@ -961,7 +963,20 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           return (
             init?.type === 'NewExpression' &&
             found.references.filter((r) => r.isWrite()).length === 1 &&
-            isOwnedConstructor(init.callee)
+            isOwnedConstructor(init.callee) &&
+            // `c.unserialize = serialize.unserialize` plants a package's sink on
+            // the instance; it is a member write, not a binding write.
+            !found.references.some((reference) => {
+              const member = reference.identifier.parent;
+              const write = member?.parent;
+              return (
+                member?.type === 'MemberExpression' &&
+                member.object === reference.identifier &&
+                write?.type === 'AssignmentExpression' &&
+                write.left === member &&
+                reachesAPackage(write.right)
+              );
+            })
           );
         }
         scope = scope.upper;
