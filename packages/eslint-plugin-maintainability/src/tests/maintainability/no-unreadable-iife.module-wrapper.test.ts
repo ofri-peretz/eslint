@@ -84,6 +84,18 @@ describe('no-unreadable-iife — the module wrapper', () => {
     ],
     invalid: [
       {
+        name: 'control: a local object called exports exports nothing',
+        ...invalid(
+          `(function () {${BODY} var exports = {}; exports.isString = isString; }());`,
+        ),
+      },
+      {
+        name: 'control: a local object called module exports nothing',
+        ...invalid(
+          `(function () {${BODY} var module = {}; module.exports = isString; }());`,
+        ),
+      },
+      {
         name: 'control: the same body with no export is plain work',
         ...invalid(`(function () {${BODY} use(isString); }());`),
       },

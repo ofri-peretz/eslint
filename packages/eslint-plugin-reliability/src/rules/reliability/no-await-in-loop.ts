@@ -166,7 +166,16 @@ function carriesAwaitedValue(
       // `const { done, value } = await reader.read()` binds `done` and `value`
       // from the awaited result exactly as `const r = await reader.read()` binds
       // `r`, so every name in the pattern carries it.
-      for (const id of patternIdentifiers(n.id)) writes.push([id, n.init]);
+      //
+      // Only when the initializer is not a literal: `const { value, done } = {
+      // value: await next(), done: false }` takes `done` from a different field
+      // than the await, and one write expression cannot say which.
+      const literalInit =
+        n.init?.type === 'ObjectExpression' ||
+        n.init?.type === 'ArrayExpression';
+      if (n.id.type === 'Identifier' || !literalInit) {
+        for (const id of patternIdentifiers(n.id)) writes.push([id, n.init]);
+      }
     } else if (
       n.type === 'AssignmentExpression' &&
       n.left.type === 'Identifier'

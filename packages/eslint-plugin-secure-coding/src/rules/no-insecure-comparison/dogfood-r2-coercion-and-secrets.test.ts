@@ -107,6 +107,38 @@ ruleTester.run(
         ],
       },
       {
+        name: 'control: a binding destructured from a typeof result is not a string',
+        code: "function f(input) { const { length: size } = typeof input; return size == '6'; }",
+        errors: [
+          {
+            messageId: 'insecureComparison',
+            suggestions: [
+              {
+                messageId: 'useStrictEquality',
+                output:
+                  "function f(input) { const { length: size } = typeof input; return size === '6'; }",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'control: a destructured default is not the literal it was destructured from',
+        code: "const { token = process.env.TOKEN } = ''; function f(presented) { return presented === token; }",
+        errors: [
+          {
+            messageId: 'timingUnsafeComparison',
+            suggestions: [
+              {
+                messageId: 'useTimingSafeEqual',
+                output:
+                  "const { token = process.env.TOKEN } = ''; function f(presented) { return crypto.timingSafeEqual(Buffer.from(presented), Buffer.from(token)); }",
+              },
+            ],
+          },
+        ],
+      },
+      {
         name: 'control: typeof against a non-string operand is still loose',
         code: 'function f(srv, other) { return typeof srv == other; }',
         errors: [

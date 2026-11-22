@@ -27,6 +27,10 @@ ruleTester.run(
   {
     valid: [
       {
+        name: 'a negated Boolean rejects null before the typeof test',
+        code: "function f(value) { if (!Boolean(value) || typeof value !== 'object') { return; } }",
+      },
+      {
         name: 'the trpc isObject guard',
         code: "function isObject(value) { return !!value && !Array.isArray(value) && typeof value === 'object'; }",
       },
@@ -48,6 +52,16 @@ ruleTester.run(
       },
     ],
     invalid: [
+      {
+        name: 'control: a local Boolean is not the constructor',
+        code: "function f(value, Boolean) { return Boolean(value) && typeof value === 'object'; }",
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      {
+        name: 'control: the polarity still matters for a negated Boolean',
+        code: "function f(value) { return !Boolean(value) && typeof value === 'object'; }",
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
       {
         name: 'control: a truthiness test on a different operand guards nothing',
         code: "function f(value, other) { return !!other && typeof value === 'object'; }",

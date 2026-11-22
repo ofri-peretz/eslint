@@ -305,7 +305,14 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         // A write we cannot read proves nothing, which is a refusal.
         return writes.every((ref) => {
           const written = ref.writeExpr;
-          return written != null && isStringTyped(written, seen);
+          // A destructured binding records the WHOLE initializer as its write
+          // (`const { length: size } = typeof input` makes `size` a number), so
+          // only a binding written directly can take the initializer's type.
+          const writer = ref.identifier.parent?.type;
+          const direct =
+            writer === AST_NODE_TYPES.VariableDeclarator ||
+            writer === AST_NODE_TYPES.AssignmentExpression;
+          return direct && written != null && isStringTyped(written, seen);
         });
       }
       return false;
@@ -614,6 +621,9 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
               variable.defs.length === 1 &&
               def.type === 'Variable' &&
               def.parent.kind === 'const' &&
+              // A destructured binding keeps the whole declarator as its
+              // definition: `const { token = process.env.T } = ''` is not `''`.
+              def.node.id.type === AST_NODE_TYPES.Identifier &&
               def.node.init !== null &&
               (def.node.init.type === AST_NODE_TYPES.Literal ||
                 (def.node.init.type === AST_NODE_TYPES.TemplateLiteral &&

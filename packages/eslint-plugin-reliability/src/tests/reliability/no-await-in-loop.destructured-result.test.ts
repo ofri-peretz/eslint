@@ -65,6 +65,11 @@ describe('no-await-in-loop — a destructured result decides the next turn', () 
     ],
     invalid: [
       {
+        name: 'control: done comes from another field of a literal than the awaited one',
+        code: 'async function f(next) { while (true) { const { value, done } = { value: await next(), done: false }; use(value); if (done) break; } }',
+        errors: [{ messageId: 'awaitInLoop' }],
+      },
+      {
         name: 'control: the destructured value never reaches the exit or the next await',
         code: 'async function f(items) { for (const item of items) { const { id } = await save(item); log(id); } }',
         errors: [{ messageId: 'awaitInLoop' }],

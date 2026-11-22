@@ -9,7 +9,11 @@
  * Prevent unreadable Immediately Invoked Function Expressions (unicorn-inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  isGlobalReference,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -256,16 +260,20 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
           return false;
         }
         const target = inner.expression.left;
+        // `module` and `exports` must be the CommonJS globals: a local object
+        // that happens to be called `exports` exports nothing.
+        const isCjsName = (n: TSESTree.Node, name: string): boolean =>
+          n.type === 'Identifier' &&
+          n.name === name &&
+          isGlobalReference(n, context.sourceCode);
         const isModuleExports = (n: TSESTree.Node): boolean =>
           n.type === 'MemberExpression' &&
-          n.object.type === 'Identifier' &&
-          n.object.name === 'module' &&
+          isCjsName(n.object, 'module') &&
           propertyName(n) === 'exports';
         return (
           isModuleExports(target) ||
           isModuleExports(target.object) ||
-          (target.object.type === 'Identifier' &&
-            target.object.name === 'exports')
+          isCjsName(target.object, 'exports')
         );
       });
     }

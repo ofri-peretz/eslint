@@ -594,7 +594,12 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           // `config.transformer.input.deserialize(raw)`: a data transformer is the
           // codec the application chose for its own wire format (tRPC, superjson),
           // reached through a property named `transformer`.
-          if (receiverPassesThrough(callee.object, 'transformer')) return false;
+          if (
+            memberName === 'deserialize' &&
+            receiverPassesThrough(callee.object, 'transformer')
+          ) {
+            return false;
+          }
           return true;
         }
 

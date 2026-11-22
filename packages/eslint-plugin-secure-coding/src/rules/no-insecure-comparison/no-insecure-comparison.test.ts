@@ -48,6 +48,7 @@ describe('no-insecure-comparison', () => {
           code: 'if (value !== null && value !== undefined) {}',
         },
         {
+          name: 'comparing an id is not comparing a secret',
           code: 'if (user.id === userId) {}',
         },
         // Test files (when allowInTests is true)

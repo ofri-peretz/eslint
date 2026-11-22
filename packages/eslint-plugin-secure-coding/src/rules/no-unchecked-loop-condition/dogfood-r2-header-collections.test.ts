@@ -37,6 +37,14 @@ ruleTester.run(
         code: 'function f(req) { for (const h of req.rawHeaders) { use(h); } }',
       },
       {
+        name: 'a request wrapped in a context object',
+        code: 'function f(ctx) { for (const h of ctx.request.rawHeaders) { use(h); } }',
+      },
+      {
+        name: 'a computed hop in the receiver path names no payload property',
+        code: 'function f(req, k) { for (const h of req[k].rawHeaders) { use(h); } }',
+      },
+      {
         name: 'for-in over the multi-value headers',
         code: 'function f(event) { for (const name in event.multiValueHeaders) { use(name); } }',
       },
@@ -49,6 +57,16 @@ ruleTester.run(
       {
         name: 'control: a body collection is still reported',
         code: 'function f(req) { for (const item of req.body.items) { use(item); } }',
+        errors: [{ messageId: 'uncheckedLoopCondition' }],
+      },
+      {
+        name: 'control: a body field that is merely named rawHeaders',
+        code: 'function f(req) { for (const item of req.body.rawHeaders) { use(item); } }',
+        errors: [{ messageId: 'uncheckedLoopCondition' }],
+      },
+      {
+        name: 'control: a body field that is merely named multiValueHeaders',
+        code: 'function f(req) { for (const item of req.body.multiValueHeaders) { use(item); } }',
         errors: [{ messageId: 'uncheckedLoopCondition' }],
       },
       {

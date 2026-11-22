@@ -40,6 +40,10 @@ ruleTester.run(
   {
     valid: [
       {
+        name: 'a property write replaces the literal before the middleware sees it',
+        code: `${IM}const opts = { secret: 'changeme' };\nopts.secret = process.env.S;\napp.use(session(opts));`,
+      },
+      {
         name: 'an empty knownSessionSecrets list leaves changeme as a placeholder',
         options: [{ knownSessionSecrets: [] }],
         code: `${IM}app.use(session({ secret: 'changeme' }));`,
@@ -91,6 +95,102 @@ ruleTester.run(
       },
     ],
     invalid: [
+      {
+        name: 'the default list is what reports change-me once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['change', 'me'] }],
+        code: `${IM}app.use(session({ secret: 'change-me' }));`,
+        errors: REPORTED,
+      },
+      {
+        name: 'the default list is what reports my-secret once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['my', 'secret'] }],
+        code: `${IM}app.use(session({ secret: 'my-secret' }));`,
+        errors: REPORTED,
+      },
+      {
+        name: 'the default list is what reports shhhhh once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['shhhhh'] }],
+        code: `${IM}app.use(session({ secret: 'shhhhh' }));`,
+        errors: REPORTED,
+      },
+      {
+        name: 'the default list is what reports super-secret once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['super', 'secret'] }],
+        code: `${IM}app.use(session({ secret: 'super-secret' }));`,
+        errors: REPORTED,
+      },
+      {
+        name: 'the default list is what reports your_secret_key once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['your', 'secret', 'key'] }],
+        code: `${IM}app.use(session({ secret: 'your_secret_key' }));`,
+        errors: REPORTED,
+      },
+      {
+        name: 'the default list is what reports yoursecret once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['yoursecret'] }],
+        code: `${IM}app.use(session({ secret: 'yoursecret' }));`,
+        errors: REPORTED,
+      },
+      {
+        name: 'the default list is what reports changeme once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['changeme'] }],
+        code: `${IM}app.use(session({ secret: 'changeme' }));`,
+        errors: REPORTED,
+      },
+      {
+        name: 'the default list is what reports change_me once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['change', 'me'] }],
+        code: `${IM}app.use(session({ secret: 'change_me' }));`,
+        errors: REPORTED,
+      },
+      {
+        name: 'the default list is what reports your-secret-key once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['your', 'secret', 'key'] }],
+        code: `${IM}app.use(session({ secret: 'your-secret-key' }));`,
+        errors: REPORTED,
+      },
+      {
+        name: 'the default list is what reports your-secret once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['your', 'secret'] }],
+        code: `${IM}app.use(session({ secret: 'your-secret' }));`,
+        errors: REPORTED,
+      },
+      {
+        name: 'the default list is what reports keyboard cat once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['keyboard', 'cat'] }],
+        code: `${IM}app.use(session({ secret: 'keyboard cat' }));`,
+        errors: REPORTED,
+      },
+      {
+        name: 'the default list is what reports secret once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['secret'] }],
+        code: `${IM}app.use(session({ secret: 'secret' }));`,
+        errors: REPORTED,
+      },
+      {
+        name: 'the default list is what reports mysecret once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['mysecret'] }],
+        code: `${IM}app.use(session({ secret: 'mysecret' }));`,
+        errors: REPORTED,
+      },
+      {
+        name: 'the default list is what reports supersecret once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['supersecret'] }],
+        code: `${IM}app.use(session({ secret: 'supersecret' }));`,
+        errors: REPORTED,
+      },
+      {
+        name: 'the default list is what reports session secret once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['session', 'secret'] }],
+        code: `${IM}app.use(session({ secret: 'session secret' }));`,
+        errors: REPORTED,
+      },
+      {
+        name: 'the default list is what reports secret key once it reads as a placeholder',
+        options: [{ additionalPlaceholderWords: ['secret', 'key'] }],
+        code: `${IM}app.use(session({ secret: 'secret key' }));`,
+        errors: REPORTED,
+      },
       {
         name: 'a project-listed copied secret is reported, matched case-insensitively',
         options: [{ knownSessionSecrets: ['Replace-This'] }],

@@ -42,6 +42,7 @@ describe('no-improper-type-validation', () => {
         },
         // Safe type guards
         {
+          name: 'Number.isNaN on a conversion is a numeric check, not a typeof test',
           code: 'if (Number.isNaN(Number(value))) { /* handle NaN */ }',
         },
         {

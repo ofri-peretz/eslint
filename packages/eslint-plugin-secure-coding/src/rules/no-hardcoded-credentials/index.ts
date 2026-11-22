@@ -1546,6 +1546,19 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       ) {
         // An identifier-named declarator declares exactly one variable.
         const [variable] = context.sourceCode.getDeclaredVariables(holder);
+        // `opts.secret = process.env.S` replaces the literal before the middleware
+        // sees it. A `const` binding does not freeze its properties, so any
+        // property write on the binding withdraws the claim.
+        const replaced = variable.references.some((reference) => {
+          const member = reference.identifier.parent;
+          return (
+            member?.type === 'MemberExpression' &&
+            member.object === reference.identifier &&
+            member.parent?.type === 'AssignmentExpression' &&
+            member.parent.left === member
+          );
+        });
+        if (replaced) return null;
         for (const reference of variable.references) {
           const use = reference.identifier.parent;
           if (

@@ -43,6 +43,7 @@ describe('no-unsafe-deserialization', () => {
         },
         // Non-deserialization operations
         {
+          name: 'an ordinary call on input is not a deserializer',
           code: 'const result = calculate(input);',
         },
         // Validated input

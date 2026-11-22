@@ -23,6 +23,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
   createRule,
+  isGlobalReference,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -295,6 +296,8 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         expression.type === 'CallExpression' &&
         expression.callee.type === 'Identifier' &&
         expression.callee.name === 'Boolean' &&
+        // A local `Boolean` is whatever the file made it, not the constructor.
+        isGlobalReference(expression.callee, sourceCode) &&
         expression.arguments.length === 1
       ) {
         return unwrapBoolean(expression.arguments[0]);
@@ -347,7 +350,12 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
           expression.type === 'UnaryExpression' &&
           expression.operator === '!'
         ) {
-          return sameExpression(expression.argument, operand) && negated;
+          // `!Boolean(x)` is `!x`, so the argument is read through the same
+          // unwrapping as a bare guard.
+          return (
+            sameExpression(unwrapBoolean(expression.argument), operand) &&
+            negated
+          );
         }
         if (expression.type !== 'BinaryExpression') return false;
         // `x instanceof C` is strictly stronger than `x !== null`, the same reason

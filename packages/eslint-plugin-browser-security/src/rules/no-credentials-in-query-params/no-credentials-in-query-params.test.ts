@@ -45,7 +45,10 @@ ruleTester.run('no-credentials-in-query-params', noCredentialsInQueryParams, {
     },
     // The prefix requirement now matches the Literal branch: a bare `token=`
     // with no `?` or `&` before it is not a query parameter.
-    { code: 'const msg = `status: token=${x}`' },
+    {
+      name: 'a bare token= with no ? or & before it is not a query parameter',
+      code: 'const msg = `status: token=${x}`',
+    },
     // A longer parameter that merely ENDS in a sensitive name is not that
     // parameter: `?stateToken=` is OAuth state, not `?token=`.
     { code: 'const url = `${base}/sso/idps/${id}?stateToken=${stateHandle}`' },

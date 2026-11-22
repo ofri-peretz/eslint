@@ -90,6 +90,7 @@ describe('no-hardcoded-credentials', () => {
         },
         // Non-credential strings
         {
+          name: 'plain prose in a string is not a credential',
           code: 'const message = "Hello, world!";',
         },
         {

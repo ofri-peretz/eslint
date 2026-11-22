@@ -62,6 +62,28 @@ const TRANSPORT_BOUNDED_COLLECTIONS: ReadonlySet<string> = new Set([
   'rawHeaders',
 ]);
 
+/**
+ * Properties that carry what the client chose to send, not what the transport framed.
+ *
+ * @protocol-constant the property names Express, Fastify and Koa define on a request object for the client's payload; they are an API shape, not words a project would extend.
+ */
+const CLIENT_PAYLOAD_PROPERTIES: ReadonlySet<string> = new Set([
+  'body',
+  'query',
+  'params',
+  'payload',
+]);
+
+/** Does a member path pass through a client-payload property on its way to the root? */
+function pathReadsBody(node: TSESTree.Node): boolean {
+  let current: TSESTree.Node = node;
+  while (current.type === 'MemberExpression') {
+    if (CLIENT_PAYLOAD_PROPERTIES.has(propertyName(current) ?? '')) return true;
+    current = current.object;
+  }
+  return false;
+}
+
 export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
   name: 'no-unchecked-loop-condition',
   meta: {
@@ -586,7 +608,12 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           // size the transport allowed. Plain `headers` is deliberately not here:
           // a framework context can build it from anything (see the
           // ultimate-backend `ctx.headers` case, kept as a true positive).
-          if (TRANSPORT_BOUNDED_COLLECTIONS.has(propertyName(node) ?? '')) {
+          // Only on the request itself: `req.body.rawHeaders` is a field the
+          // client wrote into the body, not the transport's header list.
+          if (
+            TRANSPORT_BOUNDED_COLLECTIONS.has(propertyName(node) ?? '') &&
+            !pathReadsBody(node.object)
+          ) {
             return false;
           }
           // The object decides: `req.body.count` is user input because `req`

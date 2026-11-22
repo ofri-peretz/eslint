@@ -46,16 +46,33 @@ describe('no-missing-error-context — re-throwing a stored error', () => {
         code: 'function f(ctx) { throw ctx.state.failure; }',
       },
       {
-        name: 'a computed key',
-        code: 'function f(errors, i) { throw errors[i]; }',
-      },
-      {
         name: 'the stack is not lost either, with requireStackTrace on',
         code: 'function f(res) { throw res.error; }',
         options: [{ requireStackTrace: true }],
       },
     ],
     invalid: [
+      {
+        name: 'control: a message string is thrown, not the stored error',
+        code: 'function f() { try { run(); } catch (e) { throw e.message; } }',
+        errors: [{ messageId: 'missingErrorContext' }],
+      },
+      {
+        name: 'control: a message read off a fresh Error has no stack, with requireStackTrace',
+        options: [{ requireStackTrace: true }],
+        code: "function f() { throw new Error('failed').message; }",
+        errors: [{ messageId: 'missingErrorContext' }],
+      },
+      {
+        name: 'control: a global undefined is not a stored error',
+        code: 'function f() { throw globalThis.undefined; }',
+        errors: [{ messageId: 'missingErrorContext' }],
+      },
+      {
+        name: 'control: a computed key names no error-holding property',
+        code: 'function f(errors, i) { throw errors[i]; }',
+        errors: [{ messageId: 'missingErrorContext' }],
+      },
       {
         name: 'control: an Error built with no message',
         code: 'function f() { throw new Error(); }',

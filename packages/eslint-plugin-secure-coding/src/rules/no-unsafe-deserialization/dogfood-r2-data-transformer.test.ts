@@ -33,6 +33,11 @@ ruleTester.run(
     ],
     invalid: [
       {
+        name: 'control: only deserialize is exempt, an unserialize through transformer is not',
+        code: 'function f(config, raw) { return config.transformer.unserialize(raw); }',
+        errors: [{ messageId: 'unsafeDeserialization' }],
+      },
+      {
         name: 'control: a codec not named transformer',
         code: 'function f(codec, raw) { return codec.deserialize(raw); }',
         errors: [{ messageId: 'unsafeDeserialization' }],
