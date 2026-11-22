@@ -5,6 +5,16 @@ All notable changes to `eslint-plugin-react-features` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.2.0
+
+### Minor Changes
+
+- **✨ Feature** — presets for using the package as an npm alias for eslint-plugin-react. `configs.flat.recommended`, `configs.flat.all`, `configs.flat['jsx-runtime']`, `configs.all` and `configs['jsx-runtime']` copy the shape and `react/<rule>` ids of eslint-plugin-react 7.37.5, and the default-exported plugin now carries `configs`. Existing `configs.recommended` is unchanged; rule behaviour is unchanged.
+
+### Patch Changes
+
+- **🐛 Fix** — `component-api/no-is-prefix-prop` reports an `isXxx: boolean` member of an inline props type again: the first parameter of a component (PascalCase, or one that returns JSX) and the type argument of `FC<...>` / `React.FC<...>`. #1556 stopped reporting data interfaces but also dropped these; the data-interface exemption stays.
+
 ## 2.1.2
 
 ### Patch Changes
