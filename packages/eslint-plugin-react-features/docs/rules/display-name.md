@@ -289,11 +289,12 @@ with a name is already named — there is nothing to fix and nothing to report.
 | `function Profile() { ... }` | Named by the function. |
 | `const Profile = () => ...` | Named by the binding. |
 | `class Profile extends Component { ... }` | Named by the class; `static displayName` is optional. |
-| `const Row = memo(() => <div />)` | The binding names the component through the wrapper. |
+| `const Row = memo(() => <div />)` | Treated as named by the binding (see the difference above). |
 
 **Differs from eslint-plugin-react 7.37.5:** a `memo` or `forwardRef` wrapper assigned to a named variable is not
-reported (15 upstream cases). DevTools shows the variable name for memo'd components in modern React, and the pattern
-is very common.
+reported (15 upstream cases), because the pattern is very common. React does not copy the variable name onto the inner
+function, so DevTools shows it only when your toolchain infers names; for a guaranteed name, pass a named function or
+set `displayName`.
 
 **If it fires**, React genuinely cannot name it: an anonymous `export default`, an
 anonymous class component, or `memo`/`forwardRef` with no binding to take a name from.

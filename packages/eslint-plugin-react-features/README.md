@@ -95,7 +95,8 @@ Graded by eslint-plugin-react 7.37.5's own test cases for the recommended set, r
 (83.8%) agree. Two differences are intentional:
 
 - `display-name` does not report a `memo` or `forwardRef` wrapper assigned to a named variable (15 upstream cases).
-  DevTools shows the variable name for memo'd components in modern React, and the pattern is very common.
+  The pattern is very common. React does not copy the variable name onto the inner function, so DevTools shows it
+  only when your toolchain infers names.
 - `no-deprecated` still reports `ReactDOM.findDOMNode` (2 upstream cases), because React warns on it from 18.3.
 
 ## 📦 Compatibility
