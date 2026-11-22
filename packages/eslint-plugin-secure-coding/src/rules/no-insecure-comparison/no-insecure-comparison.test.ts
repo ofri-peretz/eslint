@@ -40,6 +40,7 @@ describe('no-insecure-comparison', () => {
           code: 'if (x !== y) {}',
         },
         {
+          name: 'a strict equality in a ternary is a safe comparison',
           code: 'const result = a === b ? 1 : 0;',
         },
         {
@@ -47,6 +48,7 @@ describe('no-insecure-comparison', () => {
           code: 'if (value !== null && value !== undefined) {}',
         },
         {
+          name: 'comparing an id is not comparing a secret',
           code: 'if (user.id === userId) {}',
         },
         // Test files (when allowInTests is true)

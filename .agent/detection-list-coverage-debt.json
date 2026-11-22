@@ -343,8 +343,7 @@
     "notreal",
     "redacted",
     "tbd",
-    "todo",
-    "yours"
+    "todo"
   ],
   "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-credentials/index.ts#PUBLISHABLE_VENDORS": [
     "bugsnag-js",

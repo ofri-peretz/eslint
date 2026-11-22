@@ -150,6 +150,9 @@ function boundOf(
   return result;
 }
 
+/** A file whose own name says it is a test. */
+const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
+
 export const requireNetworkTimeout = createRule<RuleOptions, MessageIds>({
   name: 'require-network-timeout',
   meta: {
@@ -179,6 +182,11 @@ export const requireNetworkTimeout = createRule<RuleOptions, MessageIds>({
   createOnce(context) {
     return {
       CallExpression(node: TSESTree.CallExpression) {
+        // A test hits a local server or a mock, and the runner's own timeout ends
+        // a hang. `fetch()` in trpc's `*.test.ts` files was the whole of the
+        // findings on that repo. Decided by the file's own name, as
+        // `no-silent-errors` does, not by the broader devkit predicate.
+        if (TEST_FILE.test(context.filename)) return;
         const sourceCode = context.sourceCode;
         const slot = configSlot(node, sourceCode);
         if (slot === null) return;

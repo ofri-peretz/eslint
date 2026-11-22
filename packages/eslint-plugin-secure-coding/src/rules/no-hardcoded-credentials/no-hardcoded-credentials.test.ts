@@ -82,6 +82,7 @@ describe('no-hardcoded-credentials', () => {
         },
         // Short strings (below minLength)
         {
+          name: 'a short value under a neutral name is not a credential',
           code: 'const key = "short";',
         },
         {
@@ -89,6 +90,7 @@ describe('no-hardcoded-credentials', () => {
         },
         // Non-credential strings
         {
+          name: 'plain prose in a string is not a credential',
           code: 'const message = "Hello, world!";',
         },
         {

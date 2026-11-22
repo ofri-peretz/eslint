@@ -19,8 +19,11 @@
  * `scripts/`, and a prefix test would silently never fire.
  *
  * Deliberately NOT here: `src`, `lib`, `app`, or anything that could plausibly
- * ship. And `test` is absent too — both rules already have their own test-file
- * handling, and duplicating it here would put the same decision in two places.
+ * ship. `test` is absent as a DIRECTORY: a `test/` folder name proves little. A
+ * file whose own name says it is a test (`*.test.ts`, `*.spec.mts`) is decided in
+ * `isNonProductionPath` below instead. The comment that used to sit here claimed
+ * both rules had their own test-file handling; neither did, so trpc's
+ * `next-app-dir.test.ts:68` was reported twice, once by each rule.
  *
  * `bin` was in this list and has been removed. A published package very often
  * delivers its CLI entry point from `bin/cli.js` — that file runs on end-user
@@ -53,6 +56,13 @@ const BUILD_CONFIG_BASENAMES =
   /^(eslint|jest|vite|vitest|rollup|webpack|tsup|next|babel|karma|nuxt|astro|svelte|tailwind|postcss|playwright|cypress|commitlint|lint-staged|release|changeset|turbo|nx)\.config\.(js|cjs|mjs|ts|mts|cts)$/;
 
 /**
+ * A file named as a test: `a.test.ts`, `a.spec.tsx`, `a.test.mjs`. The name is the
+ * claim, so this does not widen to `fixtures/` or `stories` the way the devkit's
+ * `isTestFilePath` does.
+ */
+const TEST_FILE_BASENAME = /\.(test|spec)\.[cm]?[jt]sx?$/;
+
+/**
  * Does this file sit inside a directory that never ships, or is it build-tool
  * configuration?
  */
@@ -67,7 +77,9 @@ export function isNonProductionPath(
   // be a branch no input can take.
   const base = parts[parts.length - 1] as string;
   return (
-    BUILD_CONFIG_BASENAMES.test(base) || /^(Gruntfile|Gulpfile)\./i.test(base)
+    TEST_FILE_BASENAME.test(base) ||
+    BUILD_CONFIG_BASENAMES.test(base) ||
+    /^(Gruntfile|Gulpfile)\./i.test(base)
   );
 }
 

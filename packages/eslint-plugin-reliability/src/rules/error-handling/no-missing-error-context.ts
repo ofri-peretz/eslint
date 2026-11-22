@@ -16,6 +16,7 @@ import {
   isGlobalReference,
   MessageIcons,
   objectKeyName,
+  propertyName,
   staticString,
   variableOf,
 } from '@interlace/eslint-devkit';
@@ -188,6 +189,24 @@ function classIsError(
   return parent === null || classIsError(parent, sourceCode, depth + 1);
 }
 
+/** Properties that conventionally hold an error object rather than a string. */
+const ERROR_HOLDING_PROPERTIES: ReadonlySet<string> = new Set([
+  'error',
+  'err',
+  'reason',
+  'cause',
+  'failure',
+  'exception',
+]);
+
+/** `res.error`, `this.reason`, `ctx.state.failure`: an error read from storage. */
+function isStoredErrorRead(node: TSESTree.Node): boolean {
+  return (
+    node.type === 'MemberExpression' &&
+    ERROR_HOLDING_PROPERTIES.has(propertyName(node) ?? '')
+  );
+}
+
 /**
  * Check if error has a message
  */
@@ -210,6 +229,16 @@ function hasErrorMessage(
     node.argument.name !== 'NaN' &&
     node.argument.name !== 'Infinity'
   ) {
+    return true;
+  }
+
+  // `throw res.error` / `throw this.reason` re-throws a value that already
+  // exists. Whatever message and stack it has were given where it was made; this
+  // statement adds none and removes none. A bare identifier is accepted for the
+  // same reason, and a member read is the same re-throw one hop further, but only
+  // for a property that conventionally HOLDS an error: `throw e.message` throws a
+  // string and loses the stack.
+  if (isStoredErrorRead(node.argument)) {
     return true;
   }
 
@@ -300,6 +329,16 @@ function hasErrorStack(
     node.argument.name !== 'NaN' &&
     node.argument.name !== 'Infinity'
   ) {
+    return true;
+  }
+
+  // `throw res.error` / `throw this.reason` re-throws a value that already
+  // exists. Whatever message and stack it has were given where it was made; this
+  // statement adds none and removes none. A bare identifier is accepted for the
+  // same reason, and a member read is the same re-throw one hop further, but only
+  // for a property that conventionally HOLDS an error: `throw e.message` throws a
+  // string and loses the stack.
+  if (isStoredErrorRead(node.argument)) {
     return true;
   }
 

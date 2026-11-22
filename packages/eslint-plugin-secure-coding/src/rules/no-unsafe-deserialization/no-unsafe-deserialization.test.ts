@@ -38,14 +38,17 @@ describe('no-unsafe-deserialization', () => {
         },
         // Safe libraries
         {
+          name: 'a project-named safe parser is not a deserialization sink',
           code: 'const data = safeJsonParse(input);',
         },
         // Non-deserialization operations
         {
+          name: 'an ordinary call on input is not a deserializer',
           code: 'const result = calculate(input);',
         },
         // Validated input
         {
+          name: 'JSON.parse of validated input is not a deserialization sink',
           code: 'const cleanData = validateInput(req.body); const obj = JSON.parse(cleanData);',
         },
       ],
