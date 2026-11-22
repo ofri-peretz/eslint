@@ -2,7 +2,7 @@
   "command": "npm run nestjs:releases -- --advance",
   "repos": {
     "ai": "2026-11-06T20:26:45Z",
-    "authentication": "2026-11-13T13:10:27Z",
+    "authentication": "2026-11-20T11:07:45Z",
     "authorization": "2026-11-13T13:10:27Z",
     "axios": "2026-11-13T13:10:46Z",
     "azure-func-http": "2023-06-19T12:01:39Z",
@@ -23,14 +23,14 @@
     "mapped-types": "2026-11-02T11:50:18Z",
     "mcp": "2026-11-06T10:20:27Z",
     "mongoose": "2026-11-06T10:20:08Z",
-    "nest": "2026-11-18T08:44:35Z",
-    "nest-cli": "2026-11-13T13:10:11Z",
+    "nest": "2026-11-20T12:51:21Z",
+    "nest-cli": "2026-11-20T11:01:49Z",
     "observe": "2026-11-19T10:34:19Z",
     "outbox": "2026-11-02T08:06:19Z",
     "passport": "2026-11-13T13:11:00Z",
     "resilience": "2026-10-27T08:14:30Z",
     "schedule": "2026-11-13T13:10:24Z",
-    "schematics": "2026-11-06T10:31:18Z",
+    "schematics": "2026-11-20T11:28:39Z",
     "sequelize": "2026-11-06T10:20:31Z",
     "serve-static": "2026-10-27T10:09:49Z",
     "storage": "2026-11-06T10:19:50Z",
@@ -40,6 +40,7 @@
     "throttler": "2026-11-16T08:19:50Z",
     "typeorm": "2026-11-06T10:19:50Z",
     "webhooks": "2026-10-27T08:13:56Z",
-    "workflows": "2026-11-06T10:20:27Z"
+    "workflows": "2026-11-06T10:20:27Z",
+    "agent-skills": "2026-11-20T11:04:20Z"
   }
 }
