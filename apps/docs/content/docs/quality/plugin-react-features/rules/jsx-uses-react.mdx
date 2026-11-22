@@ -38,9 +38,12 @@ The binding is read from, in order: a `@jsx` comment, `settings.react.pragma`, `
 // eslint.config.js
 export default [
   {
-    plugins: { react: reactFeatures },
+    plugins: { 'react-features': reactFeatures },
     settings: { react: { pragma: 'h', fragment: 'Fragment' } },
-    rules: { 'react/jsx-uses-react': 'error', 'no-unused-vars': 'error' },
+    rules: {
+      'react-features/jsx-uses-react': 'error',
+      'no-unused-vars': 'error',
+    },
   },
 ];
 ```
