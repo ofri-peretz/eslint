@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-operability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.0.7
+
+### Patch Changes
+
+- **🐛 Fix** — treat test files as non-production for console and debug-code rules
+
+  `no-console-log` and `no-debug-code-in-production` treat `*.test.*` / `*.spec.*` files as non-production (`ignoreNonProductionPaths`), so a `console.log` in a test is no longer reported twice.
+
 ## 5.0.6
 
 ### Patch Changes

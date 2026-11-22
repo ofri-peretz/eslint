@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-browser-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.3
+
+### Patch Changes
+
+- **🐛 Fix** — allow Google's documented tokeninfo GET in query-credential rule
+
+  `no-credentials-in-query-params` no longer reports `?id_token=` / `?access_token=` on `oauth2.googleapis.com/tokeninfo`, which is a GET with no body form.
+
 ## 3.1.2
 
 ### Patch Changes
