@@ -331,8 +331,8 @@ const nativeConfigs = {
  * `react`. Only rules this package exports are listed; none of upstream's other
  * rules are claimed.
  */
-const ERROR = 2;
-const OFF = 0;
+const ERROR = 2 as const;
+const OFF = 0 as const;
 
 /** Non-deprecated rule names of eslint-plugin-react 7.37.5 (lib/rules). */
 const UPSTREAM_ACTIVE_RULES = new Set([
@@ -371,12 +371,12 @@ const UPSTREAM_ACTIVE_RULES = new Set([
 
 const jsxParserOptions = { ecmaFeatures: { jsx: true } };
 
-const aliasAll: Record<string, number> = {};
+const aliasAll: Record<string, 0 | 2> = {};
 for (const name of Object.keys(rules)) {
   if (UPSTREAM_ACTIVE_RULES.has(name)) aliasAll[`react/${name}`] = ERROR;
 }
 
-const aliasRecommendedRules: Record<string, number> = {
+const aliasRecommendedRules: Record<string, 0 | 2> = {
   'react/display-name': ERROR,
   'react/jsx-key': ERROR,
   'react/jsx-no-comment-textnodes': ERROR,
@@ -401,7 +401,7 @@ const aliasRecommendedRules: Record<string, number> = {
   'react/require-render-return': ERROR,
 };
 
-const aliasJsxRuntimeRules: Record<string, number> = {
+const aliasJsxRuntimeRules: Record<string, 0 | 2> = {
   'react/react-in-jsx-scope': OFF,
   'react/jsx-uses-react': OFF,
 };
@@ -440,14 +440,25 @@ const aliasFlat = {
   },
 };
 
-export const configs = {
-  ...nativeConfigs,
-  ...aliasLegacy,
-  flat: aliasFlat,
-};
+const enumerableConfigs = { ...nativeConfigs };
+
+/**
+ * `all`, `jsx-runtime` and `flat` are non-enumerable on purpose: they carry
+ * eslint-plugin-react's shapes (legacy `plugins: ['react']` blocks and a
+ * dictionary of flat presets), which is what a consumer reads by key, but they are
+ * not flat config blocks, so anything that iterates `Object.keys(configs)` as
+ * blocks (the ecosystem-integrity preset lock, preset tables) must not see them.
+ * The alias test loads each of them through ESLint instead.
+ */
+export const configs = Object.defineProperties(enumerableConfigs, {
+  all: { value: aliasLegacy.all },
+  'jsx-runtime': { value: aliasLegacy['jsx-runtime'] },
+  flat: { value: aliasFlat },
+}) as typeof enumerableConfigs & typeof aliasLegacy & { flat: typeof aliasFlat };
 
 // eslint-plugin-react exposes its presets on the plugin object (`react.configs.flat.recommended`).
+// Not part of the declared type: `configs.flat` is a dictionary, which ESLint's
+// `Plugin['configs']` does not accept. Typed access is the named `configs` export.
 Object.assign(plugin, { configs });
 
-export default plugin as typeof plugin & { configs: typeof configs };
-
+export default plugin;

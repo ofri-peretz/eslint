@@ -14,9 +14,8 @@ import { ESLint } from 'eslint';
 import plugin, { configs } from '../index';
 
 // What a consumer gets from `import react from 'eslint-plugin-react'`.
-const react = plugin as unknown as {
-  configs: Record<string, any> & { flat: Record<string, any> };
-};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const react = plugin as unknown as { configs: any };
 
 const SOURCE = `
 export const List = ({ items }) => (
