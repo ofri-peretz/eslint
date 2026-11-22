@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-maintainability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.6
+
+### Patch Changes
+
+- **🐛 Fix** — stop reporting re-thrown errors and the classic module wrapper
+
+  `no-missing-error-context` accepts `throw res.error` / `throw this.reason`. `no-unreadable-iife` accepts the classic `(function () { ...; module.exports = x; }());` module wrapper.
+
 ## 4.0.5
 
 ### Patch Changes
