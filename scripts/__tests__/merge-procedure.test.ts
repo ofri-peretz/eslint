@@ -368,11 +368,17 @@ function runGateOverRest(
       '#!/usr/bin/env bash',
       `echo "$*" >> "${calls}"`,
       '[ "$1" = api ] || { echo "HTTP 403: GitHub GraphQL is not available" >&2; exit 1; }',
-      'filter=.; file=""',
-      'for a in "$@"; do case "$a" in */check-runs*) file=runs ;; */status) file=status ;; */pulls/42) file=pull ;; esac; done',
-      'while [ $# -gt 0 ]; do [ "$1" = --jq ] && filter="$2"; shift; done',
-      `[ -n "$file" ] && jq "$filter" "${dir}/$file.json"`,
-      'exit 0',
+      'method=GET; path=""; filter=.',
+      'while [ $# -gt 0 ]; do case "$1" in -X) method="$2"; shift ;; --jq) filter="$2"; shift ;; repos/*) path="$1" ;; esac; shift; done',
+      // Every route the script may call, by method and full path. Anything else fails, so a
+      // misrouted merge or delete cannot pass a test by accident.
+      'case "$method $path" in',
+      `  "GET repos/o/r/pulls/42") jq "$filter" "${dir}/pull.json" ;;`,
+      `  "GET repos/o/r/commits/abc/check-runs?per_page=100") jq "$filter" "${dir}/runs.json" ;;`,
+      `  "GET repos/o/r/commits/abc/status?per_page=100") jq "$filter" "${dir}/status.json" ;;`,
+      '  "PUT repos/o/r/pulls/42/merge" | "DELETE repos/o/r/git/refs/heads/feat/x") echo "{}" ;;',
+      '  *) echo "unexpected route: $method $path" >&2; exit 1 ;;',
+      'esac',
     ].join('\n'),
   );
   chmodSync(fake, 0o755);
@@ -389,11 +395,17 @@ function runGateOverRest(
     status: result.status,
     stderr: result.stderr,
     merges: log.split('\n').filter((l) => l.includes('/pulls/42/merge')),
+    deletes: log.split('\n').filter((l) => l.includes('-X DELETE')),
   };
 }
 
-const restPull = (mergeable_state: string, draft = false) => ({
-  head: { sha: 'abc', ref: 'feat/x' },
+const restPull = (
+  mergeable_state: string,
+  draft = false,
+  headRepo = 'o/r',
+) => ({
+  head: { sha: 'abc', ref: 'feat/x', repo: { full_name: headRepo } },
+  base: { repo: { full_name: 'o/r' } },
   mergeable_state,
   draft,
 });
@@ -413,6 +425,25 @@ describe('without GraphQL, the script judges the REST rollup the same way', () =
     expect(run.stderr).toBe('');
     expect(run.status).toBe(0);
     expect(run.merges).toHaveLength(1);
+    // Pinned to the head the gate judged, so a later push is refused, not merged.
+    expect(run.merges[0]).toContain('sha=abc');
+    expect(run.deletes).toHaveLength(1);
+  });
+
+  it('never deletes a branch for a PR from a fork', () => {
+    const run = runGateOverRest(
+      {
+        pull: restPull('clean', false, 'contributor/r'),
+        checkRuns: [
+          { name: 'Vitest', status: 'completed', conclusion: 'success' },
+        ],
+        statuses: [],
+      },
+      '--merge',
+    );
+    expect(run.status).toBe(0);
+    expect(run.merges).toHaveLength(1);
+    expect(run.deletes).toHaveLength(0);
   });
 
   it('waits on a check run in progress (its conclusion is null over REST)', () => {
