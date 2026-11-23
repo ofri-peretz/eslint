@@ -1,0 +1,17 @@
+# The shared gate from burgee's reusable workflows: the git hooks match the hookset presets this
+# repo pins (lefthook.yml), with no hand-written copy of a preset step.
+name: Shared gates
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  hookset:
+    uses: ofri-peretz/burgee/.github/workflows/hookset-check.yml@main
