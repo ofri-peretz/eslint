@@ -21,8 +21,9 @@ in two of them is paid for twice on every session, and when one copy is edited t
 The rule compares this file's prose lines with the always-loaded files in the same directory and
 every ancestor up to the lint working directory. Lines are normalised first (list marker, emphasis,
 code ticks and whitespace removed, case folded) and must be at least `minLength` characters (default
-40). The copy in the file whose path sorts later is the one reported, so each duplicate is reported
-once.
+40). Each duplicate is reported once: between two files of one directory, in the one whose name
+sorts later; between a file and an ancestor's file, in the deeper one, since the ancestor never
+reads its descendants.
 
 ## Options
 

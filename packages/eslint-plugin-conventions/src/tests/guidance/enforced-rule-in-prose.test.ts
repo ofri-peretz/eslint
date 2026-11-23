@@ -8,6 +8,11 @@ const rule = enforcedRuleInProse as unknown as Rule.RuleModule;
 markdownRuleTester().run('enforced-rule-in-prose', rule, {
   valid: [
     {
+      name: 'a fence line with text after it does not close the fence',
+      filename: 'CLAUDE.md',
+      code: '```\n```still-code\nNever use `--no-verify`.\n```\n',
+    },
+    {
       name: 'a description, not an imperative',
       filename: 'CLAUDE.md',
       code: 'Run `npm test` before pushing.\n',

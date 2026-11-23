@@ -13,8 +13,9 @@
  * Compares this file's prose lines (normalised: list marker, emphasis and
  * whitespace removed, case folded, at least `minLength` characters) with the
  * always-loaded files in the same directory and every ancestor up to the
- * lint working directory. The copy in the file whose path sorts later is the
- * one reported, so each duplicate is reported once.
+ * lint working directory. Each duplicate is reported once: between two files
+ * of one directory, in the one whose name sorts later; between a file and an
+ * ancestor's, in the deeper file (the ancestor never reads its descendants).
  */
 
 import * as path from 'node:path';
@@ -94,8 +95,11 @@ export const noDuplicatedGuidance = createRule<
         const seen = new Map<string, { file: string; line: number }>();
         for (const other of companions(self, context.cwd)) {
           const otherKey = repoRelative(context.cwd, other);
-          // Report only the copy whose path sorts later.
-          if (otherKey > selfKey) continue;
+          // Two files of one directory each read the other: report only in
+          // the one that sorts later. An ancestor never reads this file, so
+          // its copy is always compared here.
+          const sameDir = path.dirname(other) === path.dirname(self);
+          if (sameDir && otherKey > selfKey) continue;
           const text = readIfExists(other);
           if (text === null) continue;
           for (const { line, text: lineText } of proseLines(text.split('\n'))) {

@@ -177,15 +177,43 @@ function lineOf(lines: readonly string[], prefix: string): number {
   return lines.findIndex((l) => l.startsWith(prefix)) + 1;
 }
 
+const MEASURES: ReadonlySet<string> = new Set([
+  'bytes',
+  'lines',
+  'descriptionChars',
+]);
+
 function readRatchet(file: string): Ratchet {
   const text = readIfExists(file);
   if (text === null) return {};
-  try {
-    return JSON.parse(text) as Ratchet;
-  } catch (error) {
-    // A bare SyntaxError from inside a rule names neither the file nor the fix.
+  const fail = (why: string): never => {
+    // A bare error from inside a rule names neither the file nor the fix.
     throw new Error(
-      `guidance-budget: ${file} is not valid JSON (${(error as Error).message}). fix: repair it, or delete it to fall back to the default budgets.`,
+      `guidance-budget: ${file} ${why}. fix: repair it, or delete it to fall back to the default budgets.`,
     );
+  };
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch (error) {
+    fail(`is not valid JSON (${(error as Error).message})`);
   }
+  if (!isObject(parsed)) fail('is not a JSON object of file entries');
+  for (const [entryFile, entry] of Object.entries(parsed as object)) {
+    if (!isObject(entry)) fail(`has a non-object entry for ${entryFile}`);
+    for (const [measure, value] of Object.entries(entry as object)) {
+      // A string or negative budget would compare false both ways and
+      // silently switch the check off.
+      if (!MEASURES.has(measure) || !Number.isInteger(value) || value < 0) {
+        fail(
+          `has ${entryFile}.${measure} = ${JSON.stringify(value)}; each entry holds bytes, lines or descriptionChars as a whole number`,
+        );
+      }
+    }
+  }
+  return parsed as Ratchet;
+}
+
+function isObject(value: unknown): boolean {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

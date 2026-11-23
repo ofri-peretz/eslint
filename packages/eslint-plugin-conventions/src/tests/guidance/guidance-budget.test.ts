@@ -155,6 +155,54 @@ markdownRuleTester().run('guidance-budget', rule, {
       ],
     },
     {
+      name: 'a block-scalar description is measured whole',
+      filename: '.claude/skills/ship/SKILL.md',
+      code: `---\nname: ship\ndescription: >\n  ${'x'.repeat(15)}\n  ${'y'.repeat(15)}\n---\n`,
+      options: [{ descriptionChars: 30 }],
+      errors: [
+        {
+          messageId: 'overBudget',
+          line: 3,
+          data: {
+            kind: 'skill',
+            measure: 'descriptionChars',
+            actual: '31',
+            budget: '30',
+            file: '.claude/skills/ship/SKILL.md',
+            ratchetFile: '.guidance-budget.json',
+          },
+        },
+      ],
+    },
+    ...[
+      [
+        'a literal block keeps its line breaks',
+        'description: |\n  aaaa\n  bbbb',
+      ],
+      [
+        'a plain scalar continues on indented lines',
+        'description: aaaa\n  bbbb',
+      ],
+    ].map(([name, description]) => ({
+      name,
+      filename: '.claude/skills/ship/SKILL.md',
+      code: `---\n${description}\n---\n`,
+      options: [{ descriptionChars: 8 }],
+      errors: [
+        {
+          messageId: 'overBudget' as const,
+          data: {
+            kind: 'skill',
+            measure: 'descriptionChars',
+            actual: '9',
+            budget: '8',
+            file: '.claude/skills/ship/SKILL.md',
+            ratchetFile: '.guidance-budget.json',
+          },
+        },
+      ],
+    })),
+    {
       name: 'a ratcheted file that grew past its entry',
       filename: path.join(tmp, 'big/CLAUDE.md'),
       code: lines(11),
@@ -197,5 +245,62 @@ describe('guidance-budget: a malformed ratchet file', () => {
         'CLAUDE.md',
       ),
     ).toThrow(/broken\.json is not valid JSON .*fix: repair it/);
+  });
+
+  it.each([
+    ['null', 'null', /is not a JSON object of file entries/],
+    ['an array', '[]', /is not a JSON object of file entries/],
+    [
+      'a non-object entry',
+      '{"CLAUDE.md": 5}',
+      /non-object entry for CLAUDE\.md/,
+    ],
+    [
+      'a string budget',
+      '{"CLAUDE.md": {"bytes": "unlimited"}}',
+      /CLAUDE\.md\.bytes = "unlimited"; each entry holds bytes, lines or descriptionChars as a whole number\. fix: repair it/,
+    ],
+    [
+      'a negative budget',
+      '{"CLAUDE.md": {"lines": -1}}',
+      /CLAUDE\.md\.lines = -1/,
+    ],
+    [
+      'an unknown measure',
+      '{"CLAUDE.md": {"words": 10}}',
+      /CLAUDE\.md\.words = 10/,
+    ],
+  ])('rejects %s, naming the file and the fix', (_name, json, message) => {
+    const bad = path.join(tmp, 'bad.json');
+    fs.writeFileSync(bad, json);
+    expect(() =>
+      new Linter().verify(
+        '# x\n',
+        {
+          files: ['**/*.md'],
+          plugins: { markdown, local: { rules: { 'guidance-budget': rule } } },
+          language: 'markdown/gfm',
+          rules: { 'local/guidance-budget': ['error', { ratchetFile: bad }] },
+        },
+        'CLAUDE.md',
+      ),
+    ).toThrow(message);
+  });
+
+  it('accepts a zero budget', () => {
+    const zero = path.join(tmp, 'zero.json');
+    fs.writeFileSync(zero, '{"other.md": {"bytes": 0}}');
+    expect(
+      new Linter().verify(
+        '# x\n',
+        {
+          files: ['**/*.md'],
+          plugins: { markdown, local: { rules: { 'guidance-budget': rule } } },
+          language: 'markdown/gfm',
+          rules: { 'local/guidance-budget': ['error', { ratchetFile: zero }] },
+        },
+        'CLAUDE.md',
+      ),
+    ).toEqual([]);
   });
 });

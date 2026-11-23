@@ -53,6 +53,19 @@ Each preset is one flat config object: put it in the array as an element, do not
 - `subagent-declares-model` (warn): Require every .claude/agents/*.md subagent to declare a model and a tool allowlist in its frontmatter.
 - `no-duplicated-guidance` (warn): Disallow the same guidance line in two always-loaded agent files (CLAUDE.md, AGENTS.md, GEMINI.md) of one repo.
 
+This preset lints Markdown, so it needs `@eslint/markdown` registered as the `markdown` plugin beside it:
+
+```bash
+npm install --save-dev @eslint/markdown
+```
+
+```js
+import markdown from '@eslint/markdown';
+import conventions from 'eslint-plugin-conventions';
+
+export default [{ plugins: { markdown } }, conventions.configs.guidance];
+```
+
 ### Rules in no preset
 
 Enable these by name (`'conventions/<rule>': 'error'`):

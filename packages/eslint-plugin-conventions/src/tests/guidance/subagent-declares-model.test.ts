@@ -13,6 +13,16 @@ markdownRuleTester().run('subagent-declares-model', rule, {
       code: '---\nname: reviewer\nmodel: haiku\ntools: Read, Grep, Glob\n---\nReview.\n',
     },
     {
+      name: 'tools as a YAML block list',
+      filename: '.claude/agents/reviewer.md',
+      code: '---\nmodel: haiku\ntools:\n  - Read\n  - Grep\n---\nReview.\n',
+    },
+    {
+      name: 'tools as an unindented YAML block list',
+      filename: '.claude/agents/reviewer.md',
+      code: '---\nmodel: haiku\ntools:\n- Read\n---\nReview.\n',
+    },
+    {
       name: 'not a subagent',
       filename: 'docs/agents/reviewer.md',
       code: 'No frontmatter.\n',
@@ -45,6 +55,12 @@ markdownRuleTester().run('subagent-declares-model', rule, {
       name: 'tools declared, model missing',
       filename: '.claude/agents/reviewer.md',
       code: '---\ntools: Read\n---\n',
+      errors: [{ messageId: 'missingKey' }],
+    },
+    {
+      name: 'an empty block list declares no tools',
+      filename: '.claude/agents/reviewer.md',
+      code: '---\nmodel: haiku\ntools:\n  # none yet\n---\n',
       errors: [{ messageId: 'missingKey' }],
     },
     {

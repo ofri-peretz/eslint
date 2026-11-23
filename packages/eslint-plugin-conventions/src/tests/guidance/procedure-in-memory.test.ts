@@ -22,6 +22,19 @@ markdownRuleTester().run('procedure-in-memory', rule, {
       code: `${steps(4)}\n\nThen:\n\n${steps(4)}\n`,
     },
     {
+      name: 'nested numbered items are not top-level steps',
+      filename: 'CLAUDE.md',
+      code: `1. Release\n${steps(5)
+        .split('\n')
+        .map((l) => `   ${l}`)
+        .join('\n')}\n2. Announce\n`,
+    },
+    {
+      name: 'a fence at the margin ends a list',
+      filename: 'AGENTS.md',
+      code: `${steps(3)}\n\n\`\`\`sh\nnpm test\n\`\`\`\n\n${steps(3)}\n`,
+    },
+    {
       name: 'a numbered list inside a code fence',
       filename: 'CLAUDE.md',
       code: '```\n' + steps(9) + '\n```\n',
@@ -50,6 +63,15 @@ markdownRuleTester().run('procedure-in-memory', rule, {
           line: 3,
           data: { steps: '6', maxSteps: '5' },
         },
+      ],
+    },
+    {
+      name: 'a fence indented under a step continues the list',
+      filename: 'AGENTS.md',
+      code: '1. a\n   ```sh\n   npm test\n   ```\n2. b\n3. c\n',
+      options: [{ maxSteps: 2 }],
+      errors: [
+        { messageId: 'procedureInMemory', data: { steps: '3', maxSteps: '2' } },
       ],
     },
     {

@@ -40,23 +40,60 @@ export function guidanceKind(filename: string): GuidanceKind | null {
 }
 
 export interface Frontmatter {
-  /** Top-level keys and their raw single-line values. */
+  /**
+   * Top-level keys and their values. A block scalar (`description: |` or
+   * `>`) is its indented lines, joined; a block list (`tools:` then
+   * `- Read` lines) is its items joined with `, `.
+   */
   keys: Map<string, string>;
   /** 1-based line of the closing `---`. */
   endLine: number;
 }
 
+const BLOCK_SCALAR = /^([|>])[+-]?\d*$/;
+const LIST_ITEM = /^\s*-\s+(.*)$/;
+
 /** The leading `---` YAML block, read for its top-level keys only. */
 export function frontmatter(lines: readonly string[]): Frontmatter | null {
   if (lines[0]?.trim() !== '---') return null;
   const keys = new Map<string, string>();
+  let key: string | null = null;
+  /** The indented lines under the current key. */
+  let nested: string[] = [];
+  const settle = (): void => {
+    if (key !== null && nested.length)
+      keys.set(key, nestedValue(keys.get(key) as string, nested));
+    key = null;
+    nested = [];
+  };
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
-    if (line.trim() === '---') return { keys, endLine: i + 1 };
+    if (line.trim() === '---') {
+      settle();
+      return { keys, endLine: i + 1 };
+    }
     const match = /^([A-Za-z_][\w-]*):\s*(.*)$/.exec(line);
-    if (match) keys.set(match[1], match[2].trim());
+    if (match) {
+      settle();
+      key = match[1];
+      keys.set(key, match[2].trim());
+    } else if (key !== null && /^(?:\s|-\s)/.test(line)) {
+      nested.push(line.trim());
+    }
   }
   return null;
+}
+
+/** The value of a key whose content sits on the indented lines below it. */
+function nestedValue(head: string, nested: readonly string[]): string {
+  const scalar = BLOCK_SCALAR.exec(head);
+  if (scalar) return nested.join(scalar[1] === '|' ? '\n' : ' ').trim();
+  // A plain scalar continues on its indented lines, folded with spaces.
+  if (head !== '') return [head, ...nested].join(' ');
+  return nested
+    .map((l) => LIST_ITEM.exec(l)?.[1].trim() ?? '')
+    .filter(Boolean)
+    .join(', ');
 }
 
 export interface ProseLine {
@@ -65,7 +102,7 @@ export interface ProseLine {
   text: string;
 }
 
-const FENCE = /^\s{0,3}(`{3,}|~{3,})/;
+const FENCE = /^\s{0,3}(`{3,}|~{3,})(.*)$/;
 
 /** Every line outside frontmatter and fenced code. */
 export function proseLines(lines: readonly string[]): ProseLine[] {
@@ -76,7 +113,14 @@ export function proseLines(lines: readonly string[]): ProseLine[] {
     const text = lines[i];
     const open = FENCE.exec(text);
     if (fence) {
-      if (open && open[1][0] === fence[0] && open[1].length >= fence.length) {
+      // A closing fence is the same character, at least as long, and
+      // nothing but whitespace after it.
+      if (
+        open &&
+        open[1][0] === fence[0] &&
+        open[1].length >= fence.length &&
+        open[2].trim() === ''
+      ) {
         fence = null;
       }
       continue;

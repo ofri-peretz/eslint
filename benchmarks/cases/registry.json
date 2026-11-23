@@ -5209,8 +5209,8 @@
     {
       "id": "ILB-0180",
       "added": "2026-11-23",
-      "title": "The same guidance line in CLAUDE.md and GEMINI.md",
-      "rationale": "Files in one directory chain load together, so a line in two of them is paid for twice, and the copies drift when one is edited. The case copies a line from this repository's own root CLAUDE.md, so it holds only while that line is there.",
+      "title": "The same guidance line in AGENTS.md and GEMINI.md",
+      "rationale": "Files in one directory chain load together, so a line in two of them is paid for twice, and the copies drift when one is edited. The case is a GEMINI.md beside the fixture AGENTS.md under benchmarks/cases/fixtures/guidance, copying its one rule line.",
       "cwe": null,
       "severity": {
         "cvss": null,
@@ -5219,13 +5219,13 @@
       },
       "references": [],
       "occurrences": [],
-      "code": "- Reproduce visual bugs at **~390px** before claiming a fix; mobile regresses most.\n",
+      "code": "- **Run the full test suite** before you ask anyone to review the branch.\n",
       "kind": "defect",
       "coverage": [
         {
           "rule": "conventions/no-duplicated-guidance",
           "expect": "report",
-          "filename": "GEMINI.md",
+          "filename": "benchmarks/cases/fixtures/guidance/GEMINI.md",
           "evidence": "packages/eslint-plugin-conventions/src/tests/guidance/no-duplicated-guidance.test.ts"
         }
       ],

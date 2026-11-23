@@ -60,6 +60,12 @@ markdownRuleTester().run('no-duplicated-guidance', rule, {
   ],
   invalid: [
     {
+      name: 'a copy of an ancestor line is reported even when the ancestor path sorts later',
+      filename: path.join(tmp, '.github', 'AGENTS.md'),
+      code: `- ${RULE_LINE}\n`,
+      errors: [{ messageId: 'duplicated' }],
+    },
+    {
       name: 'a GEMINI.md copy of a CLAUDE.md line is reported in GEMINI.md, which sorts later',
       filename: path.join(tmp, 'pkg', 'GEMINI.md'),
       code: `Some intro.\n\n- ${RULE_LINE}\n`,

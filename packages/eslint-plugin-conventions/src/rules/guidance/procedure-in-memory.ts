@@ -70,9 +70,12 @@ export const procedureInMemory = createRule<
         const maxSteps = options()[0].maxSteps as number;
         const lines = context.sourceCode.text.split('\n');
         // A list is a run of top-level numbered items; blank lines and
-        // indented continuation lines do not end it, any other line does.
+        // indented continuation lines (nested items among them) do not end
+        // it, any other line does — fenced code at the margin included.
         let first: { line: number; text: string } | null = null;
+        let indent = 0;
         let steps = 0;
+        let previous = 0;
         const flush = (): void => {
           if (first && steps > maxSteps) {
             context.report({
@@ -85,8 +88,19 @@ export const procedureInMemory = createRule<
           steps = 0;
         };
         for (const prose of proseLines(lines)) {
-          if (STEP.test(prose.text)) {
-            first ??= prose;
+          // Lines between two prose lines were fenced code; one opened at the
+          // margin ends the list.
+          if (prose.line > previous + 1 && !/^\s/.test(lines[previous])) {
+            flush();
+          }
+          previous = prose.line;
+          const step = STEP.exec(prose.text);
+          // A step indented 2+ past the first is a nested item: continuation.
+          if (step && (first === null || step[1].length < indent + 2)) {
+            if (first === null) {
+              first = prose;
+              indent = step[1].length;
+            }
             steps++;
           } else if (!(
             prose.text.trim() === '' || /^\s{2,}\S/.test(prose.text)

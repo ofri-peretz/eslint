@@ -44,13 +44,20 @@ call.
 
 ### ✅ Correct
 
-The rule lives in a hook and the guidance line is deleted — or, while it is being moved:
+The rule lives in a hook, and the guidance line is gone:
+
+```md
+- Commits go through the hooks; they are the gate.
+```
+
+### While it is being moved
+
+Linking the hook from the line is an intermediate state, still reported (as `removable`) as a
+reminder to delete it once the hook is trusted:
 
 ```md
 - Never `--no-verify` ([hook](.claude/hooks/guard-bash.mjs)).
 ```
-
-(reported as `removable`, a reminder to delete it once the hook is trusted).
 
 ## Known limitations
 
