@@ -1762,12 +1762,27 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // FPs before the gate landed).
       let finalIsCredential = isCredential;
       let finalType = type;
-      if (
-        isCredential &&
-        confidence === 'ambiguous' &&
-        !isCredentialContext(value, parent)
-      ) {
-        finalIsCredential = false;
+      if (isCredential && confidence === 'ambiguous') {
+        const inContext = isCredentialContext(value, parent);
+        // A "Common password" match is ambiguous about the STRING, not the
+        // slot: `password` is a weak password, but it is also the keyword a
+        // route-name list uses to label the login endpoint. The generic
+        // secret-shaped-blob ambiguous match has no such second life, so any
+        // credential-named slot is still enough for it — but a common
+        // password word needs the slot's OWN category to actually say
+        // "password" (or an unclassified-but-credential-ish name like
+        // `credentials`/`auth`), not merely to end in some other credential
+        // word like `tokens` (#1557: `SENSITIVE_ROUTE_TOKENS = [...,
+        // 'password']` is a route-name list, not a password store).
+        const categoryMismatch =
+          inContext &&
+          type === 'Common password' &&
+          !['password', 'other'].includes(
+            inferCredentialTypeFromContext(parent!),
+          );
+        if (!inContext || categoryMismatch) {
+          finalIsCredential = false;
+        }
       }
 
       // An enum member named after itself is a code, not a credential. Gated
