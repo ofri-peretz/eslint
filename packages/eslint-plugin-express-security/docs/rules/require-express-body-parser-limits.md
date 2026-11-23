@@ -39,28 +39,20 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ## Rule Details
 
-This rule detects an Express/body-parser body parser configured with **no explicit
-size limit**.
+This rule detects an Express/body-parser body parser configured with an **explicit** size limit larger than the app can afford.
 
-### What it reports, and what it does not
+### What it does not report
 
-- **Reported:** `express.json()`, `express.urlencoded({ extended: true })`,
-  `bodyParser.json({})` — any `json`, `urlencoded`, `raw` or `text` parser whose
-  options carry no `limit`. Each runs on Express's documented `100kb` default,
-  which is a sound ceiling but invisible at the call site. The rule asks you to
-  write the ceiling down so a reviewer can see and change it.
-- **Never reported: any explicit `limit`, whatever the value.** `limit: '50mb'`,
-  `limit: '1gb'` and `limit: 52428800` are an author stating a number on
-  purpose. This is a **decided behaviour**: the rule no longer judges the
-  number, only whether one was chosen.
-- **Abstains** when the options cannot be read: `express.json(opts)`, a spread
-  (`{ ...defaults }`), or a computed key (`{ [name]: value }`) may well carry the
-  limit.
+`express.json()` with no options is **not** unbounded. All four parsers —
+`json`, `urlencoded`, `raw`, `text` — ship `limit: '100kb'` as their documented
+default in Express 4 and 5 alike, so omitting the option leaves the parser at
+100kb, far below every threshold this rule enforces. Reporting the omission was
+a claim about a default that does not exist; it was removed on 2026-08-12, and
+the `missingLimit` message with it.
 
-> **Behaviour change (2026-11-23).** Earlier versions reported an explicit limit
-> above `maxLimit` (default 5 MB) and did **not** report a parser with no limit.
-> That is reversed. `maxLimit` and `excessiveLimits` are still accepted so
-> existing configurations keep loading, and are now **ignored**.
+The limit is read in bytes, so both spellings are compared the same way:
+`limit: '50mb'` and `limit: 52428800` are the same finding. The numeric one was
+invisible to this rule before.
 
 **Related CVE:** CVE-2024-45590 - body-parser DoS vulnerability
 
@@ -69,33 +61,37 @@ size limit**.
 ### ❌ Incorrect
 
 ```javascript
-// No limit written down — runs on the unstated 100kb default
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(bodyParser.json({ type: 'application/json' }));
+// An explicit limit well above what a request should be able to pin
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+
+// The same limit written as a byte count
+app.use(bodyParser.json({ limit: 52428800 }));
 ```
 
 ### ✅ Correct
 
 ```javascript
-// The ceiling is stated — any value is a deliberate choice
+// No options at all — Express's own 100kb default applies
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// With size limits - SAFE
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
-app.use(bodyParser.json({ limit: '1mb' }));
-app.use(express.json({ limit: '50mb' })); // not judged: you chose it
-app.use(bodyParser.raw({ limit: 52428800 }));
 
-// Options the rule cannot read abstain
-app.use(express.json(parserOptions));
+// body-parser with limits - SAFE
+app.use(bodyParser.json({ limit: '1mb' }));
+app.use(bodyParser.urlencoded({ limit: '1mb', extended: true }));
 ```
 
 ## Options
 
-| Option            | Type       | Default | Description                                             |
-| ----------------- | ---------- | ------- | ------------------------------------------------------- |
-| `allowInTests`    | `boolean`  | `false` | Allow in test files                                     |
-| `maxLimit`        | `number`   | —       | **Deprecated, ignored.** Any explicit limit is accepted |
-| `excessiveLimits` | `string[]` | —       | **Deprecated, ignored.** Any explicit limit is accepted |
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow in test files |
+| `maxLimit` | `number` | `5242880` | Largest explicit body-parser limit, in bytes, that is not reported |
+| `excessiveLimits` | `string[]` | `["10mb","50mb","100mb","500mb","1gb","1GB","10MB","50MB","100MB","500MB"]` | Limits considered excessive |
 
 ```json
 {
@@ -164,16 +160,14 @@ app.use(customParser.json()); // Limits?
 
 ### Reverse Proxy Limits
 
-**Why**: Infrastructure-level limits are not visible, so a parser that relies on
-a proxy for its ceiling is still reported.
+**Why**: Infrastructure-level limits are not visible.
 
 ```typescript
-// ✅ REPORTED - the limit lives in Nginx, not in this file
-app.use(express.json());
+// ❌ NOT DETECTED (correctly) - Nginx handles limits
+app.use(express.json()); // Nginx limits request size
 ```
 
-**Mitigation**: State the ceiling in code as well (`express.json({ limit: '1mb' })`),
-or document the infrastructure limit and disable the rule on that line.
+**Mitigation**: Document infrastructure limits. Add code comment.
 
 ## Further Reading
 

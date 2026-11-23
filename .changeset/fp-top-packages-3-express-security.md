@@ -1,10 +1,8 @@
 ---
-'eslint-plugin-express-security': minor
+'eslint-plugin-express-security': patch
 ---
 
 False positives and coverage gaps found linting popular Node.js packages and Express/NestJS starters.
-
-**Decided behaviour change, `require-express-body-parser-limits`.** The rule now reports a body parser (`json`, `urlencoded`, `raw`, `text`) that sets **no** `limit`, and never reports an explicit `limit`, whatever its value: any number an author writes down is a deliberate choice. Before, it did the opposite: an explicit limit above `maxLimit` (5 MB by default) reported and a parser with no limit did not. The message id changes from `excessiveLimit` to `missingLimit`. `maxLimit` and `excessiveLimits` are still accepted so existing configs load, and are ignored. Options the rule cannot read (`express.json(opts)`, a spread, a computed key) abstain.
 
 - `no-client-controlled-authorization`: `req.params.userId !== user.id` is not reported when `user` is a never-reassigned parameter, with nothing written below it (directly or through `req.user`), of the callback `passport.authenticate` invokes (its second parameter, the user, not `info`) (inline, or returned by a local factory whose call is passed to it), stored on the same request (`req.user = user`). A parameter of an ordinary function (`check(req, req.body)`), a local copy of client input, a parameter stored on another request, a rewritten parameter, a principal whose properties are overwritten, and a comparison against a second client value still report.
 - `no-exposed-debug-endpoints`: a path segment spelled as a health probe (`health-check`, `healthcheck`, `health_check`, `healthz`) is not a debug endpoint, unless an inline handler reads the global `process`, a `process` or `os` module binding (`res.json(process.env)`). `/health` itself and `/health-check/debug` still report, and an `endpoints` list you configure is matched against the route as written.

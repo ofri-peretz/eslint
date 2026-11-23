@@ -7,30 +7,26 @@
 /**
  * ESLint Rule: require-express-body-parser-limits
  *
- * Detects an Express/body-parser body parser configured with NO explicit
- * size limit.
+ * Detects an Express/body-parser body parser configured with an *explicit*
+ * size limit larger than the app can afford.
  *
  * CWE-400: Uncontrolled Resource Consumption
  *
- * ## Decided behaviour: any explicit limit is a deliberate choice
+ * ## What this rule does NOT report, and why
  *
- * The four parsers — `json`, `urlencoded`, `raw`, `text` — ship
- * `limit: '100kb'` as a documented default, so `express.json()` is not
- * unbounded. The rule still reports it: the default is invisible at the call
- * site, and a body-size ceiling is a decision that belongs in the code where a
- * reviewer can see it and change it.
+ * `express.json()` with no options is **not** unbounded. Every one of the four
+ * parsers — `json`, `urlencoded`, `raw`, `text` — ships `limit: '100kb'` as its
+ * documented default, in Express 4 and 5 alike. The rule used to report the
+ * omission as "Missing Body Parser Limit … attackers can exhaust server
+ * memory", which is a claim about a default that does not exist: 100kb is far
+ * below every threshold this rule enforces, so the rule was reporting a
+ * configuration it would have accepted had it been written out. All seven
+ * findings on the 8-repo corpus were that shape, including
+ * `app.use(express.urlencoded({ extended: true }))`.
  *
- * What it does NOT report is any `limit` that is written down, whatever the
- * value. `express.json({ limit: '50mb' })` is an author stating a number on
- * purpose, and a rule that second-guesses the number reports a configuration
- * the author already reviewed. This reverses two earlier policies: the
- * original "no limit is not a finding" (2026-08-12, when 7 of 7 corpus
- * findings were the 100kb default) and the later "an explicit limit above
- * `maxLimit` is a finding". `maxLimit` and `excessiveLimits` are still
- * accepted so existing configs keep loading, and are ignored.
- *
- * An options value the rule cannot read (`express.json(opts)`, a spread, a
- * computed key) abstains: it may well carry the limit.
+ * Only an explicit `limit` above `maxLimit` is a finding. That is also the
+ * only form an attacker can steer, and it now catches the numeric spelling
+ * (`limit: 52428800`) that the string-only comparison used to miss entirely.
  *
  * @see https://cwe.mitre.org/data/definitions/400.html
  * @see https://expressjs.com/en/4x/api.html#express.json
@@ -49,20 +45,44 @@ import {
   createRule,
   isTestFilePath,
   propertyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'missingLimit';
+type MessageIds = 'excessiveLimit';
 
 export interface Options {
   /** Allow in test files. Default: false */
   allowInTests?: boolean;
-  /** @deprecated Ignored: any explicit limit is accepted. Kept so existing configs load. */
+  /** Largest explicit limit, in bytes, that is not reported. Default: 5242880 (5MB) */
   maxLimit?: number;
-  /** @deprecated Ignored: any explicit limit is accepted. Kept so existing configs load. */
+  /** Limits that are considered excessive (as strings). Default: ['50mb', '100mb', '500mb', '1gb'] */
   excessiveLimits?: string[];
 }
 
 type RuleOptions = [Options?];
+
+/**
+ * Largest explicit limit that is not reported, in bytes (5MB).
+ *
+ * Sits just under the smallest entry in `DEFAULT_EXCESSIVE_LIMITS` so the two
+ * gates agree: 10mb and up is excessive whichever way it is spelled. The old
+ * value, 102400, was never read by the rule at all — it would have reported
+ * `limit: '1mb'`, which this rule's own fix text recommends.
+ */
+const DEFAULT_MAX_LIMIT = 5 * 1024 * 1024;
+
+const DEFAULT_EXCESSIVE_LIMITS = [
+  '10mb',
+  '50mb',
+  '100mb',
+  '500mb',
+  '1gb',
+  '1GB',
+  '10MB',
+  '50MB',
+  '100MB',
+  '500MB',
+];
 
 /**
  * Body parser function names to check
@@ -70,22 +90,65 @@ type RuleOptions = [Options?];
 const BODY_PARSER_METHODS = new Set(['json', 'urlencoded', 'raw', 'text']);
 
 /**
- * Does this options object leave the limit unset?
- *
- * `false` when a `limit` key is present, and also when the answer cannot be
- * read: a spread, or a key computed at runtime, may carry it.
+ * Check if a property has a limit option
  */
-function leavesLimitUnset(
+function getLimitOption(
   properties: TSESTree.ObjectLiteralElement[],
-): boolean {
+): TSESTree.Property | null {
   for (const prop of properties) {
-    if (prop.type !== 'Property') return false;
     // `limit:`, `'limit':` and `['limit']:` all name the option; a computed
-    // `[limit]:` names whatever the variable holds, so it may be anything.
-    const key = objectKeyName(prop);
-    if (key === null || key === 'limit') return false;
+    // `[limit]:` names whatever the variable holds, so it does not.
+    if (prop.type === 'Property' && objectKeyName(prop) === 'limit') {
+      return prop;
+    }
   }
-  return true;
+  return null;
+}
+
+/** Byte multipliers `bytes` (the parser body-parser delegates to) accepts. */
+const UNITS: Readonly<Record<string, number>> = {
+  b: 1,
+  kb: 1024,
+  mb: 1024 ** 2,
+  gb: 1024 ** 3,
+  tb: 1024 ** 4,
+};
+
+/**
+ * The limit in bytes, or `null` when it is not a literal we can evaluate.
+ *
+ * `limit` accepts either a number of bytes or a `bytes`-parseable string, and
+ * the two spellings are equally common. Comparing only against a list of
+ * *strings* meant `express.json({ limit: 52428800 })` — 50MB, spelled the way
+ * a constant usually is — was invisible to this rule.
+ */
+function limitInBytes(value: TSESTree.Node): number | null {
+  if (value.type === 'Literal' && typeof value.value === 'number')
+    return value.value;
+  const text = staticString(value);
+  if (text === null) return null;
+  const parsed = /^\s*(\d+(?:\.\d+)?)\s*(b|kb|mb|gb|tb)?\s*$/i.exec(text);
+  if (!parsed) return null;
+  return Number(parsed[1]) * UNITS[(parsed[2] ?? 'b').toLowerCase()];
+}
+
+/**
+ * Check if the limit value is considered excessive
+ */
+function isExcessiveLimit(
+  value: TSESTree.Node,
+  excessiveLimits: string[],
+  maxLimit: number,
+): boolean {
+  const staticText = staticString(value);
+  if (staticText !== null) {
+    const named = excessiveLimits.some(
+      (limit) => staticText.toLowerCase() === limit.toLowerCase(),
+    );
+    if (named) return true;
+  }
+  const bytes = limitInBytes(value);
+  return bytes !== null && bytes > maxLimit;
 }
 
 export const requireExpressBodyParserLimits = createRule<
@@ -101,18 +164,17 @@ export const requireExpressBodyParserLimits = createRule<
       description:
         'Require size limits on Express.js body parsers to prevent DoS attacks',
       cwe: 'CWE-400',
-      cvss: 5.3,
+      cvss: 7.5,
     },
     messages: {
-      missingLimit: formatLLMMessage({
+      excessiveLimit: formatLLMMessage({
         icon: MessageIcons.SECURITY,
-        issueName: 'Body Parser Without An Explicit Limit',
+        issueName: 'Excessive Body Parser Limit',
         cwe: 'CWE-400',
-        cvss: 5.3,
         description:
-          "This body parser sets no `limit`, so it silently runs on Express's 100kb default. A body-size ceiling is a security decision that should be visible where the parser is mounted, not inherited.",
+          "This body parser raises the limit above Express's 100kb default, so a single request can pin that much memory per connection.",
         severity: 'MEDIUM',
-        fix: "State the ceiling: express.json({ limit: '100kb' }). Any value you write down is accepted.",
+        fix: "Reduce the limit to a reasonable size: '100kb' for JSON APIs, '1mb' for file uploads with proper handling",
         documentationLink: 'https://expressjs.com/en/4x/api.html#express.json',
       }),
     },
@@ -127,26 +189,35 @@ export const requireExpressBodyParserLimits = createRule<
           },
           maxLimit: {
             type: 'number',
+            default: DEFAULT_MAX_LIMIT,
             description:
-              'Deprecated and ignored: any explicit body-parser limit is accepted',
+              'Largest explicit body-parser limit, in bytes, that is not reported',
           },
           excessiveLimits: {
             type: 'array',
             items: { type: 'string' },
-            description:
-              'Deprecated and ignored: any explicit body-parser limit is accepted',
+            default: DEFAULT_EXCESSIVE_LIMITS,
+            description: 'Limits considered excessive',
           },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{ allowInTests: false }],
+  defaultOptions: [
+    {
+      allowInTests: false,
+      maxLimit: DEFAULT_MAX_LIMIT,
+      excessiveLimits: DEFAULT_EXCESSIVE_LIMITS,
+    },
+  ],
   createOnce(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     currentOptions,
   ) {
     let allowInTests: boolean;
+    let maxLimit: number;
+    let excessiveLimits: string[];
     /** What the file binds `express` and `body-parser` to. */
     let parsers: PackageBindings;
 
@@ -159,7 +230,11 @@ export const requireExpressBodyParserLimits = createRule<
         // path — a file with no Express in it does no work.
         if (!fileUsesExpress(context.sourceCode.ast)) return false;
 
-        ({ allowInTests = false } = options as Options);
+        ({
+          allowInTests = false,
+          maxLimit = DEFAULT_MAX_LIMIT,
+          excessiveLimits = DEFAULT_EXCESSIVE_LIMITS,
+        } = options as Options);
 
         const filename = context.filename;
         const isTestFile = allowInTests && isTestFilePath(filename);
@@ -190,18 +265,21 @@ export const requireExpressBodyParserLimits = createRule<
         );
         if (!isParser) return;
 
-        // No argument, or an options object with no `limit` key and nothing
-        // that could carry one, runs on the 100kb default unstated. Options
-        // the rule cannot read (`express.json(opts)`) may hold the limit.
+        // An absent options object, or options without `limit`, leaves the
+        // parser on Express's documented 100kb default. There is nothing to
+        // report: the default is already at (in fact below) `maxLimit`.
         const firstArg = node.arguments[0];
-        if (firstArg !== undefined && firstArg.type !== 'ObjectExpression') {
-          return;
-        }
-        if (firstArg !== undefined && !leavesLimitUnset(firstArg.properties)) {
-          return;
-        }
+        if (firstArg?.type !== 'ObjectExpression') return;
 
-        context.report({ node, messageId: 'missingLimit' });
+        const limitProp = getLimitOption(firstArg.properties);
+        if (!limitProp) return;
+
+        if (isExcessiveLimit(limitProp.value, excessiveLimits, maxLimit)) {
+          context.report({
+            node: limitProp,
+            messageId: 'excessiveLimit',
+          });
+        }
       },
     };
   },

@@ -50,131 +50,155 @@ const xp = <T>(cases: T[]): T[] =>
 
 const ruleTester = new RuleTester();
 
-const missing = { messageId: 'missingLimit' as const };
-
-// ---------------------------------------------------------------------------
-// DECIDED BEHAVIOUR CHANGE (Ofri, 2026-11-23): a parser with NO `limit` is the
-// finding; ANY explicit `limit` is a deliberate choice and is never reported.
-//
-// Every case below was in this file before and is kept, with its verdict
-// flipped: the old "explicit limit above maxLimit reports" invalids are now
-// valid, and the old "LOCK: the 100kb default is not a finding" valids are now
-// invalid. `maxLimit` / `excessiveLimits` are accepted and ignored.
-// ---------------------------------------------------------------------------
 ruleTester.run(
   'require-express-body-parser-limits',
   requireExpressBodyParserLimits,
   {
     valid: xp([
-      // Reasonable and generous explicit limits are all deliberate choices
-      { code: `express.json({ limit: '100kb' })` },
-      { code: `express.urlencoded({ limit: '10kb', extended: true })` },
-      { code: `express.raw({ limit: '1mb' })` },
-      { code: `express.text({ limit: '50kb' })` },
-      { code: `bodyParser.json({ limit: '100kb' })` },
-      { code: `express.json({ limit: '1mb' })` },
-      { code: `express.json({ limit: '5mb' })` },
-      { code: `express.json({ limit: 102400 })` },
-      // Was invalid: an explicit limit above 5MB. Now a deliberate choice.
+      // ---------------------------------------------------------------
+      // LOCK: Express's own 100kb default is not "unbounded".
+      //
+      // Every one of these reported `missingLimit` before 2026-08-12 and
+      // every one is a body parser sitting on the documented default. Seven
+      // of seven corpus findings were this shape. If the missing-limit
+      // report ever comes back, this block goes red.
+      // ---------------------------------------------------------------
+      { name: 'the default limit', code: `express.json()` },
+      { code: `express.urlencoded()` },
+      { code: `express.raw()` },
+      { code: `express.text()` },
+      { code: `bodyParser.json()` },
+      { code: `express.json({ extended: true })` },
+      { code: `app.use(express.urlencoded({ extended: true }))` },
+      { code: `express.json({})` },
+      { code: `express.json({ type: 'application/json' })` },
+      { code: `express.json()`, filename: 'app.spec.ts' },
+      // With explicit limit
       {
-        name: 'a 100mb body limit is an explicit choice',
-        code: `express.json({ limit: '100mb' })`,
-      },
-      { code: `express.json({ limit: '50mb' })` },
-      { code: `express.json({ limit: '1gb' })` },
-      { code: `express.json({ limit: 52428800 })` },
-      { code: `bodyParser.raw({ limit: '1.5gb' })` },
-      { code: `express.text({ limit: ' 20 MB ' })` },
-      { code: `express.urlencoded({ limit: '99999999' })` },
-      {
-        name: "express's named parser export, imported or required",
-        code: `import { json } from 'express';
-const { urlencoded: form } = require('express');
-app.use(json({ limit: '50mb' }));
-app.use(form({ limit: '50mb', extended: true }));`,
+        code: `express.json({ limit: '100kb' })`,
       },
       {
-        name: 'a quoted or string-subscript `limit` key is still the option',
-        code: `const { ['urlencoded']: form } = require('express');
-app.use(form({ ['limit']: '50mb', extended: true }));
-app.use(express.json({ 'limit': '50mb' }));`,
+        code: `express.urlencoded({ limit: '10kb', extended: true })`,
       },
       {
-        name: 'a renamed body-parser import is still body-parser',
-        code: `import parsers from 'body-parser';
-app.use(parsers.json({ limit: '50mb' }));`,
+        code: `express.raw({ limit: '1mb' })`,
       },
-      // The retired options are accepted and have no effect
       {
-        code: `express.json({ limit: '10mb' })`,
-        options: [{ maxLimit: 1024, excessiveLimits: ['10mb'] }],
+        code: `express.text({ limit: '50kb' })`,
       },
+      // bodyParser pattern
+      {
+        code: `bodyParser.json({ limit: '100kb' })`,
+      },
+      // Reasonable limits
       {
         code: `express.json({ limit: '1mb' })`,
+      },
+      {
+        code: `express.json({ limit: '5mb' })`,
+      },
+      // Numeric spelling below the threshold
+      { code: `express.json({ limit: 102400 })` },
+      // A raised maxLimit accepts what the default would report
+      {
+        code: `express.json({ limit: '10mb' })`,
         options: [{ maxLimit: 20 * 1024 * 1024, excessiveLimits: [] }],
       },
       // Non-body parser calls - should be ignored
-      { code: `express.static('public')` },
-      { code: `express.Router()` },
       {
-        name: 'a computed `[limit]` key may carry the option, so the rule abstains',
+        code: `express.static('public')`,
+      },
+      {
+        code: `express.Router()`,
+      },
+      // Test file with allowInTests
+      {
+        name: 'a computed `[limit]` key names the variable, not the option',
         code: `const limit = 'inflate'; app.use(express.json({ [limit]: '50mb' }));`,
       },
       {
-        name: 'a test file is skipped when allowInTests is set',
         code: `express.json()`,
         filename: 'test.spec.ts',
         options: [{ allowInTests: true }],
       },
     ]),
     invalid: xp([
-      // Was valid under "LOCK: the 100kb default is not unbounded".
       {
-        name: 'no options: runs on the unstated 100kb default',
-        code: `express.json()`,
-        errors: [missing],
-      },
-      { code: `express.urlencoded()`, errors: [missing] },
-      { code: `express.raw()`, errors: [missing] },
-      { code: `express.text()`, errors: [missing] },
-      { code: `bodyParser.json()`, errors: [missing] },
-      { code: `express.json({ extended: true })`, errors: [missing] },
-      {
-        code: `app.use(express.urlencoded({ extended: true }))`,
-        errors: [missing],
-      },
-      { code: `express.json({})`, errors: [missing] },
-      { code: `express.json({ type: 'application/json' })`, errors: [missing] },
-      {
-        name: 'a spec file reports unless allowInTests is set',
-        code: `express.json()`,
-        filename: 'app.spec.ts',
-        errors: [missing],
-      },
-      {
-        name: "express's named parser export, imported or required, with no limit",
+        name: "express's named parser export, imported or required",
         code: `import { json } from 'express';
 const { urlencoded: form } = require('express');
-app.use(json());
-app.use(form({ extended: true }));`,
-        errors: [missing, missing],
+app.use(json({ limit: '50mb' }));
+app.use(form({ limit: '50mb', extended: true }));`,
+        errors: [
+          { messageId: 'excessiveLimit' },
+          { messageId: 'excessiveLimit' },
+        ],
       },
       {
-        name: 'a renamed body-parser import with no limit',
+        name: 'a quoted or string-subscript `limit` key is still the option',
+        code: `const { ['urlencoded']: form } = require('express');
+app.use(form({ ['limit']: '50mb', extended: true }));
+app.use(express.json({ 'limit': '50mb' }));`,
+        errors: [
+          { messageId: 'excessiveLimit' },
+          { messageId: 'excessiveLimit' },
+        ],
+      },
+      {
+        name: 'a renamed body-parser import is still body-parser',
         code: `import parsers from 'body-parser';
-app.use(parsers.json());`,
-        errors: [missing],
+app.use(parsers.json({ limit: '50mb' }));`,
+        errors: [{ messageId: 'excessiveLimit' }],
+      },
+      // Excessive limits
+      {
+        name: 'a 100mb body limit',
+        code: `express.json({ limit: '100mb' })`,
+        errors: [{ messageId: 'excessiveLimit' }],
       },
       {
-        name: 'a static key that is not `limit` leaves the limit unset',
-        code: `express.json({ 'inflate': false, ['strict']: true });`,
-        errors: [missing],
+        code: `express.json({ limit: '50mb' })`,
+        errors: [{ messageId: 'excessiveLimit' }],
       },
       {
-        name: 'the retired options do not suppress the finding',
-        code: `express.json()`,
-        options: [{ maxLimit: 1024 * 1024 * 1024, excessiveLimits: [] }],
-        errors: [missing],
+        code: `express.json({ limit: '1gb' })`,
+        errors: [{ messageId: 'excessiveLimit' }],
+      },
+      // ---------------------------------------------------------------
+      // LOCK: the numeric spelling. `limit: 52428800` is 50MB written the
+      // way a constant usually is, and the string-only comparison could
+      // not see it — a false negative for the whole life of the rule.
+      // ---------------------------------------------------------------
+      {
+        code: `express.json({ limit: 52428800 })`,
+        errors: [{ messageId: 'excessiveLimit' }],
+      },
+      // A decimal + unit still parses
+      {
+        code: `bodyParser.raw({ limit: '1.5gb' })`,
+        errors: [{ messageId: 'excessiveLimit' }],
+      },
+      // Whitespace and mixed case around the unit
+      {
+        code: `express.text({ limit: ' 20 MB ' })`,
+        errors: [{ messageId: 'excessiveLimit' }],
+      },
+      // A bare byte count with no unit
+      {
+        code: `express.urlencoded({ limit: '99999999' })`,
+        errors: [{ messageId: 'excessiveLimit' }],
+      },
+      // A lowered maxLimit reports what the default would accept
+      {
+        code: `express.json({ limit: '1mb' })`,
+        options: [{ maxLimit: 1024, excessiveLimits: [] }],
+        errors: [{ messageId: 'excessiveLimit' }],
+      },
+      // The named list still wins on its own, even under a huge maxLimit
+      {
+        code: `express.json({ limit: '10mb' })`,
+        options: [{ maxLimit: 1024 * 1024 * 1024, excessiveLimits: ['10mb'] }],
+        errors: [{ messageId: 'excessiveLimit' }],
       },
     ]),
   },
@@ -190,31 +214,41 @@ ruleTester.run(
     valid: xp([
       // bare call — callee is not a member expression
       { code: `json({ limit: '1mb' });` },
-      { code: `json();` },
       // deep member — object is not an identifier
       { code: `foo.bar.json();` },
       // object is neither express nor bodyParser
       { code: `myParser.json();` },
+      // computed property — not an identifier
+      { code: `express['json']();` },
       // property is not a body-parser method
       { code: `express.static('public');` },
       // options argument is not an object literal
       { code: `express.json(parserOptions);` },
-      // identifier / template / boolean / unparseable limit values are all explicit
+      // identifier limit value — not a literal, nothing to evaluate
       { code: `express.json({ limit: MAX_BODY });` },
+      // a template literal limit is a Literal-shaped value we cannot read
       { code: 'express.json({ limit: `${max}mb` });' },
+      // boolean literal in the limit slot — neither number nor string
       { code: `express.json({ limit: false });` },
+      // a string that `bytes` cannot parse
       { code: `express.json({ limit: 'huge' });` },
-      // spread element in the options object — may carry the limit
+      // spread element in the options object — no `limit` key found
       { code: `express.json({ ...defaults });` },
+      // reasonable string limit
       { code: `express.json({ limit: '100kb' });` },
-      // a string-subscript key still names `limit`
-      { code: `express.json({ ['limit']: '900mb' });` },
     ]),
     invalid: xp([
-      // a string-subscript method still names the parser
-      { code: `express['json']();`, errors: [missing] },
-      // only the first argument is the options object
-      { code: `express.json({ }, extra);`, errors: [missing] },
+      // a string-subscript key still names `limit`
+      {
+        code: `express.json({ ['limit']: '900mb' });`,
+        errors: [{ messageId: 'excessiveLimit' }],
+      },
+      // custom excessiveLimits matched case-insensitively
+      {
+        code: `express.json({ limit: '5GB' });`,
+        options: [{ excessiveLimits: ['5gb'] }],
+        errors: [{ messageId: 'excessiveLimit' }],
+      },
     ]),
   },
 );
