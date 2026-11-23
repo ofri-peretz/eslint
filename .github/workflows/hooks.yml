@@ -14,4 +14,4 @@ permissions:
 
 jobs:
   hookset:
-    uses: ofri-peretz/burgee/.github/workflows/hookset-check.yml@main
+    uses: ofri-peretz/burgee/.github/workflows/hookset-check.yml@hookset@0.1.0

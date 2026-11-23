@@ -34,8 +34,8 @@ function runsTests(words) {
     const head = i === start || LAUNCHERS.has(words[i - 1] ?? "");
     if (head && (RUNNERS.has(w) || RUNNERS.has(w.split("/").pop()))) return true;
     if (/^(npm|pnpm|yarn|bun)$/.test(w) && (next === "test" || next === "t")) return true;
-    if (/^(npm|pnpm|yarn|bun)$/.test(w) && next === "run" && /^(test|ci:local)([:\-].*)?$/.test(words[i + 2] ?? "")) return true;
-    if (w === "turbo" && next === "run" && words.slice(i + 2).some((x) => /^test([:\-].*)?$/.test(x))) return true;
+    if (/^(npm|pnpm|yarn|bun)$/.test(w) && next === "run" && /^(test|ci:local)([:-].*)?$/.test(words[i + 2] ?? "")) return true;
+    if (w === "turbo" && next === "run" && words.slice(i + 2).some((x) => /^test([:-].*)?$/.test(x))) return true;
     if (w === "node" && words.slice(i + 1).includes("--test")) return true;
     if ((w === "cargo" || w === "go") && next === "test") return true;
     if (w === "playwright" && next === "test") return true;
