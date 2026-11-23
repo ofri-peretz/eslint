@@ -36,17 +36,22 @@ rest_repo() {
 rest_view() {
   local r pr sha
   r=$(rest_repo)
-  pr=$(gh api "repos/$r/pulls/$PR")
+  pr=$(gh api "repos/$r/pulls/$PR") || exit 1
   sha=$(jq -r .head.sha <<<"$pr")
   jq -n \
     --argjson pr "$pr" \
-    --argjson runs "$(gh api "repos/$r/commits/$sha/check-runs?per_page=100" --jq '[.check_runs[] | {name, status: (.status | ascii_upcase), conclusion: ((.conclusion // "") | ascii_upcase)}]')" \
+    --argjson runs "$(gh api --paginate "repos/$r/commits/$sha/check-runs?per_page=100" --jq '.check_runs[] | {name, status: (.status | ascii_upcase), conclusion: ((.conclusion // "") | ascii_upcase)}' | jq -s .)" \
     --argjson statuses "$(gh api "repos/$r/commits/$sha/status" --jq '[.statuses[] | {context, state: (.state | ascii_upcase)}]')" \
     '{statusCheckRollup: ($runs + $statuses), mergeStateStatus: ($pr.mergeable_state | ascii_upcase), isDraft: $pr.draft, headRefName: $pr.head.ref}'
 }
-if ! json=$(gh ${repo[@]+"${repo[@]}"} pr view "$PR" --json statusCheckRollup,mergeStateStatus,isDraft 2>/dev/null); then
+if ! json=$(gh ${repo[@]+"${repo[@]}"} pr view "$PR" --json statusCheckRollup,mergeStateStatus,isDraft 2>&1); then
+  # Only an unreachable GraphQL earns the fallback. A wrong PR number or broken auth is reported as is.
+  if ! grep -qi graphql <<<"$json"; then
+    echo "$json" >&2
+    exit 1
+  fi
   rest=1
-  json=$(rest_view)
+  json=$(rest_view) || exit 1
 fi
 
 pending=$(jq -r "$WAIT_JQ" <<<"$json")
@@ -96,7 +101,8 @@ if [ -n "$rest" ]; then
   # above already refused every case where that bypass is not allowed.
   r=$(rest_repo)
   gh api -X PUT "repos/$r/pulls/$PR/merge" -f merge_method=squash >/dev/null
-  gh api -X DELETE "repos/$r/git/refs/heads/$(jq -r .headRefName <<<"$json")" >/dev/null || true
+  gh api -X DELETE "repos/$r/git/refs/heads/$(jq -r .headRefName <<<"$json")" >/dev/null 2>&1 ||
+    echo "pr-merge-gate: merged, but could not delete the head branch." >&2
   echo "pr-merge-gate: merged PR $PR."
   exit 0
 fi

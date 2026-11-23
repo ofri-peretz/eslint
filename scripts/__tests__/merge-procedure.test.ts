@@ -367,7 +367,7 @@ function runGateOverRest(
     [
       '#!/usr/bin/env bash',
       `echo "$*" >> "${calls}"`,
-      '[ "$1" = api ] || exit 1',
+      '[ "$1" = api ] || { echo "HTTP 403: GitHub GraphQL is not available" >&2; exit 1; }',
       'filter=.; file=""',
       'for a in "$@"; do case "$a" in */check-runs*) file=runs ;; */status) file=status ;; */pulls/42) file=pull ;; esac; done',
       'while [ $# -gt 0 ]; do [ "$1" = --jq ] && filter="$2"; shift; done',
@@ -392,10 +392,10 @@ function runGateOverRest(
   };
 }
 
-const restPull = (mergeable_state: string) => ({
+const restPull = (mergeable_state: string, draft = false) => ({
   head: { sha: 'abc', ref: 'feat/x' },
   mergeable_state,
-  draft: false,
+  draft,
 });
 
 describe('without GraphQL, the script judges the REST rollup the same way', () => {
@@ -457,5 +457,39 @@ describe('without GraphQL, the script judges the REST rollup the same way', () =
     );
     expect(run.status).toBe(1);
     expect(run.merges).toHaveLength(0);
+  });
+
+  it('says a pending draft needs to be marked ready', () => {
+    const run = runGateOverRest(
+      {
+        pull: restPull('blocked', true),
+        checkRuns: [{ name: 'Build', status: 'queued', conclusion: null }],
+        statuses: [],
+      },
+      '--merge',
+    );
+    expect(run.status).toBe(2);
+    expect(run.stderr).toContain('ready for review');
+  });
+});
+
+describe('only an unreachable GraphQL earns the REST fallback', () => {
+  it('reports any other gh failure and stops', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pr-merge-gate-err-'));
+    const fake = join(dir, 'gh');
+    writeFileSync(
+      fake,
+      '#!/usr/bin/env bash\necho "$*" >> "' +
+        join(dir, 'calls') +
+        '"\necho "no pull request found" >&2\nexit 1\n',
+    );
+    chmodSync(fake, 0o755);
+    const result = spawnSync('bash', [SCRIPT, '42'], {
+      encoding: 'utf8',
+      env: { ...process.env, PATH: `${dir}:${process.env.PATH}` },
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('no pull request found');
+    expect(readFileSync(join(dir, 'calls'), 'utf8')).not.toContain('api');
   });
 });
