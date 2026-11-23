@@ -3465,18 +3465,23 @@
     "conventions": [
       "analytics-event-naming",
       "consistent-existence-index-check",
+      "enforced-rule-in-prose",
       "expiring-todo-comments",
       "filename-case",
+      "guidance-budget",
       "no-commented-code",
       "no-console-spaces",
       "no-deprecated-api",
+      "no-duplicated-guidance",
       "no-json-schema-tags",
       "no-magic-numbers",
       "no-raw-cross-property-href",
       "prefer-code-point",
       "prefer-dependency-version-strategy",
       "prefer-dom-node-text-content",
+      "procedure-in-memory",
       "require-data-testid",
+      "subagent-declares-model",
       "utm-taxonomy"
     ],
     "drizzle-security": [
@@ -4038,6 +4043,12 @@
       "no-public-storage-bucket",
       "no-service-role-key-in-client",
       "require-auth-error-check"
+    ],
+    "test-integrity": [
+      "no-fixed-sleep",
+      "no-focused-test",
+      "no-test-retry",
+      "no-unexplained-skip"
     ],
     "typeorm-security": [
       "no-hardcoded-credentials",
