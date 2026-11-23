@@ -5,6 +5,17 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.8
+
+### Patch Changes
+
+- **🐛 Fix** — no-empty-named-blocks no longer autofixes a load-bearing import
+
+  An empty `import type {}` beside a same-file `declare module` is what
+  binds that block as an augmentation rather than a fresh ambient module.
+  Still reported, and still offered as a suggestion, but no longer
+  autofixed when a `declare module` for the same specifier exists.
+
 ## 4.1.7
 
 ### Patch Changes

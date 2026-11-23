@@ -5,6 +5,21 @@ All notable changes to `eslint-plugin-conventions` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 7.2.0
+
+### Minor Changes
+
+- **✨ Feature** — The guidance rules read a Claude Code plugin's subagents (`agents/*.md` beside `.claude-plugin/plugin.json`) as subagents, and the `guidance` preset lints `**/agents/*.md` for them. Before this, `subagent-declares-model` never saw a plugin's agents.
+
+### Patch Changes
+
+- **🐛 Fix** — The README says the `guidance` preset needs ESLint 9 or later: it runs on the `markdown/gfm` language, and ESLint 8 has no language plugins.
+- **🐛 Fix** — no-commented-code false positive on a label-like prose prefix
+
+  `Word:` followed by a run of bare words and a parenthetical aside (e.g.
+  `Always: scoped log statement (function-specific log group)`) read as
+  commented-out code.
+
 ## 7.1.0
 
 ### Minor Changes
