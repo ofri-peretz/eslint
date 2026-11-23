@@ -1691,13 +1691,20 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * to a type alias this same file declares as one — or `null` when the
      * type cannot be resolved this way.
      *
-     * Deliberately narrow, the same way `isProvablyArray` only reads a
-     * PARAMETER's own annotation or a never-reassigned `const`'s: a `let` can
-     * hold a wider value by the time it is read, and this file has no type
-     * checker to ask what a cast, `keyof typeof`, an enum member or a generic
-     * actually resolves to — so each of those comes back `null` and the
-     * access falls through to the existing checks, rather than being guessed
-     * at. github.com/ofri-peretz/eslint issue #1547 (second repro).
+     * Deliberately PARAMETER-only, not also a `const`'s own annotation the
+     * way `isProvablyArray` reads one: a `const`'s declared type is not
+     * checked against its initializer by anything in this file, so
+     * `const key: Status = req.body.action` (`req: any`) would be trusted at
+     * face value while its actual runtime value is attacker-controlled —
+     * TypeScript erases the annotation and never required the initializer to
+     * narrow this way once `any` is anywhere in the chain. A parameter is
+     * the function's own stated contract with its caller, the same boundary
+     * `isProvablyArray` trusts; reading a local `const`'s annotation instead
+     * reads what the code ASSERTS about a value, not what proves it. Caught
+     * by review on #1675. A `let`, a cast, `keyof typeof`, an enum member or
+     * a generic the type checker alone could resolve each still come back
+     * `null`, falling through to the existing checks rather than being
+     * guessed at. github.com/ofri-peretz/eslint issue #1547 (second repro).
      */
     const keyUnionLiteralMembers = (
       node: TSESTree.Node,
@@ -1706,30 +1713,52 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       const variable = resolvedReference(sourceCode.getScope(node), node);
       if (!variable || variable.defs.length !== 1) return null;
       const def = variable.defs[0];
-
-      let annotation: TSESTree.TypeNode | undefined;
-      if (def.type === 'Parameter') {
-        // A parameter's value is chosen by the caller; only its own
-        // annotation states what it is — same reasoning as `isProvablyArray`.
-        annotation = def.name.typeAnnotation?.typeAnnotation;
-      } else if (def.type === 'Variable') {
-        const declarator = def.node as TSESTree.VariableDeclarator;
-        if (declarator.id.type !== AST_NODE_TYPES.Identifier) return null;
-        // No annotation to trust past a `let`, which can be reassigned to
-        // anything the (erased) annotation still accepts syntactically.
-        if (def.parent.kind !== 'const') return null;
-        annotation = declarator.id.typeAnnotation?.typeAnnotation;
-      } else {
-        return null;
-      }
+      if (def.type !== 'Parameter') return null;
+      // A parameter's value is chosen by the caller; only its own annotation
+      // states what it is — same reasoning as `isProvablyArray`.
+      const annotation = def.name.typeAnnotation?.typeAnnotation;
       if (!annotation) return null;
 
       if (annotation.type === AST_NODE_TYPES.TSTypeReference) {
         const typeName = annotation.typeName;
         if (typeName.type !== AST_NODE_TYPES.Identifier) return null;
+        // A type parameter of the same name (`function f<Status>(...)`, or
+        // an enclosing generic) SHADOWS the module-level alias; resolving by
+        // name alone would hand back the alias's own union for a value the
+        // generic actually lets be anything its constraint allows. Caught by
+        // review on #1675.
+        if (isShadowedByTypeParameter(def.name, typeName.name)) return null;
         return typeAliasUnions.get(typeName.name) ?? null;
       }
       return stringLiteralUnionMembers(annotation);
+    };
+
+    /**
+     * Does a type parameter of this name shadow a module-level type alias,
+     * anywhere between `fromNode` and the file's root? Type-level scoping
+     * has no entry in ESLint's (runtime) scope manager, so this walks `.parent`
+     * by hand over the one place a type parameter can be declared: a
+     * function, class, interface or type alias's own `typeParameters` list.
+     */
+    const isShadowedByTypeParameter = (
+      fromNode: TSESTree.Node,
+      name: string,
+    ): boolean => {
+      let cur: TSESTree.Node | undefined = fromNode;
+      while (cur) {
+        const withTypeParams = cur as TSESTree.Node & {
+          typeParameters?: TSESTree.TSTypeParameterDeclaration;
+        };
+        if (
+          withTypeParams.typeParameters?.params.some(
+            (p) => p.name.name === name,
+          )
+        ) {
+          return true;
+        }
+        cur = cur.parent;
+      }
+      return false;
     };
 
     /**
@@ -1804,6 +1833,17 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     ): boolean => {
       const keyMembers = keyUnionLiteralMembers(propertyNode);
       if (keyMembers === null) return false;
+      // A union naming a POLLUTION_KEYS member is never trusted through this
+      // path, even when the table's own literal appears to declare it: a
+      // non-computed `{ __proto__: v }` sets the prototype rather than
+      // creating an own property of that name (so `closedObjectLiteralOwnKeys`
+      // reading it as one would be wrong), and an own `constructor` the table
+      // DOES declare can still be `delete`d or `Reflect.deleteProperty`d
+      // before this access runs, exposing the inherited one underneath.
+      // Caught by review on #1675.
+      for (const member of keyMembers) {
+        if (POLLUTION_KEYS.has(member)) return false;
+      }
       const objectKeys = closedObjectLiteralOwnKeys(objectNode);
       if (objectKeys === null) return false;
       for (const member of keyMembers) {
@@ -3769,12 +3809,20 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
          */
         typeAliasUnions = new Map<string, Set<string>>();
         for (const statement of sourceCode.ast.body) {
-          if (statement.type !== AST_NODE_TYPES.TSTypeAliasDeclaration) {
+          // `export type Status = …` wraps the alias in an
+          // ExportNamedDeclaration; unwrapping it is what makes this see the
+          // common, exported form of a module-level alias at all. Caught by
+          // review on #1675.
+          const declaration =
+            statement.type === AST_NODE_TYPES.ExportNamedDeclaration
+              ? statement.declaration
+              : statement;
+          if (declaration?.type !== AST_NODE_TYPES.TSTypeAliasDeclaration) {
             continue;
           }
-          const members = stringLiteralUnionMembers(statement.typeAnnotation);
+          const members = stringLiteralUnionMembers(declaration.typeAnnotation);
           if (members !== null) {
-            typeAliasUnions.set(statement.id.name, members);
+            typeAliasUnions.set(declaration.id.name, members);
           }
         }
       },

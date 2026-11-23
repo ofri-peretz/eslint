@@ -180,6 +180,15 @@ const COUNTS: Record<Status, number> = { ok: 0, fail: 0 };
 export function reset(status: Status) { COUNTS[status] = 0; }`,
       },
       {
+        // An EXPORTED alias is wrapped in an ExportNamedDeclaration; the scan
+        // that builds `typeAliasUnions` must unwrap it to see the alias at
+        // all (#1675 review).
+        name: 'an exported type alias is still resolved as the closed key union',
+        code: `export type Status = 'ok' | 'fail';
+const PAINT: Record<Status, (s: string) => string> = { ok: (s) => s, fail: (s) => s.toUpperCase() };
+export const paint = (status: Status, text: string): string => PAINT[status](text);`,
+      },
+      {
         name: 'an imported binding of any spelling is a module constant',
         code: `import { fieldName } from './fields';
 export function f(o, v) { o[fieldName] = v; }`,
@@ -233,6 +242,74 @@ export function f(o, v) { o[fieldName] = v; }`,
         code: `type Mixed = 'ok' | 1;
 const TABLE: Record<string, number> = { ok: 0 };
 export function f(m: Mixed) { TABLE[m] = 1; }`,
+        errors: reported,
+      },
+      {
+        // A `const` key's own declared type is NOT trusted — only a
+        // PARAMETER's is. A `const`'s initializer is never checked against
+        // the annotation, so an `any`-typed source (an untyped `req`, here)
+        // can hold anything at runtime whatever the annotation claims (#1675
+        // review: TypeScript erases the annotation and never required this
+        // to narrow).
+        name: "a const key's own annotation is not trusted — only a parameter's is",
+        code: `const TABLE = {
+  ok: (value: unknown) => value,
+  fail: (value: unknown) => value,
+};
+export function dispatch(req: any) {
+  const key: 'ok' | 'fail' = req.body.action;
+  return TABLE[key](req.body.payload);
+}`,
+        errors: reported,
+      },
+      {
+        // The function's OWN type parameter, also named `Status`, SHADOWS
+        // the module-level alias of the same name; resolving by name alone
+        // would hand back the alias's closed union for a value the generic
+        // actually lets be anything its constraint admits (#1675 review).
+        name: 'a same-named generic type parameter shadows the module-level alias',
+        code: `type Status = 'ok' | 'fail';
+const TABLE: Record<string, () => unknown> = { ok: () => 0, fail: () => 0 };
+export function dispatch<Status extends string>(status: Status) {
+  return TABLE[status]();
+}`,
+        errors: reported,
+      },
+      {
+        // The key's type admits `constructor`, which the table's own literal
+        // ALSO declares — but an own `constructor` can be removed later
+        // (`delete`, `Reflect.deleteProperty`), exposing the inherited one
+        // underneath. A pollution-key name is never trusted through this
+        // check, regardless of what the table appears to own (#1675 review).
+        name: 'a key type admitting constructor/__proto__/prototype is never trusted, even if the table owns it',
+        code: `type Key = 'constructor' | 'ok';
+const TABLE: Record<Key, number> = { constructor: 0, ok: 0 };
+export function f(k: Key) { TABLE[k] = 1; }`,
+        errors: reported,
+      },
+      {
+        // A non-computed `{ __proto__: v }` in an object literal sets the
+        // PROTOTYPE; it does not create an own property named `__proto__`.
+        // Reading it as one would let a `__proto__`-admitting key type pass
+        // the subset check it should never pass (#1675 review).
+        name: 'a literal __proto__ initializer is not an own property, so a key admitting it is never trusted',
+        code: `type Key = '__proto__' | 'ok';
+const TABLE: Record<Key, number> = { __proto__: {}, ok: 0 };
+export function f(k: Key) { TABLE[k] = 1; }`,
+        errors: reported,
+      },
+      {
+        name: 'an undeclared global table has no single definition to resolve',
+        code: `type Status = 'ok' | 'fail';
+export function f(status: Status) { TABLE[status] = 1; }`,
+        errors: reported,
+      },
+      {
+        name: 'a redeclared var table has more than one definition to resolve',
+        code: `type Status = 'ok' | 'fail';
+var TABLE = { ok: 0, fail: 0 };
+var TABLE = { ok: 0, fail: 0 };
+export function f(status: Status) { TABLE[status] = 1; }`,
         errors: reported,
       },
       {
