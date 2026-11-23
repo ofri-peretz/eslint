@@ -372,7 +372,7 @@
     "reliability/no-unsafe-type-narrowing": 25,
     "reliability/require-network-timeout": 6,
     "secure-coding/detect-non-literal-regexp": 56,
-    "secure-coding/detect-object-injection": 180,
+    "secure-coding/detect-object-injection": 179,
     "secure-coding/detect-weak-password-validation": 35,
     "secure-coding/no-bidi-characters": 11,
     "secure-coding/no-directive-injection": 98,

@@ -836,11 +836,17 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       node: TSESTree.Node,
       writtenObject: TSESTree.Node,
     ): boolean => {
-      // Only check for identifier keys (obj[key] where key is a variable)
-      if (propertyNode.type !== AST_NODE_TYPES.Identifier) {
+      // Only check for identifier keys (obj[key] where key is a variable). A TS
+      // type-only cast around the key — `WRITERS[kind as keyof typeof WRITERS]`,
+      // the canonical way to narrow a dispatch-table key to its own key union —
+      // is erased at compile time and is the same identifier underneath, so
+      // without unwrapping it first a hasOwn/includes guard on that identifier
+      // was never recognised. github.com/ofri-peretz/eslint issue #1547.
+      const unwrappedProperty = withoutTypeAnnotation(propertyNode);
+      if (unwrappedProperty.type !== AST_NODE_TYPES.Identifier) {
         return false;
       }
-      const keyName = propertyNode.name;
+      const keyName = unwrappedProperty.name;
 
       // AST-based validation detection (faster than getText + regex)
       const isIncludesCall = (testNode: TSESTree.Node): boolean => {
@@ -1611,8 +1617,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       const declarator = def.node as TSESTree.VariableDeclarator;
       // A destructured name binds a piece of the initializer, not the initializer.
       if (declarator.id.type !== AST_NODE_TYPES.Identifier) return false;
-      const init = declarator.init;
-      if (!init) return false;
+      const rawInit = declarator.init;
+      if (!rawInit) return false;
+      // `Object.create(null) as Record<string, number>` (or `satisfies`, or the
+      // `<T>x` assertion) is a TS type-only wrapper erased at compile time — the
+      // CallExpression beneath it is unchanged at runtime, so the cast form was
+      // reported while the bare `Object.create(null)` form above it was already
+      // silent. Same unwrap `isLocallyConstructed` already applies for the same
+      // reason. github.com/ofri-peretz/eslint issue #1573.
+      const init = withoutTypeAnnotation(rawInit);
 
       // Check for array spread: [...array]
       if (
