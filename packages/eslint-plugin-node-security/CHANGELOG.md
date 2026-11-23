@@ -5,6 +5,22 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.1.3
+
+### Patch Changes
+
+- **🐛 Fix** — Fix false positives found linting popular Node.js packages.
+
+  - `no-unsafe-buffer-alloc`: a buffer filled by `fs.read(fd, buf, 0, n, pos, (err, bytesRead) => buf.slice(0, bytesRead))` is recognised in the callback spelling, as the synchronous and promise spellings already were, provided the callback's third parameter (which aliases the whole buffer) is absent or never read; and `count === buf.byteLength ? buf : buf.subarray(0, count)` after a `readSync` hands out the whole buffer only on the arm where the read filled it. A callback that reads its third parameter, a callback that hands out the whole buffer, and the unmatched arm of the length test still report.
+  - `no-deprecated-buffer`: `new Buffer(...)` in the branch of a feature check that only a runtime without `Buffer.alloc` / `Buffer.allocUnsafe` / `Buffer.from` takes is not reported. The same call in the branch that runs where the API exists, behind an unrelated test, or with no check still reports.
+  - `no-buffer-overread`: the `noAssert` argument is recognised on `Buffer`'s numeric accessors only (`readUInt32LE`, `writeDoubleBE`, `readUIntBE`...). `writeFileTo(path, data, true)` is an `overwrite` flag, not `noAssert`.
+
+- **🐛 Fix** — Fix four false positives found linting popular Express/NestJS packages.
+
+  - `no-timing-unsafe-compare`: an auth-scheme word (`auth_scheme`, `scheme`) is a public header token, not a secret, and a value bound through a chained assignment (`var id = req.sessionID = read(req)`) is now read as coming from the request, so two client-held copies of one session id are no longer reported as a secret comparison. A real token or HMAC compared with `===` still reports.
+  - `no-arbitrary-file-access`: a hand-written prefix-containment guard (`(p + sep).substr(0, root.length) !== root`, or its `slice` / `substring` spelling, against a root that provably ends at a separator) is recognised like `startsWith`, and a reject block may log before it returns. An unguarded `readFile(req.query.path)` still reports.
+  - `detect-eval-with-expression`: a discarded `new vm.Script(source)` inside a `try` whose `catch` tests `instanceof SyntaxError` is a syntax probe, not code execution. A script that is kept, chained to `.runInContext`, or has no such handler still reports.
+
 ## 6.1.2
 
 ### Patch Changes
