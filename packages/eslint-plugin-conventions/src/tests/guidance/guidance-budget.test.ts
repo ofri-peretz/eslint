@@ -2,7 +2,9 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-import type { Rule } from 'eslint';
+import markdown from '@eslint/markdown';
+import { Linter, type Rule } from 'eslint';
+import { describe, expect, it } from 'vitest';
 
 import { guidanceBudget } from '../../rules/guidance/guidance-budget';
 import { markdownRuleTester } from './markdown-tester';
@@ -174,4 +176,26 @@ markdownRuleTester().run('guidance-budget', rule, {
       errors: [{ messageId: 'overBudget' }],
     },
   ],
+});
+
+describe('guidance-budget: a malformed ratchet file', () => {
+  it('names the file and the fix instead of throwing a bare SyntaxError', () => {
+    const broken = path.join(tmp, 'broken.json');
+    fs.writeFileSync(broken, '{ "CLAUDE.md": ');
+    const linter = new Linter();
+    expect(() =>
+      linter.verify(
+        '# x\n',
+        {
+          files: ['**/*.md'],
+          plugins: { markdown, local: { rules: { 'guidance-budget': rule } } },
+          language: 'markdown/gfm',
+          rules: {
+            'local/guidance-budget': ['error', { ratchetFile: broken }],
+          },
+        },
+        'CLAUDE.md',
+      ),
+    ).toThrow(/broken\.json is not valid JSON .*fix: repair it/);
+  });
 });

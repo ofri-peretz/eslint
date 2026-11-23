@@ -180,5 +180,12 @@ function lineOf(lines: readonly string[], prefix: string): number {
 function readRatchet(file: string): Ratchet {
   const text = readIfExists(file);
   if (text === null) return {};
-  return JSON.parse(text) as Ratchet;
+  try {
+    return JSON.parse(text) as Ratchet;
+  } catch (error) {
+    // A bare SyntaxError from inside a rule names neither the file nor the fix.
+    throw new Error(
+      `guidance-budget: ${file} is not valid JSON (${(error as Error).message}). fix: repair it, or delete it to fall back to the default budgets.`,
+    );
+  }
 }
