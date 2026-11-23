@@ -83,7 +83,9 @@ export default [conventions.configs.recommended];
 
 ### Agent guidance files
 
-The `guidance` preset lints agent guidance as Markdown. It needs
+The `guidance` preset lints agent guidance as Markdown. **It requires ESLint 9 or newer**: it
+declares `language: 'markdown/gfm'`, and languages do not exist in ESLint 8 (which rejects the
+key). `recommended` and the rules themselves are unaffected on ESLint 8. It also needs
 [`@eslint/markdown`](https://github.com/eslint/markdown) registered as the `markdown` plugin:
 
 ```js

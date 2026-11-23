@@ -84,6 +84,123 @@ interface RuleCase {
 
 const requireBuilt = process.argv.includes('--require-built');
 
+/** Language prefix (`markdown` in `markdown/gfm`) → package supplying it. */
+const LANGUAGE_PLUGIN_PACKAGES: Readonly<Record<string, string>> = {
+  markdown: '@eslint/markdown',
+};
+
+/** A concrete, lintable path matching a `files` glob (`**\/CLAUDE.md` → `CLAUDE.md`). */
+function concretizeGlob(glob: string): string {
+  return glob
+    .replace(/^\*\*\//, '')
+    .replace(/\*\*\//g, 'probe/')
+    .replace(/\*/g, 'probe');
+}
+
+const PROBE_TEXT: Readonly<Record<string, string>> = {
+  markdown: '# Probe\n\nA line of guidance.\n',
+};
+
+type LanguageOutcome = 'pass' | 'fail' | 'skip';
+
+async function verifyLanguagePreset(
+  name: string,
+  preset: string,
+  blocks: Record<string, unknown>[],
+  eslintMajor: number,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ESLint: any,
+): Promise<LanguageOutcome> {
+  const where = `${name} → configs.${preset}`;
+  const block = blocks.find((c) => typeof c.language === 'string') as Record<
+    string,
+    unknown
+  >;
+  const language = block.language as string;
+  if (eslintMajor < 9) {
+    console.log(
+      `  ⏭ ${where}: SKIPPED — requires ESLint >= 9: declares language "${language}" (eslint@${eslintMajor} has no languages)`,
+    );
+    return 'skip';
+  }
+  const prefix = language.split('/')[0];
+  const pkg = LANGUAGE_PLUGIN_PACKAGES[prefix];
+  if (pkg === undefined) {
+    console.error(
+      `✗ ${where}: declares language "${language}" but this script has no plugin registered for "${prefix}" — cannot verify`,
+    );
+    return 'fail';
+  }
+  const files = (block.files ?? []) as unknown[];
+  const glob = files.find((f): f is string => typeof f === 'string');
+  if (glob === undefined) {
+    console.error(
+      `✗ ${where}: language preset has no string \`files\` — cannot pick a probe path`,
+    );
+    return 'fail';
+  }
+  try {
+    const mod = await import(pathToFileURL(repoRequire.resolve(pkg)).href);
+    const languagePlugin = mod.default ?? mod;
+    const probePath = concretizeGlob(glob);
+    const eslint = new ESLint({
+      overrideConfigFile: true,
+      overrideConfig: [{ plugins: { [prefix]: languagePlugin } }, ...blocks],
+    });
+    const results = await eslint.lintText(PROBE_TEXT[prefix] ?? '', {
+      filePath: probePath,
+    });
+    if (results.length !== 1) {
+      console.error(
+        `✗ ${where}: expected 1 lint result for ${probePath}, got ${results.length}`,
+      );
+      return 'fail';
+    }
+    const messages = results[0].messages as {
+      ruleId: string | null;
+      message: string;
+      fatal?: boolean;
+    }[];
+    const bad = messages.find(
+      (m) =>
+        m.fatal === true || (m.ruleId === null && /ignored/i.test(m.message)),
+    );
+    if (bad !== undefined) {
+      console.error(
+        `✗ ${where}: probe ${probePath} was ignored or failed to parse — ${bad.message}`,
+      );
+      return 'fail';
+    }
+    const resolved = (await eslint.calculateConfigForFile(probePath)) as {
+      language?: unknown;
+      rules?: Record<string, unknown>;
+    };
+    // ESLint resolves the `prefix/name` string to the plugin's Language object.
+    const expectedLanguage = languagePlugin.languages?.[language.split('/')[1]];
+    if (
+      expectedLanguage === undefined ||
+      resolved.language !== expectedLanguage
+    ) {
+      console.error(
+        `✗ ${where}: probe ${probePath} did not resolve language "${language}"`,
+      );
+      return 'fail';
+    }
+    const expected = blocks.flatMap((c) => Object.keys(c.rules ?? {}));
+    const missing = expected.filter((r) => resolved.rules?.[r] === undefined);
+    if (missing.length > 0) {
+      console.error(
+        `✗ ${where}: rules did not resolve for ${probePath}: ${missing.join(', ')}`,
+      );
+      return 'fail';
+    }
+    return 'pass';
+  } catch (err) {
+    console.error(`✗ ${where}: ${(err as Error).message.split('\n')[0]}`);
+    return 'fail';
+  }
+}
+
 async function main(): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const eslintMod: any = repoRequire('eslint');
@@ -161,6 +278,7 @@ async function main(): Promise<void> {
   }
 
   let failures = 0;
+  let skipped = 0;
 
   if (unbuilt.length) {
     const msg = `  ${unbuilt.length} published plugin(s) have no built dist/: ${unbuilt.join(', ')}`;
@@ -225,17 +343,37 @@ async function main(): Promise<void> {
   // rule→plugin reference (a bare `{ plugins, rules }` preset is otherwise
   // "File ignored" and never resolved). This is the lock that catches the
   // plugin-key ↔ rule-prefix mismatch in a BUILT artifact.
+  //
+  // A preset that declares a non-JS `language` (e.g. the Markdown `guidance`
+  // preset) cannot be probed with JS source. It is verified on its own terms:
+  // ESLint >= 9 only (languages do not exist in 8 — logged skip, never a
+  // silent pass), the plugin that supplies the language is registered, and a
+  // probe in that language is linted on a path matching the preset's OWN
+  // `files`, which must not be ignored and must resolve every preset rule.
   for (const { name, preset, config } of presetCases) {
-    const presetBlocks = (Array.isArray(config) ? config : [config]).map(
-      (c) => {
-        const {
-          files: _files,
-          ignores: _ignores,
-          ...rest
-        } = c as Record<string, unknown>;
-        return rest;
-      },
+    const blocks = (Array.isArray(config) ? config : [config]) as Record<
+      string,
+      unknown
+    >[];
+    const languageBlock = blocks.find(
+      (c) => typeof c.language === 'string' && c.language !== 'js/js',
     );
+    if (languageBlock !== undefined) {
+      const outcome = await verifyLanguagePreset(
+        name,
+        preset,
+        blocks,
+        eslintMajor,
+        ESLint,
+      );
+      if (outcome === 'fail') failures += 1;
+      else if (outcome === 'skip') skipped += 1;
+      continue;
+    }
+    const presetBlocks = blocks.map((c) => {
+      const { files: _files, ignores: _ignores, ...rest } = c;
+      return rest;
+    });
     const overrideConfig = [
       { files: ['**/*.{js,jsx,ts,tsx,cjs,mjs}'] },
       ...presetBlocks,

@@ -40,6 +40,7 @@ Snapshot from `benchmark-results/eslint-version-stats.json` (refreshed 2026-05-0
 
 - Required `peerDependencies` per package: `"eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"`
 - Required benchmark matrix: `[v8, v9, v10]`
+- Presets that declare a non-JS `language` (today: `eslint-plugin-conventions` `configs.guidance`, Markdown) need ESLint >= 9, because languages arrived in v9. `scripts/verify-dist-integrity.ts` logs an explicit skip for them under v8 and verifies them under v9/v10 with the language plugin registered and a probe on the preset's own `files`.
 - v10 is currently below the 20% gate but covered by the forward-looking exception. Re-evaluate at each refresh — once v10 crosses the gate and v8 falls below it on two consecutive refreshes, v8 becomes a deprecation candidate.
 
 #### Why the v8 floor is 8.40, not 8.0
