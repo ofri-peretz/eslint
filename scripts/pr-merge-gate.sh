@@ -6,11 +6,14 @@
 #
 # Exit codes: 0 ok · 1 refused (a check is not SUCCESS, or the branch is BEHIND/DIRTY) · 2 still pending.
 # It asks GitHub once and never loops. Wait first with `gh pr checks <PR> --watch`.
-# Locked by scripts/__tests__/merge-procedure.test.ts, which runs it against a fake `gh`.
+# Locked in ofri-peretz/eslint by scripts/__tests__/merge-procedure.test.ts, which runs it against a fake `gh`.
 
 set -euo pipefail
 
-REPO="${PR_MERGE_GATE_REPO:-ofri-peretz/eslint}"
+# gh infers the repo from the checkout; PR_MERGE_GATE_REPO=owner/name overrides it. Same file in every
+# Interlace repo.
+repo=()
+if [ -n "${PR_MERGE_GATE_REPO:-}" ]; then repo=(-R "$PR_MERGE_GATE_REPO"); fi
 PR="${1:?usage: scripts/pr-merge-gate.sh <PR> [--merge]}"
 MODE="${2:-}"
 
@@ -22,7 +25,7 @@ MODE="${2:-}"
 WAIT_JQ='[.statusCheckRollup[]? | select((.conclusion // .state // .status // "") as $s | $s == "IN_PROGRESS" or $s == "PENDING" or $s == "QUEUED" or $s == "")] | length'
 GATE_JQ='[.statusCheckRollup[]? | select((.conclusion // .state // .status // "UNREPORTED") as $s | $s != "SUCCESS" and $s != "SKIPPED" and $s != "NEUTRAL") | "\(.conclusion // .state // .status // "UNREPORTED")  \(.name // .context)"] | .[]'
 
-json=$(gh -R "$REPO" pr view "$PR" --json statusCheckRollup,mergeStateStatus,isDraft)
+json=$(gh ${repo[@]+"${repo[@]}"} pr view "$PR" --json statusCheckRollup,mergeStateStatus,isDraft)
 
 pending=$(jq -r "$WAIT_JQ" <<<"$json")
 if [ "$pending" != "0" ]; then
@@ -66,4 +69,4 @@ esac
 
 echo "pr-merge-gate: every check on PR $PR is SUCCESS (mergeStateStatus $state)."
 [ "$MODE" = "--merge" ] || exit 0
-gh -R "$REPO" pr merge "$PR" --squash --delete-branch ${admin[@]+"${admin[@]}"}
+gh ${repo[@]+"${repo[@]}"} pr merge "$PR" --squash --delete-branch ${admin[@]+"${admin[@]}"}

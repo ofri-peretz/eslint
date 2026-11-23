@@ -252,7 +252,7 @@ function runGate(view: object, mode?: '--merge') {
   const fake = join(dir, 'gh');
   writeFileSync(
     fake,
-    `#!/usr/bin/env bash\necho "$*" >> "${calls}"\ncase "$*" in *" pr view "*) cat "${dir}/view.json" ;; esac\n`,
+    `#!/usr/bin/env bash\necho "$*" >> "${calls}"\ncase "$*" in *"pr view"*) cat "${dir}/view.json" ;; esac\n`,
   );
   chmodSync(fake, 0o755);
   const result = spawnSync('bash', [SCRIPT, '42', ...(mode ? [mode] : [])], {
@@ -262,7 +262,7 @@ function runGate(view: object, mode?: '--merge') {
   const merges = existsSync(calls)
     ? readFileSync(calls, 'utf8')
         .split('\n')
-        .filter((l) => l.includes(' pr merge '))
+        .filter((l) => l.includes('pr merge'))
     : [];
   return { status: result.status, stderr: result.stderr, merges };
 }
