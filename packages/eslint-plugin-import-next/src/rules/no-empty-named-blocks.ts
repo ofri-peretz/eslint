@@ -77,6 +77,32 @@ export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
               `import ${context.sourceCode.text.slice(source.range[0], node.range[1])}`,
             );
     };
+    /**
+     * Specifiers named by a `declare module '…'` ambient block anywhere in
+     * the file. An empty `import type {} from 'm'` beside `declare module
+     * 'm' { … }` is what makes TypeScript bind that block as an
+     * AUGMENTATION of `m` rather than a fresh ambient module, under
+     * Node16/NodeNext resolution — a compile-time effect `keepSideEffect`'s
+     * "a type-only statement loads nothing" reasoning does not cover (#1552).
+     */
+    let declaredModules: ReadonlySet<string> | undefined;
+    const declaredModuleSpecifiers = (): ReadonlySet<string> => {
+      if (declaredModules === undefined) {
+        const found = new Set<string>();
+        for (const stmt of context.sourceCode.ast.body) {
+          if (
+            stmt.type === 'TSModuleDeclaration' &&
+            stmt.id.type === 'Literal' &&
+            typeof stmt.id.value === 'string'
+          ) {
+            found.add(stmt.id.value);
+          }
+        }
+        declaredModules = found;
+      }
+      return declaredModules;
+    };
+
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         // Check if this import has empty named imports: import {} from 'foo'
@@ -104,10 +130,20 @@ export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
           // Braces with no specifier in them sit alone or after a default
           // binding (`import * as ns, {}` is not valid syntax).
           if (!hasDefaultImport) {
+            const augmentsDeclaredModule =
+              node.importKind === 'type' &&
+              typeof node.source.value === 'string' &&
+              declaredModuleSpecifiers().has(node.source.value);
             context.report({
               node,
               messageId: 'emptyNamedBlock',
-              fix: keepSideEffect(node, node.source),
+              // Not autofixed when removing it would silently stop a
+              // `declare module` block elsewhere in the file from binding
+              // as an augmentation; the suggestion stays available as an
+              // explicit choice.
+              ...(augmentsDeclaredModule
+                ? {}
+                : { fix: keepSideEffect(node, node.source) }),
               suggest: [
                 {
                   messageId: 'suggestRemove',
