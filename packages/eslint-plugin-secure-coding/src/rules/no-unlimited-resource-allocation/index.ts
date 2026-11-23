@@ -1346,9 +1346,14 @@ export const noUnlimitedResourceAllocation = createRule<
           if (argument.type === AST_NODE_TYPES.Identifier) {
             const variable = variableOf(argument);
             const definition = variable?.defs[0];
+            // A plain `const opts = { ... }` that is never written again. A
+            // destructured name holds a PART of its source, not the source, and
+            // a reassigned one may no longer hold the literal that was read.
             object =
               variable?.defs.length === 1 &&
-              definition?.node.type === AST_NODE_TYPES.VariableDeclarator
+              definition?.node.type === AST_NODE_TYPES.VariableDeclarator &&
+              definition.node.id.type === AST_NODE_TYPES.Identifier &&
+              variable.references.filter((ref) => ref.isWrite()).length === 1
                 ? (definition.node.init ?? undefined)
                 : undefined;
           }
@@ -1396,11 +1401,14 @@ export const noUnlimitedResourceAllocation = createRule<
          */
         const handedToLimitedConsumer = (
           variable: TSESLint.Scope.Variable,
+          createdAt: number,
         ): boolean =>
           variable.references.some((reference) => {
             const call = reference.identifier.parent;
             return (
               call?.type === AST_NODE_TYPES.CallExpression &&
+              // A consumer that ran before the stream existed bounds another one.
+              call.range[0] >= createdAt &&
               call.arguments.some(
                 (argument) => argument === reference.identifier,
               ) &&
@@ -1420,7 +1428,9 @@ export const noUnlimitedResourceAllocation = createRule<
          */
         const limitedDownstream = (): boolean => {
           const holder = holderOf(node);
-          if (holder !== null) return handedToLimitedConsumer(holder);
+          if (holder !== null) {
+            return handedToLimitedConsumer(holder, node.range[1]);
+          }
 
           if (node.parent?.type !== AST_NODE_TYPES.ReturnStatement)
             return false;
@@ -1438,7 +1448,13 @@ export const noUnlimitedResourceAllocation = createRule<
                 )[0] as TSESLint.Scope.Variable)
               : null;
           if (variable === null) return false;
-          const calls = variable.references
+          // Every use of the factory must be a plain call. `const alias = make`
+          // or `register(make)` hands out a second way to build the stream that
+          // no limited consumer is shown to read.
+          const uses = variable.references.filter(
+            (reference) => !reference.init,
+          );
+          const calls = uses
             .map((reference) => reference.identifier.parent)
             .filter(
               (parent): parent is TSESTree.CallExpression =>
@@ -1448,9 +1464,13 @@ export const noUnlimitedResourceAllocation = createRule<
             );
           return (
             calls.length > 0 &&
+            calls.length === uses.length &&
             calls.every((call) => {
               const stored = holderOf(call);
-              return stored !== null && handedToLimitedConsumer(stored);
+              return (
+                stored !== null &&
+                handedToLimitedConsumer(stored, call.range[1])
+              );
             })
           );
         };

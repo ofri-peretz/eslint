@@ -541,43 +541,110 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    /** Does anything write to this variable after its declaration? */
+    const hasLaterWrites = (variable: TSESLint.Scope.Variable): boolean =>
+      variable.references.some(
+        (reference) => reference.isWrite() && !reference.init,
+      );
+
+    /**
+     * Is this a call to one of `node:path`'s own functions: `path.normalize(x)`
+     * or `normalize(x)` imported / required from `path`? A local function that
+     * happens to be called `normalize` says nothing about its result.
+     */
+    /** `path`, `require('path')` or `require('node:path')`. */
+    const isPathModule = (node: TSESTree.Node): boolean =>
+      (node.type === AST_NODE_TYPES.Identifier && node.name === 'path') ||
+      (node.type === AST_NODE_TYPES.CallExpression &&
+        node.callee.type === AST_NODE_TYPES.Identifier &&
+        node.callee.name === 'require' &&
+        ['path', 'node:path'].includes(
+          String(
+            node.arguments[0]?.type === AST_NODE_TYPES.Literal
+              ? node.arguments[0].value
+              : '',
+          ),
+        ));
+
+    /**
+     * `var normalize = path.normalize` — a name bound once, and never again,
+     * to a member of the path module.
+     */
+    const isPathAlias = (
+      callee: TSESTree.Identifier,
+      names: readonly string[],
+    ): boolean => {
+      const variable = resolve(callee);
+      if (variable === null || hasLaterWrites(variable)) return false;
+      const init = bindings.get(variable);
+      return (
+        init?.type === AST_NODE_TYPES.MemberExpression &&
+        isPathModule(init.object) &&
+        names.includes(propertyName(init) ?? '')
+      );
+    };
+
+    /**
+     * `isSeparatorAnchored`, plus a `sep` bound once to `path.sep`
+     * (`var sep = path.sep`), which is how the path module is usually read.
+     */
+    const isAnchoredExpression = (node: TSESTree.Node): boolean =>
+      isSeparatorAnchored(node, sourceCode) ||
+      (node.type === AST_NODE_TYPES.Identifier && isPathAlias(node, ['sep']));
+
+    const isPathCall = (
+      node: TSESTree.Node,
+      names: readonly string[],
+    ): node is TSESTree.CallExpression =>
+      node.type === AST_NODE_TYPES.CallExpression &&
+      ((node.callee.type === AST_NODE_TYPES.MemberExpression &&
+        isPathModule(node.callee.object) &&
+        names.includes(propertyName(node.callee) ?? '')) ||
+        (node.callee.type === AST_NODE_TYPES.Identifier &&
+          isPathAlias(node.callee, names)) ||
+        isModuleBinding(node.callee, sourceCode.getScope(node.callee), 'path', [
+          ...names,
+        ]));
+
     /**
      * Is `root` a path that provably ends at a separator?
      *
-     * Read straight off the expression, or one hop through a binding and the
-     * `normalize()` / `resolve()` calls that wrap it:
-     * `const root = normalize(resolve(dir) + sep)`. An anchor that cannot be
-     * read is not an anchor, for the reason `isSeparatorAnchored` gives.
+     * Read straight off the expression, or one hop through a binding and a
+     * `normalize()` call that wraps it:
+     * `const root = normalize(resolve(dir) + sep)`. `resolve()` alone is NOT
+     * an anchor: it strips a trailing separator (`path.resolve('/safe/')` is
+     * `'/safe'`), so only a separator appended after it counts. An anchor that
+     * cannot be read is not an anchor, for the reason `isSeparatorAnchored`
+     * gives.
      */
-    /** `normalize` for both `normalize(x)` and `path.normalize(x)`. */
-    const trailingName = (callee: TSESTree.Node): string =>
-      callee.type === AST_NODE_TYPES.Identifier
-        ? callee.name
-        : callee.type === AST_NODE_TYPES.MemberExpression
-          ? (propertyName(callee) ?? '')
-          : '';
-
     function isAnchoredRoot(root: TSESTree.Node, depth = 0): boolean {
       if (depth > 3) return false;
-      if (isSeparatorAnchored(root, sourceCode)) return true;
+      if (isAnchoredExpression(root)) return true;
       if (root.type === AST_NODE_TYPES.Identifier) {
         const variable = resolve(root);
-        // One write only: a root that is reassigned is not the root that was
-        // read here.
-        if (variable === null || assignedValues(variable).length > 0) {
-          return false;
-        }
+        // One write only: a root that is reassigned, by any assignment form,
+        // is not the root that was read here.
+        if (variable === null || hasLaterWrites(variable)) return false;
         const init = bindings.get(variable);
         return init !== undefined && isAnchoredRoot(init, depth + 1);
       }
-      if (
-        root.type === AST_NODE_TYPES.CallExpression &&
-        root.arguments.length === 1 &&
-        ['normalize', 'resolve'].includes(trailingName(root.callee))
-      ) {
+      if (isPathCall(root, ['normalize']) && root.arguments.length === 1) {
         return isAnchoredRoot(root.arguments[0] as TSESTree.Node, depth + 1);
       }
       return false;
+    }
+
+    /**
+     * Was this variable produced by `normalize` / `resolve` / `join`, and never
+     * written again? A prefix test on a path that still carries `..` segments
+     * proves nothing: `/root/../etc` starts with `/root/`.
+     */
+    function isNormalizedPath(variable: TSESLint.Scope.Variable): boolean {
+      if (hasLaterWrites(variable)) return false;
+      const init = bindings.get(variable);
+      return (
+        init !== undefined && isPathCall(init, ['normalize', 'resolve', 'join'])
+      );
     }
 
     /**
@@ -618,14 +685,20 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         return false;
       }
       const subject = test.left.callee.object;
-      const guarded =
+      // `(p + sep)` appends a separator so `p` equal to the root still
+      // matches; the appended operand must BE a separator, or any suffix
+      // would be accepted.
+      const appended =
         subject.type === AST_NODE_TYPES.BinaryExpression &&
-        subject.operator === '+'
-          ? subject.left
-          : subject;
+        subject.operator === '+';
+      if (appended && !isAnchoredExpression(subject.right)) {
+        return false;
+      }
+      const guarded = appended ? subject.left : subject;
       return (
         guarded.type === AST_NODE_TYPES.Identifier &&
         resolve(guarded) === variable &&
+        isNormalizedPath(variable) &&
         isAnchoredRoot(test.right)
       );
     }

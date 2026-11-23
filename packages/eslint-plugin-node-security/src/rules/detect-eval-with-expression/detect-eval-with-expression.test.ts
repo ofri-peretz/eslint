@@ -95,6 +95,7 @@ describe('detect-eval-with-expression', () => {
         valid: [],
         invalid: [
           {
+            name: 'an arrow function that evaluates its parameter is reported',
             code: 'const runner = (code) => eval(code);',
             errors: [{ messageId: 'strategyRefactor' }],
           },

@@ -49,6 +49,12 @@ ruleTester.run('a syntax probe is not an execution', detectEvalWithExpression, {
   ],
   invalid: [
     {
+      name: 'a SyntaxError class declared in the file is not the built-in',
+      code: "import { Script } from 'vm'; class SyntaxError extends Error {} function run(src) { try { new Script(src); } catch (e) { if (e instanceof SyntaxError) return; } }",
+      errors: [{ messageId: 'vmCodeExecution' }],
+    },
+
+    {
       name: 'a discarded script with no SyntaxError handler is not shown to be a probe',
       code: "import { Script } from 'vm'; function run(userInput) { try { new Script(userInput); } catch (e) { log(e); } }",
       errors: [{ messageId: 'vmCodeExecution' }],

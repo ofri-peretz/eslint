@@ -81,12 +81,73 @@ ruleTester.run(
           const stream = make();
           getBody(stream, { maxSize: options.max }, next);
         }
-        register(make);
-        module.exports = make;
       `,
       },
     ],
     invalid: [
+      {
+        name: 'a second way to reach the factory (an alias) is not shown to be limited',
+        code: `
+        const zlib = require('zlib');
+        function make() { return zlib.createGunzip(); }
+        function read(req, options, next) {
+          const bounded = make();
+          getBody(bounded, { limit: options.limit }, next);
+          const alias = make;
+          const unchecked = alias();
+          req.pipe(unchecked).pipe(res);
+        }
+      `,
+        errors: fileOps,
+      },
+      {
+        name: 'a factory passed on as a value is not only called',
+        code: `
+        const zlib = require('zlib');
+        const make = () => { return zlib.createGunzip(); };
+        function read(req, options, next) {
+          const stream = make();
+          getBody(stream, { limit: options.limit }, next);
+        }
+        register(make);
+      `,
+        errors: fileOps,
+      },
+      {
+        name: 'a consumer that ran before the stream existed bounds another stream',
+        code: `
+        const zlib = require('zlib');
+        function read(req, options, next) {
+          let stream = req;
+          getBody(stream, { limit: options.limit }, next);
+          stream = zlib.createGunzip();
+          req.pipe(stream).pipe(res);
+        }
+      `,
+        errors: fileOps,
+      },
+      {
+        name: 'options reassigned after the literal no longer carry the limit',
+        code: factory(
+          'let opts = { limit: 1 }; opts = makeOptions(); getBody(stream, opts, next);',
+        ),
+        errors: fileOps,
+      },
+      {
+        name: 'options assigned after an empty declaration have no initializer to read',
+        code: factory(
+          'let opts; opts = { limit: 1 }; getBody(stream, opts, next);',
+        ),
+        errors: fileOps,
+      },
+      {
+        name: 'a destructured name holds a part of its source, not the options object',
+        code: factory(
+          'const { inner } = { limit: 1 }; getBody(stream, inner, next);',
+        ),
+        errors: fileOps,
+      },
+
       {
         name: 'the options are declared and never given a value',
         code: factory('let opts; getBody(stream, opts, next);'),

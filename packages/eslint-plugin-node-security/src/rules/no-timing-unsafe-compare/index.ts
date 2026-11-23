@@ -375,6 +375,14 @@ function memberRoot(node: TSESTree.Node): TSESTree.Identifier | null {
   return current.type === AST_NODE_TYPES.Identifier ? current : null;
 }
 
+/** The value an assignment expression evaluates to: `a = b = v` is `v`. */
+function assignedValue(node: TSESTree.AssignmentExpression): TSESTree.Node {
+  let value: TSESTree.Node = node.right;
+  while (value.type === AST_NODE_TYPES.AssignmentExpression)
+    value = value.right;
+  return value;
+}
+
 /**
  * Are both operands readings of the SAME value?
  *
@@ -873,6 +881,11 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       const bare = unwrapTypeSyntax(node);
       if (bare !== node) return isServerDerived(bare, visited);
 
+      // `const stored = req.cache = await store.get()` holds what the store
+      // returned, whatever slot it was also written to.
+      if (node.type === AST_NODE_TYPES.AssignmentExpression) {
+        return isServerDerived(assignedValue(node), visited);
+      }
       if (node.type === AST_NODE_TYPES.AwaitExpression) return true;
       if (containsCryptoDerivation(node)) return true;
       if (node.type === AST_NODE_TYPES.MemberExpression) {
@@ -1262,14 +1275,27 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         // attacker input against a server secret (`expressjs/session`
         // `index.js:466`). Followed here, not in the shared reader, because
         // sixteen other rules read taint through it.
+        //
+        // The VALUE is read, never the destination: `const x = req.cache =
+        // await store.get()` stores a server value in a request-looking slot,
+        // and calling `x` a request read would hide a real comparison.
+        // Only a binding written once counts, so a later write cannot make
+        // the initializer a stale answer.
         readsUntrusted = (node) => {
           if (readsRequest(node)) return true;
           const bare = unwrapTypeSyntax(node);
           if (bare.type !== AST_NODE_TYPES.Identifier) return false;
+          const variable = findVariable(sourceCode, bare);
+          if (
+            variable === null ||
+            variable.references.filter((ref) => ref.isWrite()).length !== 1
+          ) {
+            return false;
+          }
           const init = bindingInit(sourceCode, bare);
           return (
             init?.type === AST_NODE_TYPES.AssignmentExpression &&
-            (readsRequest(init.left) || readsRequest(init.right))
+            readsRequest(assignedValue(init))
           );
         };
         // A short pattern matches on word boundaries, a long one anywhere (see

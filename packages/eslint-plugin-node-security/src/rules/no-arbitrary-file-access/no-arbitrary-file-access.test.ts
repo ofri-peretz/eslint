@@ -31,7 +31,10 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
       name: 'a path variable traced to no request is not user input',
       code: 'fs.readFile(userFile, cb)',
     },
-    'fs.readdirSync(scanPath)',
+    {
+      name: 'a directory listing of a variable traced to no request is not user input',
+      code: 'fs.readdirSync(scanPath)',
+    },
     'fs.writeFileSync(destPath, content)',
     // A local bound to something visible that is NOT a request.
     {

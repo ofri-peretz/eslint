@@ -93,7 +93,10 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
         // Same for `category` — `secretCategory` is a classification label the
         // program assigns, not a value an attacker guesses a byte at a time.
         // Removing `category` makes this report on the `secret` pattern.
-        "if (secretCategory === 'rotating') { return; }",
+        {
+          name: 'a classification label is not a secret even when it contains the word secret',
+          code: "if (secretCategory === 'rotating') { return; }",
+        },
         // An existence check is not a secret comparison — there is no
         // attacker-supplied operand, so there is nothing to time. Measured: the
         // rule fired on `if (firstKey !== undefined)` in a plain object walk.

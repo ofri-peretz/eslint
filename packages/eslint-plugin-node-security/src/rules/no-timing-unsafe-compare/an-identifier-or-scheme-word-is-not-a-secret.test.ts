@@ -49,6 +49,15 @@ ruleTester.run(
       `,
       },
       {
+        name: 'a chain of two assignments still evaluates to the last value',
+        code: `
+          function mw(req) {
+            var cookieId = state.id = other.id = getcookie(req, name);
+            return cookieId !== req.sessionID;
+          }
+        `,
+      },
+      {
         name: 'a chained assignment whose request read sits on the right',
         code: `
           function mw(req) {
@@ -56,6 +65,10 @@ ruleTester.run(
             return cookieId !== req.sessionID;
           }
         `,
+      },
+      {
+        name: 'a list of accepted auth schemes read off the request is public words',
+        code: 'function ok(req) { return auth_schemes === req.headers.accept; }',
       },
       {
         name: 'the header scheme word against the configured scheme is public',
@@ -75,6 +88,17 @@ ruleTester.run(
       },
     ],
     invalid: [
+      {
+        name: 'a server value stored through a request-looking slot is still a server value',
+        code: 'async function check(req) { const stored = req.cache = await store.get(req.params.id); return stored === req.body.token; }',
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a chained-assignment binding that is written again no longer answers for the id',
+        code: 'function mw(req) { var cookieId = req.sessionID = getcookie(req); cookieId = loadStored(); return cookieId !== req.sessionID; }',
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+
       {
         name: 'a real token compared with ===',
         code: "function check(req) { return req.headers['x-token'] === storedToken; }",

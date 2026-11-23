@@ -804,7 +804,9 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         candidate.type === 'BinaryExpression' &&
         candidate.operator === 'instanceof' &&
         candidate.right.type === 'Identifier' &&
-        candidate.right.name === 'SyntaxError'
+        candidate.right.name === 'SyntaxError' &&
+        // The built-in, not a class the file declares under the same name.
+        isGlobalBinding(candidate.right)
       ) {
         return true;
       }

@@ -27,7 +27,10 @@ const ruleTester = new RuleTester({
 const serve = (guard: string, root = 'normalize(resolve(root) + sep)') => `
   var fs = require('fs');
   var path = require('path');
-  var normalize = path.normalize, resolve = path.resolve, join = path.join, sep = path.sep;
+  var normalize = require('path').normalize;
+  var resolve = require('path').resolve;
+  var join = require('path').join;
+  var sep = require('path').sep;
   function serveIndex(root) {
     var rootPath = ${root};
     return function (req, res, next) {
@@ -354,3 +357,126 @@ ruleTester.run(
     ],
   },
 );
+
+const GUARD =
+  'if ((path + sep).substr(0, rootPath.length) !== rootPath) return next(createError(403));';
+
+ruleTester.run('what a prefix guard has to prove', noArbitraryFileAccess, {
+  valid: [
+    {
+      name: 'the preamble serve-index really has: sep, normalize and join read off a path binding',
+      code: `
+        var fs = require('fs')
+          , path = require('path')
+          , normalize = path.normalize
+          , sep = path.sep
+          , join = path.join;
+        var resolve = require('path').resolve;
+        function serveIndex(root) {
+          var rootPath = normalize(resolve(root) + sep);
+          return function (req, res, next) {
+            var dir = getRequestedDir(req);
+            var path = normalize(join(rootPath, dir));
+            if ((path + sep).substr(0, rootPath.length) !== rootPath) {
+              debug('malicious path "%s"', path);
+              return next(createError(403));
+            }
+            fs.stat(path, function () { fs.readdir(path, function () {}); });
+          };
+        }
+      `,
+    },
+  ],
+  invalid: [
+    {
+      name: 'a path function chosen by a computed key names nothing',
+      code: serve(GUARD).replace(
+        "var normalize = require('path').normalize;",
+        "var normalize = require('path')[kind];",
+      ),
+      errors: [
+        { messageId: 'violationDetected' },
+        { messageId: 'violationDetected' },
+      ],
+    },
+    {
+      name: 'a root built by another operator is not a separator-anchored string',
+      code: serve(GUARD, 'base * sep'),
+      errors: [
+        { messageId: 'violationDetected' },
+        { messageId: 'violationDetected' },
+      ],
+    },
+    {
+      name: 'a root read off an object member is not a separator-anchored string',
+      code: serve(GUARD, 'options.root'),
+      errors: [
+        { messageId: 'violationDetected' },
+        { messageId: 'violationDetected' },
+      ],
+    },
+
+    {
+      name: 'a root rewritten through a destructuring assignment is not the root that was read',
+      code: serve(GUARD).replace(
+        'return function',
+        "({ rootPath } = { rootPath: '/safe' });\n    return function",
+      ),
+      errors: [
+        { messageId: 'violationDetected' },
+        { messageId: 'violationDetected' },
+      ],
+    },
+    {
+      name: 'a local function named normalize says nothing about its result',
+      code: serve(GUARD, "normalize('/safe/')").replace(
+        "var normalize = require('path').normalize;",
+        "function normalize(x) { return '/safe'; }",
+      ),
+      errors: [
+        { messageId: 'violationDetected' },
+        { messageId: 'violationDetected' },
+      ],
+    },
+    {
+      name: 'resolve strips the trailing separator, so resolve alone is not an anchor',
+      code: serve(GUARD, "resolve('/safe/')"),
+      errors: [
+        { messageId: 'violationDetected' },
+        { messageId: 'violationDetected' },
+      ],
+    },
+    {
+      name: 'appending something that is not a separator proves nothing',
+      code: serve(
+        'if ((path + suffix).substr(0, rootPath.length) !== rootPath) return next(createError(403));',
+      ),
+      errors: [
+        { messageId: 'violationDetected' },
+        { messageId: 'violationDetected' },
+      ],
+    },
+    {
+      name: 'a path never normalised may still carry .. segments',
+      code: serve(GUARD).replace(
+        'var path = normalize(join(rootPath, dir));',
+        'var path = join(rootPath, dir) + extra;',
+      ),
+      errors: [
+        { messageId: 'violationDetected' },
+        { messageId: 'violationDetected' },
+      ],
+    },
+    {
+      name: 'a path rewritten after the check is not the path that was checked',
+      code: serve(GUARD).replace(
+        'fs.stat(path',
+        'path = req.query.other;\n      fs.stat(path',
+      ),
+      errors: [
+        { messageId: 'violationDetected' },
+        { messageId: 'violationDetected' },
+      ],
+    },
+  ],
+});

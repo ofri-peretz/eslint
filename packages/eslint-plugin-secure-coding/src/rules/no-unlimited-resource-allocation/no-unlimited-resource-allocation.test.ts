@@ -90,6 +90,7 @@ describe('no-unlimited-resource-allocation', () => {
           },
           // Resource allocation outside loops
           {
+            name: 'a fixed-size buffer allocated once, outside the loop, is bounded',
             code: `
             const buffer = Buffer.alloc(1024);
             for (let i = 0; i < 10; i++) {
