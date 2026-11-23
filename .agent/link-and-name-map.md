@@ -29,7 +29,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :-: | :-: | :-: |
 | `eslint-plugin-anthropic-security` | 2.0.5 | `anthropic-security/` | — | `plugin-anthropic-security` | security | `claude` | ✅ | ✅ | ✅ |
 | `eslint-plugin-browser-security` | 3.1.3 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
-| `eslint-plugin-conventions` | 7.0.4 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-conventions` | 7.1.0 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-drizzle-security` | 2.0.4 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
 | `eslint-plugin-express-security` | 4.3.2 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
 | `eslint-plugin-gemini-security` | 2.0.4 | `gemini-security/` | — | `plugin-gemini-security` | security | `gemini` | ✅ | ✅ | ✅ |
