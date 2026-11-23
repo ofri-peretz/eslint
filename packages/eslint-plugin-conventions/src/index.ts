@@ -79,6 +79,8 @@ export const GUIDANCE_FILES = [
   '**/GEMINI.md',
   '**/.claude/skills/**/SKILL.md',
   '**/.claude/agents/*.md',
+  // A plugin's subagents; a file here counts only beside .claude-plugin/plugin.json.
+  '**/agents/*.md',
 ] as const;
 
 export const configs = {

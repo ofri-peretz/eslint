@@ -19,7 +19,9 @@ import * as path from 'node:path';
 /**
  * `memory`: loaded into every session (CLAUDE.md, AGENTS.md, GEMINI.md).
  * `skill`: a skill body, loaded when its trigger matches.
- * `agent`: a subagent definition under `.claude/agents/`.
+ * `agent`: a subagent definition under `.claude/agents/`, or under a Claude
+ *   Code plugin's `agents/` (a folder whose parent holds
+ *   `.claude-plugin/plugin.json`).
  */
 export type GuidanceKind = 'memory' | 'skill' | 'agent';
 
@@ -36,7 +38,19 @@ export function guidanceKind(filename: string): GuidanceKind | null {
   if (MEMORY_FILES.has(base)) return 'memory';
   if (base === 'SKILL.md') return 'skill';
   if (/(?:^|\/)\.claude\/agents\/[^/]+\.md$/.test(normalized)) return 'agent';
+  if (
+    /(?:^|\/)agents\/[^/]+\.md$/.test(normalized) &&
+    isPluginAgent(normalized)
+  ) {
+    return 'agent';
+  }
   return null;
+}
+
+/** A plugin ships its subagents from `<plugin root>/agents/*.md`. */
+function isPluginAgent(normalized: string): boolean {
+  const pluginRoot = path.dirname(path.dirname(normalized));
+  return fs.existsSync(path.join(pluginRoot, '.claude-plugin', 'plugin.json'));
 }
 
 export interface Frontmatter {

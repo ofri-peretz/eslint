@@ -1,9 +1,25 @@
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+
 import type { Rule } from 'eslint';
 
 import { subagentDeclaresModel } from '../../rules/guidance/subagent-declares-model';
 import { markdownRuleTester } from './markdown-tester';
 
 const rule = subagentDeclaresModel as unknown as Rule.RuleModule;
+
+// A Claude Code plugin ships its subagents from <root>/agents/, beside
+// <root>/.claude-plugin/plugin.json; an agents/ folder without one is not a plugin.
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'subagent-declares-model-'));
+const pluginRoot = path.join(tmp, 'plugin');
+fs.mkdirSync(path.join(pluginRoot, '.claude-plugin'), { recursive: true });
+fs.writeFileSync(
+  path.join(pluginRoot, '.claude-plugin', 'plugin.json'),
+  '{"name":"p"}',
+);
+const pluginAgent = path.join(pluginRoot, 'agents', 'reviewer.md');
+const plainAgentsFolder = path.join(tmp, 'notes', 'agents', 'reviewer.md');
 
 markdownRuleTester().run('subagent-declares-model', rule, {
   valid: [
@@ -28,6 +44,16 @@ markdownRuleTester().run('subagent-declares-model', rule, {
       code: 'No frontmatter.\n',
     },
     {
+      name: 'an agents/ folder with no plugin manifest beside it is not a subagent',
+      filename: plainAgentsFolder,
+      code: 'No frontmatter.\n',
+    },
+    {
+      name: "a plugin's subagent that declares both",
+      filename: pluginAgent,
+      code: '---\nmodel: haiku\ntools: Read\n---\n',
+    },
+    {
       name: 'a nested file is not a subagent',
       filename: '.claude/agents/x/notes.md',
       code: 'x\n',
@@ -50,6 +76,12 @@ markdownRuleTester().run('subagent-declares-model', rule, {
         },
         { messageId: 'missingKey', line: 1 },
       ],
+    },
+    {
+      name: "a plugin's subagent (agents/ beside .claude-plugin/plugin.json) without a model",
+      filename: pluginAgent,
+      code: '---\ntools: Read\n---\n',
+      errors: [{ messageId: 'missingKey', line: 1 }],
     },
     {
       name: 'tools declared, model missing',
