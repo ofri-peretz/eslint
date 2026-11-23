@@ -33,6 +33,7 @@ describe('no-buffer-overread — noAssert needs a Buffer accessor', () => {
         code: 'filetools.writeFileTo(targetFileName, zipData, true);',
       },
       {
+        // @found linting popular Node.js packages
         name: 'FP: readFileFrom(path, true) is not a numeric accessor',
         code: 'store.readFileFrom(name, true);',
       },

@@ -594,8 +594,20 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
               ))
             : resolved;
         if (skipInternal && isInternal(importPath, resolve)) return true;
-        if (resolve() === null && !namesUnmodelledResolver(context.settings))
-          return true;
+        if (resolve() === null) {
+          // `@/` — nothing between `@` and `/` — is not a scoped package
+          // under any resolver: npm scopes need at least one character after
+          // `@`. It is the create-next-app / shadcn tsconfig `paths` alias
+          // convention (`"paths": { "@/*": ["./src/*"] }`), and an unmodelled
+          // resolver otherwise treats an unresolved specifier as maybe-a-real
+          // package (same reasoning as `fumadocs-mdx:collections` above) —
+          // which reported every aliased import as missing once a project
+          // configured one (#1551). A specifier no resolver, modelled or
+          // not, could ever turn into an installable package is exempt from
+          // that assumption.
+          if (packageName.startsWith('@/')) return true;
+          if (!namesUnmodelledResolver(context.settings)) return true;
+        }
         const realName = realPackageName(resolve());
         return (
           realName !== undefined &&
