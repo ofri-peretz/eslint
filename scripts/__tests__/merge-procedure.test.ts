@@ -5,11 +5,12 @@
  */
 
 /**
- * The merge procedure in CLAUDE.md, executed rather than read.
+ * The merge procedure, executed rather than read.
  *
  * Stage 5 of `AI_SDLC.md`. That procedure is the one an agent follows
  * unattended at 2am, so a defect in it is a defect in every merge — and it
- * carried one for months.
+ * carried one for months. It used to be a bash block in prose; it is now
+ * `scripts/pr-merge-gate.sh`, so the agent runs it instead of re-typing it.
  *
  * ## The bug
  *
@@ -27,50 +28,34 @@
  * counts as PENDING. A finished, green CodeRabbit made the loop run forever,
  * and it reads as a slow CI run, so the natural response is to wait longer.
  *
- * The validation gate two lines below it read `.conclusion // .state //
- * .status`, which is correct. The two expressions disagreed about the same
- * object, in the same code block, and nothing said so.
- *
  * ## Why executed and not grepped
  *
- * Asserting the string `.state` appears in CLAUDE.md would pass on a version
- * that mentions it in a comment and gets the expression wrong. So the jq is
- * EXTRACTED from the document and run against fixtures of both shapes. If the
- * documentation changes, this tests the new documentation.
+ * The jq is EXTRACTED from the script and run against fixtures of both
+ * shapes, and the script itself runs against a fake `gh` to lock the
+ * `--admin` policy: what it merges, and what it refuses.
  */
 
 import { describe, it, expect } from 'vitest';
-import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import {
+  chmodSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+  existsSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const ROOT = resolve(__dirname, '..', '..');
-// The merge procedure moved out of CLAUDE.md (always-on context) into the ship-a-pr skill
-// (loaded on demand). The lock follows the procedure - it protects the jq, not the filename.
-const DOC = readFileSync(
-  join(ROOT, '.claude', 'skills', 'ship-a-pr', 'SKILL.md'),
-  'utf8',
-);
+const SCRIPT = join(ROOT, 'scripts', 'pr-merge-gate.sh');
+const SOURCE = readFileSync(SCRIPT, 'utf8');
 
-/**
- * The jq expression from the documented step, by the `--jq '…'` that follows
- * its numbered comment.
- */
+/** The jq expression the script assigns to WAIT_JQ or GATE_JQ. */
 function documentedJq(step: 'wait' | 'validate'): string {
-  const anchor =
-    step === 'wait'
-      ? '# 1. Wait until every required check has a terminal state.'
-      : '# 2. Validation gate';
-  const from = DOC.indexOf(anchor);
-  expect(
-    from,
-    `ship-a-pr/SKILL.md no longer contains "${anchor}"`,
-  ).toBeGreaterThan(-1);
-
-  const match = /--jq '([^']+)'/.exec(DOC.slice(from, from + 1200));
-  expect(match, `no --jq expression after "${anchor}"`).not.toBeNull();
-  // The document escapes nothing for the shell beyond the single quotes, so
-  // the captured text is the expression verbatim.
+  const name = step === 'wait' ? 'WAIT_JQ' : 'GATE_JQ';
+  const match = new RegExp(`^${name}='([^']+)'$`, 'm').exec(SOURCE);
+  expect(match, `pr-merge-gate.sh no longer assigns ${name}`).not.toBeNull();
   return match![1];
 }
 
@@ -259,18 +244,100 @@ describe('both expressions read the same fields', () => {
   });
 });
 
-describe('the --admin policy is stated where the decision is made', () => {
-  it('says the bypass is authorised on a fully green branch', () => {
-    // Left implicit, every agent re-derives it or stops to ask — and this repo
-    // has a standing answer: green means merge.
-    const section = DOC.slice(DOC.indexOf('If `mergeStateStatus == "DIRTY"'));
-    expect(section).toMatch(/`--admin` is\s*\n?\s*authorised/);
+/** Run the script against a fake `gh` that answers `pr view` with `view`. */
+function runGate(view: object, mode?: '--merge') {
+  const dir = mkdtempSync(join(tmpdir(), 'pr-merge-gate-'));
+  const calls = join(dir, 'calls');
+  writeFileSync(join(dir, 'view.json'), JSON.stringify(view));
+  const fake = join(dir, 'gh');
+  writeFileSync(
+    fake,
+    `#!/usr/bin/env bash\necho "$*" >> "${calls}"\ncase "$*" in *"pr view"*) cat "${dir}/view.json" ;; esac\n`,
+  );
+  chmodSync(fake, 0o755);
+  const result = spawnSync('bash', [SCRIPT, '42', ...(mode ? [mode] : [])], {
+    encoding: 'utf8',
+    env: { ...process.env, PATH: `${dir}:${process.env.PATH}` },
+  });
+  const merges = existsSync(calls)
+    ? readFileSync(calls, 'utf8')
+        .split('\n')
+        .filter((l) => l.includes('pr merge'))
+    : [];
+  return { status: result.status, stderr: result.stderr, merges };
+}
+
+const green = [
+  checkRun('Vitest', 'SUCCESS'),
+  statusContext('CodeRabbit', 'SUCCESS'),
+];
+
+describe('the --admin policy is enforced by the script', () => {
+  it('uses --admin on a fully green branch held up by a review', () => {
+    // Left implicit, every agent re-derives it or stops to ask. This repo has
+    // a standing answer: green means merge.
+    const run = runGate(
+      { statusCheckRollup: green, mergeStateStatus: 'BLOCKED' },
+      '--merge',
+    );
+    expect(run.status).toBe(0);
+    expect(run.merges).toHaveLength(1);
+    expect(run.merges[0]).toContain('--admin');
   });
 
-  it('names what the bypass is never for', () => {
-    const section = DOC.slice(DOC.indexOf('If `mergeStateStatus == "DIRTY"'));
-    for (const forbidden of ['FAILURE', 'pending', 'BEHIND']) {
-      expect(section).toContain(forbidden);
-    }
+  it('merges a CLEAN branch without --admin', () => {
+    const run = runGate(
+      { statusCheckRollup: green, mergeStateStatus: 'CLEAN' },
+      '--merge',
+    );
+    expect(run.status).toBe(0);
+    expect(run.merges[0]).not.toContain('--admin');
+  });
+
+  it('never merges with a FAILURE', () => {
+    const run = runGate(
+      {
+        statusCheckRollup: [checkRun('Build', 'FAILURE')],
+        mergeStateStatus: 'BLOCKED',
+      },
+      '--merge',
+    );
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain('Build');
+    expect(run.merges).toHaveLength(0);
+  });
+
+  it('never merges while a check is pending, and says how to wait', () => {
+    const run = runGate(
+      {
+        statusCheckRollup: [runningCheck('Build')],
+        mergeStateStatus: 'BLOCKED',
+        isDraft: true,
+      },
+      '--merge',
+    );
+    expect(run.status).toBe(2);
+    expect(run.stderr).toContain('--watch');
+    expect(run.stderr).toContain('ready for review');
+    expect(run.merges).toHaveLength(0);
+  });
+
+  it('never merges a BEHIND branch', () => {
+    const run = runGate(
+      { statusCheckRollup: green, mergeStateStatus: 'BEHIND' },
+      '--merge',
+    );
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain('origin/main');
+    expect(run.merges).toHaveLength(0);
+  });
+
+  it('checks without merging unless --merge is passed', () => {
+    const run = runGate({
+      statusCheckRollup: green,
+      mergeStateStatus: 'BLOCKED',
+    });
+    expect(run.status).toBe(0);
+    expect(run.merges).toHaveLength(0);
   });
 });
