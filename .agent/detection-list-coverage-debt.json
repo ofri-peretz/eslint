@@ -60,10 +60,6 @@
     "validateCsrf",
     "verifyCsrfToken"
   ],
-  "packages/eslint-plugin-express-security/src/rules/require-express-body-parser-limits/index.ts#DEFAULT_EXCESSIVE_LIMITS": [
-    "500MB",
-    "500mb"
-  ],
   "packages/eslint-plugin-express-security/src/rules/require-rate-limiting/index.ts#RATE_LIMIT_PACKAGES": [
     "expressBrute",
     "expressRateLimit",
