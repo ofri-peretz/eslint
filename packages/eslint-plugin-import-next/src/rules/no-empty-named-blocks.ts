@@ -104,6 +104,13 @@ export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      // `createOnce`'s closure is reused across files under oxlint, so a
+      // cache keyed on the FIRST file's AST has to be dropped before each
+      // new one is linted — this file's own lazy build (above) only ever
+      // fills it in, never clears it.
+      before() {
+        declaredModules = undefined;
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         // Check if this import has empty named imports: import {} from 'foo'
         // or import Foo, {} from 'foo'

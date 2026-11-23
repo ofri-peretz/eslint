@@ -518,6 +518,40 @@ describe('no-commented-code — a label prefix does not make prose code', () => 
           },
         ],
       },
+      // FN GUARD: the bare-word-run exemption is colon-only. An assignment
+      // (`=`) whose right-hand side is two bare words with no operator
+      // between them is routinely real code — `new`, `typeof` and `await`
+      // take their operand directly — and must stay reported.
+      {
+        name: 'an assignment to a constructed value stays reported',
+        code: 'const a = 1;\n// x = new Foo();',
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }],
+          },
+        ],
+      },
+      {
+        name: 'an assignment from typeof stays reported',
+        code: 'const a = 1;\n// x = typeof value;',
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }],
+          },
+        ],
+      },
+      {
+        name: 'an assignment from an awaited call stays reported',
+        code: 'const a = 1;\n// x = await client.connect();',
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }],
+          },
+        ],
+      },
     ],
   });
 });

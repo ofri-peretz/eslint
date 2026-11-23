@@ -159,18 +159,24 @@ ruleTester.run('no-empty-named-blocks', noEmptyNamedBlocks, {
     },
     {
       // FN GUARD: a declare module for a DIFFERENT specifier does not
-      // protect this one — the autofix still applies.
+      // protect this one — the autofix still applies. A sibling `export {}`
+      // keeps the file a module independent of this import, so removing it
+      // cannot itself change whether `declare module 'some-lib'` augments or
+      // declares — the one thing this case means to isolate.
       name: 'a type-only empty import beside a declare module for a different specifier is still autofixed',
-      code: `import type {} from 'foo';\ndeclare module 'some-lib' {}`,
+      code: `import type {} from 'foo';\nexport {};\ndeclare module 'some-lib' {}`,
       errors: [
         {
           messageId: 'emptyNamedBlock',
           suggestions: [
-            { messageId: 'suggestRemove', output: `\ndeclare module 'some-lib' {}` },
+            {
+              messageId: 'suggestRemove',
+              output: `\nexport {};\ndeclare module 'some-lib' {}`,
+            },
           ],
         },
       ],
-      output: `\ndeclare module 'some-lib' {}`,
+      output: `\nexport {};\ndeclare module 'some-lib' {}`,
     },
     {
       // Two empty type-only imports in one file: the declare-module scan
