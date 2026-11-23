@@ -330,7 +330,11 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       ) {
         return false;
       }
-      const target = assignment.left.name;
+      /** The variable an identifier reads or writes, by scope — not by spelling. */
+      const variableOf = (id: TSESTree.Identifier) =>
+        sourceCode.getScope(id).references.find((ref) => ref.identifier === id)
+          ?.resolved ?? null;
+      const target = variableOf(assignment.left);
       const statement = assignment.parent;
       const block = statement.parent;
       if (
@@ -350,7 +354,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
           write.type !== AST_NODE_TYPES.AssignmentExpression ||
           write.operator !== '=' ||
           write.left.type !== AST_NODE_TYPES.Identifier ||
-          write.left.name !== target ||
+          variableOf(write.left) !== target ||
           !isReplaceCall(write.right)
         ) {
           return false;
@@ -359,20 +363,41 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         const receiver = (quote.callee as TSESTree.MemberExpression).object;
         return (
           receiver.type === AST_NODE_TYPES.Identifier &&
-          receiver.name === target &&
+          variableOf(receiver) === target &&
           staticPattern(quote.arguments[0]) === '"' &&
           /^(?:&quot;|&#0?34;|&#x22;)$/i.test(
             staticReplacement(quote.arguments[1]) ?? '',
           )
         );
       };
-      return block.body
-        .slice(block.body.indexOf(statement) + 1)
-        .some((later) =>
+      /** Does anything in this statement read or write the escaped variable? */
+      const touchesTarget = (stmt: TSESTree.Node): boolean =>
+        target !== null &&
+        target.references.some(
+          (ref) =>
+            ref.identifier.range[0] >= stmt.range[0] &&
+            ref.identifier.range[1] <= stmt.range[1],
+        );
+      for (const later of block.body.slice(block.body.indexOf(statement) + 1)) {
+        // An unconditional exit ends the scan: nothing after it runs.
+        if (
+          later.type === AST_NODE_TYPES.ReturnStatement ||
+          later.type === AST_NODE_TYPES.ThrowStatement
+        ) {
+          return false;
+        }
+        if (
           later.type === AST_NODE_TYPES.IfStatement
             ? escapesQuoteInto(later.consequent)
-            : escapesQuoteInto(later),
-        );
+            : escapesQuoteInto(later)
+        ) {
+          return true;
+        }
+        // Any other statement that touches the value uses it before the quote
+        // step has run.
+        if (touchesTarget(later)) return false;
+      }
+      return false;
     };
 
     /**
@@ -393,6 +418,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
      */
     const isIncompleteReplaceSanitization = (
       callExpression: TSESTree.CallExpression,
+      quoteEscapedAfter = false,
     ): boolean => {
       const pairs = replaceChain(callExpression);
 
@@ -410,7 +436,9 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       );
       const hasAmpersandEscaping = /&amp;/.test(replacements);
 
-      return !(hasQuoteEscaping && hasAmpersandEscaping);
+      // A quote step that runs later satisfies the quote requirement only; the
+      // ampersand requirement is independent.
+      return !((hasQuoteEscaping || quoteEscapedAfter) && hasAmpersandEscaping);
     };
 
     /**
@@ -576,10 +604,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             return;
           }
 
-          if (
-            isIncompleteReplaceSanitization(node) &&
-            !quoteEscapedLater(node)
-          ) {
+          if (isIncompleteReplaceSanitization(node, quoteEscapedLater(node))) {
             if (safetyChecker.isSafe(node, context)) {
               return;
             }

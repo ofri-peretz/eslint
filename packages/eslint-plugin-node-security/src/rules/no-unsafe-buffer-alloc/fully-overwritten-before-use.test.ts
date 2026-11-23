@@ -7,20 +7,20 @@
 /**
  * `Buffer.allocUnsafe` whose every byte is written before anything reads it.
  *
- * Four shapes found linting popular Node.js packages, each one a buffer that
- * cannot leak an uninitialized byte:
+ * Two shapes that cannot leak an uninitialized byte:
  *
- *   1. `src.copy(buf, 0, from, from + SIZE)` into a buffer allocated with that
- *      same `SIZE`, so the copy writes the whole allocation;
- *   2. `this.m = Buffer.allocUnsafeSlow(src.length); this.m.set(src)`, the
- *      property-stored form of "fill it from the source it was sized by";
- *   3. `fs.read(fd, buf, 0, n, pos, (err, bytesRead) => buf.slice(0, bytesRead))`,
- *      the callback spelling of a read that is consumed only up to its count;
- *   4. `count === buf.byteLength ? buf : buf.subarray(0, count)`, where the
+ *   1. `fs.read(fd, buf, 0, n, pos, (err, bytesRead) => buf.slice(0, bytesRead))`,
+ *      the callback spelling of a read that is consumed only up to its count,
+ *      provided the callback's third parameter (which aliases the whole buffer)
+ *      is absent or never read;
+ *   2. `count === buf.byteLength ? buf : buf.subarray(0, count)`, where the
  *      whole buffer is handed out only when the read filled all of it.
  *
- * Each has an invalid lookalike that breaks the one fact it depends on and
- * must still report.
+ * The invalid cases include shapes a review showed to LOOK covered and are not:
+ * a copy whose source can be shorter than its range, `start + 8` when `start`
+ * is a string, a property assignment that can run a setter, `byteLength` on a
+ * multi-byte typed array, and a callback that aliases the buffer. Each must
+ * still report.
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
@@ -61,63 +61,14 @@ describe('no-unsafe-buffer-alloc — fully overwritten before use', () => {
   ruleTester.run('fully-overwritten', noUnsafeBufferAlloc, {
     valid: [
       {
-        // @source mscdex/busboy lib/types/multipart.js:469
-        // @found linting popular Node.js packages
-        name: 'FP: copy(chunk, 0, start, start + actualLen) into allocUnsafe(actualLen)',
+        name: 'a third callback parameter that is never read cannot alias the buffer out',
         code: `
-          function onData(data, start, end, limit, size, sink) {
-            const actualLen = Math.min(end - start, limit - size);
-            let chunk;
-            chunk = Buffer.allocUnsafe(actualLen);
-            data.copy(chunk, 0, start, start + actualLen);
-            sink.push(chunk);
-          }
-        `,
-      },
-      {
-        // @source mscdex/busboy lib/types/multipart.js:494
-        // @found linting popular Node.js packages
-        name: 'FP: the range start is a let that the loop moves',
-        code: `
-          function onData(data, end, limit, size, sink) {
-            let start = 0;
-            while (start < end) {
-              const actualLen = Math.min(end - start, limit - size);
-              const chunk = Buffer.allocUnsafe(actualLen);
-              data.copy(chunk, 0, start, start + actualLen);
-              sink.push(chunk);
-              start += actualLen;
-            }
-          }
-        `,
-      },
-      {
-        name: 'FP: the same copy with the operands of + swapped, and a [0, SIZE) range',
-        code: `
-          function a(data, start, size, sink) {
-            const out = Buffer.allocUnsafe(size);
-            data.copy(out, 0, start, size + start);
-            sink(out);
-          }
-          function b(data, size, sink) {
-            const out = Buffer.allocUnsafe(size);
-            data.copy(out, 0, 0, size);
-            sink(out);
-          }
-        `,
-      },
-      {
-        // @source websockets/ws lib/websocket.js:1226
-        // @found linting popular Node.js packages
-        name: 'FP: this.m = allocUnsafeSlow(reason.length); this.m.set(reason)',
-        code: `
-          function receiverOnConclude(websocket, code, reason) {
-            if (reason.length === 0) {
-              websocket._closeMessage = EMPTY_BUFFER;
-            } else {
-              websocket._closeMessage = Buffer.allocUnsafeSlow(reason.length);
-              websocket._closeMessage.set(reason);
-            }
+          var fs = require('fs');
+          function read(self, toRead) {
+            var buffer = Buffer.allocUnsafe(toRead);
+            fs.read(self.fd, buffer, 0, toRead, self.pos, function(err, bytesRead, unused) {
+              self.push(buffer.slice(0, bytesRead));
+            });
           }
         `,
       },
@@ -166,13 +117,6 @@ describe('no-unsafe-buffer-alloc — fully overwritten before use', () => {
         `,
       },
       {
-        name: 'a literal range start and a literal size: copy(b, 0, 4, 4 + size) and copy(b, 0, 0, 8)',
-        code: `
-          function a(data, size, sink) { const b = Buffer.allocUnsafe(size); data.copy(b, 0, 4, 4 + size); sink(b); }
-          function c(data, sink) { const b = Buffer.allocUnsafe(8); data.copy(b, 0, 0, 8); sink(b); }
-        `,
-      },
-      {
         name: 'the unequal-length test with its operands swapped: buf.byteLength === count ? buf : ...',
         code: `
           import fs from 'node:fs';
@@ -185,6 +129,43 @@ describe('no-unsafe-buffer-alloc — fully overwritten before use', () => {
       },
     ],
     invalid: [
+      // ── review regressions: each one is a buffer that still leaks ──────────
+      {
+        name: 'a copy whose source is shorter than the range copies fewer bytes (data.copy(out, 0, 0, 8) from one byte)',
+        ...reports(
+          'function f(sink) { const data = Buffer.from([1]); const out = Buffer.allocUnsafe(8); data.copy(out, 0, 0, 8); sink(out); }',
+        ),
+      },
+      {
+        name: 'start + 8 is string concatenation when start is a string, so the range copies nothing',
+        ...reports(
+          "function f(data, sink) { const start = '0.5'; const out = Buffer.allocUnsafe(8); data.copy(out, 0, start, start + 8); sink(out); }",
+        ),
+      },
+      {
+        name: 'the fs.read callback hands out the whole buffer through its third parameter',
+        ...reports(
+          "var fs = require('fs'); function r(self, send) { var b = Buffer.allocUnsafe(8); fs.read(self.fd, b, 0, 8, 0, function(err, n, result) { if (!err) send(result); }); }",
+        ),
+      },
+      {
+        name: 'the fs.read callback destructures its third parameter, which can alias the whole buffer',
+        ...reports(
+          "var fs = require('fs'); function r(self, send) { var b = Buffer.allocUnsafe(8); fs.read(self.fd, b, 0, 8, 0, function(err, n, { length }) { send(b.slice(0, n)); }); }",
+        ),
+      },
+      {
+        name: 'an assignment to a property can run a setter that sends the buffer before it is filled',
+        ...reports(
+          'function f(box, src) { box.msg = Buffer.allocUnsafeSlow(src.length); box.msg.set(src); }',
+        ),
+      },
+      {
+        name: 'byteLength counts bytes, but TypedArray.set copies elements: a Uint16Array leaves bytes behind',
+        ...reports(
+          'function f(box) { const src = new Uint16Array([1, 2]); box.msg = Buffer.allocUnsafeSlow(src.byteLength); box.msg.set(src); }',
+        ),
+      },
       {
         name: 'a [0, expression) range is not the allocation size',
         ...reports(

@@ -48,6 +48,31 @@ describe('no-improper-sanitization — conditional quote escape', () => {
     ],
     invalid: [
       {
+        name: 'an undeclared variable: the escaped value is read before any quote step',
+        code: `s = s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); send(s);`,
+        errors: incomplete,
+      },
+      {
+        name: 'the quote step rewrites a shadowing inner binding, not the escaped one',
+        code: `function escapeHtml(s, quote, other) { ${chain} if (quote) { let s = other; s = s.replace(/"/g, '&quot;'); } return s; }`,
+        errors: incomplete,
+      },
+      {
+        name: 'the quote step sits after an unconditional return, so it never runs',
+        code: `function escapeHtml(s) { ${chain} return s; s = s.replace(/"/g, '&quot;'); }`,
+        errors: incomplete,
+      },
+      {
+        name: 'the value is read before the quote step',
+        code: `function escapeHtml(s, sink) { ${chain} sink(s); s = s.replace(/"/g, '&quot;'); return s; }`,
+        errors: incomplete,
+      },
+      {
+        name: 'a later quote step does not stand in for the missing ampersand step',
+        code: `function escapeHtml(s, quote) { s = s.replace(/</g, '&lt;').replace(/>/g, '&gt;'); if (quote) { s = s.replace(/"/g, '&quot;'); } return s; }`,
+        errors: incomplete,
+      },
+      {
         name: 'the chain is an argument, not a statement of its own',
         code: `function escapeHtml(s, quote) { keep(s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')); if (quote) { s = s.replace(/"/g, '&quot;'); } return s; }`,
         errors: incomplete,
