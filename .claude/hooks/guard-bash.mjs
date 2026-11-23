@@ -293,7 +293,7 @@ async function repoConfig() {
 }
 
 // Imported (stop-after-3 reads `commands` from guard-bash) is not run: only the entry file acts.
-const isMain = Boolean(process.argv[1]) && import.meta.url.endsWith(`/${process.argv[1].split("/").pop()}`);
+const isMain = Boolean(process.argv[1]) && import.meta.url.endsWith(`/${process.argv[1].split(/[\\/]/).pop()}`);
 if (isMain && process.argv.includes("--self-test")) selfTest();
 else if (isMain) {
   let raw = "";
