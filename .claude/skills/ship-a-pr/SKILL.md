@@ -40,20 +40,18 @@ outcome; name any lock added), `## After merge`.
 gh pr checks <PR> --watch
 ```
 
-Prefer this for waiting. Hand-rolled polling cost 111 hours across 3,627 local transcripts, and
-193 of those loops were killed by the harness timeout — the turn ends having learned nothing, so
-the next one starts over.
+Hand-rolled `until … gh … sleep` loops are denied by `.claude/hooks/guard-bash.mjs`.
 
 `--watch` returning means nothing is still _pending_. It does **not** mean everything passed.
 Run the validation gate below before merging, always.
 
-**Branch protection requires exactly two contexts.** Not six, and not the ones CLAUDE.md listed
-until 2026-08-30 — five of those six names had never existed as job names at all, so an agent
-polling for `Playwright (e2e + a11y)` waited for something that could not arrive:
+**Branch protection requires exactly three contexts.** `scripts/setup-branch-protection.sh`
+declares them and `scripts/__tests__/claude-md-contract.test.ts` holds this list to it:
 
 ```text
 oxlint (fast pass)     — the cheap loop, every push
 Quality (Full) Gate    — the heavy gate, and the one that actually blocks
+review                 — the automated reviewer (claude-code-review.yml)
 ```
 
 `Quality (Full) Gate` is the important one, because of **when it runs**:
@@ -166,8 +164,8 @@ per-app deploy. **Don't claim "live"** until all three hold:
 2. the dispatched per-app workflow also `completed success`
 3. the production URL HEADs 2xx
 
-`docs` → `deploy-docs.yml` → eslint.interlace.tools · `storybook`/`registry` → `deploy.yml` →
-storybook.interlace.tools / ds.interlace.tools
+`docs` → `deploy-docs.yml` → eslint.interlace.tools, the only app this repo deploys
+(storybook and ds deploy from ofri-peretz/interlace).
 
 If `auto-deploy.yml` ran but no per-app workflow did, nothing was turbo-affected (e.g. a
 workflow-only or root-docs change). That is the expected silent path — confirm in the `affected`

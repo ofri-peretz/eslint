@@ -61,13 +61,18 @@ function workflowJobNames(): Set<string> {
     for (const match of text.matchAll(/^ {4}name:\s*(.+)$/gm)) {
       names.add(match[1].trim().replace(/^['"]|['"]$/g, ''));
     }
+    // A job with no `name:` is displayed, and required, by its id (`review`).
+    const jobs = text.slice(text.search(/^jobs:\s*$/m));
+    for (const match of jobs.matchAll(/^ {2}([A-Za-z0-9_-]+):\s*$/gm)) {
+      names.add(match[1]);
+    }
   }
   return names;
 }
 
 /** The check names CLAUDE.md presents as the required set. */
 function documentedChecks(): string[] {
-  const from = DOC.indexOf('Branch protection requires exactly two contexts');
+  const from = DOC.search(/Branch protection requires exactly \w+ contexts/);
   expect(
     from,
     'Neither CLAUDE.md nor ship-a-pr/SKILL.md states which contexts branch protection requires',
@@ -92,6 +97,23 @@ describe('CLAUDE.md describes checks that exist', () => {
       'CLAUDE.md names these as required checks and no workflow declares a ' +
         'job by that name. An agent polling for one waits forever.',
     ).toEqual([]);
+  });
+
+  it('lists exactly the checks setup-branch-protection.sh declares', () => {
+    // The skill said "exactly two contexts" for months after `review` became the
+    // third. The script is the declaration that is re-checked against GitHub, so
+    // the prose is held to it rather than to anyone's memory.
+    const script = readFileSync(
+      join(ROOT, 'scripts', 'setup-branch-protection.sh'),
+      'utf8',
+    );
+    const declared = /^REQUIRED_CHECKS='(.+)'$/m.exec(script);
+    expect(
+      declared,
+      'no REQUIRED_CHECKS line in setup-branch-protection.sh',
+    ).not.toBeNull();
+    const required: string[] = JSON.parse(declared![1]);
+    expect([...documentedChecks()].sort()).toEqual([...required].sort());
   });
 
   it('names the heavy gate, which is the one that blocks', () => {

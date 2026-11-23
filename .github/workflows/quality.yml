@@ -26,7 +26,7 @@ run-name: >-
 # everything else still finishes in ~30s.
 #
 # Caching: `./.github/actions/setup` hydrates node_modules and (where used)
-# the `.turbo` task cache. See AGENTS.md "Promotion gate" for the full model.
+# the `.turbo` task cache. See docs/CI_AND_RELEASE.md "Promotion gate" for the full model.
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:

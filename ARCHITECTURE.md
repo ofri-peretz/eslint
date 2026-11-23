@@ -49,7 +49,7 @@ When adding a rule, decide which plugin owns it using the **scope rule**:
 | A pattern in a specific SDK / framework | A dedicated SDK plugin (`-pg`, `-mongodb-security`, `-vercel-ai-security`, `-jwt`, `-jwt`, `-react-a11y`, etc.) |
 | Code-quality / maintainability concern (not security) | One of the quality plugins (`-conventions`, `-maintainability`, `-modernization`, `-modularity`, `-operability`, `-reliability`) |
 
-**Why:** SDK-specific rules understand the API surface, reduce false positives, and enable framework-aware remediation. Generic rules produce noisy detections that erode trust. See the philosophy section in [AGENTS.md](AGENTS.md).
+**Why:** SDK-specific rules understand the API surface, reduce false positives, and enable framework-aware remediation. Generic rules produce noisy detections that erode trust. See [docs/RULE_AUTHORING.md](docs/RULE_AUTHORING.md).
 
 ## Build & release
 
