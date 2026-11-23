@@ -33,6 +33,11 @@ const tsParser = require(
 const { clearCaches } = require(
   require.resolve('@typescript-eslint/typescript-estree', { paths: [REPO] }),
 );
+/** Loaded only when a Markdown model runs. */
+const markdown = () => {
+  const m = require(require.resolve('@eslint/markdown', { paths: [REPO] }));
+  return m.default ?? m;
+};
 const MODELS_DIR = path.join(__dirname, 'models');
 const QUINT = '@informalsystems/quint@0.33.1';
 const DEFAULT_TRACES = 300;
@@ -118,10 +123,17 @@ function lint(short, cfg, code, ruleOpts, filename, files) {
     files && cfg.typed
       ? { project: './tsconfig.json', tsconfigRootDir: files.dir }
       : undefined;
-  const msgs = linter.verify(
-    code,
-    [
-      {
+  const rules = { [id]: ['error', ...(ruleOpts ? [ruleOpts] : [])] };
+  // A Markdown rule (agent guidance files) lints with @eslint/markdown's
+  // language instead of a JS parser.
+  const config = cfg.markdown
+    ? {
+        files: ['**/*.md'],
+        plugins: { [short]: loadPlugin(short), markdown: markdown() },
+        language: 'markdown/gfm',
+        rules,
+      }
+    : {
         files: ['**/*.{js,jsx,ts,tsx,cjs,mjs}'],
         plugins: { [short]: loadPlugin(short) },
         languageOptions: {
@@ -129,15 +141,13 @@ function lint(short, cfg, code, ruleOpts, filename, files) {
           ...(parserOptions && { parserOptions }),
         },
         ...(cfg.settings && { settings: cfg.settings }),
-        rules: { [id]: ['error', ...(ruleOpts ? [ruleOpts] : [])] },
-      },
-    ],
-    {
-      filename: files
-        ? path.join(files.dir, filename)
-        : (filename ?? 'src/app.ts'),
-    },
-  );
+        rules,
+      };
+  const msgs = linter.verify(code, [config], {
+    filename: files
+      ? path.join(files.dir, filename)
+      : (filename ?? 'src/app.ts'),
+  });
   const fatal = msgs.find((m) => m.fatal);
   if (fatal)
     throw new Error(

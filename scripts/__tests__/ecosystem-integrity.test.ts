@@ -23,6 +23,7 @@
 
 import { readFile, readdir } from 'node:fs/promises';
 import { describe, it, expect } from 'vitest';
+import markdown from '@eslint/markdown';
 import { ESLint } from 'eslint';
 
 // ---------------------------------------------------------------------------
@@ -254,8 +255,14 @@ describe('config presets load into ESLint without throwing', () => {
           return rest;
         },
       );
+      // A preset that runs on a Markdown language (`markdown/gfm`) documents
+      // that the consumer registers @eslint/markdown beside it: do the same.
+      const needsMarkdown = presetBlocks.some((c) =>
+        String(c.language ?? '').startsWith('markdown/'),
+      );
       const overrideConfig = [
         { files: ['**/*.{js,jsx,ts,tsx,cjs,mjs}'] },
+        ...(needsMarkdown ? [{ plugins: { markdown } }] : []),
         ...presetBlocks,
       ];
       const eslint = new ESLint({ overrideConfigFile: true, overrideConfig });
