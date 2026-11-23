@@ -183,6 +183,7 @@ describe('no-zip-slip', () => {
         },
         // …and so does a `new AdmZip(…)` with no import in view.
         {
+          name: 'a new AdmZip with no import in view is still archive context',
           code: `const zip = new AdmZip(file);
                  const filePath = path.resolve(destDir, entry.path);`,
           errors: [{ messageId: 'unvalidatedArchivePath' }],

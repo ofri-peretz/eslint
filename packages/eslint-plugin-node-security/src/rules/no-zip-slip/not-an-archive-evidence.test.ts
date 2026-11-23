@@ -359,6 +359,22 @@ describe('no-zip-slip — not an archive entry', () => {
           { messageId: 'unvalidatedArchivePath' },
         ],
       },
+      {
+        name: 'a require whose specifier is decided at runtime is not provably project-local',
+        code: `
+          const unzip = require(modulePath);
+          unzip(upload, destination);
+        `,
+        errors: [{ messageId: 'unsafeArchiveExtraction' }],
+      },
+      {
+        name: 'a package whose name merely contains a dot is not a relative module',
+        code: `
+          import unzip from 'some.unzip-lib';
+          unzip(upload, destination);
+        `,
+        errors: [{ messageId: 'unsafeArchiveExtraction' }],
+      },
     ],
   });
 });

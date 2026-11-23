@@ -172,9 +172,9 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
     let handled: Set<string>;
     let escaped: Set<string>;
     /** Destinations built in place that a chain-ending listener covers. */
-    let handledNodes: Set<TSESTree.Node>;
+    let handledNodes: Set<TSESTree.Node | null>;
     /** Bindings handed to the caller with `return name`. */
-    let returned: Set<TSESLint.Scope.Variable>;
+    let returned: Set<TSESLint.Scope.Variable | undefined>;
 
     function variableOf(
       identifier: TSESTree.Identifier,
@@ -209,8 +209,7 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
       if (handled.has(node.name) || escaped.has(node.name)) return null;
       // Returned BINDINGS, not names: a same-named stream in a sibling
       // function is a different variable and is still judged on its own.
-      const variable = variableOf(node);
-      if (variable !== undefined && returned.has(variable)) return null;
+      if (returned.has(variableOf(node))) return null;
       return node;
     }
 
@@ -313,8 +312,7 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
       // returns it — the consumer is who listens.
       ReturnStatement(node: TSESTree.ReturnStatement) {
         if (node.argument?.type === AST_NODE_TYPES.Identifier) {
-          const variable = variableOf(node.argument);
-          if (variable !== undefined) returned.add(variable);
+          returned.add(variableOf(node.argument));
         }
       },
 
@@ -344,7 +342,7 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
           ) {
             const listened = listenedStream(callee.object);
             if (typeof listened === 'string') handled.add(listened);
-            else if (listened !== null) handledNodes.add(listened);
+            else handledNodes.add(listened);
           }
           return;
         }

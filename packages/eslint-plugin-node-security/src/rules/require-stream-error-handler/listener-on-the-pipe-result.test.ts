@@ -98,6 +98,37 @@ describe('require-stream-error-handler — listener on the pipe result', () => {
           }
         `,
       },
+      {
+        name: "a stream returned from a nested block is still the function's binding",
+        code: `
+          import { PassThrough } from 'stream';
+          export function open(source, ready) {
+            const entry = new PassThrough();
+            source.pipe(entry);
+            if (ready) {
+              return entry;
+            }
+            return null;
+          }
+        `,
+      },
+      {
+        name: 'a listener on a member receiver names no binding and is ignored',
+        code: `
+          function watch(self, fail) {
+            self.stream.on('error', fail);
+          }
+        `,
+      },
+      {
+        name: 'a bare return hands nothing to the caller',
+        code: `
+          function stop(source, done) {
+            source.on('error', done);
+            return;
+          }
+        `,
+      },
     ],
     invalid: [
       {
@@ -215,6 +246,28 @@ describe('require-stream-error-handler — listener on the pipe result', () => {
           function identity(stream) { return stream; }
           const stream = fs.createReadStream('input');
           stream.pipe(res);
+        `,
+        errors: reports,
+      },
+      {
+        name: 'a chain through a method that is not a listener does not carry the listener back to the destination',
+        code: `
+          import { Transform } from 'stream';
+          function pull(self, fail) {
+            const sink = new Transform({});
+            self.pipe(sink).setEncoding('utf8').on('error', fail);
+          }
+        `,
+        errors: reports,
+      },
+      {
+        name: 'a chain through a runtime-named method proves nothing about the destination',
+        code: `
+          import { Transform } from 'stream';
+          function pull(self, fail, name) {
+            const sink = new Transform({});
+            self.pipe(sink)[name]().on('error', fail);
+          }
         `,
         errors: reports,
       },

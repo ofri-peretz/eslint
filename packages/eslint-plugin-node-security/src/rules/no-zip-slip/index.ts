@@ -397,85 +397,11 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
      * its own `./unzip` module with an offset and a password, and was reported
      * as an extraction without validation.
      */
-    const isProjectLocalBinding = (node: TSESTree.Node): boolean => {
-      if (node.type !== 'Identifier') return false;
-      let variable: TSESLint.Scope.Variable | undefined;
-      for (
-        let scope: TSESLint.Scope.Scope | null =
-          context.sourceCode.getScope(node);
-        scope;
-        scope = scope.upper
-      ) {
-        variable = scope.set.get(node.name);
-        if (variable) break;
-      }
-      const def = variable?.defs[0];
-      if (!def) return false;
-      const relative = (specifier: string | null): boolean =>
-        specifier !== null && /^\.{1,2}(?:[/\\]|$)/.test(specifier);
-      if (def.type === 'ImportBinding') {
-        const parent = def.parent;
-        return (
-          parent?.type === 'ImportDeclaration' &&
-          relative(String(parent.source.value))
-        );
-      }
-      if (def.node.type !== 'VariableDeclarator') return false;
-      // A reassigned binding may hold something else by the time it is called.
-      if (variable?.references.filter((ref) => ref.isWrite()).length !== 1) {
-        return false;
-      }
-      let init: TSESTree.Node | null = def.node.init;
-      while (init?.type === 'MemberExpression') init = init.object;
-      return (
-        init?.type === 'CallExpression' &&
-        init.callee.type === 'Identifier' &&
-        init.callee.name === 'require' &&
-        relative(staticString(init.arguments[0]))
-      );
-    };
-    /** Identity for scope-resolved variables, so two spellings of one binding match. */
-    let variableIds: WeakMap<object, number>;
-    let variableCount: number;
-    const variableOf = (
-      identifier: TSESTree.Identifier,
-    ): TSESLint.Scope.Variable | undefined => {
-      for (
-        let scope: TSESLint.Scope.Scope | null =
-          context.sourceCode.getScope(identifier);
-        scope;
-        scope = scope.upper
-      ) {
-        const variable = scope.set.get(identifier.name);
-        if (variable) return variable;
-      }
-      return undefined;
-    };
-    /**
-     * `opts.path` as `<binding id>.path`: the root resolved through scope, the
-     * rest by static property names. `null` when any link is dynamic or the
-     * root is unbound.
-     */
-    const memberKey = (node: TSESTree.Node): string | null => {
-      const chain: string[] = [];
-      let current: TSESTree.Node = node;
-      while (current.type === 'MemberExpression') {
-        const name = propertyName(current);
-        if (name === null) return null;
-        chain.unshift(name);
-        current = current.object;
-      }
-      if (current.type !== 'Identifier' || chain.length === 0) return null;
-      const variable = variableOf(current);
-      if (!variable) return null;
-      let id = variableIds.get(variable);
-      if (id === undefined) {
-        variableCount += 1;
-        id = variableCount;
-        variableIds.set(variable, id);
-      }
-      return `${id}.${chain.join('.')}`;
-    };
+    const isProjectLocalBinding = (node: TSESTree.Expression): boolean =>
+      resolveModuleBinding(
+        node,
+        context.sourceCode.getScope(node),
+      )?.module.startsWith('.') === true;
     /** @vocabulary Node path API */
     const pathFns = ['join', 'resolve', 'relative', 'normalize'];
     const isPathFunctionCallee = (callee: TSESTree.Node): boolean =>
@@ -496,16 +422,16 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
     const isCanonicalizedInPlace = (
       arg: TSESTree.MemberExpression,
     ): boolean => {
-      const key = memberKey(arg);
-      if (key === null) return false;
       let current: TSESTree.Node = arg;
       for (;;) {
         const parent: TSESTree.Node | undefined = current.parent;
+        // The same spelling on both sides of one statement is one binding:
+        // a statement cannot shadow a name inside itself.
         if (parent?.type === 'AssignmentExpression') {
           return (
             parent.operator === '=' &&
-            parent.right === current &&
-            memberKey(parent.left) === key
+            context.sourceCode.getText(parent.left) ===
+              context.sourceCode.getText(arg)
           );
         }
         if (
@@ -878,8 +804,6 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
 
         /** Shapes deferred to Program:exit, once archive context is known. */
         pending = [];
-        variableIds = new WeakMap();
-        variableCount = 0;
 
         /** Does this statement always leave the enclosing list? */
         EXITS = new Set([
