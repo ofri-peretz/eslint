@@ -78,6 +78,26 @@ describe('require-stream-error-handler — listener on the pipe result', () => {
           }
         `,
       },
+      {
+        // Review: the same listener on an inline destination.
+        name: 'an inline destination covered by the listener that ends the chain',
+        code: `
+          const fs = require('fs');
+          function copy(src, fail) {
+            src.on('error', fail);
+            src.pipe(fs.createWriteStream('output')).on('error', fail);
+          }
+        `,
+      },
+      {
+        name: 'a pipe with no destination argument names nothing the listener could cover',
+        code: `
+          function copy(src, fail) {
+            src.on('error', fail);
+            src.pipe().on('error', fail);
+          }
+        `,
+      },
     ],
     invalid: [
       {
@@ -173,6 +193,28 @@ describe('require-stream-error-handler — listener on the pipe result', () => {
           export function copy(source) {
             source.pipe(entry);
           }
+        `,
+        errors: reports,
+      },
+      {
+        name: 'the same inline destination without the final listener still reports',
+        code: `
+          const fs = require('fs');
+          function copy(src, fail) {
+            src.on('error', fail);
+            src.pipe(fs.createWriteStream('output'));
+          }
+        `,
+        errors: reports,
+      },
+      {
+        // Review: an unrelated parameter that is returned does not cover a different binding.
+        name: 'a parameter named like the stream, returned by an unrelated function, does not cover it',
+        code: `
+          const fs = require('fs');
+          function identity(stream) { return stream; }
+          const stream = fs.createReadStream('input');
+          stream.pipe(res);
         `,
         errors: reports,
       },

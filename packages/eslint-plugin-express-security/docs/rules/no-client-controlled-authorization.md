@@ -124,12 +124,20 @@ If a proxy really is the only writer of an identity header, terminate it: strip 
 ## The "self or holder of the right" check
 
 `req.params.userId !== user.id` is not decided on client input when `user` is the
-**principal the verifying callback stored on this same request**: a parameter that is
-never reassigned and is stored as `req.user = user` / `req.auth = user` on the same
-request binding the client value was read from. A client cannot choose a callback's
-arguments. A local copy of client input (`const user = req.body.user`), a parameter
-stored on a different request, a rewritten parameter, or a comparison against a second
-client value still reports.
+**principal `passport.authenticate` handed its callback and the callback stored on this same
+request**. The evidence is a binding, resolved through scope and the module graph:
+
+- the parameter belongs to the callback that `passport.authenticate(...)` calls (`passport`
+  resolved to the module), passed inline or as the function a local factory returns when the
+  factory's call is what is passed (`verifyCallback(req, ...)`);
+- the parameter is never reassigned and none of its properties is written (`user.id = ...`,
+  `user.n++`, `delete user.role`);
+- it is stored as `req.user = user` / `req.auth = user` on the same request binding the client value was read from.
+
+A parameter of any other function proves nothing, since `check(req, req.body)` hands the client's
+own object in as `user`. A local copy of client input, a parameter stored on a different request,
+a rewritten parameter, a principal whose properties are overwritten, and a comparison against a
+second client value still report.
 
 ## Options
 

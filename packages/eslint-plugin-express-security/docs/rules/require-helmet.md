@@ -74,7 +74,8 @@ A call that takes the app is read, not assumed, when its callee is a function
 helmet is reported at `express()`, and `target.use(helmet())` inside it counts
 as helmet. Anything this file cannot read is still an escape: an imported
 function, a method call, a parameter that is passed on, returned, stored,
-rewritten or destructured, or a spread argument.
+rewritten or destructured, an app reached through `arguments`, or a spread argument, and a
+function declaration that is reassigned is not the function that was declared.
 
 **The limit, on purpose.** A module that only _receives_ the app —
 `export default ({ app }) => { app.use(...) }`, the loader shape — is never

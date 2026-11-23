@@ -43,6 +43,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   propertyName,
+  resolveModuleBinding,
   staticString,
 } from '@interlace/eslint-devkit';
 
@@ -277,8 +278,8 @@ export const noClientControlledAuthorization = createRule<
     /**
      * Request binding -> bindings stored as its authenticated principal.
      *
-     * `req.user = user`, where `user` is a PARAMETER of the verifying callback
-     * (`passport.authenticate('jwt', cb)`), is the server telling the request
+     * `req.user = user`, where `user` is a PARAMETER of the callback
+     * `passport.authenticate('jwt', cb)` invokes, is the server telling the request
      * who the caller is: a client cannot choose a callback's arguments. A
      * comparison of a client-supplied id against that principal's own id
      * (`req.params.userId !== user.id`) is the "self or holder of the right"
@@ -300,6 +301,103 @@ export const noClientControlledAuthorization = createRule<
         if (variable) return variable;
       }
       return undefined;
+    }
+
+    /** `passport.authenticate(...)`, with `passport` resolved to the module. */
+    function isPassportAuthenticate(call: TSESTree.Node | undefined): boolean {
+      if (call?.type !== AST_NODE_TYPES.CallExpression) return false;
+      const callee = call.callee;
+      if (
+        callee.type !== AST_NODE_TYPES.MemberExpression ||
+        propertyName(callee) !== 'authenticate'
+      ) {
+        return false;
+      }
+      return (
+        resolveModuleBinding(callee.object, context.sourceCode.getScope(call))
+          ?.module === 'passport'
+      );
+    }
+
+    /**
+     * Is `fn` the callback `passport.authenticate(strategy, options, fn)`
+     * calls with the verified user — passed directly, or the function a local
+     * factory returns and the factory's call is what gets passed
+     * (`verifyCallback(req, ...)`)?
+     *
+     * A parameter of an arbitrary function proves nothing: `check(req, req.body)`
+     * hands the client's own object in as `user`.
+     */
+    function isVerifierCallback(fn: TSESTree.Node): boolean {
+      // A function whose parent is the call can only be an argument of it:
+      // the callee of `passport.authenticate(...)` is a member expression.
+      if (isPassportAuthenticate(fn.parent)) return true;
+      // The factory: `(req) => (err, user) => {...}` or `function f() { return (err, user) => {...}; }`.
+      let factory: TSESTree.Node | undefined;
+      if (
+        fn.parent?.type === AST_NODE_TYPES.ArrowFunctionExpression &&
+        fn.parent.body === fn
+      ) {
+        factory = fn.parent;
+      } else if (fn.parent?.type === AST_NODE_TYPES.ReturnStatement) {
+        factory = fn.parent.parent;
+        while (
+          factory &&
+          factory.type !== AST_NODE_TYPES.FunctionDeclaration &&
+          factory.type !== AST_NODE_TYPES.FunctionExpression &&
+          factory.type !== AST_NODE_TYPES.ArrowFunctionExpression
+        ) {
+          factory = factory.parent;
+        }
+      }
+      if (factory === undefined) return false;
+      const holder =
+        factory.type === AST_NODE_TYPES.FunctionDeclaration
+          ? factory
+          : factory.parent?.type === AST_NODE_TYPES.VariableDeclarator
+            ? factory.parent
+            : undefined;
+      if (holder === undefined) return false;
+      const name =
+        holder.type === AST_NODE_TYPES.FunctionDeclaration
+          ? holder.id?.name
+          : holder.id.type === AST_NODE_TYPES.Identifier
+            ? holder.id.name
+            : undefined;
+      const variable = context.sourceCode
+        .getDeclaredVariables(holder)
+        .find((candidate) => candidate.name === name);
+      return (
+        variable?.references.some((reference) => {
+          const call = reference.identifier.parent;
+          return (
+            call?.type === AST_NODE_TYPES.CallExpression &&
+            call.callee === reference.identifier &&
+            isPassportAuthenticate(call.parent)
+          );
+        }) ?? false
+      );
+    }
+
+    /** Is any property of `variable` written (`user.id = ...`, `user.id++`, `delete user.id`)? */
+    function hasMemberWrite(variable: TSESLint.Scope.Variable): boolean {
+      return variable.references.some((reference) => {
+        const member = reference.identifier.parent;
+        if (
+          member?.type !== AST_NODE_TYPES.MemberExpression ||
+          member.object !== reference.identifier
+        ) {
+          return false;
+        }
+        const use = member.parent;
+        return (
+          (use?.type === AST_NODE_TYPES.AssignmentExpression &&
+            use.left === member) ||
+          use?.type === AST_NODE_TYPES.UpdateExpression ||
+          (use?.type === AST_NODE_TYPES.UnaryExpression &&
+            use.operator === 'delete')
+        );
+      });
     }
 
     function rootIdentifier(node: TSESTree.Node): TSESTree.Identifier | null {
@@ -374,14 +472,18 @@ export const noClientControlledAuthorization = createRule<
         if (slot === null || !PRINCIPAL_SLOTS.has(slot)) return;
         const request = variableOf(node.left.object);
         const value = variableOf(node.right);
-        // Only a parameter that is never reassigned: a `const user =
-        // req.body.user` is the client's word, and a rewritten parameter may
-        // hold anything.
+        // Only a parameter of a passport verifier callback that is never
+        // reassigned and has no property written: a `const user =
+        // req.body.user` is the client's word, a parameter of any other
+        // function can be handed the client's object, and a rewritten
+        // parameter or `user.id = req.body.id` may hold anything.
         if (
           request === undefined ||
           value === undefined ||
           value.defs[0]?.type !== 'Parameter' ||
-          value.references.some((reference) => reference.isWrite())
+          value.references.some((reference) => reference.isWrite()) ||
+          hasMemberWrite(value) ||
+          !isVerifierCallback(value.defs[0].node)
         ) {
           return;
         }

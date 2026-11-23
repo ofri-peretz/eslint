@@ -156,6 +156,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // case that makes the first `valid` fixture pass for the RIGHT reason: drop
     // the listener from it and it lands here.
     {
+      name: 'a named stream that is never handled anywhere in the file',
       code: `
         const stream = fs.createReadStream('/etc/hosts');
         stream.pipe(res);

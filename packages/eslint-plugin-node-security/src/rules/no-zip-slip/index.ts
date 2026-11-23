@@ -437,7 +437,6 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
     /** Identity for scope-resolved variables, so two spellings of one binding match. */
     let variableIds: WeakMap<object, number>;
     let variableCount: number;
-    let destinationBases: Set<string>;
     const variableOf = (
       identifier: TSESTree.Identifier,
     ): TSESLint.Scope.Variable | undefined => {
@@ -477,28 +476,46 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       }
       return `${id}.${chain.join('.')}`;
     };
-    /** The member an archive entry exposes its path on, through `.replace(...)`-style calls. */
-    const entryFieldMember = (
-      node: TSESTree.Node,
-    ): TSESTree.MemberExpression | null => {
-      let current: TSESTree.Node = node;
+    /** @vocabulary Node path API */
+    const pathFns = ['join', 'resolve', 'relative', 'normalize'];
+    const isPathFunctionCallee = (callee: TSESTree.Node): boolean =>
+      (callee.type === 'MemberExpression' &&
+        namesOneOf(propertyName(callee), pathFns)) ||
+      // `import { join } from 'node:path'` / `const { join } = require('path')`.
+      // Resolved through the module graph, not matched on the callee's NAME:
+      // a local function called `join` is not `path.join`.
+      (callee.type === 'Identifier' && isNamedPathFunction(callee, pathFns));
+    /**
+     * `opts.path = path.resolve(path.normalize(opts.path))`: the member is
+     * canonicalized and written back to itself. That statement is not a join
+     * onto anything, so it cannot escape a directory; any LATER read of the
+     * member (a join, a write) is judged on its own. The chain must be single
+     * argument path calls ending in an assignment to the same binding and
+     * property.
+     */
+    const isCanonicalizedInPlace = (
+      arg: TSESTree.MemberExpression,
+    ): boolean => {
+      const key = memberKey(arg);
+      if (key === null) return false;
+      let current: TSESTree.Node = arg;
       for (;;) {
-        if (
-          current.type === 'MemberExpression' &&
-          namesOneOf(propertyName(current), archiveEntryFields)
-        ) {
-          return current;
+        const parent: TSESTree.Node | undefined = current.parent;
+        if (parent?.type === 'AssignmentExpression') {
+          return (
+            parent.operator === '=' &&
+            parent.right === current &&
+            memberKey(parent.left) === key
+          );
         }
         if (
-          current.type === 'CallExpression' &&
-          current.callee.type === 'MemberExpression'
+          parent?.type !== 'CallExpression' ||
+          parent.arguments.length !== 1 ||
+          !isPathFunctionCallee(parent.callee)
         ) {
-          current = current.callee.object;
-        } else if (current.type === 'MemberExpression') {
-          current = current.object;
-        } else {
-          return null;
+          return false;
         }
+        current = parent;
       }
     };
     const namesArchive = (node: TSESTree.Node): boolean => {
@@ -863,8 +880,6 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         pending = [];
         variableIds = new WeakMap();
         variableCount = 0;
-        /** Keys of members used as the BASE of a join whose last argument is an entry. */
-        destinationBases = new Set();
 
         /** Does this statement always leave the enclosing list? */
         EXITS = new Set([
@@ -1011,33 +1026,9 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
 
         // Check for path.join or similar operations with archive entry names
         const callee = node.callee;
-        // @vocabulary Node path API
-        const pathFns = ['join', 'resolve', 'relative', 'normalize'];
-        if (
-          (callee.type === 'MemberExpression' &&
-            namesOneOf(propertyName(callee), pathFns)) ||
-          // `import { join } from 'node:path'` / `const { join } = require('path')`.
-          // Resolved through the module graph, not matched on the callee's
-          // NAME: a local function called `join` is not `path.join`.
-          (callee.type === 'Identifier' && isNamedPathFunction(callee, pathFns))
-        ) {
+        if (isPathFunctionCallee(callee)) {
           // Check arguments for potential archive entry usage
           const args = node.arguments;
-          // `path.join(opts.path, entry.path)`: every leading member is the
-          // directory the entry is joined onto, i.e. the extraction
-          // destination — the caller's value, not an entry name. Recorded
-          // here, consulted at Program:exit, so order does not matter.
-          const lastEntry =
-            args.length > 1 ? entryFieldMember(args[args.length - 1]) : null;
-          if (lastEntry !== null) {
-            const entryRoot = memberKey(lastEntry)?.split('.')[0];
-            for (const base of args.slice(0, -1)) {
-              const key = memberKey(base);
-              if (key !== null && key.split('.')[0] !== entryRoot) {
-                destinationBases.add(key);
-              }
-            }
-          }
           for (const arg of args) {
             if (
               arg.type === 'MemberExpression' &&
@@ -1051,8 +1042,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
               if (!isPathValidated(arg)) {
                 pending.push(() => {
                   if (!hasArchiveContext) return;
-                  const key = memberKey(arg);
-                  if (key !== null && destinationBases.has(key)) return;
+                  if (isCanonicalizedInPlace(arg)) return;
                   context.report({
                     node: arg,
                     messageId: 'unvalidatedArchivePath',

@@ -169,6 +169,7 @@ describe('no-zip-slip', () => {
         // The archive makes it zip slip. `require('adm-zip')` is the evidence
         // the two shapes above lack.
         {
+          name: 'an entry name joined onto the destination in a file that requires an archive library',
           code: `const AdmZip = require('adm-zip');
                  fs.writeFileSync(path.join(dest, entry.name), data);`,
           errors: [{ messageId: 'unvalidatedArchivePath' }],

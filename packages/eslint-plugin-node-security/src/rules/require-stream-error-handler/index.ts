@@ -171,6 +171,8 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
   ) {
     let handled: Set<string>;
     let escaped: Set<string>;
+    /** Destinations built in place that a chain-ending listener covers. */
+    let handledNodes: Set<TSESTree.Node>;
     /** Bindings handed to the caller with `return name`. */
     let returned: Set<TSESLint.Scope.Variable>;
 
@@ -200,7 +202,8 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
      */
     function unhandledStream(node: TSESTree.Node): TSESTree.Node | null {
       // Constructed inline: it has no name, so nothing can have listened to it.
-      if (constructsStreamHere(node)) return node;
+      if (constructsStreamHere(node))
+        return handledNodes.has(node) ? null : node;
       if (node.type !== AST_NODE_TYPES.Identifier) return null;
       if (!streamBindings.has(node.name)) return null;
       if (handled.has(node.name) || escaped.has(node.name)) return null;
@@ -242,7 +245,9 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
      * with `.on('error', reject)`, and the destination was reported as
      * having no listener.
      */
-    function listenedStream(receiver: TSESTree.Node): string | null {
+    function listenedStream(
+      receiver: TSESTree.Node,
+    ): string | TSESTree.Node | null {
       let current: TSESTree.Node = receiver;
       for (;;) {
         if (current.type === AST_NODE_TYPES.Identifier) return current.name;
@@ -255,9 +260,12 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
         const method = propertyName(current.callee);
         if (method === 'pipe') {
           const destination = current.arguments[0];
-          return destination?.type === AST_NODE_TYPES.Identifier
+          if (destination === undefined) return null;
+          // A name for a binding; the node itself for a destination built in
+          // place (`src.pipe(fs.createWriteStream(p)).on('error', h)`).
+          return destination.type === AST_NODE_TYPES.Identifier
             ? destination.name
-            : null;
+            : destination;
         }
         if (method === null || !LISTENER_METHODS.has(method)) return null;
         current = current.callee.object;
@@ -280,6 +288,7 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
          * unproven is not unhandled.
          */
         escaped = new Set<string>();
+        handledNodes = new Set();
         returned = new Set();
         /** Names bound to a stream constructor. */
         streamBindings = new Set<string>();
@@ -334,7 +343,8 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
             event.value === 'error'
           ) {
             const listened = listenedStream(callee.object);
-            if (listened !== null) handled.add(listened);
+            if (typeof listened === 'string') handled.add(listened);
+            else if (listened !== null) handledNodes.add(listened);
           }
           return;
         }

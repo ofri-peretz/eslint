@@ -208,6 +208,34 @@ describe('require-helmet — app as a parameter', () => {
           configure(options, app);
         `,
       },
+      {
+        // Review: a declaration can be reassigned to something this file does not hold.
+        name: 'a function declaration that is reassigned is not the function that was declared',
+        code: `
+          import express from 'express';
+          import { secure } from './secure';
+          function configure(target) { target.use(json); }
+          configure = secure;
+          const app = express();
+          app.set('view engine', 'pug');
+          configure(app);
+        `,
+      },
+      {
+        // Review: arguments[0] is the app, passed on.
+        name: 'the app passed on through arguments is an escape',
+        code: `
+          import express from 'express';
+          import { secure } from './secure';
+          function configure(target) {
+            target.use(json);
+            secure(arguments[0]);
+          }
+          const app = express();
+          app.set('view engine', 'pug');
+          configure(app);
+        `,
+      },
     ],
     invalid: [
       {
@@ -228,6 +256,28 @@ describe('require-helmet — app as a parameter', () => {
         code: `
           import express from 'express';
           const configure = (target) => { target.use(express.json()); };
+          const app = express();
+          app.set('view engine', 'pug');
+          configure(app);
+        `,
+        errors: missing,
+      },
+      {
+        name: 'an arrow function has no arguments of its own, so one it names is the outer one',
+        code: `
+          import express from 'express';
+          const configure = (target) => { target.use(json); };
+          const app = express();
+          app.set('view engine', 'pug');
+          configure(app);
+        `,
+        errors: missing,
+      },
+      {
+        name: 'a function that never touches arguments is still read',
+        code: `
+          import express from 'express';
+          function configure(target) { target.use(json); return; }
           const app = express();
           app.set('view engine', 'pug');
           configure(app);

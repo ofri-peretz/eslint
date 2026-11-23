@@ -61,6 +61,22 @@ describe('no-exposed-debug-endpoints — health probe segments', () => {
         name: 'the probe spelling is case-insensitive',
         code: "import 'express'; app.get('/Health-Check', probe);",
       },
+      {
+        name: 'an inline probe handler that only answers a status is excused',
+        code: "import 'express'; app.get('/healthz', (req, res) => res.sendStatus(200));",
+      },
+      {
+        name: 'a property or key that is merely named process or os is not the host',
+        code: "import 'express'; app.get('/healthz', (req, res) => res.json({ process: 'up', os: ctx.process }));",
+      },
+      {
+        name: 'a process or os binding the handler declares itself is not the global or the module',
+        code: `
+          import 'express';
+          import fs from 'fs';
+          app.get('/healthz', function (req, res, process) { res.json(fs && process); });
+        `,
+      },
     ],
     invalid: [
       {
@@ -81,6 +97,32 @@ describe('no-exposed-debug-endpoints — health probe segments', () => {
       {
         name: 'an admin path next to a probe still reports',
         code: "import 'express'; app.use('/admin/healthz', adminRouter);",
+        errors: report,
+      },
+      {
+        // Review: a probe spelling alone must not excuse a handler that leaks the host.
+        name: 'a probe path whose inline handler returns process.env still reports',
+        code: "import 'express'; app.get('/healthz', (req, res) => res.json(process.env));",
+        errors: report,
+      },
+      {
+        name: 'a probe path whose handler reads process.memoryUsage still reports',
+        code: "import 'express'; app.get('/health-check', function (req, res) { res.json(process.memoryUsage()); });",
+        errors: report,
+      },
+      {
+        name: 'a probe path whose handler reads the os module still reports',
+        code: `
+          import 'express';
+          import os from 'node:os';
+          app.get('/healthz', (req, res) => res.json({ cpus: os.cpus() }));
+        `,
+        errors: report,
+      },
+      {
+        name: 'an endpoints list the user wrote is matched against the route as written',
+        code: "import 'express'; app.get('/healthz', (req, res) => res.sendStatus(200));",
+        options: [{ endpoints: ['/healthz'] }],
         errors: report,
       },
     ],

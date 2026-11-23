@@ -164,6 +164,9 @@ function localReceiverOnly(
   if (!variable || !def) return false;
   let fn: TSESTree.Node | null = null;
   if (def.type === 'FunctionName') {
+    // A declaration can be reassigned (`configure = imported`); the callee is
+    // then whatever it was last set to, which this file may not hold.
+    if (variable.references.some((ref) => ref.isWrite())) return false;
     fn = def.node;
   } else if (
     def.node.type === AST_NODE_TYPES.VariableDeclarator &&
@@ -175,6 +178,15 @@ function localReceiverOnly(
     fn?.type !== AST_NODE_TYPES.FunctionDeclaration &&
     fn?.type !== AST_NODE_TYPES.FunctionExpression &&
     fn?.type !== AST_NODE_TYPES.ArrowFunctionExpression
+  ) {
+    return false;
+  }
+  // `arguments[0]` is the app by another name, and passing it on is an escape
+  // the parameter's own references cannot show. (An arrow has no `arguments`
+  // of its own.)
+  if (
+    fn.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+    sourceCode.getScope(fn).set.get('arguments')?.references.length
   ) {
     return false;
   }

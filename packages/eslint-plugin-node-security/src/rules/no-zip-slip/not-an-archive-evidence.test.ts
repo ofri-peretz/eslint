@@ -112,17 +112,24 @@ describe('no-zip-slip — not an archive entry', () => {
       {
         // @source ZJONSSON/node-unzipper lib/Open/directory.js:157
         // @found linting popular Node.js packages
-        name: 'FP: the destination is normalized and used as the join base, with no containment guard to excuse it',
+        name: 'FP: a member canonicalized in place (written back to itself) is not a join onto anything',
         code: `
           import path from 'path';
           import AdmZip from 'adm-zip';
           function make(vars) {
             vars.extract = async function (opts) {
               opts.path = path.resolve(path.normalize(opts.path));
-              return vars.files.map(function (entry) {
-                return path.join(opts.path, entry.path.replace(/\\\\/g, '/'));
-              });
             };
+          }
+        `,
+      },
+      {
+        name: 'a single in-place normalize is the same statement',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          function make(opts) {
+            opts.path = path.normalize(opts.path);
           }
         `,
       },
@@ -250,6 +257,107 @@ describe('no-zip-slip — not an archive entry', () => {
           }
         `,
         errors: [{ messageId: 'unvalidatedArchivePath' }],
+      },
+      {
+        // Review: two entries in one join; argument position proves nothing.
+        name: 'two archive entries in one join both report, whatever their position',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          function extract(first, second) {
+            return path.join('/out', first.path, second.name);
+          }
+        `,
+        errors: [
+          { messageId: 'unvalidatedArchivePath' },
+          { messageId: 'unvalidatedArchivePath' },
+        ],
+      },
+      {
+        // Review: a later join must not exempt an earlier read.
+        name: 'an entry used as the base of a later join does not excuse its earlier unchecked read',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          function extract(dest, entry, other) {
+            path.join(dest, entry.path);
+            path.join(entry.path, other.name);
+          }
+        `,
+        errors: [
+          { messageId: 'unvalidatedArchivePath' },
+          { messageId: 'unvalidatedArchivePath' },
+          { messageId: 'unvalidatedArchivePath' },
+        ],
+      },
+      {
+        name: 'a canonicalization written to a different member is not in place',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          function make(target, opts) {
+            target.path = path.normalize(opts.path);
+          }
+        `,
+        errors: [{ messageId: 'unvalidatedArchivePath' }],
+      },
+      {
+        name: 'a compound assignment is not a canonicalization in place',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          function make(opts) {
+            opts.path += path.normalize(opts.path);
+          }
+        `,
+        errors: [{ messageId: 'unvalidatedArchivePath' }],
+      },
+      {
+        name: 'a path call with a second argument joins onto something, so it is not in place',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          function make(opts, base) {
+            opts.path = path.resolve(base, opts.path);
+          }
+        `,
+        errors: [{ messageId: 'unvalidatedArchivePath' }],
+      },
+      {
+        name: 'a chain interrupted by a non-path call is not provably in place',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          function make(opts) {
+            opts.path = wrap(path.normalize(opts.path));
+          }
+        `,
+        errors: [{ messageId: 'unvalidatedArchivePath' }],
+      },
+      {
+        name: 'a canonicalization whose target key is decided at runtime is not provably in place',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          function make(opts, k) {
+            opts[k] = path.normalize(opts.path);
+          }
+        `,
+        errors: [{ messageId: 'unvalidatedArchivePath' }],
+      },
+      {
+        name: 'an unguarded join onto the caller destination still reports the destination read',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          function make(opts, entry) {
+            return path.join(opts.path, entry.name);
+          }
+        `,
+        errors: [
+          { messageId: 'unvalidatedArchivePath' },
+          { messageId: 'unvalidatedArchivePath' },
+        ],
       },
     ],
   });
