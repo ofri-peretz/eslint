@@ -52,7 +52,7 @@ function skipQuoted(src, start) {
 
 /** Split into commands of whitespace-separated words; quoted text becomes an empty word. */
 export function commands(cmd) {
-  const src = dropHeredocs(cmd ?? '');
+  const src = dropHeredocs(cmd ?? '').replace(/\\\n/g, ' ');
   const result = [];
   let words = [];
   let word = '';
@@ -139,6 +139,7 @@ export const CASES = {
     'git commit -n -m x',
     'LEFTHOOK=0 git push',
     'cd repo && git commit --no-verify',
+    'git commit \\\n  --no-verify -m x',
     'until gh pr view 5 --json state | grep MERGED; do sleep 30; done',
     'while true; do gh run list; sleep 10; done',
     'until gh workflow view ci; do sleep 5; done',
