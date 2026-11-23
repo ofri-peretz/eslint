@@ -341,3 +341,121 @@ describe('the --admin policy is enforced by the script', () => {
     expect(run.merges).toHaveLength(0);
   });
 });
+
+/**
+ * Run the script where GraphQL is unreachable (Claude Code cloud sessions): `gh pr view` fails, and
+ * a fake `gh api` answers the REST routes from fixtures, applying `--jq` with the real jq.
+ */
+function runGateOverRest(
+  rest: { pull: object; checkRuns: object[]; statuses: object[] },
+  mode?: '--merge',
+) {
+  const dir = mkdtempSync(join(tmpdir(), 'pr-merge-gate-rest-'));
+  const calls = join(dir, 'calls');
+  writeFileSync(join(dir, 'pull.json'), JSON.stringify(rest.pull));
+  writeFileSync(
+    join(dir, 'runs.json'),
+    JSON.stringify({ check_runs: rest.checkRuns }),
+  );
+  writeFileSync(
+    join(dir, 'status.json'),
+    JSON.stringify({ statuses: rest.statuses }),
+  );
+  const fake = join(dir, 'gh');
+  writeFileSync(
+    fake,
+    [
+      '#!/usr/bin/env bash',
+      `echo "$*" >> "${calls}"`,
+      '[ "$1" = api ] || exit 1',
+      'filter=.; file=""',
+      'for a in "$@"; do case "$a" in */check-runs*) file=runs ;; */status) file=status ;; */pulls/42) file=pull ;; esac; done',
+      'while [ $# -gt 0 ]; do [ "$1" = --jq ] && filter="$2"; shift; done',
+      `[ -n "$file" ] && jq "$filter" "${dir}/$file.json"`,
+      'exit 0',
+    ].join('\n'),
+  );
+  chmodSync(fake, 0o755);
+  const result = spawnSync('bash', [SCRIPT, '42', ...(mode ? [mode] : [])], {
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      PATH: `${dir}:${process.env.PATH}`,
+      PR_MERGE_GATE_REPO: 'o/r',
+    },
+  });
+  const log = existsSync(calls) ? readFileSync(calls, 'utf8') : '';
+  return {
+    status: result.status,
+    stderr: result.stderr,
+    merges: log.split('\n').filter((l) => l.includes('/pulls/42/merge')),
+  };
+}
+
+const restPull = (mergeable_state: string) => ({
+  head: { sha: 'abc', ref: 'feat/x' },
+  mergeable_state,
+  draft: false,
+});
+
+describe('without GraphQL, the script judges the REST rollup the same way', () => {
+  it('merges a green branch held up by a review', () => {
+    const run = runGateOverRest(
+      {
+        pull: restPull('blocked'),
+        checkRuns: [
+          { name: 'Vitest', status: 'completed', conclusion: 'success' },
+        ],
+        statuses: [{ context: 'CodeRabbit', state: 'success' }],
+      },
+      '--merge',
+    );
+    expect(run.stderr).toBe('');
+    expect(run.status).toBe(0);
+    expect(run.merges).toHaveLength(1);
+  });
+
+  it('waits on a check run in progress (its conclusion is null over REST)', () => {
+    const run = runGateOverRest(
+      {
+        pull: restPull('blocked'),
+        checkRuns: [{ name: 'Build', status: 'in_progress', conclusion: null }],
+        statuses: [],
+      },
+      '--merge',
+    );
+    expect(run.status).toBe(2);
+    expect(run.merges).toHaveLength(0);
+  });
+
+  it('refuses a failing commit status', () => {
+    const run = runGateOverRest(
+      {
+        pull: restPull('blocked'),
+        checkRuns: [
+          { name: 'Vitest', status: 'completed', conclusion: 'success' },
+        ],
+        statuses: [{ context: 'CodeRabbit', state: 'failure' }],
+      },
+      '--merge',
+    );
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain('CodeRabbit');
+    expect(run.merges).toHaveLength(0);
+  });
+
+  it('refuses a BEHIND branch', () => {
+    const run = runGateOverRest(
+      {
+        pull: restPull('behind'),
+        checkRuns: [
+          { name: 'Vitest', status: 'completed', conclusion: 'success' },
+        ],
+        statuses: [],
+      },
+      '--merge',
+    );
+    expect(run.status).toBe(1);
+    expect(run.merges).toHaveLength(0);
+  });
+});
