@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-import-next",
-  "version": "4.1.8",
+  "version": "4.1.9",
   "description": "Oxlint import rules — eslint-plugin-import replacement for ESLint 10 (and 8, 9): same import/* rule names and settings (node, typescript and custom-alias resolvers), passes 95% of its own test cases. Flat config. Same rules and rule IDs as eslint-plugin-import-next, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
@@ -80,6 +80,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-import-next": "4.1.8"
+    "eslint-plugin-import-next": "4.1.9"
   }
 }
