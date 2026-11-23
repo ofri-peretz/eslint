@@ -83,8 +83,9 @@ export default [conventions.configs.recommended];
 
 ### Agent guidance files
 
-The `guidance` preset lints agent guidance as Markdown. It needs
-[`@eslint/markdown`](https://github.com/eslint/markdown) registered as the `markdown` plugin:
+The `guidance` preset lints agent guidance as Markdown, so it needs ESLint 9 or later (language
+plugins) and [`@eslint/markdown`](https://github.com/eslint/markdown) registered as the `markdown`
+plugin:
 
 ```js
 // eslint.config.js
