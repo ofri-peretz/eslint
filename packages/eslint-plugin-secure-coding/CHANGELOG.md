@@ -5,6 +5,19 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.4.6
+
+### Patch Changes
+
+- **🐛 Fix** — detect-object-injection false positive on a const dispatch table indexed by its own key-union type
+
+  `obj[key]` where `obj` is a `const` object literal with a closed set of
+  literal keys, and `key`'s own declared TS type — stated directly or through
+  a type alias in the same file — is a union of string literals that is a
+  subset of that key set, no longer reports. `__proto__` and `constructor`
+  are excluded by the key's own type, so no runtime guard is needed to prove
+  the access cannot reach the prototype.
+
 ## 6.4.5
 
 ### Patch Changes
