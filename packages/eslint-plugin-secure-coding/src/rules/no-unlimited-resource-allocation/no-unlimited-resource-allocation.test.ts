@@ -99,6 +99,7 @@ describe('no-unlimited-resource-allocation', () => {
           },
           // Static path construction - should NOT be flagged as unlimited resource
           {
+            name: 'a path built only from __dirname and literals is a fixed file',
             code: `import path from 'path'; fs.readFileSync(path.join(__dirname, 'data', 'users.json'));`,
           },
           // Same static path construction, but using `path.resolve` instead of

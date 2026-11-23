@@ -77,7 +77,7 @@ export interface Options {
   /**
    * Whole words whose presence in an identifier means a `secretPatterns` match
    * was a collision, not a secret. Default: `['author', 'authors', 'authored',
-   * 'authoring', 'authorship', 'hashtag', 'hashtags']`.
+   * 'authoring', 'authorship', 'hashtag', 'hashtags', 'scheme', 'schemes']`.
    *
    * Split on identifier word boundaries, so `postAuthorId` is excluded and
    * `authorization` is not. REPLACES the default list — `[]` removes the guard
@@ -445,6 +445,13 @@ const DEFAULT_NON_SECRET_WORDS: readonly string[] = [
   'authorship',
   'hashtag',
   'hashtags',
+  // The auth SCHEME is the public word before the credential in an
+  // `Authorization` header — `Bearer`, `Basic`. `auth_scheme_lower ===
+  // auth_params.scheme.toLowerCase()` (`passport-jwt` `lib/extract_jwt.js`)
+  // matched `auth` and reported a comparison of two copies of that word. The
+  // credential that follows it is named `token`, `value` or `credentials`.
+  'scheme',
+  'schemes',
 ];
 
 /**
@@ -1243,10 +1250,28 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
           nonSecretTails.map((word) => word.toLowerCase()),
         );
         sourceCode = context.sourceCode;
-        readsUntrusted = makeReadsTaintSource(
+        const readsRequest = makeReadsTaintSource(
           sourceCode,
           new Set(untrustedSources.map((source) => source.toLowerCase())),
         );
+        // `var cookieId = req.sessionID = getcookie(req, name)` binds the name
+        // to an assignment, and an assignment EXPRESSION evaluates to the value
+        // it assigned. The shared reader stops at it, so `cookieId` read as
+        // not-from-the-request, and `cookieId !== req.sessionID` — one
+        // client-held id against another copy of itself — looked like an
+        // attacker input against a server secret (`expressjs/session`
+        // `index.js:466`). Followed here, not in the shared reader, because
+        // sixteen other rules read taint through it.
+        readsUntrusted = (node) => {
+          if (readsRequest(node)) return true;
+          const bare = unwrapTypeSyntax(node);
+          if (bare.type !== AST_NODE_TYPES.Identifier) return false;
+          const init = bindingInit(sourceCode, bare);
+          return (
+            init?.type === AST_NODE_TYPES.AssignmentExpression &&
+            (readsRequest(init.left) || readsRequest(init.right))
+          );
+        };
         // A short pattern matches on word boundaries, a long one anywhere (see
         // SHORT_PATTERN_LENGTH). Plain anchoring was tried once and dropped
         // because it stopped `auth` matching `req.headers.authorization`; that

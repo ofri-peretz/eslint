@@ -1231,7 +1231,10 @@ describe('no-hardcoded-credentials', () => {
         valid: [
           // isLabelContext: Property with an Identifier key that's directly
           // in LABEL_CONTEXT_NAMES ('type').
-          { code: 'const config = { type: "password" };' },
+          {
+            name: 'a type label spelled password is a label, not a credential',
+            code: 'const config = { type: "password" };',
+          },
           // isLabelContext: Property key isn't label-typed, but the
           // enclosing object's own variable is 'labels' — the Property
           // fallback recursion (walks Property -> ObjectExpression ->

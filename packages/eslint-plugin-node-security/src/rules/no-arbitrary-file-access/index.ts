@@ -542,6 +542,99 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
     }
 
     /**
+     * Is `root` a path that provably ends at a separator?
+     *
+     * Read straight off the expression, or one hop through a binding and the
+     * `normalize()` / `resolve()` calls that wrap it:
+     * `const root = normalize(resolve(dir) + sep)`. An anchor that cannot be
+     * read is not an anchor, for the reason `isSeparatorAnchored` gives.
+     */
+    /** `normalize` for both `normalize(x)` and `path.normalize(x)`. */
+    const trailingName = (callee: TSESTree.Node): string =>
+      callee.type === AST_NODE_TYPES.Identifier
+        ? callee.name
+        : callee.type === AST_NODE_TYPES.MemberExpression
+          ? (propertyName(callee) ?? '')
+          : '';
+
+    function isAnchoredRoot(root: TSESTree.Node, depth = 0): boolean {
+      if (depth > 3) return false;
+      if (isSeparatorAnchored(root, sourceCode)) return true;
+      if (root.type === AST_NODE_TYPES.Identifier) {
+        const variable = resolve(root);
+        // One write only: a root that is reassigned is not the root that was
+        // read here.
+        if (variable === null || assignedValues(variable).length > 0) {
+          return false;
+        }
+        const init = bindings.get(variable);
+        return init !== undefined && isAnchoredRoot(init, depth + 1);
+      }
+      if (
+        root.type === AST_NODE_TYPES.CallExpression &&
+        root.arguments.length === 1 &&
+        ['normalize', 'resolve'].includes(trailingName(root.callee))
+      ) {
+        return isAnchoredRoot(root.arguments[0] as TSESTree.Node, depth + 1);
+      }
+      return false;
+    }
+
+    /**
+     * Is `test` the prefix-containment test `(<variable> + sep).substr(0,
+     * root.length) !== root`, or its `slice` / `substring` spelling?
+     *
+     * `expressjs/serve-index` guards `readdir` with exactly this before it
+     * answers 403. It is `startsWith` written out by hand: the first
+     * `root.length` characters of the path are the root. The root must end at
+     * a separator for the same reason a `startsWith` prefix must, so an
+     * unanchored root is not accepted.
+     */
+    function isPrefixSliceMismatchOn(
+      test: TSESTree.Expression,
+      variable: TSESLint.Scope.Variable,
+    ): boolean {
+      if (
+        test.type !== AST_NODE_TYPES.BinaryExpression ||
+        (test.operator !== '!==' && test.operator !== '!=') ||
+        test.left.type !== AST_NODE_TYPES.CallExpression ||
+        test.left.callee.type !== AST_NODE_TYPES.MemberExpression ||
+        !['substr', 'substring', 'slice'].includes(
+          propertyName(test.left.callee) ?? '',
+        ) ||
+        test.right.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return false;
+      }
+      const [start, end] = test.left.arguments;
+      if (
+        start?.type !== AST_NODE_TYPES.Literal ||
+        start.value !== 0 ||
+        end?.type !== AST_NODE_TYPES.MemberExpression ||
+        propertyName(end) !== 'length' ||
+        end.object.type !== AST_NODE_TYPES.Identifier ||
+        resolve(end.object) !== resolve(test.right)
+      ) {
+        return false;
+      }
+      const subject = test.left.callee.object;
+      const guarded =
+        subject.type === AST_NODE_TYPES.BinaryExpression &&
+        subject.operator === '+'
+          ? subject.left
+          : subject;
+      return (
+        guarded.type === AST_NODE_TYPES.Identifier &&
+        resolve(guarded) === variable &&
+        isAnchoredRoot(test.right)
+      );
+    }
+
+    const isExit = (stmt: TSESTree.Node | undefined): boolean =>
+      stmt?.type === AST_NODE_TYPES.ThrowStatement ||
+      stmt?.type === AST_NODE_TYPES.ReturnStatement;
+
+    /**
      * Is the sink protected by a startsWith() guard on this variable?
      *   if (!p.startsWith(base)) { throw ... }   — BEFORE the sink
      *   if (!p.startsWith(base)) return ...;     — BEFORE the sink
@@ -558,21 +651,26 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
           for (const stmt of current.body) {
             // A guard after the sink runs after the file was already read.
             if (stmt.range[1] > sink.range[0]) break;
-            if (
-              stmt.type !== AST_NODE_TYPES.IfStatement ||
-              stmt.test.type !== AST_NODE_TYPES.UnaryExpression ||
-              stmt.test.operator !== '!' ||
-              !isStartsWithOn(stmt.test.argument, variable)
-            )
-              continue;
+            if (stmt.type !== AST_NODE_TYPES.IfStatement) continue;
+            const isGuardTest =
+              (stmt.test.type === AST_NODE_TYPES.UnaryExpression &&
+                stmt.test.operator === '!' &&
+                isStartsWithOn(stmt.test.argument, variable)) ||
+              isPrefixSliceMismatchOn(stmt.test, variable);
+            if (!isGuardTest) continue;
             const consequent =
               stmt.consequent.type === AST_NODE_TYPES.BlockStatement
                 ? stmt.consequent.body[0]
                 : stmt.consequent;
-            if (
-              consequent?.type === AST_NODE_TYPES.ThrowStatement ||
-              consequent?.type === AST_NODE_TYPES.ReturnStatement
-            ) {
+            // A reject path may log before it leaves: serve-index writes
+            // `debug('malicious path')` and then `return next(createError(403))`.
+            // The guard holds when the block exits at its top level, wherever
+            // in the block the exit sits.
+            const exits =
+              stmt.consequent.type === AST_NODE_TYPES.BlockStatement
+                ? stmt.consequent.body.some(isExit)
+                : isExit(consequent);
+            if (exits) {
               return true;
             }
           }

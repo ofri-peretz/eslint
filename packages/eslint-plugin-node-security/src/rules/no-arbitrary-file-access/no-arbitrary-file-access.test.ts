@@ -235,7 +235,10 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
     },
 
     // FP-5: Variables with safe naming conventions
-    { code: 'fs.readFileSync(safePath)' },
+    {
+      name: 'a variable named safePath with no request behind it is not user input',
+      code: 'fs.readFileSync(safePath)',
+    },
     { code: 'fs.readFileSync(sanitizedPath)' },
     { code: 'fs.readFileSync(validatedFilename)' },
     { code: 'fs.readFileSync(cleanPath)' },

@@ -43,7 +43,10 @@ describe('detect-eval-with-expression', () => {
           name: 'a plain function returning its argument evaluates nothing',
           code: 'function myFunction(data) { return data; }',
         },
-        'const result = calculateValue();',
+        {
+          name: 'a call to an ordinary function evaluates nothing',
+          code: 'const result = calculateValue();',
+        },
       ],
       invalid: [],
     });
