@@ -19,6 +19,10 @@ A subagent with no `model:` inherits the parent session's model — usually the 
 for a task picked precisely because it was narrow. One with no `tools:` inherits every tool,
 including the ones that write. Both are one frontmatter line each.
 
+A Claude Code plugin's subagents count too: `agents/*.md` in a folder whose parent holds
+`.claude-plugin/plugin.json`. The `guidance` preset lints `**/agents/*.md` for them, and an
+`agents/` folder with no plugin manifest beside it is not read as subagents.
+
 ## Examples
 
 ### ❌ Incorrect
