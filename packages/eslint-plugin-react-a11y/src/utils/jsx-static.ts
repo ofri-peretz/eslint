@@ -14,7 +14,11 @@
  * `tabIndex`.
  */
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, staticString } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  propertyName,
+  staticString,
+} from '@interlace/eslint-devkit';
 
 /** Marks a value the file cannot know: an identifier, a call, a member read. */
 export const DYNAMIC = Symbol('dynamic');
@@ -242,4 +246,112 @@ export function judgedValue(
   return attr.value?.type === AST_NODE_TYPES.Literal
     ? String(attr.value.value)
     : null;
+}
+
+/**
+ * A comparable key for an attribute value that is the same expression in two
+ * places: a static string, or a template literal / identifier / property chain
+ * built from the same parts. `null` when the value is anything else (a call, a
+ * computed member...), which cannot be shown equal by reading it.
+ */
+function valueKey(node: TSESTree.Node): string | null {
+  switch (node.type) {
+    case AST_NODE_TYPES.Literal:
+      return typeof node.value === 'string' ? `s:${node.value}` : null;
+    case AST_NODE_TYPES.Identifier:
+      return `i:${node.name}`;
+    case AST_NODE_TYPES.ThisExpression:
+      return 'this';
+    case AST_NODE_TYPES.MemberExpression: {
+      const name = propertyName(node);
+      const object = name === null ? null : valueKey(node.object);
+      return object === null ? null : `${object}.${name}`;
+    }
+    case AST_NODE_TYPES.TemplateLiteral: {
+      let key = 't:';
+      for (const [index, quasi] of node.quasis.entries()) {
+        key += quasi.value.cooked;
+        const expression = node.expressions[index];
+        if (expression !== undefined) {
+          const part = valueKey(expression);
+          if (part === null) return null;
+          key += `\${${part}}`;
+        }
+      }
+      // A template with no expression is the plain string it spells.
+      return node.expressions.length === 0 ? `s:${key.slice(2)}` : key;
+    }
+    default:
+      return null;
+  }
+}
+
+/** The comparable key of a JSX attribute's value, or `null`. */
+function attributeKey(attr: TSESTree.JSXAttribute | undefined): string | null {
+  const value = attr?.value;
+  if (value === null || value === undefined) return null;
+  if (value.type === AST_NODE_TYPES.Literal) return valueKey(value);
+  // An empty `{}` is a JSXEmptyExpression, which `valueKey` reads as no key.
+  return value.type === AST_NODE_TYPES.JSXExpressionContainer
+    ? valueKey(value.expression)
+    : null;
+}
+
+const isFunctionNode = (node: TSESTree.Node): boolean =>
+  node.type === AST_NODE_TYPES.FunctionDeclaration ||
+  node.type === AST_NODE_TYPES.FunctionExpression ||
+  node.type === AST_NODE_TYPES.ArrowFunctionExpression;
+
+/** Does any `<label htmlFor={key}>` with readable content sit under `root`, outside nested functions? */
+function containsLabelFor(root: TSESTree.Node, key: string): boolean {
+  const stack: TSESTree.Node[] = [root];
+  while (stack.length > 0) {
+    const current = stack.pop() as TSESTree.Node;
+    if (
+      current.type === AST_NODE_TYPES.JSXElement &&
+      current.openingElement.name.type === AST_NODE_TYPES.JSXIdentifier &&
+      current.openingElement.name.name === 'label' &&
+      attributeKey(findAttribute(current.openingElement, 'htmlFor')) === key &&
+      hasAccessibleChild(current.children)
+    ) {
+      return true;
+    }
+    for (const [name, child] of Object.entries(current)) {
+      if (name === 'parent' || typeof child !== 'object' || child === null)
+        continue;
+      for (const item of Array.isArray(child) ? child : [child]) {
+        if (
+          typeof item === 'object' &&
+          item !== null &&
+          typeof (item as TSESTree.Node).type === 'string' &&
+          !isFunctionNode(item as TSESTree.Node)
+        ) {
+          stack.push(item as TSESTree.Node);
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Whether the control is named by a `<label htmlFor>` whose value is the same
+ * as the control's `id` — a static string, or the same template / identifier /
+ * property chain written twice (`id={`field-${id}`}` and
+ * `htmlFor={`field-${id}`}`). The label has to have content and sit in the same
+ * JSX tree as the control, in the same function: a label in another function
+ * could see a different `id`.
+ */
+export function isNamedByLabelFor(node: TSESTree.JSXOpeningElement): boolean {
+  const key = attributeKey(findAttribute(node, 'id'));
+  if (key === null) return false;
+  let root: TSESTree.Node = node.parent;
+  for (
+    let current: TSESTree.Node | undefined = node.parent;
+    current && !isFunctionNode(current);
+    current = current.parent
+  ) {
+    if (current.type === AST_NODE_TYPES.JSXElement) root = current;
+  }
+  return containsLabelFor(root, key);
 }

@@ -65,7 +65,10 @@ describe('no-xxe-injection', () => {
           code: `const data = JSON.parse(fs.readFileSync(file, 'utf-8'));`,
         },
         `const cfg = JSON.parse(req.body);`,
-        `const when = Date.parse(input);`,
+        {
+          name: 'Date.parse is not an XML parser',
+          code: `const when = Date.parse(input);`,
+        },
         `const parts = path.parse(userPath);`,
         {
           code: `const q = url.parse(req.url);`,

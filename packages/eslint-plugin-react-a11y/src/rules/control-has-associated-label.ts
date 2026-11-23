@@ -16,6 +16,7 @@ import { createRule } from '@interlace/eslint-devkit';
 import {
   findAttribute,
   hasSpreadAttribute,
+  isNamedByLabelFor,
   isJsxAttributeValue,
   staticAttributeValue,
 } from '../utils/jsx-static';
@@ -357,6 +358,9 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
         // The label, aria-label, htmlFor or children this rule looks for may
         // arrive through a spread the call site cannot see into (#1563).
         if (hasSpreadAttribute(openingElement)) return;
+
+        // Named by a `<label htmlFor>` carrying the same value as this `id`.
+        if (isNamedByLabelFor(openingElement)) return;
 
         // Check if it has accessible text
         if (!hasAccessibleText(node, depth, labelAttributes)) {

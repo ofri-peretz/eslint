@@ -983,7 +983,10 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
      * to find evidence of coverage, never to prove the absence of a read.
      */
     // oxlint-disable-next-line consistent-function-scoping
-    function classifyUse(identifier: TSESTree.Identifier): Use {
+    function classifyUse(
+      identifier: TSESTree.Identifier,
+      size?: TSESTree.Node,
+    ): Use {
       const parent = identifier.parent;
       if (
         parent.type === AST_NODE_TYPES.MemberExpression &&
@@ -1027,7 +1030,9 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         ) {
           return 'read';
         }
-        return coversWholeBuffer(grandparent, name) ? 'covering' : 'partial';
+        return coversWholeBuffer(grandparent, name, size)
+          ? 'covering'
+          : 'partial';
       }
       // `src.copy(buf, offset)` / `crypto.randomFillSync(buf)`.
       if (
@@ -1036,7 +1041,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
       ) {
         const method = destinationArgumentCallee(parent.callee);
         if (method === null) return 'read';
-        return coversWholeBuffer(parent, method) ? 'covering' : 'partial';
+        return coversWholeBuffer(parent, method, size) ? 'covering' : 'partial';
       }
       return 'read';
     }
@@ -1127,10 +1132,90 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     function coversWholeBuffer(
       call: TSESTree.CallExpression,
       method: string,
+      size?: TSESTree.Node,
     ): boolean {
       const offset = offsetOf(call.arguments[1]);
       if (offset === 'start') return !WRITE_WIDTHS.has(method);
+      // `src.copy(buf, 0, from, from + SIZE)` is the one explicit-zero spelling
+      // that is decidably whole: its source range is as long as the allocation.
+      // Every other write at a literal `0` (`buf.write(s, 0)`, `buf.set(s, 0)`)
+      // stays a fixed-offset write, judged by its offset like any other.
+      if (offset === 0 && method === 'copy')
+        return copiesExactlySize(call, size);
       return offset === null && isInsideLoop(call);
+    }
+
+    /** Is this node a literal, or a name no write touches after its declaration? */
+    function isStableValue(node: TSESTree.Node): boolean {
+      if (node.type === AST_NODE_TYPES.Literal) return true;
+      if (node.type !== AST_NODE_TYPES.Identifier) return false;
+      const variable = findVariable(sourceCode, node);
+      return (
+        variable !== null &&
+        variable.defs.length === 1 &&
+        variable.references.every(
+          (reference) => reference.init === true || !reference.isWrite(),
+        )
+      );
+    }
+
+    /** Do these two stable values read the same binding or spell the same literal? */
+    function sameStableValue(a: TSESTree.Node, b: TSESTree.Node): boolean {
+      if (!isStableValue(a) || !isStableValue(b)) return false;
+      return a.type === AST_NODE_TYPES.Identifier
+        ? b.type === AST_NODE_TYPES.Identifier &&
+            findVariable(sourceCode, a) === findVariable(sourceCode, b)
+        : b.type === AST_NODE_TYPES.Literal &&
+            (a as TSESTree.Literal).value === b.value;
+    }
+
+    /**
+     * `src.copy(buf, 0, from, from + SIZE)` into a buffer allocated with that
+     * very `SIZE`: the source range is exactly as long as the allocation, so
+     * the copy writes every byte. The range has to be `[from, from + SIZE)`
+     * (either operand order) or `[0, SIZE)`, both ends read from bindings that
+     * are never reassigned; a range of any other length leaves bytes behind.
+     */
+    function copiesExactlySize(
+      call: TSESTree.CallExpression,
+      size: TSESTree.Node | undefined,
+    ): boolean {
+      if (size === undefined || call.arguments.length !== 4) return false;
+      const [, , from, to] = call.arguments as [
+        TSESTree.Node,
+        TSESTree.Node,
+        TSESTree.Node,
+        TSESTree.Node,
+      ];
+      if (offsetOf(from as TSESTree.CallExpressionArgument) === 0) {
+        return sameStableValue(to, size);
+      }
+      if (to.type !== AST_NODE_TYPES.BinaryExpression || to.operator !== '+') {
+        return false;
+      }
+      // `from` is read twice inside ONE argument list, so both reads see the
+      // same value whether or not the binding is reassigned elsewhere; only
+      // the size has to be a value that cannot move after the allocation.
+      const left = to.left as TSESTree.Node;
+      return (
+        (sameReads(left, from) && sameStableValue(to.right, size)) ||
+        (sameReads(to.right, from) && sameStableValue(left, size))
+      );
+    }
+
+    /** Do these two expressions read the same binding / spell the same literal? */
+    function sameReads(a: TSESTree.Node, b: TSESTree.Node): boolean {
+      if (a.type === AST_NODE_TYPES.Identifier) {
+        return (
+          b.type === AST_NODE_TYPES.Identifier &&
+          findVariable(sourceCode, a) !== null &&
+          findVariable(sourceCode, a) === findVariable(sourceCode, b)
+        );
+      }
+      if (a.type === AST_NODE_TYPES.Literal) {
+        return b.type === AST_NODE_TYPES.Literal && a.value === b.value;
+      }
+      return false;
     }
 
     /**
@@ -1229,6 +1314,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
           // After the read, every look at the buffer must stop at its count.
           // Writes and metadata change nothing about what a read can see.
           if (isReadUpTo(identifier, readCount)) continue;
+          if (isReadWhenFull(identifier, readCount)) continue;
           if (classifyUse(identifier) === 'read') return false;
           continue;
         }
@@ -1237,7 +1323,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
           readCount = filled;
           continue;
         }
-        const kind = classifyUse(identifier);
+        const kind = classifyUse(identifier, call.arguments[0]);
         // Metadata reads disclose nothing, and a partial write is not a read —
         // neither settles the question, so keep looking for the first one that
         // does.
@@ -1325,6 +1411,34 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
           (declarator as TSESTree.VariableDeclarator).id,
         );
         return variable === null ? null : { via: 'binding', variable };
+      }
+
+      // `fs.read(fd, buf, 0, len, pos, (err, bytesRead) => …)` — the callback
+      // spelling of the same read. The count is the callback's second
+      // parameter, and it counts only while nothing reassigns it.
+      if (
+        isFsExport(call.callee, ['read']) &&
+        call.arguments.length === 6 &&
+        call.arguments[1] === identifier
+      ) {
+        const offset = offsetOf(call.arguments[2]);
+        if (offset !== 'start' && offset !== 0) return null;
+        const callback = call.arguments[5] as TSESTree.Node;
+        if (
+          callback.type !== AST_NODE_TYPES.FunctionExpression &&
+          callback.type !== AST_NODE_TYPES.ArrowFunctionExpression
+        ) {
+          return null;
+        }
+        const count = callback.params[1];
+        if (count?.type !== AST_NODE_TYPES.Identifier) return null;
+        const variable = sourceCode
+          .getDeclaredVariables(callback)
+          .find((declared) => declared.name === count.name);
+        return variable !== undefined &&
+          variable.references.every((reference) => !reference.isWrite())
+          ? { via: 'binding', variable }
+          : null;
       }
 
       // `handle.read(buf, …)` on a FileHandle this file opened with
@@ -1442,6 +1556,48 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         node.object.type === AST_NODE_TYPES.Identifier &&
         propertyName(node) === 'bytesRead' &&
         findVariable(sourceCode, node.object) === readCount.variable
+      );
+    }
+
+    /**
+     * `count === buf.byteLength ? buf : buf.subarray(0, count)` — the read
+     * filled the whole buffer exactly when its count equals the buffer's
+     * length, so the arm taken on equality exposes only written bytes. The
+     * test has to compare THIS read's count with THIS buffer's own length, and
+     * the buffer has to sit in the arm that equality selects.
+     */
+    function isReadWhenFull(
+      identifier: TSESTree.Identifier,
+      readCount: ReadCount,
+    ): boolean {
+      const conditional = identifier.parent;
+      if (
+        conditional.type !== AST_NODE_TYPES.ConditionalExpression ||
+        conditional.test.type !== AST_NODE_TYPES.BinaryExpression
+      ) {
+        return false;
+      }
+      const test = conditional.test;
+      const equal = test.operator === '===' || test.operator === '==';
+      const unequal = test.operator === '!==' || test.operator === '!=';
+      if (
+        !(equal && conditional.consequent === identifier) &&
+        !(unequal && conditional.alternate === identifier)
+      ) {
+        return false;
+      }
+      const ownLength = (node: TSESTree.Node): boolean =>
+        node.type === AST_NODE_TYPES.MemberExpression &&
+        !node.computed &&
+        node.object.type === AST_NODE_TYPES.Identifier &&
+        findVariable(sourceCode, node.object) ===
+          findVariable(sourceCode, identifier) &&
+        (propertyName(node) === 'byteLength' ||
+          propertyName(node) === 'length');
+      const left = test.left as TSESTree.Node;
+      return (
+        (isCount(left, readCount) && ownLength(test.right)) ||
+        (ownLength(left) && isCount(test.right, readCount))
       );
     }
 
@@ -1587,6 +1743,75 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         : null;
     }
 
+    /** A property chain this file can compare by its text: `a.b.c`, `this.m`. */
+    function isPlainChain(node: TSESTree.Node): boolean {
+      if (node.type === AST_NODE_TYPES.Identifier) return true;
+      if (node.type === AST_NODE_TYPES.ThisExpression) return true;
+      return (
+        node.type === AST_NODE_TYPES.MemberExpression &&
+        !node.computed &&
+        node.property.type === AST_NODE_TYPES.Identifier &&
+        isPlainChain(node.object)
+      );
+    }
+
+    /**
+     * `this.m = Buffer.allocUnsafeSlow(src.length); this.m.set(src);`
+     *
+     * The allocation is stored on a property, so the local-binding analysis
+     * cannot follow it, but the very next statement copies a source of exactly
+     * the allocated length into it. Nothing runs between the two, so no byte
+     * is read before it is written, and `set(src)` with no offset writes all
+     * `src.length` of them. The size has to be `src.length` (or `byteLength`)
+     * of the same never-reassigned `src` that is copied; any other size, an
+     * offset, or a statement between them leaves the buffer reported.
+     */
+    function isFilledProperty(node: TSESTree.CallExpression): boolean {
+      const assignment = node.parent;
+      if (
+        assignment.type !== AST_NODE_TYPES.AssignmentExpression ||
+        assignment.operator !== '=' ||
+        assignment.right !== node ||
+        assignment.left.type !== AST_NODE_TYPES.MemberExpression ||
+        !isPlainChain(assignment.left)
+      ) {
+        return false;
+      }
+      const statement = assignment.parent;
+      if (statement.type !== AST_NODE_TYPES.ExpressionStatement) return false;
+      const block = statement.parent;
+      if (
+        block.type !== AST_NODE_TYPES.BlockStatement &&
+        block.type !== AST_NODE_TYPES.Program
+      ) {
+        return false;
+      }
+      const next = block.body[block.body.indexOf(statement) + 1];
+      if (next?.type !== AST_NODE_TYPES.ExpressionStatement) return false;
+      const call = next.expression;
+      if (
+        call.type !== AST_NODE_TYPES.CallExpression ||
+        call.callee.type !== AST_NODE_TYPES.MemberExpression ||
+        call.callee.computed ||
+        propertyName(call.callee) !== 'set' ||
+        call.arguments.length !== 1 ||
+        sourceCode.getText(call.callee.object) !==
+          sourceCode.getText(assignment.left)
+      ) {
+        return false;
+      }
+      const source = call.arguments[0] as TSESTree.Node;
+      const size = node.arguments[0];
+      return (
+        source.type === AST_NODE_TYPES.Identifier &&
+        size?.type === AST_NODE_TYPES.MemberExpression &&
+        !size.computed &&
+        (propertyName(size) === 'length' ||
+          propertyName(size) === 'byteLength') &&
+        sameStableValue(size.object, source)
+      );
+    }
+
     /**
      * True when the call's result is immediately zeroed in the same
      * expression: `Buffer.allocUnsafe(n).fill(0)`. Parent-node shape only.
@@ -1686,6 +1911,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         if (allocator === null) return;
 
         if (isFilledInPlace(node)) return;
+        if (isFilledProperty(node)) return;
         if (isCoveredBeforeRead(node)) return;
 
         // The suggestion rewrites the PROPERTY, so it exists only for the

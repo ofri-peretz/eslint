@@ -56,6 +56,7 @@ import {
   resolveModuleBinding,
   staticString,
   namesOneOf,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -593,6 +594,58 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
         scope: sourceCode.getScope(xmlSource),
       });
 
+    /**
+     * The method names this file itself defines: `X.prototype.name = …` and
+     * `class X { name() {} }`. Collected once per file, on first use.
+     */
+    let ownMethods: Set<string> | null = null;
+    const definedMethods = (): Set<string> => {
+      if (ownMethods !== null) return ownMethods;
+      const found = new Set<string>();
+      const keys = sourceCode.visitorKeys;
+      const stack: TSESTree.Node[] = [sourceCode.ast];
+      while (stack.length > 0) {
+        const current = stack.pop() as TSESTree.Node;
+        if (
+          current.type === AST_NODE_TYPES.AssignmentExpression &&
+          current.left.type === AST_NODE_TYPES.MemberExpression &&
+          current.left.object.type === AST_NODE_TYPES.MemberExpression &&
+          propertyName(current.left.object) === 'prototype'
+        ) {
+          const name = propertyName(current.left);
+          if (name !== null) found.add(name);
+        }
+        if (current.type === AST_NODE_TYPES.MethodDefinition) {
+          const name = objectKeyName(current);
+          if (name !== null) found.add(name);
+        }
+        for (const key of keys[current.type] as readonly string[]) {
+          const child = (current as unknown as Record<string, unknown>)[key];
+          for (const item of Array.isArray(child) ? child : [child]) {
+            if (item !== null && typeof item === 'object') {
+              stack.push(item as TSESTree.Node);
+            }
+          }
+        }
+      }
+      ownMethods = found;
+      return found;
+    };
+
+    /**
+     * Is this call a method of the parser this very file defines?
+     * `this.parseString(str, cb)` inside `Parser.prototype.parseStringPromise`,
+     * in the file that defines `Parser.prototype.parseString`, delegates to the
+     * implementation written a few lines up; what that implementation parses
+     * with is judged where it calls the real parser, not at each internal hop.
+     */
+    const callsOwnMethod = (node: TSESTree.CallExpression): boolean => {
+      const callee = node.callee;
+      if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+      const name = propertyName(callee);
+      return name !== null && definedMethods().has(name);
+    };
+
     return {
       before() {
         const [options] = currentOptions();
@@ -623,6 +676,7 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
         ]);
 
         sourceCode = context.sourceCode;
+        ownMethods = null;
       },
       CallExpression(node: TSESTree.CallExpression) {
         if (!isXmlParsingCall(node)) return;
@@ -672,6 +726,8 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
 
         if (isTrustedXmlSource(xmlInput) || isXmlInputValidated(xmlInput))
           return;
+
+        if (callsOwnMethod(node)) return;
 
         // Untrusted input is only half of it. The other half is a parser that
         // can reach the filesystem — see DEFAULT_EXTERNAL_ENTITY_MODULES.

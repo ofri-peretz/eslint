@@ -307,6 +307,75 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * `s = s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+     *  if (quote) { s = s.replace(/"/g, '&quot;'); }`
+     *
+     * An escaper that takes the quote decision as a parameter: ampersand and
+     * the angle brackets always, the double quote when the caller says the
+     * output lands in an attribute. The chain on its own is incomplete only if
+     * the quote step is missing, and here the very next statements of the same
+     * block escape it into the same variable — so the helper does escape every
+     * character the rule asks for, on a path the caller chooses. The chain has
+     * to be assigned back to a plain identifier, and a LATER statement of the
+     * same block (as itself, or the body of an `if`) has to rewrite that same
+     * identifier with a `"` pattern and a quote entity.
+     */
+    const quoteEscapedLater = (call: TSESTree.CallExpression): boolean => {
+      const assignment = call.parent;
+      if (
+        assignment?.type !== AST_NODE_TYPES.AssignmentExpression ||
+        assignment.operator !== '=' ||
+        assignment.right !== call ||
+        assignment.left.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return false;
+      }
+      const target = assignment.left.name;
+      const statement = assignment.parent;
+      const block = statement.parent;
+      if (
+        statement.type !== AST_NODE_TYPES.ExpressionStatement ||
+        (block?.type !== AST_NODE_TYPES.BlockStatement &&
+          block?.type !== AST_NODE_TYPES.Program)
+      ) {
+        return false;
+      }
+      const escapesQuoteInto = (stmt: TSESTree.Node | null): boolean => {
+        if (stmt?.type === AST_NODE_TYPES.BlockStatement) {
+          return stmt.body.some((inner) => escapesQuoteInto(inner));
+        }
+        if (stmt?.type !== AST_NODE_TYPES.ExpressionStatement) return false;
+        const write = stmt.expression;
+        if (
+          write.type !== AST_NODE_TYPES.AssignmentExpression ||
+          write.operator !== '=' ||
+          write.left.type !== AST_NODE_TYPES.Identifier ||
+          write.left.name !== target ||
+          !isReplaceCall(write.right)
+        ) {
+          return false;
+        }
+        const quote = write.right;
+        const receiver = (quote.callee as TSESTree.MemberExpression).object;
+        return (
+          receiver.type === AST_NODE_TYPES.Identifier &&
+          receiver.name === target &&
+          staticPattern(quote.arguments[0]) === '"' &&
+          /^(?:&quot;|&#0?34;|&#x22;)$/i.test(
+            staticReplacement(quote.arguments[1]) ?? '',
+          )
+        );
+      };
+      return block.body
+        .slice(block.body.indexOf(statement) + 1)
+        .some((later) =>
+          later.type === AST_NODE_TYPES.IfStatement
+            ? escapesQuoteInto(later.consequent)
+            : escapesQuoteInto(later),
+        );
+    };
+
+    /**
      * Check whether a `.replace()` chain is an INCOMPLETE HTML escaper.
      *
      * Two conditions, both about meaning rather than shape:
@@ -507,7 +576,10 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             return;
           }
 
-          if (isIncompleteReplaceSanitization(node)) {
+          if (
+            isIncompleteReplaceSanitization(node) &&
+            !quoteEscapedLater(node)
+          ) {
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
