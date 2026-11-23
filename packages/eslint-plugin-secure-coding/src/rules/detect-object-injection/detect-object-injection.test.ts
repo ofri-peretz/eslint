@@ -70,6 +70,7 @@ describe('detect-object-injection', () => {
           code: "const A = { a: 'A' }; A = other; function f(req) { return A[req.body.k]; }",
         },
         {
+          name: 'a var redeclared and reassigned is also disqualified from the constant-map allowlist',
           code: "var A = { a: 'A' }; var A = other; function f(req) { return A[req.body.k]; }",
         },
         {
@@ -942,6 +943,37 @@ describe('detect-object-injection', () => {
   });
 
   /**
+   * hasPrecedingValidation — a TS type-only cast around the key identifier
+   * (`WRITERS[kind as keyof typeof WRITERS]`, the standard way to narrow a
+   * dispatch-table key to its own key union) must not stop the Identifier
+   * check from seeing the identifier underneath: the cast is erased at
+   * compile time, so `Object.hasOwn(WRITERS, kind)` guards the same access
+   * whether or not the key is cast at the point it is read.
+   * github.com/ofri-peretz/eslint issue #1547.
+   */
+  describe('hasPrecedingValidation sees past a TS type-only cast on the key', () => {
+    ruleTester.run(
+      'Object.hasOwn guard still silences an invoked read through `key as keyof typeof table`',
+      detectObjectInjection,
+      {
+        valid: [
+          {
+            name: 'hasOwn-guarded dispatch table call, key cast with `as keyof typeof`',
+            code: `
+            const WRITERS = { a: () => 1, b: () => 2 };
+            function write(kind: string): number {
+              if (!Object.hasOwn(WRITERS, kind)) throw new TypeError(kind);
+              return WRITERS[kind as keyof typeof WRITERS]();
+            }
+          `,
+          },
+        ],
+        invalid: [],
+      },
+    );
+  });
+
+  /**
    * hasPrecedingValidation — exercise the negated-includes recursion, the
    * hasOwnProperty.call() args[1]-mismatch false path, and the non-block
    * (unbraced) early-exit consequent shape.
@@ -1203,6 +1235,61 @@ describe('detect-object-injection', () => {
             code: `
             const merged = [...baseArray];
             merged[dynamicKey] = value;
+          `,
+          },
+        ],
+        invalid: [],
+      },
+    );
+  });
+
+  /**
+   * isPrototypelessObject — a `const` initialized from `Object.create(null)`
+   * wrapped in a TS type-only cast (`as Record<...>` / `satisfies` / the
+   * `<T>x` assertion). `declarator.init` is then a TSAsExpression/
+   * TSSatisfiesExpression/TSTypeAssertion node, not the CallExpression the
+   * identifier branch pattern-matches against, so the cast form was reported
+   * at CVSS 9.8 while the bare `Object.create(null)` form (already covered
+   * above) was silent. Fixed by unwrapping with `withoutTypeAnnotation` —
+   * the same helper `isLocallyConstructed` already uses for exactly this
+   * reason, since every one of these casts is erased at compile time and
+   * changes nothing about what the target is at runtime.
+   * github.com/ofri-peretz/eslint issue #1573.
+   */
+  describe('isPrototypelessObject sees past a TS type-only cast', () => {
+    ruleTester.run(
+      'Object.create(null) wrapped in a TS type-only cast is still prototype-less',
+      detectObjectInjection,
+      {
+        valid: [
+          {
+            name: 'Object.create(null) as Record<string, number>',
+            code: `
+            function collect(keys: string[], value: number): Record<string, number> {
+              const target = Object.create(null) as Record<string, number>;
+              for (const key of keys) if (!Object.hasOwn(target, key)) target[key] = value;
+              return target;
+            }
+          `,
+          },
+          {
+            name: 'Object.create(null) satisfies Record<string, number>',
+            code: `
+            function collect(keys: string[], value: number) {
+              const target = Object.create(null) satisfies Record<string, number>;
+              for (const key of keys) target[key] = value;
+              return target;
+            }
+          `,
+          },
+          {
+            name: 'the older <T> type-assertion spelling of the same cast',
+            code: `
+            function collect(keys: string[], value: number) {
+              const target = <Record<string, number>>Object.create(null);
+              for (const key of keys) target[key] = value;
+              return target;
+            }
           `,
           },
         ],
