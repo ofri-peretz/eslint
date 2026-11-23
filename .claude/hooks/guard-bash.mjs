@@ -27,7 +27,8 @@ function dropHeredocs(cmd) {
     }
     out.push(line);
     const at = line.indexOf('<<');
-    if (at !== -1) {
+    // `<<<` is a herestring, not a heredoc: it has no body to skip.
+    if (at !== -1 && line[at + 2] !== '<') {
       const word = line
         .slice(at + 2)
         .replace(/^-/, '')
@@ -111,7 +112,7 @@ function skipsHooks(words) {
     args.some((a) => /^-[a-zA-Z]+$/.test(a) && a.includes('n'))
   )
     return true;
-  const offEnv = env.some((w) => w === 'LEFTHOOK=0' || w === 'HUSKY=0');
+  const offEnv = env.some((w) => /^(LEFTHOOK|HUSKY)=(0|false)$/.test(w));
   return offEnv && (sub === 'commit' || sub === 'push');
 }
 
@@ -159,6 +160,8 @@ export const CASES = {
     'git commit "--no-verify" -m x',
     'git -C . commit -n -m x',
     'LEFTHOOK=0 git -c core.x=1 push',
+    'HUSKY=false git commit -m x',
+    "read -r b <<< 'x'\ngit commit --no-verify -m y",
     'git commit \\\n  --no-verify -m x',
     'until gh pr view 5 --json state | grep MERGED; do sleep 30; done',
     'while true; do gh run list; sleep 10; done',
