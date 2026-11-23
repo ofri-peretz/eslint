@@ -395,8 +395,8 @@ describe('detect-object-injection', () => {
           errors: [{ messageId: 'objectInjection' }],
         },
         {
+          name: 'a computed write through a nested property access reports once, on the AssignmentExpression',
           code: 'obj[config.key] = value;',
-          // Nested property access - should report once on AssignmentExpression
           errors: [{ messageId: 'objectInjection' }],
         },
       ],
