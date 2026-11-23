@@ -312,7 +312,9 @@ else if (isMain) {
     else {
       const file = input.file_path ?? input.notebook_path;
       if (typeof file === "string") {
-        const rel = file.startsWith(`${config.dir}/`) ? file.slice(config.dir.length + 1) : file;
+        // Windows hands both paths over with backslashes: compare them with forward slashes.
+        const [f, d] = [file, config.dir].map((p) => p.replaceAll("\\", "/"));
+        const rel = f.startsWith(`${d}/`) ? f.slice(d.length + 1) : f;
         hit = decideEdit(rel, config.frozen);
       }
     }
