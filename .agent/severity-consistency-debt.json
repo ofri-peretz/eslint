@@ -171,13 +171,6 @@
       "band": "MEDIUM"
     },
     {
-      "rule": "express-security/require-express-body-parser-limits",
-      "messageId": "excessiveLimit",
-      "cvss": 7.5,
-      "label": "MEDIUM",
-      "band": "HIGH"
-    },
-    {
       "rule": "import-next/consistent-type-specifier-style",
       "messageId": "preferInline",
       "cvss": 5.3,

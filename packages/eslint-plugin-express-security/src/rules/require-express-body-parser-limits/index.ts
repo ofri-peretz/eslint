@@ -101,13 +101,14 @@ export const requireExpressBodyParserLimits = createRule<
       description:
         'Require size limits on Express.js body parsers to prevent DoS attacks',
       cwe: 'CWE-400',
-      cvss: 7.5,
+      cvss: 5.3,
     },
     messages: {
       missingLimit: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Body Parser Without An Explicit Limit',
         cwe: 'CWE-400',
+        cvss: 5.3,
         description:
           "This body parser sets no `limit`, so it silently runs on Express's 100kb default. A body-size ceiling is a security decision that should be visible where the parser is mounted, not inherited.",
         severity: 'MEDIUM',
