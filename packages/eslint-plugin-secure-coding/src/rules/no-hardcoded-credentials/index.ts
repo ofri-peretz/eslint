@@ -466,6 +466,31 @@ export function isStyleToken(value: string): boolean {
   return false;
 }
 
+/**
+ * Is this the name of a dependency-injection token, `SCREAMING_SNAKE(qualifier)`?
+ *
+ * `nestjs/bull` `get-shared-config-token.util.ts`:
+ *
+ *   export const BULL_CONFIG_DEFAULT_TOKEN = 'BULLMQ_CONFIG(default)';
+ *
+ * The slot ends in `TOKEN` and the value mixes upper case with punctuation, so
+ * the shape gate passed it. It is the string a container uses to look a
+ * provider up, written to be read in a stack trace. The shape that gives it
+ * away is a call: an upper-case word run with an underscore in it, then a
+ * parenthesised qualifier that is itself a plain word. A credential is not
+ * written as a function call, and the qualifier test (a natural word, so
+ * `default`, `primary`, `reports`) keeps `STRIPE_KEY(Xk9mP2vQ8zL4nR7w)` out.
+ *
+ * Only the shape is read. The slot name is not consulted, so the same string
+ * in a `password` slot is also not a secret.
+ */
+export function isInjectionTokenName(value: string): boolean {
+  const match = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\(([A-Za-z][A-Za-z.-]*)\)$/.exec(
+    value,
+  );
+  return match !== null && isNaturalWordString(match[1] as string);
+}
+
 function isUrlOrPath(value: string): boolean {
   if (/^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(value)) {
     return !/^[^/]*\/\/[^/@]*:[^/@]*@/.test(value);
@@ -584,6 +609,8 @@ export function isSecretShaped(value: string, minLength: number): boolean {
   if (isUrlOrPath(value)) return false;
   // CSS is written to be read; see isStyleToken.
   if (isStyleToken(value)) return false;
+  // A DI token name is a lookup key written to be read; see isInjectionTokenName.
+  if (isInjectionTokenName(value)) return false;
   // Pure word strings are identifiers / i18n keys / message constants.
   if (isNaturalWordString(value)) return false;
   // A credential mixes at least two character classes, or — for single-charset
@@ -1735,12 +1762,27 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // FPs before the gate landed).
       let finalIsCredential = isCredential;
       let finalType = type;
-      if (
-        isCredential &&
-        confidence === 'ambiguous' &&
-        !isCredentialContext(value, parent)
-      ) {
-        finalIsCredential = false;
+      if (isCredential && confidence === 'ambiguous') {
+        const inContext = isCredentialContext(value, parent);
+        // A "Common password" match is ambiguous about the STRING, not the
+        // slot: `password` is a weak password, but it is also the keyword a
+        // route-name list uses to label the login endpoint. The generic
+        // secret-shaped-blob ambiguous match has no such second life, so any
+        // credential-named slot is still enough for it — but a common
+        // password word needs the slot's OWN category to actually say
+        // "password" (or an unclassified-but-credential-ish name like
+        // `credentials`/`auth`), not merely to end in some other credential
+        // word like `tokens` (#1557: `SENSITIVE_ROUTE_TOKENS = [...,
+        // 'password']` is a route-name list, not a password store).
+        const categoryMismatch =
+          inContext &&
+          type === 'Common password' &&
+          !['password', 'other'].includes(
+            inferCredentialTypeFromContext(parent!),
+          );
+        if (!inContext || categoryMismatch) {
+          finalIsCredential = false;
+        }
       }
 
       // An enum member named after itself is a code, not a credential. Gated

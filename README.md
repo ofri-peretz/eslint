@@ -12,6 +12,45 @@
   Every finding ships with a CWE, an OWASP mapping, and the fix.
 </p>
 
+SQL and NoSQL injection, XSS sinks, JWT misuse, NestJS and Express hardening, AI SDK misuse, and an
+ESLint 10 drop-in for `eslint-plugin-import`. Each plugin installs on its own, for ESLint or oxlint.
+
+## Install one plugin, catch a real bug
+
+```bash
+npm i -D eslint eslint-plugin-postgresql-security
+```
+
+```js
+// eslint.config.mjs
+import pg from 'eslint-plugin-postgresql-security';
+
+export default [pg.configs.recommended];
+```
+
+```js
+// app.js
+import { Pool } from 'pg';
+const pool = new Pool();
+
+export async function getUser(id) {
+  return pool.query(`SELECT * FROM users WHERE id = '${id}'`); // ← interpolated
+}
+```
+
+```text
+app.js
+  5:21  error  🔒 Unsafe SQL query construction detected (template literal). | CRITICAL
+   Fix: Use parameterized queries ($1, $2) instead of interpolating values.
+   https://owasp.org/www-community/attacks/SQL_Injection   postgresql-security/no-unsafe-query
+```
+
+That message is the whole thesis. **Severity** so you can triage it, **the fix** so
+a human doesn't have to go looking, and **a citation** so an LLM asked to "fix the
+lint errors" produces a parameterized query instead of a plausible-looking escape
+helper. Machine-readable equivalents ship via the
+[SARIF formatter](./packages/eslint-formatter-sarif) for GitHub code scanning.
+
 <!-- Trust signals — every badge here is computed from a live source, not hand-set. -->
 <p align="center">
   <a href="https://github.com/ofri-peretz/eslint/actions/workflows/quality.yml"><img src="https://github.com/ofri-peretz/eslint/actions/workflows/quality.yml/badge.svg?branch=main" alt="Quality Gate" /></a>
@@ -49,42 +88,6 @@
 </p>
 
 ---
-
-## Install one plugin, catch a real bug
-
-```bash
-npm i -D eslint eslint-plugin-postgresql-security
-```
-
-```js
-// eslint.config.mjs
-import pg from 'eslint-plugin-postgresql-security';
-
-export default [pg.configs.recommended];
-```
-
-```js
-// app.js
-import { Pool } from 'pg';
-const pool = new Pool();
-
-export async function getUser(id) {
-  return pool.query(`SELECT * FROM users WHERE id = '${id}'`); // ← interpolated
-}
-```
-
-```text
-app.js
-  5:21  error  🔒 Unsafe SQL query construction detected (template literal). | CRITICAL
-   Fix: Use parameterized queries ($1, $2) instead of interpolating values.
-   https://owasp.org/www-community/attacks/SQL_Injection   postgresql-security/no-unsafe-query
-```
-
-That message is the whole thesis. **Severity** so you can triage it, **the fix** so
-a human doesn't have to go looking, and **a citation** so an LLM asked to "fix the
-lint errors" produces a parameterized query instead of a plausible-looking escape
-helper. Machine-readable equivalents ship via the
-[SARIF formatter](./packages/eslint-formatter-sarif) for GitHub code scanning.
 
 ## Ask your AI assistant to set it up
 
@@ -134,7 +137,7 @@ Using one of these plugins in a public repository and want it listed? Open an is
 
 <!-- AUTO-GENERATED:NUMBERS:START - Do not edit manually -->
 
-**31 published plugins · 503 rules** — 22 security plugins (291 rules), 7 code-quality plugins (110 rules), 2 React plugins (102 rules). <sub>Counts generated 2026-11-20 from the source tree — never hand-typed.</sub>
+**31 published plugins · 508 rules** — 22 security plugins (291 rules), 7 code-quality plugins (115 rules), 2 React plugins (102 rules). <sub>Counts generated 2026-11-23 from the source tree — never hand-typed.</sub>
 
 <!-- AUTO-GENERATED:NUMBERS:END -->
 
@@ -189,11 +192,11 @@ that match your stack; ignore the other twenty-eight.
 
 ### ✨ Code quality
 
-<sub>6 plugins · 52 rules</sub>
+<sub>6 plugins · 57 rules</sub>
 
 | Package                                                                                        | Rules | What it catches                                                                                                   | Docs                                                                                                                                   | Downloads                                                                                          |
 | :--------------------------------------------------------------------------------------------- | ----: | :---------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------- |
-| [`eslint-plugin-conventions`](https://www.npmjs.com/package/eslint-plugin-conventions)         |    15 | Enforces filename case, magic-number bans, commented-out code, expiring TODOs, and deprecated-API usage           | [docs](https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-conventions?style=flat-square&label=)     |
+| [`eslint-plugin-conventions`](https://www.npmjs.com/package/eslint-plugin-conventions)         |    20 | Enforces filename case, magic-number bans, commented-out code, expiring TODOs, and deprecated-API usage           | [docs](https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-conventions?style=flat-square&label=)     |
 | [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability) |    12 | Limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors | [docs](https://eslint.interlace.tools/docs/quality/plugin-maintainability?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-maintainability?style=flat-square&label=) |
 | [`eslint-plugin-reliability`](https://www.npmjs.com/package/eslint-plugin-reliability)         |     9 | Enforces error handling, network timeouts, null checks, and safe type narrowing                                   | [docs](https://eslint.interlace.tools/docs/quality/plugin-reliability?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-reliability?style=flat-square&label=)     |
 | [`eslint-plugin-modularity`](https://www.npmjs.com/package/eslint-plugin-modularity)           |     6 | Enforces DDD value objects and anemic-model checks, naming, REST conventions, and utility isolation               | [docs](https://eslint.interlace.tools/docs/quality/plugin-modularity?utm_source=github&utm_medium=referral&utm_campaign=monorepo)      | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-modularity?style=flat-square&label=)      |

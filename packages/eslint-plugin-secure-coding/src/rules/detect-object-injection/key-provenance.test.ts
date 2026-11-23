@@ -162,6 +162,33 @@ export function f(k) { counts[k]++; }`,
 export function f(o, input, v) { const key = MAP[input]; o[key] = v; }`,
       },
       {
+        // github.com/ofri-peretz/eslint issue #1547 (second repro — no hasOwn
+        // guard, no cast; the key's own declared type is a closed union of
+        // string literals that is a subset of the const table's own keys).
+        name: 'a const dispatch table indexed by its own key-union type, no hasOwn guard, no cast',
+        code: `type Status = 'ok' | 'fail';
+const PAINT: Record<Status, (s: string) => string> = { ok: (s) => s, fail: (s) => s.toUpperCase() };
+export const paint = (status: Status, text: string): string => PAINT[status](text);`,
+      },
+      {
+        // Same safety argument on the WRITE side: assigning through a key
+        // whose own type is a subset of the const table's own keys cannot
+        // write `__proto__`/`constructor`, which the union excludes.
+        name: 'a write through a const table indexed by its own key-union type is safe',
+        code: `type Status = 'ok' | 'fail';
+const COUNTS: Record<Status, number> = { ok: 0, fail: 0 };
+export function reset(status: Status) { COUNTS[status] = 0; }`,
+      },
+      {
+        // An EXPORTED alias is wrapped in an ExportNamedDeclaration; the scan
+        // that builds `typeAliasUnions` must unwrap it to see the alias at
+        // all (#1675 review).
+        name: 'an exported type alias is still resolved as the closed key union',
+        code: `export type Status = 'ok' | 'fail';
+const PAINT: Record<Status, (s: string) => string> = { ok: (s) => s, fail: (s) => s.toUpperCase() };
+export const paint = (status: Status, text: string): string => PAINT[status](text);`,
+      },
+      {
         name: 'an imported binding of any spelling is a module constant',
         code: `import { fieldName } from './fields';
 export function f(o, v) { o[fieldName] = v; }`,
@@ -203,6 +230,160 @@ export function f(o, v) { o[fieldName] = v; }`,
       {
         name: 'a list passed in as a parameter is not a literal the file wrote',
         code: `export function f(o, LIST) { for (const k of LIST) o[k] = 1; }`,
+        errors: reported,
+      },
+      {
+        // The key's own type alias is a union with a non-string-literal
+        // member, so it is not a closed set of PROPERTY NAMES — the same
+        // reservation `stringLiteralUnionMembers` makes for a numeric/boolean
+        // member, an object type, or any other non-literal-string member.
+        // Still reports, same as an untyped key would.
+        name: 'a type alias union with a non-string-literal member is not a closed key set',
+        code: `type Mixed = 'ok' | 1;
+const TABLE: Record<string, number> = { ok: 0 };
+export function f(m: Mixed) { TABLE[m] = 1; }`,
+        errors: reported,
+      },
+      {
+        // A `const` key's own declared type is NOT trusted — only a
+        // PARAMETER's is. A `const`'s initializer is never checked against
+        // the annotation, so an `any`-typed source (an untyped `req`, here)
+        // can hold anything at runtime whatever the annotation claims (#1675
+        // review: TypeScript erases the annotation and never required this
+        // to narrow).
+        name: "a const key's own annotation is not trusted — only a parameter's is",
+        code: `const TABLE = {
+  ok: (value: unknown) => value,
+  fail: (value: unknown) => value,
+};
+export function dispatch(req: any) {
+  const key: 'ok' | 'fail' = req.body.action;
+  return TABLE[key](req.body.payload);
+}`,
+        errors: reported,
+      },
+      {
+        // The function's OWN type parameter, also named `Status`, SHADOWS
+        // the module-level alias of the same name; resolving by name alone
+        // would hand back the alias's closed union for a value the generic
+        // actually lets be anything its constraint admits (#1675 review).
+        name: 'a same-named generic type parameter shadows the module-level alias',
+        code: `type Status = 'ok' | 'fail';
+const TABLE: Record<string, () => unknown> = { ok: () => 0, fail: () => 0 };
+export function dispatch<Status extends string>(status: Status) {
+  return TABLE[status]();
+}`,
+        errors: reported,
+      },
+      {
+        // The key's type admits `constructor`, which the table's own literal
+        // ALSO declares — but an own `constructor` can be removed later
+        // (`delete`, `Reflect.deleteProperty`), exposing the inherited one
+        // underneath. A pollution-key name is never trusted through this
+        // check, regardless of what the table appears to own (#1675 review).
+        name: 'a key type admitting constructor/__proto__/prototype is never trusted, even if the table owns it',
+        code: `type Key = 'constructor' | 'ok';
+const TABLE: Record<Key, number> = { constructor: 0, ok: 0 };
+export function f(k: Key) { TABLE[k] = 1; }`,
+        errors: reported,
+      },
+      {
+        // A non-computed `{ __proto__: v }` in an object literal sets the
+        // PROTOTYPE; it does not create an own property named `__proto__`.
+        // Reading it as one would let a `__proto__`-admitting key type pass
+        // the subset check it should never pass (#1675 review).
+        name: 'a literal __proto__ initializer is not an own property, so a key admitting it is never trusted',
+        code: `type Key = '__proto__' | 'ok';
+const TABLE: Record<Key, number> = { __proto__: {}, ok: 0 };
+export function f(k: Key) { TABLE[k] = 1; }`,
+        errors: reported,
+      },
+      {
+        name: 'an undeclared global table has no single definition to resolve',
+        code: `type Status = 'ok' | 'fail';
+export function f(status: Status) { TABLE[status] = 1; }`,
+        errors: reported,
+      },
+      {
+        name: 'a redeclared var table has more than one definition to resolve',
+        code: `type Status = 'ok' | 'fail';
+var TABLE = { ok: 0, fail: 0 };
+var TABLE = { ok: 0, fail: 0 };
+export function f(status: Status) { TABLE[status] = 1; }`,
+        errors: reported,
+      },
+      {
+        // A qualified type name (`NS.Status`) is not the simple `Identifier`
+        // this file resolves a type alias BY NAME through — left unresolved
+        // rather than guessed at.
+        name: 'a qualified type name (NS.Status) is not resolved as a type alias',
+        code: `declare namespace NS { type Status = 'ok' | 'fail'; }
+const TABLE: Record<string, number> = { ok: 0, fail: 0 };
+export function f(status: NS.Status) { TABLE[status] = 1; }`,
+        errors: reported,
+      },
+      {
+        // The object being indexed is a MemberExpression (`this.TABLE`), not
+        // a plain Identifier this file can resolve back to a declaration.
+        name: 'a dispatch table reached through a member expression (this.TABLE) is not resolved',
+        code: `type Status = 'ok' | 'fail';
+class C {
+  readonly TABLE: Record<Status, number> = { ok: 0, fail: 0 };
+  set(status: Status) { this.TABLE[status] = 1; }
+}`,
+        errors: reported,
+      },
+      {
+        name: 'a let-declared table can be reassigned, so its own keys are not closed',
+        code: `type Status = 'ok' | 'fail';
+let TABLE: Record<Status, number> = { ok: 0, fail: 0 };
+export function f(status: Status) { TABLE[status] = 1; }`,
+        errors: reported,
+      },
+      {
+        name: 'a destructured table binding has no single declarator identifier to resolve',
+        code: `type Status = 'ok' | 'fail';
+const { TABLE } = { TABLE: { ok: 0, fail: 0 } as Record<Status, number> };
+export function f(status: Status) { TABLE[status] = 1; }`,
+        errors: reported,
+      },
+      {
+        name: 'an ambient const table has no initializer to read its own keys from',
+        code: `type Status = 'ok' | 'fail';
+declare const TABLE: Record<Status, number>;
+export function f(status: Status) { TABLE[status] = 1; }`,
+        errors: reported,
+      },
+      {
+        name: 'a table initialized from a function call is not an object literal this file wrote',
+        code: `type Status = 'ok' | 'fail';
+const TABLE: Record<Status, number> = makeTable();
+export function f(status: Status) { TABLE[status] = 1; }`,
+        errors: reported,
+      },
+      {
+        name: 'a table built with a spread does not write out every key in the literal',
+        code: `type Status = 'ok' | 'fail';
+const BASE = { ok: 0 };
+const TABLE: Record<Status, number> = { ...BASE, fail: 0 };
+export function f(status: Status) { TABLE[status] = 1; }`,
+        errors: reported,
+      },
+      {
+        name: 'a table with a computed property key has no statically nameable key there',
+        code: `type Status = 'ok' | 'fail';
+declare const dynamicKey: string;
+const TABLE: Record<string, number> = { [dynamicKey]: 0, ok: 0, fail: 0 };
+export function f(status: Status) { TABLE[status] = 1; }`,
+        errors: reported,
+      },
+      {
+        // The key's type admits 'pending', which the table never declares —
+        // a WIDER type than the table's own keys is not provably safe.
+        name: "a key type wider than the table's own keys is not a subset",
+        code: `type Status = 'ok' | 'fail' | 'pending';
+const TABLE: Record<'ok' | 'fail', number> = { ok: 0, fail: 0 };
+export function f(status: Status) { TABLE[status] = 1; }`,
         errors: reported,
       },
       {

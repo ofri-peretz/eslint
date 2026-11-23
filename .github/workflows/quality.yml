@@ -101,6 +101,9 @@ jobs:
           --filter='eslint-plugin-modularity...'
           --filter='eslint-plugin-import-next...'
       - run: npm run lint:dogfood
+      # The guidance preset over CLAUDE.md, AGENTS.md, skills and subagents, at
+      # `warn`; `--max-warnings` in the script is the ratchet — it may only go down.
+      - run: npm run lint:guidance
 
   markdown:
     name: Markdown Lint

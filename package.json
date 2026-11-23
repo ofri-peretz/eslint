@@ -291,7 +291,8 @@
     "mutation": "tsx scripts/mutation.mts",
     "nestjs:releases": "tsx scripts/nestjs-release-watch.mts",
     "fidelity": "node benchmarks/suites/fidelity/run.cjs",
-    "lint:dogfood": "eslint --config eslint.dogfood.config.mjs \"packages/*/src/**/*.ts\""
+    "lint:dogfood": "eslint --config eslint.dogfood.config.mjs \"packages/*/src/**/*.ts\"",
+    "lint:guidance": "eslint --config eslint.guidance.config.mjs --no-warn-ignored --max-warnings 10 ."
   },
   "keywords": [
     "eslint",
@@ -334,6 +335,7 @@
     "@commitlint/config-conventional": "^21.0.2",
     "@eslint/compat": "^2.1.1",
     "@eslint/js": "^10.0.1",
+    "@eslint/markdown": "^9.0.0",
     "@evilmartians/lefthook": "^2.2.2",
     "@microsoft/eslint-plugin-sdl": "^1.1.0",
     "@middy/core": "^7.9.2",

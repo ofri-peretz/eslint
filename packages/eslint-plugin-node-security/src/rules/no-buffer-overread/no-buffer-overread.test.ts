@@ -73,6 +73,7 @@ describe('no-buffer-overread', () => {
         },
         // Non-buffer operations (array doesn't match buffer pattern)
         {
+          name: 'indexing a plain array is not a buffer read',
           code: 'const item = array[index];',
         },
         // Literal indices (non-negative)

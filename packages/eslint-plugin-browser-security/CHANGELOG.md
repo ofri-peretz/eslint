@@ -5,6 +5,15 @@ All notable changes to `eslint-plugin-browser-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.4
+
+### Patch Changes
+
+- **🐛 Fix** — require-postmessage-origin-check false positive on worker.js
+
+  A worker entry file named exactly `worker.<ext>`, with no
+  `<name>.worker.<ext>` prefix, was not recognized as a worker.
+
 ## 3.1.3
 
 ### Patch Changes

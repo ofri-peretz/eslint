@@ -57,6 +57,13 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import process from 'node:process';
 
+import {
+  languagesSupported,
+  presetBlocks,
+  probeConfig,
+  usesLanguage,
+} from './lib/preset-probe';
+
 const ROOT = resolve(import.meta.dirname, '..');
 const PACKAGES_DIR = join(ROOT, 'packages');
 // Resolve `eslint` exactly as the repo root would — picks up whatever major is
@@ -98,6 +105,11 @@ async function main(): Promise<void> {
     eslintMajor >= 9
       ? eslintMod.ESLint
       : repoRequire('eslint/use-at-your-own-risk').FlatESLint;
+  // @eslint/markdown needs ESLint 9; under 8 every language preset is skipped.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const markdown: any = languagesSupported(eslintMajor)
+    ? (await import('@eslint/markdown')).default
+    : undefined;
   if (!ESLint) {
     console.error(
       'verify-dist-integrity: could not load ESLint from the repo root.',
@@ -226,20 +238,16 @@ async function main(): Promise<void> {
   // "File ignored" and never resolved). This is the lock that catches the
   // plugin-key ↔ rule-prefix mismatch in a BUILT artifact.
   for (const { name, preset, config } of presetCases) {
-    const presetBlocks = (Array.isArray(config) ? config : [config]).map(
-      (c) => {
-        const {
-          files: _files,
-          ignores: _ignores,
-          ...rest
-        } = c as Record<string, unknown>;
-        return rest;
-      },
-    );
-    const overrideConfig = [
-      { files: ['**/*.{js,jsx,ts,tsx,cjs,mjs}'] },
-      ...presetBlocks,
-    ];
+    if (
+      usesLanguage(presetBlocks(config)) &&
+      !languagesSupported(eslintMajor)
+    ) {
+      console.log(
+        `  – ${name} → configs.${preset}: skipped, a language preset needs ESLint 9 or later`,
+      );
+      continue;
+    }
+    const overrideConfig = probeConfig(config, markdown);
     try {
       const eslint = new ESLint({ overrideConfigFile: true, overrideConfig });
       const results = await eslint.lintText('const _x = 1;\n', {

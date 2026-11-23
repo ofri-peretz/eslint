@@ -125,8 +125,15 @@ const GLOBAL_KEY = '<global>';
  * from the page that constructed the worker — there is no foreign origin to
  * check. `window` in the same file is still the window, so only GLOBAL_KEY is
  * cleared.
+ *
+ * Also matches the file being named `worker.<ext>` outright — no prefix
+ * before the dot — which is the OTHER half of the same convention: a
+ * worker's entry point has no sibling to disambiguate from, so it is simply
+ * called `worker.js`, not `<something>.worker.js` (#1569). The boundary
+ * before `worker` has to be the start of the path or a separator; `my`
+ * ending right before it (`myworker.js`) is a different, unrelated name.
  */
-const WORKER_ENTRY = /\.worker\.[cm]?[jt]sx?$/;
+const WORKER_ENTRY = /(?:^|[/\\])worker\.[cm]?[jt]sx?$|\.worker\.[cm]?[jt]sx?$/;
 
 /**
  * Events the platform dispatches only to a `ServiceWorkerGlobalScope`.

@@ -137,6 +137,74 @@ ruleTester.run('no-empty-named-blocks', noEmptyNamedBlocks, {
       ],
       output: ``,
     },
+    {
+      // #1552: removing this compiles to nothing, then silently stops
+      // `declare module 'some-lib'` from binding as an augmentation under
+      // Node16/NodeNext resolution. Still reported — and the suggestion
+      // still offers the removal as an explicit choice — but NOT autofixed.
+      name: 'a type-only empty import beside a declare module for the same specifier is not autofixed',
+      code: `import type {} from 'some-lib';\ndeclare module 'some-lib' { interface Registry { mine: { enabled: boolean } } }`,
+      errors: [
+        {
+          messageId: 'emptyNamedBlock',
+          suggestions: [
+            {
+              messageId: 'suggestRemove',
+              output: `\ndeclare module 'some-lib' { interface Registry { mine: { enabled: boolean } } }`,
+            },
+          ],
+        },
+      ],
+      output: null,
+    },
+    {
+      // FN GUARD: a declare module for a DIFFERENT specifier does not
+      // protect this one — the autofix still applies. A sibling `export {}`
+      // keeps the file a module independent of this import, so removing it
+      // cannot itself change whether `declare module 'some-lib'` augments or
+      // declares — the one thing this case means to isolate.
+      name: 'a type-only empty import beside a declare module for a different specifier is still autofixed',
+      code: `import type {} from 'foo';\nexport {};\ndeclare module 'some-lib' {}`,
+      errors: [
+        {
+          messageId: 'emptyNamedBlock',
+          suggestions: [
+            {
+              messageId: 'suggestRemove',
+              output: `\nexport {};\ndeclare module 'some-lib' {}`,
+            },
+          ],
+        },
+      ],
+      output: `\nexport {};\ndeclare module 'some-lib' {}`,
+    },
+    {
+      // Two empty type-only imports in one file: the declare-module scan
+      // must run once and be reused, not redone per import.
+      name: 'a second type-only empty import in the same file reuses the declare-module scan',
+      code: `import type {} from 'a';\nimport type {} from 'b';\ndeclare module 'b' {}`,
+      errors: [
+        {
+          messageId: 'emptyNamedBlock',
+          suggestions: [
+            {
+              messageId: 'suggestRemove',
+              output: `\nimport type {} from 'b';\ndeclare module 'b' {}`,
+            },
+          ],
+        },
+        {
+          messageId: 'emptyNamedBlock',
+          suggestions: [
+            {
+              messageId: 'suggestRemove',
+              output: `import type {} from 'a';\n\ndeclare module 'b' {}`,
+            },
+          ],
+        },
+      ],
+      output: `\nimport type {} from 'b';\ndeclare module 'b' {}`,
+    },
     // Empty braces with whitespace
     {
       code: `import {   } from 'foo';`,

@@ -33,7 +33,10 @@ describe('no-unsafe-buffer-alloc', () => {
         name: 'Buffer.concat copies existing buffers and is not an uninitialized allocation',
       },
       // Structural exemption: zeroed in the same expression.
-      { code: 'const buf = Buffer.allocUnsafe(64).fill(0);' },
+      {
+        name: 'a same-expression fill(0) zeroes the allocation',
+        code: 'const buf = Buffer.allocUnsafe(64).fill(0);',
+      },
       { code: 'Buffer.allocUnsafeSlow(64).fill(0);' },
       // Not the global Buffer.
       { code: 'pool.allocUnsafe(64)' },

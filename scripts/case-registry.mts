@@ -42,6 +42,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import markdown from '@eslint/markdown';
 import { Linter } from 'eslint';
 import * as tsparser from '@typescript-eslint/parser';
 import { readBaseline } from './lib/read-baseline.ts';
@@ -243,23 +244,36 @@ function reportsFor(
   options: unknown[] = [],
   filename = 'case.tsx',
 ): number | null {
+  // A Markdown claim (the guidance rules read CLAUDE.md, AGENTS.md and skills) is linted as
+  // Markdown, the language its rule declares; everything else is TypeScript.
+  const plugins = { p: { rules: { [name]: rule } } as never };
+  const config = filename.endsWith('.md')
+    ? {
+        files: ['**/*.md'],
+        plugins: { ...plugins, markdown },
+        language: 'markdown/gfm',
+        rules: { [`p/${name}`]: ['error', ...options] as never },
+      }
+    : null;
   const messages = linter.verify(
     code,
-    [
-      {
-        files: ['**/*.{ts,tsx,js,jsx}'],
-        plugins: { p: { rules: { [name]: rule } } as never },
-        languageOptions: {
-          parser: tsparser as never,
-          parserOptions: {
-            ecmaVersion: 2022,
-            sourceType: 'module',
-            ecmaFeatures: { jsx: true },
+    config
+      ? [config]
+      : [
+          {
+            files: ['**/*.{ts,tsx,js,jsx}'],
+            plugins: { p: { rules: { [name]: rule } } as never },
+            languageOptions: {
+              parser: tsparser as never,
+              parserOptions: {
+                ecmaVersion: 2022,
+                sourceType: 'module',
+                ecmaFeatures: { jsx: true },
+              },
+            },
+            rules: { [`p/${name}`]: ['error', ...options] as never },
           },
-        },
-        rules: { [`p/${name}`]: ['error', ...options] as never },
-      },
-    ],
+        ],
     filename,
   );
   if (messages.some((m) => m.ruleId === null)) return null;

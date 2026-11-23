@@ -550,6 +550,10 @@ function isClosedFlagSet(
     ) {
       const variable = scope.variables.find((v) => v.name === node.name);
       if (!variable) continue;
+      // `undefined` the global is no flags at all: `new RegExp(s, cond ? undefined : "i")`
+      // is one of two known flag sets. A binding the file declares under that
+      // name is something else, and falls through to the const check.
+      if (node.name === 'undefined' && variable.defs.length === 0) return true;
       if (seen.has(variable) || variable.defs.length !== 1) return false;
       seen.add(variable);
       const def = variable.defs[0];
@@ -561,6 +565,9 @@ function isClosedFlagSet(
         isClosedFlagSet(def.node.init, sourceCode, seen)
       );
     }
+    // No scope declares it (a runtime that does not model globals as
+    // variables): it is the global `undefined`.
+    if (node.name === 'undefined') return true;
   }
   return false;
 }

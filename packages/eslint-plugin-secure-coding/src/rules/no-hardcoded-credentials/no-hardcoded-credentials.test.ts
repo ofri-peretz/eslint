@@ -42,6 +42,17 @@ describe('no-hardcoded-credentials', () => {
           name: 'an assignment target keyed at runtime names no credential slot',
           code: 'function set(k, v) { obj[k] = "SuperSecretPhrase!!"; }',
         },
+        // #1557: a "Common password" keyword match is ambiguous about the
+        // STRING ('password' labels a login route as often as it labels a
+        // secret), so it needs the slot's OWN category to say "password",
+        // not merely to end in some unrelated credential word. Here the
+        // slot ends in `tokens` (a route-name list), which opens the
+        // generic credential-context gate but infers category 'token', not
+        // 'password' — a mismatch, so this must not report.
+        {
+          name: 'a common-password word inside a route-name list named *_TOKENS is not a credential',
+          code: "const SENSITIVE_ROUTE_TOKENS = ['login', 'signup', 'password', 'reset'];",
+        },
         // Both of these were real findings against the pinned corpus, at CVSS 9.8
         // each, and the corpus scan could not report them because its own error
         // handling had been swallowing every result. Neither value is a secret.
@@ -425,6 +436,7 @@ describe('no-hardcoded-credentials', () => {
       valid: [],
       invalid: [
         {
+          name: "TP: a common password in a slot whose own category is 'password' still reports",
           code: 'const password = "password123";',
           errors: [
             {
@@ -1231,7 +1243,10 @@ describe('no-hardcoded-credentials', () => {
         valid: [
           // isLabelContext: Property with an Identifier key that's directly
           // in LABEL_CONTEXT_NAMES ('type').
-          { code: 'const config = { type: "password" };' },
+          {
+            name: 'a type label spelled password is a label, not a credential',
+            code: 'const config = { type: "password" };',
+          },
           // isLabelContext: Property key isn't label-typed, but the
           // enclosing object's own variable is 'labels' — the Property
           // fallback recursion (walks Property -> ObjectExpression ->

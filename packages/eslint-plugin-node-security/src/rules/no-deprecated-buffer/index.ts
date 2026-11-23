@@ -65,6 +65,19 @@ function fromBufferModule(
   );
 }
 
+/**
+ * The replacement APIs whose absence marks a legacy Node. A fallback that runs
+ * only where one of these does not exist is the code path of a runtime this
+ * rule's own advice cannot reach.
+ *
+ * @protocol-constant These are the three factory names Node's own Buffer API defines to replace the constructor; they are a fixed API surface, not a vocabulary a project could rename.
+ */
+const REPLACEMENT_APIS: ReadonlySet<string> = new Set([
+  'alloc',
+  'allocUnsafe',
+  'from',
+]);
+
 export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> =
   createRule<[], MessageIds>({
     name: 'no-deprecated-buffer',
@@ -293,6 +306,97 @@ export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> =
         };
       }
 
+      /** `Buffer.alloc` / `Buffer.allocUnsafe` / `Buffer.from`, on Node's `Buffer`. */
+      function replacementApi(node: TSESTree.Node): string | null {
+        if (
+          node.type !== AST_NODE_TYPES.MemberExpression ||
+          node.computed ||
+          node.object.type !== AST_NODE_TYPES.Identifier ||
+          !resolvesToNodeBuffer(node.object)
+        ) {
+          return null;
+        }
+        // A non-computed member's property is its identifier.
+        const name = (node.property as TSESTree.Identifier).name;
+        return REPLACEMENT_APIS.has(name) ? name : null;
+      }
+
+      /**
+       * Which branch of `test` can only run where the replacement API is missing?
+       *
+       * - `Buffer.from`, `typeof Buffer.alloc === 'function'`: the ELSE branch.
+       * - `!Buffer.from`, `typeof Buffer.alloc !== 'function'`: the THEN branch.
+       * - `Buffer.from && Buffer.from !== Uint8Array.from`: the ELSE branch.
+       *   The second operand is the inherited-static check (a `Buffer` that
+       *   only has the `Uint8Array.from` it inherited has no `from` of its own),
+       *   so it cannot be false on a Node that has the API. Any other second
+       *   operand can be false anywhere, and says nothing about the runtime.
+       */
+      function legacyBranch(
+        test: TSESTree.Node,
+      ): 'consequent' | 'alternate' | null {
+        if (replacementApi(test) !== null) return 'alternate';
+        if (
+          test.type === AST_NODE_TYPES.UnaryExpression &&
+          test.operator === '!' &&
+          replacementApi(test.argument) !== null
+        ) {
+          return 'consequent';
+        }
+        if (
+          test.type === AST_NODE_TYPES.BinaryExpression &&
+          test.left.type === AST_NODE_TYPES.UnaryExpression &&
+          test.left.operator === 'typeof' &&
+          replacementApi(test.left.argument) !== null &&
+          test.right.type === AST_NODE_TYPES.Literal &&
+          test.right.value === 'function'
+        ) {
+          if (test.operator === '===' || test.operator === '==')
+            return 'alternate';
+          if (test.operator === '!==' || test.operator === '!=')
+            return 'consequent';
+        }
+        if (
+          test.type === AST_NODE_TYPES.LogicalExpression &&
+          test.operator === '&&' &&
+          replacementApi(test.left) !== null &&
+          test.right.type === AST_NODE_TYPES.BinaryExpression &&
+          test.right.operator === '!==' &&
+          replacementApi(test.right.left) === replacementApi(test.left) &&
+          test.right.right.type === AST_NODE_TYPES.MemberExpression &&
+          test.right.right.object.type === AST_NODE_TYPES.Identifier &&
+          test.right.right.object.name === 'Uint8Array' &&
+          propertyName(test.right.right) === replacementApi(test.left)
+        ) {
+          return 'alternate';
+        }
+        return null;
+      }
+
+      /**
+       * Is this node in the branch of a feature check that only a runtime
+       * without the replacement API takes? Function boundaries are crossed on
+       * purpose: a fallback function DEFINED in such a branch exists only there.
+       */
+      function isLegacyFallback(node: TSESTree.Node): boolean {
+        let child: TSESTree.Node = node;
+        for (
+          let current: TSESTree.Node | null | undefined = node.parent;
+          current;
+          child = current, current = current.parent
+        ) {
+          if (
+            current.type !== AST_NODE_TYPES.IfStatement &&
+            current.type !== AST_NODE_TYPES.ConditionalExpression
+          ) {
+            continue;
+          }
+          const branch = legacyBranch(current.test);
+          if (branch !== null && current[branch] === child) return true;
+        }
+        return false;
+      }
+
       return {
         before() {
           sourceCode = context.sourceCode;
@@ -300,7 +404,7 @@ export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> =
         // Catches `new Buffer(size)` / `new Buffer(arr)` / `new Buffer('str')`
         NewExpression(node) {
           const callee = deprecatedCallee(node.callee);
-          if (callee === null) return;
+          if (callee === null || isLegacyFallback(node)) return;
           const method = replacementMethod(node.arguments);
           context.report({
             node,
@@ -312,7 +416,7 @@ export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> =
         // Catches `Buffer(size)` (factory call without `new`)
         CallExpression(node) {
           const callee = deprecatedCallee(node.callee);
-          if (callee === null) return;
+          if (callee === null || isLegacyFallback(node)) return;
           const method = replacementMethod(node.arguments);
           context.report({
             node,

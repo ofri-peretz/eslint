@@ -68,6 +68,26 @@ ruleTester.run('no-silent-errors (documented catch)', noSilentErrors, {
       name: 'a keyword comment still works with the option left at its default',
       code: 'try { go(); } catch { /* intentional */ }',
     },
+    // #1554: `allowWithComment`'s own 15-word keyword list rejected prose
+    // reasons that use none of those words — the gap this file's own prose
+    // reason above closes. Two more shapes from that issue's repro, neither
+    // matching the keyword list, pass through `isReasonProse`.
+    {
+      name: 'a prose reason naming neither the catch nor a keyword (#1554)',
+      code: [
+        'try { b(); } catch {',
+        '  // Storage unavailable; the in-memory value still applies.',
+        '}',
+      ].join('\n'),
+    },
+    {
+      name: 'a block-comment prose reason with no keyword (#1554)',
+      code: [
+        'try { c(); } catch {',
+        '  /* never throw out of analytics setup */',
+        '}',
+      ].join('\n'),
+    },
   ],
   invalid: [
     {

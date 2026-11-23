@@ -969,7 +969,9 @@ describe('prefer-dependency-version-strategy — protocols, overrides, key shape
         // Spread elements are skipped by the property scan.
         { code: 'const pkg = { dependencies: { "a": "^1.0.0", ...extra } };' },
         // Computed keys yield no dependency name.
-        { code: 'const pkg = { dependencies: { "a": "^1.0.0", [k + "x"]: "2.0.0" } };' },
+        {
+          code: 'const pkg = { dependencies: { "a": "^1.0.0", [k + "x"]: "2.0.0" } };',
+        },
         // "dependencies" property whose value is not an object is ignored.
         { code: 'const pkg = { "dependencies": "latest" };' },
       ],

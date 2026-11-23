@@ -1229,6 +1229,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
           // After the read, every look at the buffer must stop at its count.
           // Writes and metadata change nothing about what a read can see.
           if (isReadUpTo(identifier, readCount)) continue;
+          if (isReadWhenFull(identifier, readCount)) continue;
           if (classifyUse(identifier) === 'read') return false;
           continue;
         }
@@ -1325,6 +1326,51 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
           (declarator as TSESTree.VariableDeclarator).id,
         );
         return variable === null ? null : { via: 'binding', variable };
+      }
+
+      // `fs.read(fd, buf, 0, len, pos, (err, bytesRead) => …)` — the callback
+      // spelling of the same read. The count is the callback's second
+      // parameter, and it counts only while nothing reassigns it.
+      if (
+        isFsExport(call.callee, ['read']) &&
+        call.arguments.length === 6 &&
+        call.arguments[1] === identifier
+      ) {
+        const offset = offsetOf(call.arguments[2]);
+        if (offset !== 'start' && offset !== 0) return null;
+        const callback = call.arguments[5] as TSESTree.Node;
+        if (
+          callback.type !== AST_NODE_TYPES.FunctionExpression &&
+          callback.type !== AST_NODE_TYPES.ArrowFunctionExpression
+        ) {
+          return null;
+        }
+        const count = callback.params[1];
+        if (count?.type !== AST_NODE_TYPES.Identifier) return null;
+        // Node passes the ORIGINAL buffer as the callback's third argument, so
+        // a third parameter that is read can hand out all of it whatever the
+        // count says. One that is never read (or absent) cannot.
+        const alias = callback.params[2];
+        if (
+          alias !== undefined &&
+          (alias.type !== AST_NODE_TYPES.Identifier ||
+            sourceCode
+              .getDeclaredVariables(callback)
+              .some(
+                (declared) =>
+                  declared.name === alias.name &&
+                  declared.references.length > 0,
+              ))
+        ) {
+          return null;
+        }
+        const variable = sourceCode
+          .getDeclaredVariables(callback)
+          .find((declared) => declared.name === count.name);
+        return variable !== undefined &&
+          variable.references.every((reference) => !reference.isWrite())
+          ? { via: 'binding', variable }
+          : null;
       }
 
       // `handle.read(buf, …)` on a FileHandle this file opened with
@@ -1442,6 +1488,48 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         node.object.type === AST_NODE_TYPES.Identifier &&
         propertyName(node) === 'bytesRead' &&
         findVariable(sourceCode, node.object) === readCount.variable
+      );
+    }
+
+    /**
+     * `count === buf.byteLength ? buf : buf.subarray(0, count)` — the read
+     * filled the whole buffer exactly when its count equals the buffer's
+     * length, so the arm taken on equality exposes only written bytes. The
+     * test has to compare THIS read's count with THIS buffer's own length, and
+     * the buffer has to sit in the arm that equality selects.
+     */
+    function isReadWhenFull(
+      identifier: TSESTree.Identifier,
+      readCount: ReadCount,
+    ): boolean {
+      const conditional = identifier.parent;
+      if (
+        conditional.type !== AST_NODE_TYPES.ConditionalExpression ||
+        conditional.test.type !== AST_NODE_TYPES.BinaryExpression
+      ) {
+        return false;
+      }
+      const test = conditional.test;
+      const equal = test.operator === '===' || test.operator === '==';
+      const unequal = test.operator === '!==' || test.operator === '!=';
+      if (
+        !(equal && conditional.consequent === identifier) &&
+        !(unequal && conditional.alternate === identifier)
+      ) {
+        return false;
+      }
+      const ownLength = (node: TSESTree.Node): boolean =>
+        node.type === AST_NODE_TYPES.MemberExpression &&
+        !node.computed &&
+        node.object.type === AST_NODE_TYPES.Identifier &&
+        findVariable(sourceCode, node.object) ===
+          findVariable(sourceCode, identifier) &&
+        (propertyName(node) === 'byteLength' ||
+          propertyName(node) === 'length');
+      const left = test.left as TSESTree.Node;
+      return (
+        (isCount(left, readCount) && ownLength(test.right)) ||
+        (ownLength(left) && isCount(test.right, readCount))
       );
     }
 

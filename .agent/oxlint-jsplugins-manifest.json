@@ -1,10 +1,10 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-11-20",
+  "generatedAt": "2026-11-23",
   "totalPlugins": 32,
-  "totalRules": 507,
-  "oxlintCompatible": 507,
+  "totalRules": 512,
+  "oxlintCompatible": 512,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -358,7 +358,7 @@
       "short": "conventions",
       "shim": "tools/oxlint-plugins/interlace-conventions.cjs",
       "subpath": "eslint-plugin-conventions/oxlint",
-      "ruleCount": 15,
+      "ruleCount": 20,
       "rules": [
         {
           "name": "conventions/analytics-event-naming",
@@ -446,6 +446,36 @@
         },
         {
           "name": "deprecation/no-deprecated-api",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "guidance/enforced-rule-in-prose",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "guidance/guidance-budget",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "guidance/no-duplicated-guidance",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "guidance/procedure-in-memory",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "guidance/subagent-declares-model",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3402,18 +3432,23 @@
     "conventions": [
       "analytics-event-naming",
       "consistent-existence-index-check",
+      "enforced-rule-in-prose",
       "expiring-todo-comments",
       "filename-case",
+      "guidance-budget",
       "no-commented-code",
       "no-console-spaces",
       "no-deprecated-api",
+      "no-duplicated-guidance",
       "no-json-schema-tags",
       "no-magic-numbers",
       "no-raw-cross-property-href",
       "prefer-code-point",
       "prefer-dependency-version-strategy",
       "prefer-dom-node-text-content",
+      "procedure-in-memory",
       "require-data-testid",
+      "subagent-declares-model",
       "utm-taxonomy"
     ],
     "drizzle-security": [

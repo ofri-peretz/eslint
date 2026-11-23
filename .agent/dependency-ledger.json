@@ -15,6 +15,7 @@
     "@eslint-community/regexpp": "host linter; regexpp ships with eslint",
     "@eslint/compat": "host linter; regexpp ships with eslint",
     "@eslint/js": "host linter; regexpp ships with eslint",
+    "@eslint/markdown": "Markdown language the conventions guidance rules run on",
     "@evilmartians/lefthook": "commit and format gates",
     "@fumadocs/mdx-remote": "docs framework (apps/docs)",
     "@monaco-editor/react": "docs and ui components",

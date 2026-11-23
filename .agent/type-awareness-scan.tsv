@@ -509,3 +509,8 @@ cli-floor	require-command-description	unaware
 cli-floor	require-command-example	unaware	
 secure-coding	no-invisible-characters	unaware	
 secure-coding	no-disabled-template-escaping	unaware	
+conventions	enforced-rule-in-prose	unaware	
+conventions	guidance-budget	unaware	
+conventions	no-duplicated-guidance	unaware	
+conventions	procedure-in-memory	unaware	
+conventions	subagent-declares-model	unaware	

@@ -5,6 +5,52 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.4.6
+
+### Patch Changes
+
+- **🐛 Fix** — detect-object-injection false positive on a const dispatch table indexed by its own key-union type
+
+  `obj[key]` where `obj` is a `const` object literal with a closed set of
+  literal keys, and `key`'s own declared TS type — stated directly or through
+  a type alias in the same file — is a union of string literals that is a
+  subset of that key set, no longer reports. `__proto__` and `constructor`
+  are excluded by the key's own type, so no runtime guard is needed to prove
+  the access cannot reach the prototype.
+
+## 6.4.5
+
+### Patch Changes
+
+- **🐛 Fix** — detect-object-injection sees past a TS type-only cast
+
+  `isPrototypelessObject` and `hasPrecedingValidation` resolve an identifier's
+  initializer / key to decide whether a write or an invoked read through it is
+  safe, but neither unwrapped a TS type-only cast (`as T`, `satisfies T`, the
+  `<T>x` assertion) first — both are erased at compile time and change nothing
+  about the value underneath.
+
+  Two false positives from this:
+
+  - `const target = Object.create(null) as Record<string, number>; target[k] = v;`
+    reported CWE-1321 global prototype pollution: the identifier branch of
+    `isPrototypelessObject` pattern-matched `declarator.init` against
+    `CallExpression` directly, so the cast wrapper made it miss the
+    `Object.create(null)` it already recognises without the cast (#1573).
+  - `if (!Object.hasOwn(WRITERS, kind)) throw ...; WRITERS[kind as keyof typeof WRITERS]();`
+    still reported CWE-915 object injection despite the guard:
+    `hasPrecedingValidation` required `propertyNode.type === Identifier`
+    before reading the key name, so a cast around the key — the standard way
+    to narrow a dispatch-table key to its own key union — made it never
+    recognise the `Object.hasOwn` guard on the same identifier (#1547, the
+    hasOwn-guarded half; the unguarded, type-union-only half of that issue
+    needs real TypeScript type-checker information this rule does not have
+    and is left open).
+
+  Both now unwrap through the existing `withoutTypeAnnotation` helper before
+  the structural check, the same helper `isLocallyConstructed` already uses
+  for exactly this reason.
+
 ## 6.4.4
 
 ### Patch Changes

@@ -81,6 +81,24 @@ describe('require-postmessage-origin-check — worker globals', () => {
         code: `addEventListener('message', (e) => { postMessage(parse(e.data)); });`,
       },
       {
+        // #1569: the OTHER half of the bundler convention — a worker's
+        // entry point is simply called `worker.js`, no `<name>.worker.js`
+        // prefix, when there is no sibling to disambiguate it from.
+        // @found github.com/ofri-peretz/eslint issue #1569
+        name: 'FP: self.onmessage in a worker entry named exactly worker.js, no prefix',
+        filename: 'worker.js',
+        code: `
+          self.onmessage = (event) => {
+            self.postMessage(event.data);
+          };
+        `,
+      },
+      {
+        name: 'a worker entry named worker.ts under a directory, no prefix',
+        filename: 'src/workers/worker.ts',
+        code: `self.onmessage = (event) => { self.postMessage(event.data); };`,
+      },
+      {
         name: 'a bare service-worker listener marks the bare global',
         filename: 'public/sw.js',
         code: `
@@ -147,6 +165,15 @@ describe('require-postmessage-origin-check — worker globals', () => {
       {
         name: 'the same self.onmessage in an ordinary module is a window listener',
         filename: 'src/hooks/editorFastMarkdownBlocks.ts',
+        code: `self.onmessage = (event) => { render(event.data); };`,
+        errors: missing,
+      },
+      {
+        // FN GUARD for #1569: a name that merely ENDS in "worker" with no
+        // separator before it is a different name, not the bundler's
+        // worker-entry convention.
+        name: 'myworker.js is not a worker entry, bare "worker" convention aside',
+        filename: 'src/myworker.js',
         code: `self.onmessage = (event) => { render(event.data); };`,
         errors: missing,
       },

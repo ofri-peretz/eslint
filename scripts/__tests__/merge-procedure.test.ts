@@ -341,3 +341,186 @@ describe('the --admin policy is enforced by the script', () => {
     expect(run.merges).toHaveLength(0);
   });
 });
+
+/**
+ * Run the script where GraphQL is unreachable (Claude Code cloud sessions): `gh pr view` fails, and
+ * a fake `gh api` answers the REST routes from fixtures, applying `--jq` with the real jq.
+ */
+function runGateOverRest(
+  rest: { pull: object; checkRuns: object[]; statuses: object[] },
+  mode?: '--merge',
+) {
+  const dir = mkdtempSync(join(tmpdir(), 'pr-merge-gate-rest-'));
+  const calls = join(dir, 'calls');
+  writeFileSync(join(dir, 'pull.json'), JSON.stringify(rest.pull));
+  writeFileSync(
+    join(dir, 'runs.json'),
+    JSON.stringify({ check_runs: rest.checkRuns }),
+  );
+  writeFileSync(
+    join(dir, 'status.json'),
+    JSON.stringify({ statuses: rest.statuses }),
+  );
+  const fake = join(dir, 'gh');
+  writeFileSync(
+    fake,
+    [
+      '#!/usr/bin/env bash',
+      `echo "$*" >> "${calls}"`,
+      '[ "$1" = api ] || { echo "HTTP 403: GitHub GraphQL is not available" >&2; exit 1; }',
+      'method=GET; path=""; filter=.',
+      'while [ $# -gt 0 ]; do case "$1" in -X) method="$2"; shift ;; --jq) filter="$2"; shift ;; repos/*) path="$1" ;; esac; shift; done',
+      // Every route the script may call, by method and full path. Anything else fails, so a
+      // misrouted merge or delete cannot pass a test by accident.
+      'case "$method $path" in',
+      `  "GET repos/o/r/pulls/42") jq "$filter" "${dir}/pull.json" ;;`,
+      `  "GET repos/o/r/commits/abc/check-runs?per_page=100") jq "$filter" "${dir}/runs.json" ;;`,
+      `  "GET repos/o/r/commits/abc/status?per_page=100") jq "$filter" "${dir}/status.json" ;;`,
+      '  "PUT repos/o/r/pulls/42/merge" | "DELETE repos/o/r/git/refs/heads/feat/x") echo "{}" ;;',
+      '  *) echo "unexpected route: $method $path" >&2; exit 1 ;;',
+      'esac',
+    ].join('\n'),
+  );
+  chmodSync(fake, 0o755);
+  const result = spawnSync('bash', [SCRIPT, '42', ...(mode ? [mode] : [])], {
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      PATH: `${dir}:${process.env.PATH}`,
+      PR_MERGE_GATE_REPO: 'o/r',
+    },
+  });
+  const log = existsSync(calls) ? readFileSync(calls, 'utf8') : '';
+  return {
+    status: result.status,
+    stderr: result.stderr,
+    merges: log.split('\n').filter((l) => l.includes('/pulls/42/merge')),
+    deletes: log.split('\n').filter((l) => l.includes('-X DELETE')),
+  };
+}
+
+const restPull = (
+  mergeable_state: string,
+  draft = false,
+  headRepo = 'o/r',
+) => ({
+  head: { sha: 'abc', ref: 'feat/x', repo: { full_name: headRepo } },
+  base: { repo: { full_name: 'o/r' } },
+  mergeable_state,
+  draft,
+});
+
+describe('without GraphQL, the script judges the REST rollup the same way', () => {
+  it('merges a green branch held up by a review', () => {
+    const run = runGateOverRest(
+      {
+        pull: restPull('blocked'),
+        checkRuns: [
+          { name: 'Vitest', status: 'completed', conclusion: 'success' },
+        ],
+        statuses: [{ context: 'CodeRabbit', state: 'success' }],
+      },
+      '--merge',
+    );
+    expect(run.stderr).toBe('');
+    expect(run.status).toBe(0);
+    expect(run.merges).toHaveLength(1);
+    // Pinned to the head the gate judged, so a later push is refused, not merged.
+    expect(run.merges[0]).toContain('sha=abc');
+    expect(run.deletes).toHaveLength(1);
+  });
+
+  it('never deletes a branch for a PR from a fork', () => {
+    const run = runGateOverRest(
+      {
+        pull: restPull('clean', false, 'contributor/r'),
+        checkRuns: [
+          { name: 'Vitest', status: 'completed', conclusion: 'success' },
+        ],
+        statuses: [],
+      },
+      '--merge',
+    );
+    expect(run.status).toBe(0);
+    expect(run.merges).toHaveLength(1);
+    expect(run.deletes).toHaveLength(0);
+  });
+
+  it('waits on a check run in progress (its conclusion is null over REST)', () => {
+    const run = runGateOverRest(
+      {
+        pull: restPull('blocked'),
+        checkRuns: [{ name: 'Build', status: 'in_progress', conclusion: null }],
+        statuses: [],
+      },
+      '--merge',
+    );
+    expect(run.status).toBe(2);
+    expect(run.merges).toHaveLength(0);
+  });
+
+  it('refuses a failing commit status', () => {
+    const run = runGateOverRest(
+      {
+        pull: restPull('blocked'),
+        checkRuns: [
+          { name: 'Vitest', status: 'completed', conclusion: 'success' },
+        ],
+        statuses: [{ context: 'CodeRabbit', state: 'failure' }],
+      },
+      '--merge',
+    );
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain('CodeRabbit');
+    expect(run.merges).toHaveLength(0);
+  });
+
+  it('refuses a BEHIND branch', () => {
+    const run = runGateOverRest(
+      {
+        pull: restPull('behind'),
+        checkRuns: [
+          { name: 'Vitest', status: 'completed', conclusion: 'success' },
+        ],
+        statuses: [],
+      },
+      '--merge',
+    );
+    expect(run.status).toBe(1);
+    expect(run.merges).toHaveLength(0);
+  });
+
+  it('says a pending draft needs to be marked ready', () => {
+    const run = runGateOverRest(
+      {
+        pull: restPull('blocked', true),
+        checkRuns: [{ name: 'Build', status: 'queued', conclusion: null }],
+        statuses: [],
+      },
+      '--merge',
+    );
+    expect(run.status).toBe(2);
+    expect(run.stderr).toContain('ready for review');
+  });
+});
+
+describe('only an unreachable GraphQL earns the REST fallback', () => {
+  it('reports any other gh failure and stops', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pr-merge-gate-err-'));
+    const fake = join(dir, 'gh');
+    writeFileSync(
+      fake,
+      '#!/usr/bin/env bash\necho "$*" >> "' +
+        join(dir, 'calls') +
+        '"\necho "no pull request found" >&2\nexit 1\n',
+    );
+    chmodSync(fake, 0o755);
+    const result = spawnSync('bash', [SCRIPT, '42'], {
+      encoding: 'utf8',
+      env: { ...process.env, PATH: `${dir}:${process.env.PATH}` },
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('no pull request found');
+    expect(readFileSync(join(dir, 'calls'), 'utf8')).not.toContain('api');
+  });
+});

@@ -341,6 +341,14 @@ export const noUnlimitedResourceAllocation = createRule<
       return def.node.init ?? undefined;
     };
 
+    /** The scope variable a REFERENCE to an identifier resolves to. */
+    const variableOf = (
+      id: TSESTree.Identifier,
+    ): TSESLint.Scope.Variable | null =>
+      context.sourceCode
+        .getScope(id)
+        .references.find((ref) => ref.identifier === id)?.resolved ?? null;
+
     /**
      * `const { query: { limit } } = req` / `const { body } = req` — a binding
      * destructured straight off a request root, whose OUTERMOST key is a
@@ -1329,10 +1337,149 @@ export const noUnlimitedResourceAllocation = createRule<
           return [...accumulators].some((name) => compared.has(name));
         };
 
+        /**
+         * Is a literal (or a binding to one) an options object that carries a
+         * limit key — `{ limit }`, `{ limit: options.limit }`, `{ maxSize }`?
+         */
+        const carriesLimit = (argument: TSESTree.Node): boolean => {
+          let object: TSESTree.Node | undefined = argument;
+          if (argument.type === AST_NODE_TYPES.Identifier) {
+            const variable = variableOf(argument);
+            const definition = variable?.defs[0];
+            // A plain `const opts = { ... }` that is never written again. A
+            // destructured name holds a PART of its source, not the source, and
+            // a reassigned one may no longer hold the literal that was read.
+            object =
+              variable?.defs.length === 1 &&
+              definition?.node.type === AST_NODE_TYPES.VariableDeclarator &&
+              definition.node.id.type === AST_NODE_TYPES.Identifier &&
+              variable.references.filter((ref) => ref.isWrite()).length === 1
+                ? (definition.node.init ?? undefined)
+                : undefined;
+          }
+          return (
+            object?.type === AST_NODE_TYPES.ObjectExpression &&
+            object.properties.some(
+              (property) =>
+                property.type === AST_NODE_TYPES.Property &&
+                !property.computed &&
+                property.key.type === AST_NODE_TYPES.Identifier &&
+                limitOptionNames.has(property.key.name),
+            )
+          );
+        };
+
+        /** The variable a value is stored in, for `v = <node>` / `const v = <node>`. */
+        const holderOf = (
+          value: TSESTree.Node,
+        ): TSESLint.Scope.Variable | null => {
+          const parent = value.parent;
+          if (
+            parent?.type === AST_NODE_TYPES.VariableDeclarator &&
+            parent.init === value &&
+            parent.id.type === AST_NODE_TYPES.Identifier
+          ) {
+            return context.sourceCode.getDeclaredVariables(
+              parent,
+            )[0] as TSESLint.Scope.Variable;
+          }
+          if (
+            parent?.type === AST_NODE_TYPES.AssignmentExpression &&
+            parent.right === value &&
+            parent.left.type === AST_NODE_TYPES.Identifier
+          ) {
+            return variableOf(parent.left);
+          }
+          return null;
+        };
+
+        /**
+         * Is the stream in this variable handed to a call that also receives a
+         * limit — `getBody(stream, { limit })`? A decompression stream has no
+         * cap of its own; the consumer that reads it is where the cap lives, and
+         * `raw-body` destroys the stream when the limit is passed.
+         */
+        const handedToLimitedConsumer = (
+          variable: TSESLint.Scope.Variable,
+          createdAt: number,
+        ): boolean =>
+          variable.references.some((reference) => {
+            const call = reference.identifier.parent;
+            return (
+              call?.type === AST_NODE_TYPES.CallExpression &&
+              // A consumer that ran before the stream existed bounds another one.
+              call.range[0] >= createdAt &&
+              call.arguments.some(
+                (argument) => argument === reference.identifier,
+              ) &&
+              call.arguments.some(
+                (argument) =>
+                  argument !== reference.identifier && carriesLimit(argument),
+              )
+            );
+          });
+
+        /**
+         * Is this stream limited downstream? Two shapes: the stream lands in a
+         * local that a limited consumer reads, or it is `return`ed from a local
+         * factory (`createDecompressionStream`) whose every call site stores it
+         * in such a local. A factory with no call site, or one called without a
+         * limited consumer, stays reported.
+         */
+        const limitedDownstream = (): boolean => {
+          const holder = holderOf(node);
+          if (holder !== null) {
+            return handedToLimitedConsumer(holder, node.range[1]);
+          }
+
+          if (node.parent?.type !== AST_NODE_TYPES.ReturnStatement)
+            return false;
+          // The enclosing function: a `return` cannot sit anywhere else.
+          const factory = context.sourceCode.getScope(node).variableScope.block;
+          const declarator =
+            factory.type === AST_NODE_TYPES.FunctionDeclaration
+              ? factory
+              : (factory.parent as TSESTree.Node);
+          const variable =
+            declarator.type === AST_NODE_TYPES.FunctionDeclaration ||
+            declarator.type === AST_NODE_TYPES.VariableDeclarator
+              ? (context.sourceCode.getDeclaredVariables(
+                  declarator,
+                )[0] as TSESLint.Scope.Variable)
+              : null;
+          if (variable === null) return false;
+          // Every use of the factory must be a plain call. `const alias = make`
+          // or `register(make)` hands out a second way to build the stream that
+          // no limited consumer is shown to read.
+          const uses = variable.references.filter(
+            (reference) => !reference.init,
+          );
+          const calls = uses
+            .map((reference) => reference.identifier.parent)
+            .filter(
+              (parent): parent is TSESTree.CallExpression =>
+                parent?.type === AST_NODE_TYPES.CallExpression &&
+                parent.callee.type === AST_NODE_TYPES.Identifier &&
+                parent.callee.name === variable.name,
+            );
+          return (
+            calls.length > 0 &&
+            calls.length === uses.length &&
+            calls.every((call) => {
+              const stored = holderOf(call);
+              return (
+                stored !== null &&
+                handedToLimitedConsumer(stored, call.range[1])
+              );
+            })
+          );
+        };
+
         if (
           isDecompression() &&
           !hasDecompressionLimit() &&
-          !countsOutputBytes()
+          !countsOutputBytes() &&
+          !limitedDownstream()
         ) {
           context.report({
             node,

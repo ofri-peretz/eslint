@@ -22,81 +22,80 @@ const ruleTester = new RuleTester({
 });
 
 describe('analytics-event-naming', () => {
-  ruleTester.run(
-    'analytics-event-naming',
-    analyticsEventNaming,
-    {
-      valid: [
-        // Our bare track() primitive.
-        { name: 'an event named the way the taxonomy says', code: 'track("articles:card_click", { id: 1 });' },
-        { code: 'track("articles:search_submit", { q: "x" });' },
-        { code: 'track("homepage:hero_cta_click", {});' },
-        { code: 'track("rule_page:doc_view", { slug: "x" });' },
-        { code: 'track("signup_flow:submit_send", {});' },
-        // copy is a canonical dev-content verb (code blocks, install commands).
-        { code: 'track("article:code_copy", { language: "ts" });' },
-        // PostHog convention.
-        { code: 'posthog.capture("articles:card_click", { id: 1 });' },
-        { code: 'ph.capture("homepage:hero_view", {});' },
-        // PostHog reserved events ($-prefixed) — exempt.
-        { code: 'posthog.capture("$pageview");' },
-        { code: 'posthog.capture("$set", { is_internal_user: true });' },
-        { code: 'posthog.capture("$identify");' },
-        // Segment/Mixpanel/Amplitude convention.
-        { code: 'analytics.track("articles:card_click", {});' },
-        { code: 'mixpanel.track("articles:card_click", {});' },
-        // .identify() is not validated — first arg is a person id.
-        { code: 'posthog.identify("user-123", { email: "x@example.com" });' },
-        { code: 'analytics.identify("CamelCaseUserId");' },
-        // Non-analytics calls are ignored.
-        { code: 'fetch("/api/anything");' },
-        { code: 'callback(someValue);' },
-      ],
-      invalid: [
-        // CamelCase event name.
-        {
-          name: 'PascalCase where the taxonomy is object:verb in snake_case',
-          code: 'track("ArticlesCardClick", {});',
-          errors: [{ messageId: 'invalidEventName' }],
-        },
-        // Missing colon (no category separator).
-        {
-          code: 'track("articles_card_click", {});',
-          errors: [{ messageId: 'invalidEventName' }],
-        },
-        // Past-tense verb (forbidden by philosophy principle 4).
-        {
-          code: 'track("articles:card_clicked", {});',
-          errors: [{ messageId: 'invalidEventName' }],
-        },
-        // Verb not in the fixed list.
-        {
-          code: 'track("articles:card_pressed", {});',
-          errors: [{ messageId: 'invalidEventName' }],
-        },
-        // Uppercase characters.
-        {
-          code: 'track("Articles:Card_Click", {});',
-          errors: [{ messageId: 'invalidEventName' }],
-        },
-        // Interpolated event name.
-        {
-          code: 'track(`articles:card_${verb}`, {});',
-          errors: [{ messageId: 'interpolatedEventName' }],
-        },
-        // Same for posthog.capture.
-        {
-          code: 'posthog.capture("BAD_NAME", {});',
-          errors: [{ messageId: 'invalidEventName' }],
-        },
-        // Same for analytics.track (Segment).
-        {
-          code: 'analytics.track("articles:card_clicked", {});',
-          errors: [{ messageId: 'invalidEventName' }],
-        },
-      ],
-    },
-  );
+  ruleTester.run('analytics-event-naming', analyticsEventNaming, {
+    valid: [
+      // Our bare track() primitive.
+      {
+        name: 'an event named the way the taxonomy says',
+        code: 'track("articles:card_click", { id: 1 });',
+      },
+      { code: 'track("articles:search_submit", { q: "x" });' },
+      { code: 'track("homepage:hero_cta_click", {});' },
+      { code: 'track("rule_page:doc_view", { slug: "x" });' },
+      { code: 'track("signup_flow:submit_send", {});' },
+      // copy is a canonical dev-content verb (code blocks, install commands).
+      { code: 'track("article:code_copy", { language: "ts" });' },
+      // PostHog convention.
+      { code: 'posthog.capture("articles:card_click", { id: 1 });' },
+      { code: 'ph.capture("homepage:hero_view", {});' },
+      // PostHog reserved events ($-prefixed) — exempt.
+      { code: 'posthog.capture("$pageview");' },
+      { code: 'posthog.capture("$set", { is_internal_user: true });' },
+      { code: 'posthog.capture("$identify");' },
+      // Segment/Mixpanel/Amplitude convention.
+      { code: 'analytics.track("articles:card_click", {});' },
+      { code: 'mixpanel.track("articles:card_click", {});' },
+      // .identify() is not validated — first arg is a person id.
+      { code: 'posthog.identify("user-123", { email: "x@example.com" });' },
+      { code: 'analytics.identify("CamelCaseUserId");' },
+      // Non-analytics calls are ignored.
+      { code: 'fetch("/api/anything");' },
+      { code: 'callback(someValue);' },
+    ],
+    invalid: [
+      // CamelCase event name.
+      {
+        name: 'PascalCase where the taxonomy is object:verb in snake_case',
+        code: 'track("ArticlesCardClick", {});',
+        errors: [{ messageId: 'invalidEventName' }],
+      },
+      // Missing colon (no category separator).
+      {
+        code: 'track("articles_card_click", {});',
+        errors: [{ messageId: 'invalidEventName' }],
+      },
+      // Past-tense verb (forbidden by philosophy principle 4).
+      {
+        code: 'track("articles:card_clicked", {});',
+        errors: [{ messageId: 'invalidEventName' }],
+      },
+      // Verb not in the fixed list.
+      {
+        code: 'track("articles:card_pressed", {});',
+        errors: [{ messageId: 'invalidEventName' }],
+      },
+      // Uppercase characters.
+      {
+        code: 'track("Articles:Card_Click", {});',
+        errors: [{ messageId: 'invalidEventName' }],
+      },
+      // Interpolated event name.
+      {
+        code: 'track(`articles:card_${verb}`, {});',
+        errors: [{ messageId: 'interpolatedEventName' }],
+      },
+      // Same for posthog.capture.
+      {
+        code: 'posthog.capture("BAD_NAME", {});',
+        errors: [{ messageId: 'invalidEventName' }],
+      },
+      // Same for analytics.track (Segment).
+      {
+        code: 'analytics.track("articles:card_clicked", {});',
+        errors: [{ messageId: 'invalidEventName' }],
+      },
+    ],
+  });
 });
 
 describe('analytics-event-naming: a const-bound event name', () => {

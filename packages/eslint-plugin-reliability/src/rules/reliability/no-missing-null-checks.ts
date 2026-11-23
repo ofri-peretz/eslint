@@ -644,6 +644,15 @@ export function hasNullCheck(
         p.type === 'FunctionExpression' ||
         p.type === 'ArrowFunctionExpression'
       ) {
+        // A callback declared inside the narrowed arm runs no earlier than
+        // the ternary itself, so a `const` the ternary narrowed is still
+        // narrowed inside it (#1564). Anything else — `let`, a parameter —
+        // can have changed by the time the callback runs, so the walk still
+        // stops here for those.
+        if (isConstBinding(rootBinding(node.object, sourceCode))) {
+          cur = p;
+          continue;
+        }
         break;
       }
       if (p.type === 'ConditionalExpression') {
@@ -845,6 +854,29 @@ function rootBinding(
     if (variable) return variable;
   }
   return null;
+}
+
+/**
+ * A `const` binding can never be reassigned, so a ternary that has already
+ * narrowed it stays valid inside a nested callback declared in the narrowed
+ * arm — the closure cannot run before the ternary's own evaluation, and
+ * nothing afterwards can rebind a `const`. TypeScript 5.4+ keeps exactly this
+ * narrowing across closures for the same reason (#1564):
+ *
+ *   const take = list.find(...)
+ *   return take ? items.map((x) => x.answers[take.id]) : []
+ *
+ * A `let` or a parameter gives no such guarantee — it may be written between
+ * the ternary and the callback running — so only `const` passes.
+ */
+function isConstBinding(variable: TSESLint.Scope.Variable | null): boolean {
+  if (!variable || variable.defs.length !== 1) return false;
+  const def = variable.defs[0];
+  if (def.type !== 'Variable') return false;
+  const declaration = (def as { parent?: TSESTree.Node | null }).parent;
+  return (
+    declaration?.type === 'VariableDeclaration' && declaration.kind === 'const'
+  );
 }
 
 /**

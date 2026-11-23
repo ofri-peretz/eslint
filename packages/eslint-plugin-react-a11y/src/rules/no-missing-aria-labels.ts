@@ -17,6 +17,8 @@ import {
   attributeValue,
   findAttribute,
   hasSpreadAttribute,
+  isAriaHidden,
+  isNamedByLabelFor,
   staticAttributeValue,
 } from '../utils/jsx-static';
 
@@ -69,7 +71,10 @@ function insideLabel(node: TSESTree.JSXOpeningElement): boolean {
 const UNNAMED_INPUT_TYPES = new Set(['hidden', 'submit', 'reset']);
 
 /** Returns true if any direct JSX child provides visible text content. */
-function hasTextContent(jsxElement: TSESTree.JSXElement): boolean {
+function hasTextContent(
+  jsxElement: TSESTree.JSXElement,
+  deep: boolean,
+): boolean {
   return jsxElement.children.some((child) => {
     if (child.type === 'JSXText') return child.value.trim().length > 0;
     // {expression} containers: only expressions that plausibly render as
@@ -87,6 +92,16 @@ function hasTextContent(jsxElement: TSESTree.JSXElement): boolean {
             typeof child.expression.value === 'number')))
     )
       return true;
+    // `<button><span>Sign in</span></button>`: the name is the text of the
+    // descendants a screen reader reads, so look through elements that are
+    // not hidden from it.
+    // Only a button is named by its content: a <select>'s options are its
+    // choices, not its name.
+    if (!deep) return false;
+    if (child.type === 'JSXElement')
+      return !isAriaHidden(child.openingElement) && hasTextContent(child, deep);
+    if (child.type === 'JSXFragment')
+      return hasTextContent(child as unknown as TSESTree.JSXElement, deep);
     return false;
   });
 }
@@ -171,12 +186,18 @@ export const noMissingAriaLabels = createRule<RuleOptions, MessageIds>({
       // A wrapping <label> names the control inside it.
       if (insideLabel(node)) return;
 
+      // Hidden from assistive technology: there is nothing to name.
+      if (isAriaHidden(node)) return;
+
+      // `<label htmlFor={x}>` naming a control whose `id` is the same `x`.
+      if (isNamedByLabelFor(node)) return;
+
       // Text children (e.g. <button>Submit</button>) provide an accessible name
       const parent = (node as TSESTree.Node & { parent?: TSESTree.Node })
         .parent;
       if (
         parent?.type === 'JSXElement' &&
-        hasTextContent(parent as TSESTree.JSXElement)
+        hasTextContent(parent as TSESTree.JSXElement, elementName === 'button')
       )
         return;
 

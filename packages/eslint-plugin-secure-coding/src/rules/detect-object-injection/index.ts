@@ -802,6 +802,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     let numericVarInProgress: WeakSet<object>;
     let ARRAY_PRODUCING_METHODS: ReadonlySet<string>;
     let ELEMENT_FIRST_ITERATORS: ReadonlySet<string>;
+    let typeAliasUnions: Map<string, Set<string>>;
 
     // The test-file skip that used to live here is gone. It is now `skipTestFiles`
     // on the rule definition, which short-circuits `create()` before any visitor
@@ -836,11 +837,17 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       node: TSESTree.Node,
       writtenObject: TSESTree.Node,
     ): boolean => {
-      // Only check for identifier keys (obj[key] where key is a variable)
-      if (propertyNode.type !== AST_NODE_TYPES.Identifier) {
+      // Only check for identifier keys (obj[key] where key is a variable). A TS
+      // type-only cast around the key — `WRITERS[kind as keyof typeof WRITERS]`,
+      // the canonical way to narrow a dispatch-table key to its own key union —
+      // is erased at compile time and is the same identifier underneath, so
+      // without unwrapping it first a hasOwn/includes guard on that identifier
+      // was never recognised. github.com/ofri-peretz/eslint issue #1547.
+      const unwrappedProperty = withoutTypeAnnotation(propertyNode);
+      if (unwrappedProperty.type !== AST_NODE_TYPES.Identifier) {
         return false;
       }
-      const keyName = propertyNode.name;
+      const keyName = unwrappedProperty.name;
 
       // AST-based validation detection (faster than getText + regex)
       const isIncludesCall = (testNode: TSESTree.Node): boolean => {
@@ -1611,8 +1618,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       const declarator = def.node as TSESTree.VariableDeclarator;
       // A destructured name binds a piece of the initializer, not the initializer.
       if (declarator.id.type !== AST_NODE_TYPES.Identifier) return false;
-      const init = declarator.init;
-      if (!init) return false;
+      const rawInit = declarator.init;
+      if (!rawInit) return false;
+      // `Object.create(null) as Record<string, number>` (or `satisfies`, or the
+      // `<T>x` assertion) is a TS type-only wrapper erased at compile time — the
+      // CallExpression beneath it is unchanged at runtime, so the cast form was
+      // reported while the bare `Object.create(null)` form above it was already
+      // silent. Same unwrap `isLocallyConstructed` already applies for the same
+      // reason. github.com/ofri-peretz/eslint issue #1573.
+      const init = withoutTypeAnnotation(rawInit);
 
       // Check for array spread: [...array]
       if (
@@ -1639,6 +1653,203 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // text is spelled: `o[constructorName]` names no prototype accessor.
       const name = staticString(propertyNode);
       return OBJECT_INJECTION_PATTERNS.find((p) => p.pattern === name) ?? null;
+    };
+
+    /**
+     * `'a' | 'b' | 'c'` as the AST states it: a union of STRING-literal
+     * types. `null` for anything else a `TSUnionType` can hold — a numeric or
+     * boolean literal member, a non-literal member (another type reference, an
+     * object type), or an empty union — because none of those states a closed
+     * set of PROPERTY NAMES the way a string-literal union does, and guessing
+     * would be the type-checker's job, not this file's.
+     */
+    const stringLiteralUnionMembers = (
+      type: TSESTree.TypeNode,
+    ): Set<string> | null => {
+      if (type.type !== AST_NODE_TYPES.TSUnionType) return null;
+      const members = new Set<string>();
+      for (const member of type.types) {
+        if (
+          member.type !== AST_NODE_TYPES.TSLiteralType ||
+          member.literal.type !== AST_NODE_TYPES.Literal ||
+          typeof member.literal.value !== 'string'
+        ) {
+          return null;
+        }
+        members.add(member.literal.value);
+      }
+      // `type.types` always holds 2+ entries for a real `TSUnionType` — the
+      // parser only produces this node for a union of 2 or more constituents
+      // — and every entry that was not a string literal already returned
+      // `null` above, so reaching here means `members` is non-empty.
+      return members;
+    };
+
+    /**
+     * The closed set of string values this IDENTIFIER's own declared TS type
+     * admits — stated directly as `'a' | 'b'`, or through a `TSTypeReference`
+     * to a type alias this same file declares as one — or `null` when the
+     * type cannot be resolved this way.
+     *
+     * Deliberately PARAMETER-only, not also a `const`'s own annotation the
+     * way `isProvablyArray` reads one: a `const`'s declared type is not
+     * checked against its initializer by anything in this file, so
+     * `const key: Status = req.body.action` (`req: any`) would be trusted at
+     * face value while its actual runtime value is attacker-controlled —
+     * TypeScript erases the annotation and never required the initializer to
+     * narrow this way once `any` is anywhere in the chain. A parameter is
+     * the function's own stated contract with its caller, the same boundary
+     * `isProvablyArray` trusts; reading a local `const`'s annotation instead
+     * reads what the code ASSERTS about a value, not what proves it. Caught
+     * by review on #1675. A `let`, a cast, `keyof typeof`, an enum member or
+     * a generic the type checker alone could resolve each still come back
+     * `null`, falling through to the existing checks rather than being
+     * guessed at. github.com/ofri-peretz/eslint issue #1547 (second repro).
+     */
+    const keyUnionLiteralMembers = (
+      node: TSESTree.Node,
+    ): Set<string> | null => {
+      if (node.type !== AST_NODE_TYPES.Identifier) return null;
+      const variable = resolvedReference(sourceCode.getScope(node), node);
+      if (!variable || variable.defs.length !== 1) return null;
+      const def = variable.defs[0];
+      if (def.type !== 'Parameter') return null;
+      // A parameter's value is chosen by the caller; only its own annotation
+      // states what it is — same reasoning as `isProvablyArray`.
+      const annotation = def.name.typeAnnotation?.typeAnnotation;
+      if (!annotation) return null;
+
+      if (annotation.type === AST_NODE_TYPES.TSTypeReference) {
+        const typeName = annotation.typeName;
+        if (typeName.type !== AST_NODE_TYPES.Identifier) return null;
+        // A type parameter of the same name (`function f<Status>(...)`, or
+        // an enclosing generic) SHADOWS the module-level alias; resolving by
+        // name alone would hand back the alias's own union for a value the
+        // generic actually lets be anything its constraint allows. Caught by
+        // review on #1675.
+        if (isShadowedByTypeParameter(def.name, typeName.name)) return null;
+        return typeAliasUnions.get(typeName.name) ?? null;
+      }
+      return stringLiteralUnionMembers(annotation);
+    };
+
+    /**
+     * Does a type parameter of this name shadow a module-level type alias,
+     * anywhere between `fromNode` and the file's root? Type-level scoping
+     * has no entry in ESLint's (runtime) scope manager, so this walks `.parent`
+     * by hand over the one place a type parameter can be declared: a
+     * function, class, interface or type alias's own `typeParameters` list.
+     */
+    const isShadowedByTypeParameter = (
+      fromNode: TSESTree.Node,
+      name: string,
+    ): boolean => {
+      let cur: TSESTree.Node | undefined = fromNode;
+      while (cur) {
+        const withTypeParams = cur as TSESTree.Node & {
+          typeParameters?: TSESTree.TSTypeParameterDeclaration;
+        };
+        if (
+          withTypeParams.typeParameters?.params.some(
+            (p) => p.name.name === name,
+          )
+        ) {
+          return true;
+        }
+        cur = cur.parent;
+      }
+      return false;
+    };
+
+    /**
+     * The OWN key set of a `const`-declared object literal in an outer scope,
+     * when every property has a literal key — a CLOSED set, written out in
+     * full where the object is declared. `null` when any property's key is
+     * not statically nameable (a dynamic computed key) or there is a spread
+     * (`...BASE`, whose own keys this file cannot see): the set cannot be
+     * read off the declaration site then, the same reservation
+     * `closedObjectLiteralOwnKeys`'s sibling predicates in this file already
+     * make (`isKeyFromLiteralAllowlist`, the `MAP` case pinned in
+     * key-provenance.test.ts).
+     */
+    const closedObjectLiteralOwnKeys = (
+      objectNode: TSESTree.Node,
+    ): Set<string> | null => {
+      if (objectNode.type !== AST_NODE_TYPES.Identifier) return null;
+      const variable = resolvedReference(
+        sourceCode.getScope(objectNode),
+        objectNode,
+      );
+      if (!variable || variable.defs.length !== 1) return null;
+      const def = variable.defs[0];
+      if (def.type !== 'Variable' || def.parent.kind !== 'const') return null;
+      const declarator = def.node as TSESTree.VariableDeclarator;
+      if (declarator.id.type !== AST_NODE_TYPES.Identifier) return null;
+      const rawInit = declarator.init;
+      if (!rawInit) return null;
+      const init = withoutTypeAnnotation(rawInit);
+      if (init.type !== AST_NODE_TYPES.ObjectExpression) return null;
+
+      const keys = new Set<string>();
+      for (const prop of init.properties) {
+        // A spread's own keys are not written out here, so it breaks the
+        // closure this predicate exists to prove.
+        if (prop.type !== AST_NODE_TYPES.Property) return null;
+        const key = objectKeyName(prop);
+        if (key === null) return null;
+        keys.add(key);
+      }
+      return keys;
+    };
+
+    /**
+     * SAFE: `obj[key]` where `obj` is a `const` object literal this file
+     * builds, with a CLOSED own key set (every key a literal, no spread), and
+     * `key`'s own declared TS type — stated directly or through a type alias
+     * this same file declares — is a union of string literals that is a
+     * SUBSET of that closed key set (narrower-reading-from-wider is fine; it
+     * need not be exactly equal).
+     *
+     *   type Status = 'ok' | 'fail';
+     *   const PAINT: Record<Status, …> = { ok: …, fail: … };
+     *   PAINT[status]   // status: Status
+     *
+     * cannot read off the prototype: every value `status` can hold BY ITS OWN
+     * DECLARED TYPE is one of `PAINT`'s own data properties, and `__proto__` /
+     * `constructor` are not members of that union, so they are structurally
+     * excluded — the same safety argument `hasPrecedingValidation`'s `hasOwn`
+     * branch makes for a RUNTIME guard, made here by a STATIC type instead,
+     * with no guard and no cast in sight. This is purely syntactic — this
+     * rule's tests run with no type-checker service — so a type alias this
+     * file cannot resolve this way (imported, generic, mapped, `keyof typeof`,
+     * an enum) is left unreported-by-THIS-check rather than guessed at; see
+     * `keyUnionLiteralMembers`. github.com/ofri-peretz/eslint issue #1547
+     * (second repro — the `hasOwn`-guarded repro in the same issue was fixed
+     * by the `withoutTypeAnnotation` unwrap in `hasPrecedingValidation`).
+     */
+    const isKeyWithinClosedObjectKeyUnion = (
+      objectNode: TSESTree.Node,
+      propertyNode: TSESTree.Node,
+    ): boolean => {
+      const keyMembers = keyUnionLiteralMembers(propertyNode);
+      if (keyMembers === null) return false;
+      // A union naming a POLLUTION_KEYS member is never trusted through this
+      // path, even when the table's own literal appears to declare it: a
+      // non-computed `{ __proto__: v }` sets the prototype rather than
+      // creating an own property of that name (so `closedObjectLiteralOwnKeys`
+      // reading it as one would be wrong), and an own `constructor` the table
+      // DOES declare can still be `delete`d or `Reflect.deleteProperty`d
+      // before this access runs, exposing the inherited one underneath.
+      // Caught by review on #1675.
+      for (const member of keyMembers) {
+        if (POLLUTION_KEYS.has(member)) return false;
+      }
+      const objectKeys = closedObjectLiteralOwnKeys(objectNode);
+      if (objectKeys === null) return false;
+      for (const member of keyMembers) {
+        if (!objectKeys.has(member)) return false;
+      }
+      return true;
     };
 
     /**
@@ -1762,6 +1973,12 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return null;
       }
 
+      // SAFE: the key's own declared type is a closed string-literal union
+      // that is a subset of this const object literal's own keys (#1547).
+      if (isKeyWithinClosedObjectKeyUnion(left.object, propertyNode)) {
+        return null;
+      }
+
       // Skip if the key has been validated (e.g., includes() or hasOwnProperty check)
       if (hasPrecedingValidation(propertyNode, node, left.object)) {
         return null;
@@ -1827,6 +2044,12 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       // SAFE: key originates from for..in or Object.keys/entries iteration
       if (isForInOrObjectKeysKey(propertyNode)) {
+        return false;
+      }
+
+      // SAFE: the key's own declared type is a closed string-literal union
+      // that is a subset of this const object literal's own keys (#1547).
+      if (isKeyWithinClosedObjectKeyUnion(node.object, propertyNode)) {
         return false;
       }
 
@@ -3573,6 +3796,35 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           'every',
           'flatMap',
         ]);
+
+        /**
+         * `type Status = 'ok' | 'fail';` resolved once per file, by NAME, to the
+         * string literals the union is written out as — only for an alias whose
+         * own definition is a union of string-literal types; everything else
+         * (a numeric/boolean member, an object type, a `keyof`, a reference to
+         * another alias) is left out rather than partially resolved. Built from
+         * `Program.body` only: a type alias declared inside a function or
+         * namespace is not a module-level fact the same way, and is out of
+         * scope for `isKeyWithinClosedObjectKeyUnion` below.
+         */
+        typeAliasUnions = new Map<string, Set<string>>();
+        for (const statement of sourceCode.ast.body) {
+          // `export type Status = …` wraps the alias in an
+          // ExportNamedDeclaration; unwrapping it is what makes this see the
+          // common, exported form of a module-level alias at all. Caught by
+          // review on #1675.
+          const declaration =
+            statement.type === AST_NODE_TYPES.ExportNamedDeclaration
+              ? statement.declaration
+              : statement;
+          if (declaration?.type !== AST_NODE_TYPES.TSTypeAliasDeclaration) {
+            continue;
+          }
+          const members = stringLiteralUnionMembers(declaration.typeAnnotation);
+          if (members !== null) {
+            typeAliasUnions.set(declaration.id.name, members);
+          }
+        }
       },
       ForOfStatement: checkMassAssignmentLoop,
       ForInStatement: checkPrototypePollutingCopyLoop,
