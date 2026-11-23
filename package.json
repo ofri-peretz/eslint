@@ -290,7 +290,7 @@
     "nestjs:releases": "tsx scripts/nestjs-release-watch.mts",
     "fidelity": "node benchmarks/suites/fidelity/run.cjs",
     "lint:dogfood": "eslint --config eslint.dogfood.config.mjs \"packages/*/src/**/*.ts\"",
-    "lint:integrity": "eslint --config eslint.integrity.config.mjs --no-warn-ignored --max-warnings 53 ."
+    "lint:guidance": "eslint --config eslint.guidance.config.mjs --no-warn-ignored --max-warnings 10 ."
   },
   "keywords": [
     "eslint",

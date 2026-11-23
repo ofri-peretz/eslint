@@ -2699,31 +2699,5 @@
       "confidence": "enforcement",
       "notes": "Instantiates createRequireTlsRule (@interlace/eslint-devkit). TypeORM keeps DataSourceOptions flat; `extra` is the driver passthrough bag."
     }
-  },
-  "eslint-plugin-test-integrity": {
-    "no-fixed-sleep": {
-      "environment": "universal",
-      "detection": "structural-api",
-      "confidence": "enforcement",
-      "notes": "Test files only. `new Promise((r) => setTimeout(r, n))`, `setTimeout`/`scheduler.wait` imported from timers/promises, an awaited `sleep`/`delay`/`wait`/`pause` with a numeric literal, `page.waitForTimeout(n)`, `cy.wait(n)`. Fake timers and `cy.wait('@alias')` are not reported."
-    },
-    "no-focused-test": {
-      "environment": "universal",
-      "detection": "structural-api",
-      "confidence": "enforcement",
-      "notes": "`.only` anywhere in the callee chain, or `fit`/`ftest`/`fdescribe`, on a test-runner root that is an unbound global or imported from vitest, @jest/globals, @playwright/test, node:test, bun:test or mocha."
-    },
-    "no-test-retry": {
-      "environment": "universal",
-      "detection": "structural-api",
-      "confidence": "enforcement",
-      "notes": "Non-zero `retry`/`retries` in test-runner call options, inside defineConfig/defineProject/defineWorkspace/mergeConfig, or anywhere in a vitest/vite/jest/playwright config file; `jest.retryTimes(n)` and `this.retries(n)`. Legal with an issue URL or decision id in a comment on the line or the line above."
-    },
-    "no-unexplained-skip": {
-      "environment": "universal",
-      "detection": "structural-api",
-      "confidence": "enforcement",
-      "notes": "`.skip`/`.todo`/`.fixme`, `xit`/`xtest`/`xdescribe`, constant `skipIf`/`runIf`, unconditional Playwright `test.skip()`, on a proven test-runner root. Legal with an issue URL, decision id or unexpired YYYY-MM-DD date in a comment; runtime conditions are gates and never reported."
-    }
   }
 }

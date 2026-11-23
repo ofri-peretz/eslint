@@ -2874,26 +2874,6 @@
       "failed": 0,
       "examples": []
     },
-    "eslint-plugin-test-integrity/no-fixed-sleep": {
-      "cases": 38,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-test-integrity/no-focused-test": {
-      "cases": 21,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-test-integrity/no-test-retry": {
-      "cases": 33,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-test-integrity/no-unexplained-skip": {
-      "cases": 30,
-      "failed": 0,
-      "examples": []
-    },
     "eslint-plugin-typeorm-security/no-hardcoded-credentials": {
       "cases": 11,
       "failed": 0,

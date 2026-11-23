@@ -2,9 +2,9 @@
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-11-23",
-  "totalPlugins": 33,
-  "totalRules": 516,
-  "oxlintCompatible": 516,
+  "totalPlugins": 32,
+  "totalRules": 512,
+  "oxlintCompatible": 512,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -3213,39 +3213,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-test-integrity",
-      "short": "test-integrity",
-      "shim": "tools/oxlint-plugins/interlace-test-integrity.cjs",
-      "subpath": "eslint-plugin-test-integrity/oxlint",
-      "ruleCount": 4,
-      "rules": [
-        {
-          "name": "no-fixed-sleep",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-focused-test",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-test-retry",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        },
-        {
-          "name": "no-unexplained-skip",
-          "portability": "compatible",
-          "blockers": [],
-          "isTypeAware": false
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-typeorm-security",
       "short": "typeorm-security",
       "shim": "tools/oxlint-plugins/interlace-typeorm-security.cjs",
@@ -4043,12 +4010,6 @@
       "no-public-storage-bucket",
       "no-service-role-key-in-client",
       "require-auth-error-check"
-    ],
-    "test-integrity": [
-      "no-fixed-sleep",
-      "no-focused-test",
-      "no-test-retry",
-      "no-unexplained-skip"
     ],
     "typeorm-security": [
       "no-hardcoded-credentials",

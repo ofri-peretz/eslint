@@ -16,7 +16,7 @@ cases: []
 > rule cannot see. The companion tools (proofline, triggerlist, replay) live in burgee
 > (`burgee/.sdlc/decisions/D-20261123-verification-tools-live-in-burgee.md`).
 
-**Status:** draft · **Opened:** 2026-11-23 · **Owner:** @ofri-peretz
+**Status:** dropped · **Opened:** 2026-11-23 · **Owner:** @ofri-peretz
 
 ---
 
@@ -88,3 +88,12 @@ once published.
 
 - A new plugin, or new rules in `eslint-plugin-conventions`? The default here is a new plugin, so
   consumers adopt it in one line and its scope stays testing; the owner may prefer fewer plugins.
+
+## Dropped
+
+2026-11-23. The owner moved this work to burgee: the four rules and the changed-lines check
+(weakened assertions, unexplained snapshot updates) ship there as the `truemark` package, whose
+CLI is a burgee program. See `burgee/.sdlc/intents/truemark/intent.md` and
+`burgee/.sdlc/decisions/D-20261123-truemark-lives-in-burgee.md`. A first build here
+(eslint-plugin-test-integrity on the devkit) was removed from the same PR that added it,
+before it merged, so this repo never shipped the plugin.

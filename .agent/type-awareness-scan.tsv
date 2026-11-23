@@ -509,10 +509,6 @@ cli-floor	require-command-description	unaware
 cli-floor	require-command-example	unaware	
 secure-coding	no-invisible-characters	unaware	
 secure-coding	no-disabled-template-escaping	unaware	
-test-integrity	no-fixed-sleep	unaware	
-test-integrity	no-focused-test	unaware	
-test-integrity	no-test-retry	unaware	
-test-integrity	no-unexplained-skip	unaware	
 conventions	enforced-rule-in-prose	unaware	
 conventions	guidance-budget	unaware	
 conventions	no-duplicated-guidance	unaware	

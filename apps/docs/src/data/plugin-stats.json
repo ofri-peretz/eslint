@@ -105,14 +105,6 @@
       "published": true
     },
     {
-      "name": "eslint-plugin-test-integrity",
-      "rules": 4,
-      "description": "ESLint plugin for test integrity — no focused tests, no unexplained skips, no fixed sleeps, no retries; plus a pre-push check for weakened assertions and unexplained snapshot updates",
-      "category": "security",
-      "version": "0.0.0",
-      "published": false
-    },
-    {
       "name": "eslint-plugin-typeorm-security",
       "rules": 4,
       "description": "ESLint TypeORM security rules — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
@@ -267,6 +259,6 @@
   ],
   "totalRules": 508,
   "totalPlugins": 31,
-  "allPluginsCount": 33,
+  "allPluginsCount": 32,
   "generatedAt": "2026-11-23"
 }

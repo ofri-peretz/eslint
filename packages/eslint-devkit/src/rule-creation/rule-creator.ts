@@ -533,7 +533,6 @@ const PLUGIN_DOCS_CATEGORY: Readonly<Record<string, 'security' | 'quality'>> = {
   'plugin-typeorm-security': 'security',
   'plugin-vercel-ai-security': 'security',
   'plugin-cli-floor': 'quality',
-  'plugin-test-integrity': 'quality',
   'plugin-conventions': 'quality',
   'plugin-import-next': 'quality',
   'plugin-maintainability': 'quality',
