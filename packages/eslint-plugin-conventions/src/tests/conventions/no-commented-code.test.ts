@@ -490,6 +490,72 @@ describe('no-commented-code — adversarial', () => {
   });
 });
 
+// ── A label-like prefix followed by prose is not code (#1553) ─────────────────
+// Reported dogfooding on ofri-peretz/serverless: `Word:` reads as a label or
+// object key, and a trailing parenthetical aside gives the line a code-like
+// ending, but the words in between are not one JS expression.
+describe('no-commented-code — a label prefix does not make prose code', () => {
+  ruleTester.run('valid - label-like prose', noCommentedCode, {
+    valid: [
+      {
+        name: 'a label-like prefix followed by a run of bare words and a parenthetical aside',
+        code: '// Always: scoped log statement (function-specific log group)\nout.push(x);',
+      },
+      {
+        name: 'a prose line with no code-like ending at all',
+        code: '//   security: secure-coding + node-security + lambda-security\nexport default [];',
+      },
+    ],
+    invalid: [
+      {
+        // FN GUARD: a real object-key-style expression after the label stays reported.
+        name: 'a label followed by an actual call expression',
+        code: 'const a = 1;\n// foo: bar();',
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }],
+          },
+        ],
+      },
+      // FN GUARD: the bare-word-run exemption is colon-only. An assignment
+      // (`=`) whose right-hand side is two bare words with no operator
+      // between them is routinely real code — `new`, `typeof` and `await`
+      // take their operand directly — and must stay reported.
+      {
+        name: 'an assignment to a constructed value stays reported',
+        code: 'const a = 1;\n// x = new Foo();',
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }],
+          },
+        ],
+      },
+      {
+        name: 'an assignment from typeof stays reported',
+        code: 'const a = 1;\n// x = typeof value;',
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }],
+          },
+        ],
+      },
+      {
+        name: 'an assignment from an awaited call stays reported',
+        code: 'const a = 1;\n// x = await client.connect();',
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }],
+          },
+        ],
+      },
+    ],
+  });
+});
+
 // ── Adjacency: live code between two code-like comments is NOT one block ──────
 // Surfaced by the burgee FP/FN sweep at
 // packages/compat-oracle/vendor/ora/test.js:1658, where the grouped suggestion
