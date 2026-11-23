@@ -32,7 +32,9 @@ function runsTests(words) {
     const w = words[i];
     const next = words[i + 1] ?? "";
     const head = i === start || LAUNCHERS.has(words[i - 1] ?? "");
-    if (head && (RUNNERS.has(w) || RUNNERS.has(w.split("/").pop()))) return true;
+    // Every form counts only as the command itself: `echo npm test` runs echo.
+    if (!head) continue;
+    if (RUNNERS.has(w) || RUNNERS.has(w.split("/").pop())) return true;
     if (/^(npm|pnpm|yarn|bun)$/.test(w) && (next === "test" || next === "t")) return true;
     if (/^(npm|pnpm|yarn|bun)$/.test(w) && next === "run" && /^(test|ci:local)([:-].*)?$/.test(words[i + 2] ?? "")) return true;
     if (w === "turbo" && next === "run" && words.slice(i + 2).some((x) => /^test([:-].*)?$/.test(x))) return true;
@@ -106,7 +108,7 @@ export const CASES = {
     "./node_modules/.bin/jest -t x",
     "cargo test -p core",
   ],
-  other: ["npm run build", "git commit -m 'fix tests'", "echo vitest", "npm run typecheck", "go build ./..."],
+  other: ["npm run build", "git commit -m 'fix tests'", "echo vitest", "echo npm test", "grep -r 'go test' docs", "npm run typecheck", "go build ./..."],
 };
 
 function selfTest() {
@@ -120,6 +122,12 @@ function selfTest() {
   record(session, "npm test", true);
   record(session, "npm test", false);
   if (record(session, "npm test", true) || record(session, "npm test", true)) bad.push("a pass should reset the count");
+  record(session, "npm test", false);
+  // A passing command that only mentions a test run must not reset the count.
+  record(session, "npm test", true);
+  record(session, "npm test", true);
+  record(session, "echo npm test", false);
+  if (record(session, "npm test", true)?.continue !== false) bad.push("echo npm test should not reset the count");
   record(session, "npm test", false);
   process.stdout.write(bad.length ? `${bad.join("\n")}\n${bad.length} failing\n` : `ok: ${CASES.tests.length} counted, ${CASES.other.length} ignored, stop on ${LIMIT}\n`);
   process.exit(bad.length ? 1 : 0);

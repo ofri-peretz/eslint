@@ -56,9 +56,16 @@ function skipQuoted(src, start) {
   return i + 1;
 }
 
+const VALUE_FLAG = /^(-[a-zA-Z]*[mF]|--message|--file|--trailer)$/;
+
+/** True when words[k] is a flag that takes the next word as its value, and was not itself one. */
+function takesValue(words, k) {
+  return k >= 0 && VALUE_FLAG.test(words[k]) && !takesValue(words, k - 1);
+}
+
 /**
  * Split into commands of whitespace-separated words. Quoted text becomes an empty word, except a
- * quoted lone flag ("--no-verify"), which the shell passes to git as the bare flag.
+ * quoted single word ("--no-verify", "core.hooksPath=x"), which the shell passes on as that word.
  */
 export function commands(cmd) {
   const src = dropHeredocs(cmd ?? "").replace(/\\\n/g, " ");
@@ -80,9 +87,9 @@ export function commands(cmd) {
     if (ch === "'" || ch === '"') {
       const end = skipQuoted(src, i);
       const inner = src.slice(i + 1, end - 1);
-      // A quoted lone flag reaches git as that flag, unless it is the value of a message or file flag.
-      const isValue = word === "" && /^(-[a-zA-Z]*[mF]|--message|--file|--trailer)$/.test(words.at(-1) ?? "");
-      word += !isValue && /^-[\w-]+$/.test(inner) ? inner : '""';
+      // A quoted single word reaches the program as that word, unless it is a message or file value.
+      const isValue = word === "" && takesValue(words, words.length - 1);
+      word += !isValue && /^\S+$/.test(inner) ? inner : '""';
       i = end;
       continue;
     }
@@ -237,6 +244,8 @@ export const CASES = {
     "LEFTHOOK=0 git -c core.x=1 push",
     "git config core.hooksPath /dev/null",
     "git -c core.hooksPath=/tmp/none push",
+    'git -c "core.hooksPath=/dev/null" push',
+    'git commit -m -F "--no-verify"',
     "HUSKY=false git commit -m x",
     "read -r b <<< 'x'\ngit commit --no-verify -m y",
     "git commit \\\n  --no-verify -m x",
