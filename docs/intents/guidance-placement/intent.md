@@ -63,7 +63,7 @@ ESLint config once published.
 - Budgets come from a per-repo ratchet file; the rule never guesses a budget.
 - Ships at `warn`, moves to `error` by decision after it runs clean on every repo's `main`.
 
-## Done when
+## Success criteria
 
 - Each rule has valid and invalid fixtures, including the `--no-verify` line with and without a
   linked hook.

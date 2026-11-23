@@ -70,7 +70,7 @@ once published.
 - New rules ship at `warn` in consumers and move to `error` by decision, after they have run on
   real code.
 
-## Done when
+## Success criteria
 
 - Each AST rule has valid and invalid cases in `vitest.dual-rule-tester.ts`, and a planted `.only`,
   `await sleep(500)` and `retry: 3` each fail red before the rule and pass after.
