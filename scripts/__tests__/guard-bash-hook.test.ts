@@ -17,6 +17,7 @@
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { resolve, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const REPO_ROOT = resolve(__dirname, '../..');
 const HOOK = join(REPO_ROOT, '.claude/hooks/guard-bash.mjs');
@@ -67,5 +68,28 @@ describe('guard-bash hook', () => {
     });
     expect(r.status).toBe(0);
     expect(r.stdout).toBe('');
+  });
+});
+
+// Every case the hook's own `--self-test` carries also runs here, through stdin/stdout,
+// so a case added to the hook is locked by CI without editing this file.
+const CASES = JSON.parse(
+  spawnSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `import { CASES } from ${JSON.stringify(pathToFileURL(HOOK).href)}; process.stdout.write(JSON.stringify(CASES));`,
+    ],
+    { encoding: 'utf8' },
+  ).stdout,
+) as { deny: string[]; allow: string[] };
+
+describe('guard-bash hook: its own self-test cases', () => {
+  it.each(CASES.deny)('denies %j', (command) => {
+    expect(decision(command)).toBe('deny');
+  });
+  it.each(CASES.allow)('allows %j', (command) => {
+    expect(decision(command)).toBeNull();
   });
 });
