@@ -137,8 +137,8 @@ describe('guard-bash hook: the repo config', () => {
     expect(verdict({ file_path: join(dir, 'docs/guide.md') })).toBeNull();
   });
   it('denies a frozen edit when Windows passes both paths with backslashes', () => {
-    // A real directory whose name holds backslashes stands in for a Windows path on any OS.
-    const win = join(dir, 'C:\\proj');
+    // A backslash in a directory name stands in for a Windows path on POSIX; Windows reads it as two folders.
+    const win = join(dir, 'win\\proj');
     mkdirSync(join(win, '.claude'), { recursive: true });
     writeFileSync(
       join(win, '.claude/hookset.json'),
