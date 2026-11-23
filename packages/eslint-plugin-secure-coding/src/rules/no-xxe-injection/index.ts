@@ -189,6 +189,10 @@ const PROVEN_NO_EXTERNAL_ENTITIES = [
   'fast-xml-parser',
   '@xmldom/xmldom',
   'xmldom',
+  // Not an XML parser at all. `TSDocParser#parseString` takes the text of a
+  // `/** … */` comment (`nestjs/swagger` `lib/plugin/utils/ast-utils.ts`), and
+  // the method name is the only thing it shares with xml2js.
+  '@microsoft/tsdoc',
 ];
 
 /**

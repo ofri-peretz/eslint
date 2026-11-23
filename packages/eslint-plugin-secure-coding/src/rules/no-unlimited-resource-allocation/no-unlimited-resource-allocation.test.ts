@@ -90,6 +90,7 @@ describe('no-unlimited-resource-allocation', () => {
           },
           // Resource allocation outside loops
           {
+            name: 'a fixed-size buffer allocated once, outside the loop, is bounded',
             code: `
             const buffer = Buffer.alloc(1024);
             for (let i = 0; i < 10; i++) {
@@ -99,6 +100,7 @@ describe('no-unlimited-resource-allocation', () => {
           },
           // Static path construction - should NOT be flagged as unlimited resource
           {
+            name: 'a path built only from __dirname and literals is a fixed file',
             code: `import path from 'path'; fs.readFileSync(path.join(__dirname, 'data', 'users.json'));`,
           },
           // Same static path construction, but using `path.resolve` instead of

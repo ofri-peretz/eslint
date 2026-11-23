@@ -795,6 +795,47 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       return constructed !== null && VM2_SANDBOX_CONSTRUCTORS.has(constructed);
     };
 
+    /** Does this subtree contain `<x> instanceof SyntaxError`? */
+    const testsForSyntaxError = (current: unknown): boolean => {
+      if (current === null || typeof current !== 'object') return false;
+      if (Array.isArray(current)) return current.some(testsForSyntaxError);
+      const candidate = current as TSESTree.Node;
+      if (
+        candidate.type === 'BinaryExpression' &&
+        candidate.operator === 'instanceof' &&
+        candidate.right.type === 'Identifier' &&
+        candidate.right.name === 'SyntaxError' &&
+        // The built-in, not a class the file declares under the same name.
+        isGlobalBinding(candidate.right)
+      ) {
+        return true;
+      }
+      return Object.entries(candidate).some(
+        ([key, value]) => key !== 'parent' && testsForSyntaxError(value),
+      );
+    };
+
+    /** `try { new Script(src); } catch (e) { … e instanceof SyntaxError … }` */
+    const isSyntaxProbe = (node: TSESTree.NewExpression): boolean => {
+      if (node.parent?.type !== 'ExpressionStatement') return false;
+      for (
+        let current: TSESTree.Node | undefined = node.parent;
+        current?.parent;
+        current = current.parent
+      ) {
+        const enclosing: TSESTree.Node = current.parent;
+        if (
+          enclosing.type === 'TryStatement' &&
+          enclosing.block === current &&
+          enclosing.handler !== null
+        ) {
+          return testsForSyntaxError(enclosing.handler);
+        }
+        if (/Function/.test(enclosing.type)) return false;
+      }
+      return false;
+    };
+
     const judgeVmSites = (): void => {
       const sandboxes = new Set<string>();
       for (const candidate of vm2SandboxCandidates) {
@@ -827,6 +868,15 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       }
 
       for (const node of pendingVmNews) {
+        // `try { new vm.Script(src); … } catch (e) { if (!(e instanceof
+        // SyntaxError)) … }` compiles and throws the result away, and the
+        // handler is there to learn whether the source parsed. Nothing holds
+        // the script, so nothing can ever run it: a syntax probe
+        // (`@nestjs/swagger` `lib/swagger-ui/helpers.ts`). Both halves are
+        // required. A discarded script with no SyntaxError handler is still
+        // reported, and so is a script that is kept, chained
+        // (`.runInContext`) or passed on.
+        if (isSyntaxProbe(node)) continue;
         const name = trailingName(node.callee);
         const vmCtor = resolveModuleMember(
           node.callee,
