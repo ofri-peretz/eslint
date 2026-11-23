@@ -12,6 +12,45 @@
   Every finding ships with a CWE, an OWASP mapping, and the fix.
 </p>
 
+SQL and NoSQL injection, XSS sinks, JWT misuse, NestJS and Express hardening, AI SDK misuse, and an
+ESLint 10 drop-in for `eslint-plugin-import`. Each plugin installs on its own, for ESLint or oxlint.
+
+## Install one plugin, catch a real bug
+
+```bash
+npm i -D eslint eslint-plugin-postgresql-security
+```
+
+```js
+// eslint.config.mjs
+import pg from 'eslint-plugin-postgresql-security';
+
+export default [pg.configs.recommended];
+```
+
+```js
+// app.js
+import { Pool } from 'pg';
+const pool = new Pool();
+
+export async function getUser(id) {
+  return pool.query(`SELECT * FROM users WHERE id = '${id}'`); // ← interpolated
+}
+```
+
+```text
+app.js
+  5:21  error  🔒 Unsafe SQL query construction detected (template literal). | CRITICAL
+   Fix: Use parameterized queries ($1, $2) instead of interpolating values.
+   https://owasp.org/www-community/attacks/SQL_Injection   postgresql-security/no-unsafe-query
+```
+
+That message is the whole thesis. **Severity** so you can triage it, **the fix** so
+a human doesn't have to go looking, and **a citation** so an LLM asked to "fix the
+lint errors" produces a parameterized query instead of a plausible-looking escape
+helper. Machine-readable equivalents ship via the
+[SARIF formatter](./packages/eslint-formatter-sarif) for GitHub code scanning.
+
 <!-- Trust signals — every badge here is computed from a live source, not hand-set. -->
 <p align="center">
   <a href="https://github.com/ofri-peretz/eslint/actions/workflows/quality.yml"><img src="https://github.com/ofri-peretz/eslint/actions/workflows/quality.yml/badge.svg?branch=main" alt="Quality Gate" /></a>
@@ -49,42 +88,6 @@
 </p>
 
 ---
-
-## Install one plugin, catch a real bug
-
-```bash
-npm i -D eslint eslint-plugin-postgresql-security
-```
-
-```js
-// eslint.config.mjs
-import pg from 'eslint-plugin-postgresql-security';
-
-export default [pg.configs.recommended];
-```
-
-```js
-// app.js
-import { Pool } from 'pg';
-const pool = new Pool();
-
-export async function getUser(id) {
-  return pool.query(`SELECT * FROM users WHERE id = '${id}'`); // ← interpolated
-}
-```
-
-```text
-app.js
-  5:21  error  🔒 Unsafe SQL query construction detected (template literal). | CRITICAL
-   Fix: Use parameterized queries ($1, $2) instead of interpolating values.
-   https://owasp.org/www-community/attacks/SQL_Injection   postgresql-security/no-unsafe-query
-```
-
-That message is the whole thesis. **Severity** so you can triage it, **the fix** so
-a human doesn't have to go looking, and **a citation** so an LLM asked to "fix the
-lint errors" produces a parameterized query instead of a plausible-looking escape
-helper. Machine-readable equivalents ship via the
-[SARIF formatter](./packages/eslint-formatter-sarif) for GitHub code scanning.
 
 ## Ask your AI assistant to set it up
 
