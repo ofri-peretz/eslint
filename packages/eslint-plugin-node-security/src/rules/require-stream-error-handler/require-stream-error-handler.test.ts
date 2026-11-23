@@ -140,6 +140,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // Here it is the DESTINATION that is constructed inline — the write stream
     // has no name either, and a disk error on it is equally fatal.
     {
+      name: 'a write stream constructed inline as the pipe destination has no listener',
       code: `
         function upload(req, res) {
           const busboy = Busboy({ headers: req.headers });

@@ -120,6 +120,63 @@ describe('require-stream-error-handler — listener on the pipe result', () => {
         errors: reports,
       },
       {
+        name: 'a same-named stream returned from a sibling function does not cover this one',
+        code: `
+          import { PassThrough } from 'stream';
+          export function open(source) {
+            const entry = new PassThrough();
+            return entry;
+          }
+          export function copy(source) {
+            const entry = new PassThrough();
+            source.pipe(entry);
+            return 1;
+          }
+        `,
+        errors: reports,
+      },
+      {
+        name: 'a stream declared in an inner scope is not the outer binding that is returned',
+        code: `
+          import { PassThrough } from 'stream';
+          export function open(source) {
+            const entry = new PassThrough();
+            if (source) {
+              const inner = new PassThrough();
+              source.pipe(inner);
+            }
+            return entry;
+          }
+        `,
+        errors: reports,
+      },
+      {
+        name: 'returning an undeclared name proves nothing about any stream',
+        code: `
+          import { PassThrough } from 'stream';
+          export function copy(source) {
+            const entry = new PassThrough();
+            source.pipe(entry);
+            return elsewhere;
+          }
+        `,
+        errors: reports,
+      },
+      {
+        name: 'a name bound in another function and unbound here is still judged by name',
+        code: `
+          import { PassThrough } from 'stream';
+          export function make() {
+            const entry = new PassThrough();
+            return entry;
+          }
+          export function copy(source) {
+            source.pipe(entry);
+          }
+        `,
+        errors: reports,
+      },
+      {
         name: 'returning a different stream does not cover this one',
         code: `
           import { PassThrough } from 'stream';

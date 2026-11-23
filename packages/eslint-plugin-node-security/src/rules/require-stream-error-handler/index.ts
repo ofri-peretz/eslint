@@ -171,6 +171,23 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
   ) {
     let handled: Set<string>;
     let escaped: Set<string>;
+    /** Bindings handed to the caller with `return name`. */
+    let returned: Set<TSESLint.Scope.Variable>;
+
+    function variableOf(
+      identifier: TSESTree.Identifier,
+    ): TSESLint.Scope.Variable | undefined {
+      for (
+        let scope: TSESLint.Scope.Scope | null =
+          context.sourceCode.getScope(identifier);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.set.get(identifier.name);
+        if (variable) return variable;
+      }
+      return undefined;
+    }
     let streamBindings: Set<string>;
     let pending: { node: TSESTree.CallExpression; offender: TSESTree.Node }[];
 
@@ -187,6 +204,10 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
       if (node.type !== AST_NODE_TYPES.Identifier) return null;
       if (!streamBindings.has(node.name)) return null;
       if (handled.has(node.name) || escaped.has(node.name)) return null;
+      // Returned BINDINGS, not names: a same-named stream in a sibling
+      // function is a different variable and is still judged on its own.
+      const variable = variableOf(node);
+      if (variable !== undefined && returned.has(variable)) return null;
       return node;
     }
 
@@ -259,6 +280,7 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
          * unproven is not unhandled.
          */
         escaped = new Set<string>();
+        returned = new Set();
         /** Names bound to a stream constructor. */
         streamBindings = new Set<string>();
         /** Pipes to judge at Program:exit, once every listener is known. */
@@ -282,7 +304,8 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
       // returns it — the consumer is who listens.
       ReturnStatement(node: TSESTree.ReturnStatement) {
         if (node.argument?.type === AST_NODE_TYPES.Identifier) {
-          escaped.add(node.argument.name);
+          const variable = variableOf(node.argument);
+          if (variable !== undefined) returned.add(variable);
         }
       },
 
