@@ -99,6 +99,7 @@ ruleTester.run(
       },
       // Uses custom validation function
       {
+        name: 'a call to a custom isAllowedOrigin(event.origin) guard is an origin check',
         code: `
         window.addEventListener('message', (event) => {
           if (!isAllowedOrigin(event.origin)) return;
