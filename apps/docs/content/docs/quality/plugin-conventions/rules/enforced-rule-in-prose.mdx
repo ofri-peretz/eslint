@@ -1,0 +1,59 @@
+---
+title: enforced-rule-in-prose
+description: "Report never/always lines in agent guidance that a tool could enforce, unlinked to the tool that does"
+tags: ['quality', 'conventions', 'agents', 'markdown']
+category: quality
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> Ask of every never/always line in agent guidance: which tool enforces it?
+
+## Rule Details
+
+"For every rule, ask: can a tool check this?" A line like `IMPORTANT: never --no-verify` names
+something a git hook or a Claude Code hook can hold. Written only in prose it holds nothing the day
+the model forgets it — and in a repository with no git hooks it guards nothing at all.
+
+The rule reads `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, skills and subagent files, outside code fences
+and frontmatter. A line is reported when it is **imperative** (`never`, `always`, `must`, `do not`,
+`don't`, `IMPORTANT`) and names something **checkable** (an inline-code span, a `--flag`, or a file
+path such as `package-lock.json`):
+
+- `unenforced` — it links no lever. Build the lint rule, hook, lock test or CI gate, then link it or
+  delete the line.
+- `removable` — it links a lever (a link whose target names a lint rule, hook, lefthook, lock test,
+  `.test.` file, gate or workflow). The tool already reports the violation with its own fix, so the
+  always-loaded line is a duplicate paid for on every session.
+
+The rule decides only facts a parser can tell. Whether a line is worth its bytes stays a person's
+call.
+
+## Examples
+
+### ❌ Incorrect
+
+```md
+- IMPORTANT: never `--no-verify`. The hooks are the gate.
+```
+
+### ✅ Correct
+
+The rule lives in a hook and the guidance line is deleted — or, while it is being moved:
+
+```md
+- Never `--no-verify` ([hook](.claude/hooks/guard-bash.mjs)).
+```
+
+(reported as `removable`, a reminder to delete it once the hook is trusted).
+
+## Known limitations
+
+- The imperative-plus-target heuristic is the risky part. The intent's bar is a false-positive rate
+  under 10% on the Interlace repositories; above that after one tuning pass, it becomes a report
+  command instead of a rule.

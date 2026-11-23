@@ -100,7 +100,12 @@ jobs:
           --filter='eslint-plugin-modernization...'
           --filter='eslint-plugin-modularity...'
           --filter='eslint-plugin-import-next...'
+          --filter='eslint-plugin-test-integrity...'
       - run: npm run lint:dogfood
+      # Test integrity (no .only / unexplained skip / sleep / retry) over every test
+      # file, and the guidance preset over CLAUDE.md, AGENTS.md and skills. Both at
+      # `warn`; `--max-warnings` in the script is the ratchet — it may only go down.
+      - run: npm run lint:integrity
 
   markdown:
     name: Markdown Lint

@@ -1,0 +1,42 @@
+---
+title: no-duplicated-guidance
+description: 'Disallow the same guidance line in two always-loaded agent files (CLAUDE.md, AGENTS.md, GEMINI.md) of one repo'
+tags: ['quality', 'conventions', 'agents', 'markdown']
+category: quality
+autofix: false
+---
+
+> Disallow the same guidance line in two always-loaded files of one repo
+
+<!-- @rule-summary -->
+
+Disallow the same guidance line in two always-loaded agent files (CLAUDE.md, AGENTS.md, GEMINI.md) of one repo
+<!-- @/rule-summary -->
+
+## Rule Details
+
+`CLAUDE.md`, `AGENTS.md` and `GEMINI.md` in one directory chain are loaded together. A rule written
+in two of them is paid for twice on every session, and when one copy is edited the two disagree.
+
+The rule compares this file's prose lines with the always-loaded files in the same directory and
+every ancestor up to the lint working directory. Lines are normalised first (list marker, emphasis,
+code ticks and whitespace removed, case folded) and must be at least `minLength` characters (default
+40). The copy in the file whose path sorts later is the one reported, so each duplicate is reported
+once.
+
+## Options
+
+```json
+{ "minLength": 40 }
+```
+
+## Examples
+
+### ❌ Incorrect
+
+`AGENTS.md` and `CLAUDE.md` both say "Never merge on red or unknown; confirm every required check is
+SUCCESS."
+
+### ✅ Correct
+
+The line lives in `AGENTS.md`; `CLAUDE.md` is `@AGENTS.md`.

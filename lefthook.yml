@@ -276,6 +276,13 @@ pre-push:
       # Shims are generated from rule sources and the manifest.
       glob: '{packages/eslint-plugin-*/src/**,tools/oxlint-plugins/**,.agent/plugin-rule-manifest.json}'
       run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent oxlint:shims:check
+    test-integrity-diff:
+      # The two test-integrity checks a lint rule cannot make, because they are
+      # about what the push changed: an expect() moved to a weaker matcher, and a
+      # snapshot rewritten with no `Snapshot:` reason in a commit message. Runs
+      # from source (no devkit import), so it needs no build and cannot race the
+      # build-and-test chain. Without origin/main there is no range to read.
+      run: perl -e 'alarm 60; exec @ARGV' -- bash -c 'git rev-parse --verify --quiet origin/main >/dev/null || { echo "test-integrity-diff skipped, no origin/main to compare against"; exit 0; }; npx --no tsx packages/eslint-plugin-test-integrity/src/diff/cli.ts --base origin/main'
 
 commit-msg:
   commands:

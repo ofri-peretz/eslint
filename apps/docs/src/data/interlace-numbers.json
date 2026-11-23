@@ -8,10 +8,10 @@
     "react": 2
   },
   "rules": {
-    "total": 503,
+    "total": 508,
     "security": 291,
-    "quality": 110,
+    "quality": 115,
     "react": 102
   },
-  "generatedAt": "2026-11-20"
+  "generatedAt": "2026-11-23"
 }

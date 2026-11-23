@@ -1,10 +1,10 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-11-20",
-  "totalPlugins": 32,
-  "totalRules": 507,
-  "oxlintCompatible": 507,
+  "generatedAt": "2026-11-23",
+  "totalPlugins": 33,
+  "totalRules": 516,
+  "oxlintCompatible": 516,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -358,7 +358,7 @@
       "short": "conventions",
       "shim": "tools/oxlint-plugins/interlace-conventions.cjs",
       "subpath": "eslint-plugin-conventions/oxlint",
-      "ruleCount": 15,
+      "ruleCount": 20,
       "rules": [
         {
           "name": "conventions/analytics-event-naming",
@@ -446,6 +446,36 @@
         },
         {
           "name": "deprecation/no-deprecated-api",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "guidance/enforced-rule-in-prose",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "guidance/guidance-budget",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "guidance/no-duplicated-guidance",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "guidance/procedure-in-memory",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "guidance/subagent-declares-model",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3176,6 +3206,39 @@
         },
         {
           "name": "require-auth-error-check",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-test-integrity",
+      "short": "test-integrity",
+      "shim": "tools/oxlint-plugins/interlace-test-integrity.cjs",
+      "subpath": "eslint-plugin-test-integrity/oxlint",
+      "ruleCount": 4,
+      "rules": [
+        {
+          "name": "no-fixed-sleep",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-focused-test",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-test-retry",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unexplained-skip",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

@@ -18,6 +18,11 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import * as tsParser from '@typescript-eslint/parser';
 import * as espree from 'espree';
+
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return { ...actual, readdirSync: vi.fn(actual.readdirSync) };
+});
 import { nestModuleExpiry } from './nest-modules';
 
 const project = (files: Record<string, string>): string => {
@@ -147,11 +152,17 @@ describe('nestModuleExpiry', () => {
     });
     const locked = path.join(path.dirname(file), 'locked');
     fs.mkdirSync(locked);
-    fs.chmodSync(locked, 0o000);
-    try {
-      expect(nestModuleExpiry(file, tsParser)).toBe('set');
-    } finally {
-      fs.chmodSync(locked, 0o755);
-    }
+    // Not chmod 000: root can list a 000 directory, so that case passed
+    // vacuously wherever tests run as root.
+    const readdir = vi.mocked(fs.readdirSync);
+    const actual = readdir.getMockImplementation()!;
+    readdir.mockImplementation(((dir: fs.PathLike, options?: unknown) => {
+      if (String(dir) === locked) {
+        throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+      }
+      return actual(dir, options as never);
+    }) as typeof fs.readdirSync);
+    expect(nestModuleExpiry(file, tsParser)).toBe('set');
+    expect(readdir).toHaveBeenCalledWith(locked, { withFileTypes: true });
   });
 });

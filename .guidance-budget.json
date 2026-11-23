@@ -1,0 +1,85 @@
+{
+  "AGENTS.md": {
+    "bytes": 28005,
+    "lines": 578
+  },
+  "apps/docs/AGENTS.md": {
+    "bytes": 6497
+  },
+  "packages/eslint-formatter/AGENTS.md": {
+    "bytes": 6790
+  },
+  "packages/eslint-plugin-anthropic-security/AGENTS.md": {
+    "bytes": 4221
+  },
+  "packages/eslint-plugin-browser-security/AGENTS.md": {
+    "bytes": 9375
+  },
+  "packages/eslint-plugin-drizzle-security/AGENTS.md": {
+    "bytes": 4539
+  },
+  "packages/eslint-plugin-express-security/AGENTS.md": {
+    "bytes": 8934
+  },
+  "packages/eslint-plugin-gemini-security/AGENTS.md": {
+    "bytes": 4169
+  },
+  "packages/eslint-plugin-import-next/AGENTS.md": {
+    "bytes": 11989,
+    "lines": 224
+  },
+  "packages/eslint-plugin-jwt-security/AGENTS.md": {
+    "bytes": 6160
+  },
+  "packages/eslint-plugin-knex-security/AGENTS.md": {
+    "bytes": 4743
+  },
+  "packages/eslint-plugin-lambda-security/AGENTS.md": {
+    "bytes": 5211
+  },
+  "packages/eslint-plugin-mcp-sdk-security/AGENTS.md": {
+    "bytes": 6357
+  },
+  "packages/eslint-plugin-mongodb-security/AGENTS.md": {
+    "bytes": 6348
+  },
+  "packages/eslint-plugin-mysql-security/AGENTS.md": {
+    "bytes": 4437
+  },
+  "packages/eslint-plugin-nestjs-security/AGENTS.md": {
+    "bytes": 5380
+  },
+  "packages/eslint-plugin-node-security/AGENTS.md": {
+    "bytes": 8162
+  },
+  "packages/eslint-plugin-openai-security/AGENTS.md": {
+    "bytes": 4174
+  },
+  "packages/eslint-plugin-postgresql-security/AGENTS.md": {
+    "bytes": 5383
+  },
+  "packages/eslint-plugin-prisma-security/AGENTS.md": {
+    "bytes": 4530
+  },
+  "packages/eslint-plugin-react-a11y/AGENTS.md": {
+    "bytes": 9084
+  },
+  "packages/eslint-plugin-react-features/AGENTS.md": {
+    "bytes": 7434
+  },
+  "packages/eslint-plugin-secure-coding/AGENTS.md": {
+    "bytes": 9044
+  },
+  "packages/eslint-plugin-sequelize-security/AGENTS.md": {
+    "bytes": 4662
+  },
+  "packages/eslint-plugin-supabase-security/AGENTS.md": {
+    "bytes": 4357
+  },
+  "packages/eslint-plugin-typeorm-security/AGENTS.md": {
+    "bytes": 4611
+  },
+  "packages/eslint-plugin-vercel-ai-security/AGENTS.md": {
+    "bytes": 6384
+  }
+}

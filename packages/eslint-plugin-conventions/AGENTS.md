@@ -30,6 +30,7 @@ Each preset is one flat config object: put it in the array as an element, do not
 | Preset        | Rules | Errors | Warnings |
 | ------------- | ----- | ------ | -------- |
 | `recommended` | 6     | 3      | 3        |
+| `guidance`    | 5     | 0      | 5        |
 
 ### `recommended`
 
@@ -41,6 +42,16 @@ Each preset is one flat config object: put it in the array as an element, do not
 - `utm-taxonomy` (error): Validate utm_source and utm_medium values against the fixed taxonomy in UTM_PHILOSOPHY.md.
 - `no-raw-cross-property-href` (error): Forbid hand-written cross-property hrefs; use buildUtmHref() from lib/utm.ts.
 - `analytics-event-naming` (error): Analytics event names (track/capture) must follow ANALYTICS_PHILOSOPHY.md principle 4: lowercase snake_case, category:object_action, fixed verb list.
+
+### `guidance`
+
+5 rules:
+
+- `guidance-budget` (warn): Keep always-loaded agent guidance (CLAUDE.md, AGENTS.md) and skills inside a ratcheted size budget.
+- `enforced-rule-in-prose` (warn): Report never/always lines in agent guidance that a tool could enforce, unlinked to the tool that does.
+- `procedure-in-memory` (warn): Disallow long numbered procedures in always-loaded agent guidance; move them to a skill.
+- `subagent-declares-model` (warn): Require every .claude/agents/*.md subagent to declare a model and a tool allowlist in its frontmatter.
+- `no-duplicated-guidance` (warn): Disallow the same guidance line in two always-loaded agent files (CLAUDE.md, AGENTS.md, GEMINI.md) of one repo.
 
 ### Rules in no preset
 

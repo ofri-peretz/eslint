@@ -5,15 +5,20 @@
 Every rule declares `meta.interop.runtimes`. A rule lists `oxlint` only when its
 own test suite passes on oxlint's `RuleTester` as well as ESLint's
 (`vitest.dual-rule-tester.ts`), and it is not type-aware. Measured on oxlint
-`1.88.0`: **575 of 599** rules run on
-both engines. The 24 below run on ESLint only. In oxlint or Vite+ they still load,
+`1.90.0`: **579 of 608** rules run on
+both engines. The 29 below run on ESLint only. In oxlint or Vite+ they still load,
 but nothing guarantees they report the same findings, so do not rely on them there.
 
 Re-measure with `npm run oxlint:runtimes:survey`, then `npm run oxlint:runtimes`.
 
 | Rule                                             | Why it is ESLint-only                                                                                                                                                                                                                          |
 | :----------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `conventions/enforced-rule-in-prose`             | No RuleTester cases to measure it on oxlint with.                                                                                                                                                                                              |
 | `conventions/filename-case`                      | 1 of 37 of its test cases fail on oxlint, e.g. const x = 1;: Should have no errors but had 1: [                                                                                                                                                |
+| `conventions/guidance-budget`                    | No RuleTester cases to measure it on oxlint with.                                                                                                                                                                                              |
+| `conventions/no-duplicated-guidance`             | No RuleTester cases to measure it on oxlint with.                                                                                                                                                                                              |
+| `conventions/procedure-in-memory`                | No RuleTester cases to measure it on oxlint with.                                                                                                                                                                                              |
+| `conventions/subagent-declares-model`            | No RuleTester cases to measure it on oxlint with.                                                                                                                                                                                              |
 | `import-next/default`                            | Type-aware: reads TypeScript parser services, which oxlint does not provide (hasParserServices).                                                                                                                                               |
 | `import-next/named`                              | Type-aware: reads TypeScript parser services, which oxlint does not provide (hasParserServices).                                                                                                                                               |
 | `import-next/namespace`                          | Type-aware: reads TypeScript parser services, which oxlint does not provide (hasParserServices).                                                                                                                                               |

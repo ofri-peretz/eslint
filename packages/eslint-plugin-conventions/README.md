@@ -67,6 +67,7 @@ That trade costs recall, and we measure it:
 | Preset        | Description                         |
 | :------------ | :---------------------------------- |
 | `recommended` | Balanced conventions for most teams |
+| `guidance`    | Agent guidance files (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, skills, subagents): size budgets, rules held only by prose, procedures in always-loaded files, subagent model and tools, duplicated lines. Markdown, at `warn`. |
 
 ---
 
@@ -77,6 +78,23 @@ import conventions from 'eslint-plugin-conventions';
 
 export default [conventions.configs.recommended];
 ```
+
+### Agent guidance files
+
+The `guidance` preset lints agent guidance as Markdown. It needs
+[`@eslint/markdown`](https://github.com/eslint/markdown) registered as the `markdown` plugin:
+
+```js
+// eslint.config.js
+import markdown from '@eslint/markdown';
+import { configs } from 'eslint-plugin-conventions';
+
+export default [{ plugins: { markdown } }, configs.guidance];
+```
+
+Each rule asks a question a parser can answer — is this file over its ratcheted budget, does this
+`never`/`always` line name something a tool could check without linking the tool that does, is a
+long procedure in a file read on every session — and leaves the judgment to a person.
 
 ---
 
@@ -108,18 +126,23 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | [analytics-event-naming](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/analytics-event-naming?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Analytics event names (track/capture) must follow ANALYTICS_PHILOSOPHY.md principle 4: lowercase snake_case… | 🟢 | 💼 |  |  |  |  |
 | [consistent-existence-index-check](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/consistent-existence-index-check?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Enforce one form for checking whether an object has a property | 🟢 |  |  |  | 💡 |  |
+| [enforced-rule-in-prose](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/enforced-rule-in-prose?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Report never/always lines in agent guidance that a tool could enforce, unlinked to the tool that does | 🟢 |  |  |  |  |  |
 | [expiring-todo-comments](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/expiring-todo-comments?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Add expiration conditions to TODO comments to prevent forgotten tasks. This rule is part of eslint-plugin-c… | 🟢 |  | ⚠️ |  | 💡 |  |
 | [filename-case](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/filename-case?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Enforce filename case conventions for consistency across your codebase | 🟢 |  |  |  | 💡 |  |
+| [guidance-budget](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/guidance-budget?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Keep always-loaded agent guidance (CLAUDE.md, AGENTS.md) and skills inside a ratcheted size budget | 🟢 |  |  |  |  |  |
 | [no-commented-code](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-commented-code?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Disallow commented-out code: delete it and let version control keep the history. | 🟢 |  | ⚠️ |  | 💡 |  |
 | [no-console-spaces](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-console-spaces?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Disallow leading/trailing whitespace in console arguments. This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  |  |  |
 | [no-deprecated-api](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-deprecated-api?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) | CWE-1078 |  |  | Prevent usage of deprecated APIs with migration context and timeline. This rule is part of eslint-plugin-co… | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-duplicated-guidance](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-duplicated-guidance?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Disallow the same guidance line in two always-loaded agent files (CLAUDE.md, AGENTS.md, GEMINI.md) of one repo | 🟢 |  |  |  |  |  |
 | [no-json-schema-tags](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-json-schema-tags?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Disallow JSON Schema keywords (e.g. @minimum, @maximum, @pattern, @format) used as JSDoc tags. | 🟢 |  |  |  | 💡 |  |
 | [no-magic-numbers](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-magic-numbers?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Disallow magic numbers (numeric literals without a named constant) | 🟢 |  |  |  | 💡 |  |
 | [no-raw-cross-property-href](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/no-raw-cross-property-href?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Forbid hand-written cross-property hrefs; use buildUtmHref() from lib/utm.ts | 🟢 | 💼 |  |  |  |  |
 | [prefer-code-point](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-code-point?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Prefer String.codePointAt() over String.charCodeAt(). This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  |  |  |
 | [prefer-dependency-version-strategy](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-dependency-version-strategy?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Enforce consistent version strategy (caret ^, tilde ~, exact, range, or any) for package.json dependencies.… | 🟢 |  |  |  | 💡 |  |
 | [prefer-dom-node-text-content](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/prefer-dom-node-text-content?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Prefer textContent over innerText. This rule is part of eslint-plugin-conventions. | 🟢 |  |  |  | 💡 |  |
+| [procedure-in-memory](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/procedure-in-memory?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Disallow long numbered procedures in always-loaded agent guidance; move them to a skill | 🟢 |  |  |  |  |  |
 | [require-data-testid](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/require-data-testid?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Require stable data-testid attributes on interactive elements for end-to-end test reliability | 🟢 |  |  |  | 💡 |  |
+| [subagent-declares-model](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/subagent-declares-model?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Require every .claude/agents/*.md subagent to declare a model and a tool allowlist in its frontmatter | 🟢 |  |  |  |  |  |
 | [utm-taxonomy](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/utm-taxonomy?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-conventions) |  |  |  | Validate utm_source and utm_medium values against the fixed taxonomy in UTM_PHILOSOPHY.md | 🟢 | 💼 |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:START - Do not edit manually -->
@@ -167,6 +190,7 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 | [`eslint-plugin-react-a11y`](https://www.npmjs.com/package/eslint-plugin-react-a11y) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-react-a11y.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-react-a11y) | React accessibility / WCAG. |
 | [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-react-features.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-react-features) | React best practices and optimization. |
 | [`eslint-plugin-reliability`](https://www.npmjs.com/package/eslint-plugin-reliability) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-reliability.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-reliability) | Runtime stability and error safety. |
+| [`eslint-plugin-test-integrity`](https://www.npmjs.com/package/eslint-plugin-test-integrity) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-test-integrity.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-test-integrity) | Test integrity. |
 
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->
 
