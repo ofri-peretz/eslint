@@ -25,7 +25,34 @@ MODE="${2:-}"
 WAIT_JQ='[.statusCheckRollup[]? | select((.conclusion // .state // .status // "") as $s | $s == "IN_PROGRESS" or $s == "PENDING" or $s == "QUEUED" or $s == "")] | length'
 GATE_JQ='[.statusCheckRollup[]? | select((.conclusion // .state // .status // "UNREPORTED") as $s | $s != "SUCCESS" and $s != "SKIPPED" and $s != "NEUTRAL") | "\(.conclusion // .state // .status // "UNREPORTED")  \(.name // .context)"] | .[]'
 
-json=$(gh ${repo[@]+"${repo[@]}"} pr view "$PR" --json statusCheckRollup,mergeStateStatus,isDraft)
+# `gh pr view` and `gh pr merge` go through GraphQL, which Claude Code cloud sessions cannot reach.
+# When it fails, the same rollup is rebuilt from REST (check runs + commit statuses), in the same
+# shape, so both jq expressions below judge it identically.
+rest=""
+rest_repo() {
+  if [ -n "${PR_MERGE_GATE_REPO:-}" ]; then echo "$PR_MERGE_GATE_REPO"; return; fi
+  git remote get-url origin | sed -E 's#\.git$##; s#.*[/:]([^/:]+/[^/:]+)$#\1#'
+}
+rest_view() {
+  local r pr sha
+  r=$(rest_repo)
+  pr=$(gh api "repos/$r/pulls/$PR") || exit 1
+  sha=$(jq -r .head.sha <<<"$pr")
+  jq -n \
+    --argjson pr "$pr" \
+    --argjson runs "$(gh api --paginate "repos/$r/commits/$sha/check-runs?per_page=100" --jq '.check_runs[] | {name, status: (.status | ascii_upcase), conclusion: ((.conclusion // "") | ascii_upcase)}' | jq -s .)" \
+    --argjson statuses "$(gh api --paginate "repos/$r/commits/$sha/status?per_page=100" --jq '.statuses[] | {context, state: (.state | ascii_upcase)}' | jq -s .)" \
+    '{statusCheckRollup: ($runs + $statuses), mergeStateStatus: ($pr.mergeable_state | ascii_upcase), isDraft: $pr.draft, headRefName: $pr.head.ref, headSha: $pr.head.sha, sameRepo: ($pr.head.repo.full_name == $pr.base.repo.full_name)}'
+}
+if ! json=$(gh ${repo[@]+"${repo[@]}"} pr view "$PR" --json statusCheckRollup,mergeStateStatus,isDraft 2>&1); then
+  # Only an unreachable GraphQL earns the fallback. A wrong PR number or broken auth is reported as is.
+  if ! grep -qi graphql <<<"$json"; then
+    echo "$json" >&2
+    exit 1
+  fi
+  rest=1
+  json=$(rest_view) || exit 1
+fi
 
 pending=$(jq -r "$WAIT_JQ" <<<"$json")
 if [ "$pending" != "0" ]; then
@@ -69,4 +96,19 @@ esac
 
 echo "pr-merge-gate: every check on PR $PR is SUCCESS (mergeStateStatus $state)."
 [ "$MODE" = "--merge" ] || exit 0
+if [ -n "$rest" ]; then
+  # REST has no --admin flag: an admin's merge call bypasses a pending review on its own. The gate
+  # above already refused every case where that bypass is not allowed.
+  r=$(rest_repo)
+  # Pinned to the head the gate judged: a push since then makes GitHub refuse (409) instead of
+  # merging commits no check has seen.
+  gh api -X PUT "repos/$r/pulls/$PR/merge" -f merge_method=squash -f sha="$(jq -r .headSha <<<"$json")" >/dev/null
+  # A fork's branch lives in the fork; deleting the same name here would remove an unrelated ref.
+  if [ "$(jq -r .sameRepo <<<"$json")" = "true" ]; then
+    gh api -X DELETE "repos/$r/git/refs/heads/$(jq -r .headRefName <<<"$json")" >/dev/null 2>&1 ||
+      echo "pr-merge-gate: merged, but could not delete the head branch." >&2
+  fi
+  echo "pr-merge-gate: merged PR $PR."
+  exit 0
+fi
 gh ${repo[@]+"${repo[@]}"} pr merge "$PR" --squash --delete-branch ${admin[@]+"${admin[@]}"}
