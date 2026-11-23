@@ -27,13 +27,13 @@ npm run dev --workspace docs                  # docs on :3000 (build @interlace/
 
 ## Read before you…
 
-| Task | Read |
-| --- | --- |
-| write, move or review a rule | [docs/RULE_AUTHORING.md](./docs/RULE_AUTHORING.md) and [docs/QUALITY_STANDARDS.md](./docs/QUALITY_STANDARDS.md) |
-| open, wait on or merge a PR; confirm a deploy | the `ship-a-pr` skill; [docs/CI_AND_RELEASE.md](./docs/CI_AND_RELEASE.md) |
-| trust a gate, baseline or metric | the `verify-the-instrument` skill |
-| release or reconcile versions | `npm run release:status`; [docs/CI_AND_RELEASE.md](./docs/CI_AND_RELEASE.md) |
-| preview the docs in a container or sandbox | [docs/LOCAL_PREVIEW.md](./docs/LOCAL_PREVIEW.md) |
+| Task                                          | Read                                                                                                            |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| write, move or review a rule                  | [docs/RULE_AUTHORING.md](./docs/RULE_AUTHORING.md) and [docs/QUALITY_STANDARDS.md](./docs/QUALITY_STANDARDS.md) |
+| open, wait on or merge a PR; confirm a deploy | the `ship-a-pr` skill; [docs/CI_AND_RELEASE.md](./docs/CI_AND_RELEASE.md)                                       |
+| trust a gate, baseline or metric              | the `verify-the-instrument` skill                                                                               |
+| release or reconcile versions                 | `npm run release:status`; [docs/CI_AND_RELEASE.md](./docs/CI_AND_RELEASE.md)                                    |
+| preview the docs in a container or sandbox    | [docs/LOCAL_PREVIEW.md](./docs/LOCAL_PREVIEW.md)                                                                |
 
 ## Two rules no gate holds yet
 

@@ -8,7 +8,7 @@
 dispatches `deploy-docs.yml` for turbo-affected apps; the points below still hold for the
 manual path and for previews.
 
-`apps/docs` is a Next.js app deployed to Vercel. **It does not auto-deploy.**
+`apps/docs` is a Next.js app deployed to Vercel. **It does not auto-deploy via Vercel's git integration.**
 
 - `vercel.json` sets `git.deploymentEnabled: false` — Vercel ignores pushes
   to this repo entirely (no production deploy, no PR previews).
@@ -79,13 +79,13 @@ Each row points at one of these scripts; outputs land under
 `benchmark-results/`. CI workflows under `.github/workflows/` enforce
 the gates.
 
-| Script | npm script | Output | CI workflow |
-| :--- | :--- | :--- | :--- |
-| `scripts/ilb-resource-profile.ts` | `npm run ilb:resource-profile` | `benchmark-results/resource-profile.{json,md}` | (manual / scheduled) |
-| `scripts/fetch-peer-health.ts` | `npm run peer-health` | `benchmark-results/peer-health.{json,md}` | `peer-health.yml` (weekly Monday cron) |
-| `scripts/audit-cve-rule-latency.ts` | `npm run audit:cve-latency[:strict]` | `benchmark-results/cve-rule-latency.{json,md}` | `cve-latency.yml` (PR + nightly) |
-| `scripts/audit-api-surface.ts` | `npm run audit:api-surface[:strict]` | `.agent/api-surface-manifest.json` + `benchmark-results/api-surface-coverage.md` | `api-surface.yml` (PR gate) |
-| `scripts/check-per-rule-budget.ts` | `npm run check:per-rule-budget[:soft]` | `benchmarks/budgets/per-rule-p95.json` + `benchmark-results/per-rule-budget-check.md` | `per-rule-budget.yml` (PR gate) |
+| Script                              | npm script                             | Output                                                                                | CI workflow                            |
+| :---------------------------------- | :------------------------------------- | :------------------------------------------------------------------------------------ | :------------------------------------- |
+| `scripts/ilb-resource-profile.ts`   | `npm run ilb:resource-profile`         | `benchmark-results/resource-profile.{json,md}`                                        | (manual / scheduled)                   |
+| `scripts/fetch-peer-health.ts`      | `npm run peer-health`                  | `benchmark-results/peer-health.{json,md}`                                             | `peer-health.yml` (weekly Monday cron) |
+| `scripts/audit-cve-rule-latency.ts` | `npm run audit:cve-latency[:strict]`   | `benchmark-results/cve-rule-latency.{json,md}`                                        | `cve-latency.yml` (PR + nightly)       |
+| `scripts/audit-api-surface.ts`      | `npm run audit:api-surface[:strict]`   | `.agent/api-surface-manifest.json` + `benchmark-results/api-surface-coverage.md`      | `api-surface.yml` (PR gate)            |
+| `scripts/check-per-rule-budget.ts`  | `npm run check:per-rule-budget[:soft]` | `benchmarks/budgets/per-rule-p95.json` + `benchmark-results/per-rule-budget-check.md` | `per-rule-budget.yml` (PR gate)        |
 
 Schemas for the three JSON artifacts live at
 `scripts/schemas/{cve-rule-latency,api-surface-manifest,per-rule-budget}.schema.json`.
@@ -144,7 +144,7 @@ npm run ci:local
 
 **Always run `npm run ci:local` before marking a PR ready-for-review.**
 
-What's *not* in T2 (cloud-only, intentional):
+What's _not_ in T2 (cloud-only, intentional):
 
 - CodeQL — runs on GitHub's infrastructure with security-events upload.
 - Lighthouse — needs a clean Chrome instance.
@@ -180,12 +180,12 @@ required check.
 
 Workflows that always auto-run on every PR push (T0 fast loop):
 
-| Workflow | Runtime | What it gates |
-|---|---|---|
-| `quality.yml` | ~30s | oxlint, markdown, lockfile, workflows, changelog |
-| `docs.yml` | ~45s | docs structure validation |
-| `a11y.yml` | ~60s | axe scan of route archetypes |
-| `changesets-pr.yml` | ~21s (Changeset present) | every PR has a changeset |
+| Workflow            | Runtime                  | What it gates                                    |
+| ------------------- | ------------------------ | ------------------------------------------------ |
+| `quality.yml`       | ~30s                     | oxlint, markdown, lockfile, workflows, changelog |
+| `docs.yml`          | ~45s                     | docs structure validation                        |
+| `a11y.yml`          | ~60s                     | axe scan of route archetypes                     |
+| `changesets-pr.yml` | ~21s (Changeset present) | every PR has a changeset                         |
 
 ### Triggering a full CI run on a draft PR
 
@@ -201,15 +201,15 @@ it. Drop the label or mark the PR ready-for-review when you're confident.
 
 ## Secrets / variables
 
-| Name | Type | Purpose | Required? |
-|------|------|---------|-----------|
-| `NPM_TOKEN`         | secret | First-publish fallback (existing packages use OIDC Trusted Publishers) | optional |
-| `CODECOV_TOKEN`     | secret | Coverage uploads (`codecov.yml`)                                       | optional |
-| `NVD_API_KEY`       | secret | CWE/CVE data sync (manual via CLI)                                     | optional |
-| `DEV_TO_API_KEY`    | secret | dev.to article sync (`docs-data.yml`)                                  | optional |
-| `RELEASE_BOT_PAT`   | secret | Self-approve Version PR so auto-merge can land it without manual click | optional |
-| `SCORECARD_REPO_TOKEN` | secret | Branch-protection check in OSSF Scorecard                           | optional |
-| `TURBO_TOKEN`       | secret | Vercel Remote Cache token (free for OSS) — 50–80% CI build speedup     | optional |
-| `TURBO_TEAM`        | var    | Vercel team slug, paired with `TURBO_TOKEN`                            | optional |
+| Name                   | Type   | Purpose                                                                | Required? |
+| ---------------------- | ------ | ---------------------------------------------------------------------- | --------- |
+| `NPM_TOKEN`            | secret | First-publish fallback (existing packages use OIDC Trusted Publishers) | optional  |
+| `CODECOV_TOKEN`        | secret | Coverage uploads (`codecov.yml`)                                       | optional  |
+| `NVD_API_KEY`          | secret | CWE/CVE data sync (manual via CLI)                                     | optional  |
+| `DEV_TO_API_KEY`       | secret | dev.to article sync (`docs-data.yml`)                                  | optional  |
+| `RELEASE_BOT_PAT`      | secret | Self-approve Version PR so auto-merge can land it without manual click | optional  |
+| `SCORECARD_REPO_TOKEN` | secret | Branch-protection check in OSSF Scorecard                              | optional  |
+| `TURBO_TOKEN`          | secret | Vercel Remote Cache token (free for OSS) — 50–80% CI build speedup     | optional  |
+| `TURBO_TEAM`           | var    | Vercel team slug, paired with `TURBO_TOKEN`                            | optional  |
 
 All are optional — workflows fall back gracefully when unset.

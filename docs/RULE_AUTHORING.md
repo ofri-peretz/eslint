@@ -40,14 +40,14 @@ the live awesome-list entries, so it is a decision, not a cleanup.
 
 When creating or reviewing rules, ensure they're in the correct plugin:
 
-**The decisive test — apply it before anything else:** *can this rule fire on
-code whose only dependency is the language and the platform?*
+**The decisive test — apply it before anything else:** _can this rule fire on
+code whose only dependency is the language and the platform?_
 
 - **Yes** → `secure-coding` (language), `node-security` (Node runtime/stdlib),
   `browser-security` (DOM/BOM/transport).
 - **No — it needs driver, framework or SDK X installed** → X's own protective
-  plugin. Never the code-agnostic three, no matter how generic the *vulnerability
-  class* sounds.
+  plugin. Never the code-agnostic three, no matter how generic the _vulnerability
+  class_ sounds.
 
 The vulnerability class is not the scope test; the detection gate is. SQL
 injection is a universal class, but detecting it means matching `.query()` /
@@ -87,14 +87,14 @@ spelling.** `propName.includes('phone')` matches `phoneBookLength`;
 matches `preact`. Resolve the identifier to an import, a call target, or a
 value first.
 
-Two things that are explicitly *not* this, because the distinction is the
+Two things that are explicitly _not_ this, because the distinction is the
 whole point:
 
 - **Exact membership.** `REQUEST_ROOTS.has(node.name)` matching `req`/`request`
   is a naming convention, not an inference. It stays.
 - **Whole-word matching after tokenising.** Split the name on camelCase and
   separators, then match words — `login`, `dialog`, `catalog` and `blog` all
-  contain "log" and none is a logger. This is the *fix*, not the defect.
+  contain "log" and none is a logger. This is the _fix_, not the defect.
 
 Suppression counts too, and is the quieter half: withholding a finding because
 a callee name contains `encrypt` means `decrypt` reads as safe, and a wrong
@@ -106,13 +106,13 @@ with the direction (`report` / `suppress`) and the reason — as debt, not as an
 exemption. A rule that leaves the list must be deleted from it; a stale entry
 fails the gate.
 
-| If the rule...                                                  | It belongs in...                   |
-| --------------------------------------------------------------- | ---------------------------------- |
-| Fires with no dependency installed — pure language semantics    | `eslint-plugin-secure-coding`      |
+| If the rule...                                                  | It belongs in...                                             |
+| --------------------------------------------------------------- | ------------------------------------------------------------ |
+| Fires with no dependency installed — pure language semantics    | `eslint-plugin-secure-coding`                                |
 | Needs a SQL driver or ORM (`.query()`, `.raw()`, `.execute()`)  | `eslint-plugin-postgresql-security` + the per-driver plugins |
-| Checks Vercel AI SDK patterns (`generateText`, `streamText`)    | `eslint-plugin-vercel-ai-security` |
-| Checks OpenAI SDK patterns (`openai.chat.completions`)          | `eslint-plugin-openai-security`    |
-| Detects agentic patterns (tools, autonomous agents) across SDKs | `eslint-plugin-agentic-security`   |
+| Checks Vercel AI SDK patterns (`generateText`, `streamText`)    | `eslint-plugin-vercel-ai-security`                           |
+| Checks OpenAI SDK patterns (`openai.chat.completions`)          | `eslint-plugin-openai-security`                              |
+| Detects agentic patterns (tools, autonomous agents) across SDKs | `eslint-plugin-agentic-security`                             |
 
 ---
 
@@ -150,7 +150,7 @@ vulnerability. It was written to make a branch execute, and to do that it
 declared the bug correct. When the rule was fixed, the test failed — it was
 pinning the defect. Four fixtures in that block were of this kind.
 
-A 100% *gate* is what produces that: it pressures you to write tests that
+A 100% _gate_ is what produces that: it pressures you to write tests that
 reach branches instead of tests that challenge behaviour.
 
 So:
@@ -163,10 +163,10 @@ So:
   implementation, not behaviour.
 - **Pair it with evidence coverage cannot give.** Mutation-verify — revert the
   rule and confirm named fixtures turn red — and run the corpus scan, which
-  answers the question coverage cannot: *is this true about code we did not
-  write?* Both are the convention in #546 and should stay the convention.
+  answers the question coverage cannot: _is this true about code we did not
+  write?_ Both are the convention in #546 and should stay the convention.
 - **oxmutate automates the first half for opted-in plugins.** `npm run mutation
-  -- --plugin <name>` mutates every line of `src/rules/**` and lists the
+-- --plugin <name>` mutates every line of `src/rules/**` and lists the
   changes no fixture notices; `.agent/mutation-baseline.json` ratchets the
   per-rule score in CI. A survivor in a guard is a missing `valid` case (FP
   risk), one in detection a missing `invalid` case (FN risk). See
@@ -210,7 +210,7 @@ that are not false positives at all (#517).
 `examples/`, `demo/` or `fixtures/` paths, and we do not lower severity to
 `warn` to make the number smaller. The consumer knows their repo; we do not.
 Someone who genuinely does not want Helmet in a demo directory disables the
-rule *there, explicitly* — an ESLint override or a disable comment — and that
+rule _there, explicitly_ — an ESLint override or a disable comment — and that
 decision is visible in their config, where it belongs.
 
 Two things follow, and both are the point:
