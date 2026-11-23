@@ -52,19 +52,21 @@ const SCRIPTS: Record<string, string> = JSON.parse(
   readFileSync(join(ROOT, 'package.json'), 'utf8'),
 ).scripts;
 
-/** Every `name:` a workflow job declares, at job indentation. */
+/**
+ * The context each workflow job reports under: its `name:` when it declares one, else its id
+ * (an unnamed job such as `review` is displayed, and required, by its id).
+ */
 function workflowJobNames(): Set<string> {
   const dir = join(ROOT, '.github', 'workflows');
   const names = new Set<string>();
   for (const file of readdirSync(dir).filter((f) => /\.ya?ml$/.test(f))) {
     const text = readFileSync(join(dir, file), 'utf8');
-    for (const match of text.matchAll(/^ {4}name:\s*(.+)$/gm)) {
-      names.add(match[1].trim().replace(/^['"]|['"]$/g, ''));
-    }
-    // A job with no `name:` is displayed, and required, by its id (`review`).
     const jobs = text.slice(text.search(/^jobs:\s*$/m));
-    for (const match of jobs.matchAll(/^ {2}([A-Za-z0-9_-]+):\s*$/gm)) {
-      names.add(match[1]);
+    const blocks = jobs.split(/^ {2}(?=[A-Za-z0-9_-]+:\s*$)/m).slice(1);
+    for (const block of blocks) {
+      const id = block.slice(0, block.indexOf(':'));
+      const named = /^ {4}name:\s*(.+)$/m.exec(block);
+      names.add(named ? named[1].trim().replace(/^['"]|['"]$/g, '') : id);
     }
   }
   return names;

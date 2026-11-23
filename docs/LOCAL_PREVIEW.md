@@ -24,9 +24,11 @@ Non-obvious facts both paths depend on:
   `@interlace/benchmarks` exports its `.ts` sources directly and needs no build.
 - **`LEFTHOOK=0` in containers.** The root `prepare` installs git hooks, which
   are meaningless in a container and fail without a git identity.
-- **`sync-plugin-stats.ts` is local-only.** It reads each plugin's
-  `src/index.ts` and writes `apps/docs/src/data/plugin-stats.json`. No network.
-  The docs `dev` script runs it for you.
+- **`sync-plugin-stats.ts` asks npm for versions.** It reads each plugin's
+  `src/index.ts`, runs `npm view <plugin> version` (15 s timeout each), and
+  writes `apps/docs/src/data/plugin-stats.json`. Offline, each lookup waits out
+  its timeout and falls back to the last recorded version. The docs `dev`
+  script runs it for you.
 
 ## Remote sandboxes
 

@@ -50,7 +50,10 @@ function skipQuoted(src, start) {
   return i + 1;
 }
 
-/** Split into commands of whitespace-separated words; quoted text becomes an empty word. */
+/**
+ * Split into commands of whitespace-separated words. Quoted text becomes an empty word, except a
+ * quoted lone flag ("--no-verify"), which the shell passes to git as the bare flag.
+ */
 export function commands(cmd) {
   const src = dropHeredocs(cmd ?? '').replace(/\\\n/g, ' ');
   const result = [];
@@ -69,8 +72,10 @@ export function commands(cmd) {
   while (i < src.length) {
     const ch = src[i];
     if (ch === "'" || ch === '"') {
-      word += '""';
-      i = skipQuoted(src, i);
+      const end = skipQuoted(src, i);
+      const inner = src.slice(i + 1, end - 1);
+      word += /^-[\w-]+$/.test(inner) ? inner : '""';
+      i = end;
       continue;
     }
     if (SEPARATORS.has(ch)) flushCommand();
@@ -82,12 +87,24 @@ export function commands(cmd) {
   return result;
 }
 
+const GIT_OPTS_WITH_VALUE = new Set([
+  '-C',
+  '-c',
+  '--git-dir',
+  '--work-tree',
+  '--namespace',
+]);
+
 function skipsHooks(words) {
   const g = words.indexOf('git');
   if (g === -1) return false;
   const env = words.slice(0, g);
-  const sub = words[g + 1];
-  const args = words.slice(g + 2);
+  // Skip git's global options (git -C dir commit, git -c k=v push) to reach the subcommand.
+  let s = g + 1;
+  while (words[s]?.startsWith('-'))
+    s += GIT_OPTS_WITH_VALUE.has(words[s]) ? 2 : 1;
+  const sub = words[s];
+  const args = words.slice(s + 1);
   if (args.includes('--no-verify')) return true;
   if (
     sub === 'commit' &&
@@ -139,6 +156,9 @@ export const CASES = {
     'git commit -n -m x',
     'LEFTHOOK=0 git push',
     'cd repo && git commit --no-verify',
+    'git commit "--no-verify" -m x',
+    'git -C . commit -n -m x',
+    'LEFTHOOK=0 git -c core.x=1 push',
     'git commit \\\n  --no-verify -m x',
     'until gh pr view 5 --json state | grep MERGED; do sleep 30; done',
     'while true; do gh run list; sleep 10; done',
@@ -149,6 +169,7 @@ export const CASES = {
     "git commit -F - <<'EOF'\nnever use --no-verify\nEOF",
     "git commit -F - <<'EOF'\nuntil gh pr checks; do sleep 1; done\nEOF\ngit push",
     'gh pr checks 12 --watch',
+    'git -C . log -n 3',
     'git commit -am "x"',
     'sleep 5',
     'LEFTHOOK=0 npm ci',
