@@ -80,7 +80,9 @@ export function commands(cmd) {
     if (ch === "'" || ch === '"') {
       const end = skipQuoted(src, i);
       const inner = src.slice(i + 1, end - 1);
-      word += /^-[\w-]+$/.test(inner) ? inner : '""';
+      // A quoted lone flag reaches git as that flag, unless it is the value of a message or file flag.
+      const isValue = word === "" && /^(-[a-zA-Z]*[mF]|--message|--file|--trailer)$/.test(words.at(-1) ?? "");
+      word += !isValue && /^-[\w-]+$/.test(inner) ? inner : '""';
       i = end;
       continue;
     }
@@ -244,6 +246,8 @@ export const CASES = {
   ],
   allow: [
     'git commit -m "docs: explain why --no-verify is banned"',
+    'git commit -m "--no-verify"',
+    'git commit -am "--no-verify"',
     "git commit -F - <<'EOF'\nnever use --no-verify\nEOF",
     "git commit -F - <<'EOF'\nuntil gh pr checks; do sleep 1; done\nEOF\ngit push",
     "gh pr checks 12 --watch",
