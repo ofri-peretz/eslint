@@ -105,6 +105,24 @@ describe('consumer AGENTS.md', () => {
       );
   });
 
+  it('shows the @eslint/markdown setup for a preset that lints Markdown', () => {
+    const text = readFileSync(
+      join(PACKAGES, 'eslint-plugin-conventions', 'AGENTS.md'),
+      'utf8',
+    );
+    expect(text).toContain('npm install --save-dev @eslint/markdown');
+    expect(text).toContain(
+      'export default [{ plugins: { markdown } }, conventions.configs.guidance];',
+    );
+    // Only that preset: the secure-coding guide names no Markdown setup.
+    expect(
+      readFileSync(
+        join(PACKAGES, 'eslint-plugin-secure-coding', 'AGENTS.md'),
+        'utf8',
+      ),
+    ).not.toContain('@eslint/markdown');
+  });
+
   it('is published: the build copies it and the publish gate only admits the generated one', () => {
     const build = readFileSync(join(ROOT, 'scripts/build-package.ts'), 'utf8');
     const dropped =

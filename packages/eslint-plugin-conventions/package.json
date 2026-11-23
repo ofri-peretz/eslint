@@ -57,6 +57,7 @@
     "@interlace/eslint-devkit": "^2.0.4"
   },
   "devDependencies": {
+    "@eslint/markdown": "^9.0.0",
     "@typescript-eslint/parser": "^8.68.0",
     "@typescript-eslint/rule-tester": "^8.68.0"
   },

@@ -20,23 +20,27 @@ const ruleTester = new RuleTester({
   languageOptions: { parser, ecmaVersion: 2022, sourceType: 'module' },
 });
 
-ruleTester.run('utm-taxonomy — a malformed escape does not crash', utmTaxonomy, {
-  valid: [
-    {
-      name: 'a well-formed tagged template is still read normally',
-      code: 'const u = tag`https://x.test/?utm_source=github&utm_medium=referral`;',
-    },
-  ],
-  invalid: [
-    {
-      name: 'a truncated escape reports instead of throwing URIError',
-      code: 'const u = tag`https://x.test/?utm_source=%E0%A4%A&utm_medium=email`;',
-      errors: [{ messageId: 'invalidUtmSource' }],
-    },
-    {
-      name: 'a bare percent reports instead of throwing URIError',
-      code: 'const u = tag`https://x.test/?utm_source=%&utm_medium=email`;',
-      errors: [{ messageId: 'invalidUtmSource' }],
-    },
-  ],
-});
+ruleTester.run(
+  'utm-taxonomy — a malformed escape does not crash',
+  utmTaxonomy,
+  {
+    valid: [
+      {
+        name: 'a well-formed tagged template is still read normally',
+        code: 'const u = tag`https://x.test/?utm_source=github&utm_medium=referral`;',
+      },
+    ],
+    invalid: [
+      {
+        name: 'a truncated escape reports instead of throwing URIError',
+        code: 'const u = tag`https://x.test/?utm_source=%E0%A4%A&utm_medium=email`;',
+        errors: [{ messageId: 'invalidUtmSource' }],
+      },
+      {
+        name: 'a bare percent reports instead of throwing URIError',
+        code: 'const u = tag`https://x.test/?utm_source=%&utm_medium=email`;',
+        errors: [{ messageId: 'invalidUtmSource' }],
+      },
+    ],
+  },
+);
