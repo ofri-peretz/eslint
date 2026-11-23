@@ -56,6 +56,7 @@ import {
   resolveModuleBinding,
   staticString,
   namesOneOf,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -593,6 +594,150 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
         scope: sourceCode.getScope(xmlSource),
       });
 
+    type ScopeVariable = TSESLint.Scope.Variable;
+
+    /** The variable an identifier reads or writes, by scope — not by spelling. */
+    const variableOf = (id: TSESTree.Identifier): ScopeVariable | null =>
+      sourceCode.getScope(id).references.find((ref) => ref.identifier === id)
+        ?.resolved ?? null;
+
+    /**
+     * The parse methods this file implements, by OWNER: the variable of the
+     * class or constructor they are defined on. `X.prototype.m = function () {}`
+     * and `class X { m() {} }` count; `X.prototype.m = other.m` does not, since
+     * there is no implementation here to inspect. Collected once per file.
+     */
+    let ownMethods: Map<ScopeVariable, Set<string>> | null = null;
+    const methodsByOwner = (): Map<ScopeVariable, Set<string>> => {
+      if (ownMethods !== null) return ownMethods;
+      const found = new Map<ScopeVariable, Set<string>>();
+      const add = (owner: ScopeVariable | null, name: string | null) => {
+        if (owner === null || name === null) return;
+        const names = found.get(owner) ?? new Set<string>();
+        names.add(name);
+        found.set(owner, names);
+      };
+      const keys = sourceCode.visitorKeys;
+      const stack: TSESTree.Node[] = [sourceCode.ast];
+      while (stack.length > 0) {
+        const current = stack.pop() as TSESTree.Node;
+        if (
+          current.type === AST_NODE_TYPES.AssignmentExpression &&
+          current.left.type === AST_NODE_TYPES.MemberExpression &&
+          current.left.object.type === AST_NODE_TYPES.MemberExpression &&
+          propertyName(current.left.object) === 'prototype' &&
+          current.left.object.object.type === AST_NODE_TYPES.Identifier &&
+          (current.right.type === AST_NODE_TYPES.FunctionExpression ||
+            current.right.type === AST_NODE_TYPES.ArrowFunctionExpression)
+        ) {
+          add(
+            variableOf(current.left.object.object),
+            propertyName(current.left),
+          );
+        }
+        if (
+          current.type === AST_NODE_TYPES.ClassDeclaration ||
+          current.type === AST_NODE_TYPES.ClassExpression
+        ) {
+          const owners = sourceCode.getDeclaredVariables(current);
+          for (const member of current.body.body) {
+            if (member.type !== AST_NODE_TYPES.MethodDefinition) continue;
+            for (const owner of owners) add(owner, objectKeyName(member));
+          }
+        }
+        for (const key of keys[current.type] as readonly string[]) {
+          const child = (current as unknown as Record<string, unknown>)[key];
+          for (const item of Array.isArray(child) ? child : [child]) {
+            if (item !== null && typeof item === 'object') {
+              stack.push(item as TSESTree.Node);
+            }
+          }
+        }
+      }
+      ownMethods = found;
+      return found;
+    };
+
+    /** The owners of `this` at this node: the class or prototype it is a method of. */
+    const ownersOfThis = (node: TSESTree.Node): ScopeVariable[] => {
+      let fn: TSESTree.Node | undefined = node.parent;
+      while (
+        fn &&
+        fn.type !== AST_NODE_TYPES.FunctionExpression &&
+        fn.type !== AST_NODE_TYPES.FunctionDeclaration
+      ) {
+        fn = fn.parent;
+      }
+      const holder = fn?.parent;
+      if (holder?.type === AST_NODE_TYPES.MethodDefinition) {
+        return sourceCode.getDeclaredVariables(
+          holder.parent.parent as TSESTree.Node,
+        ) as ScopeVariable[];
+      }
+      if (
+        holder?.type === AST_NODE_TYPES.AssignmentExpression &&
+        holder.left.type === AST_NODE_TYPES.MemberExpression &&
+        holder.left.object.type === AST_NODE_TYPES.MemberExpression &&
+        propertyName(holder.left.object) === 'prototype' &&
+        holder.left.object.object.type === AST_NODE_TYPES.Identifier
+      ) {
+        const owner = variableOf(holder.left.object.object);
+        return owner === null ? [] : [owner];
+      }
+      return [];
+    };
+
+    /**
+     * What a receiver is an instance of, by evidence: `this` inside the class or
+     * prototype method, a never-reassigned alias of it (`var _this = this`), or
+     * a never-reassigned binding of `new C()` with `C` a constructor or class of
+     * this file. A parameter, an import or any other receiver is unknown.
+     */
+    const ownersOfReceiver = (receiver: TSESTree.Node): ScopeVariable[] => {
+      if (receiver.type === AST_NODE_TYPES.ThisExpression) {
+        return ownersOfThis(receiver);
+      }
+      if (receiver.type === AST_NODE_TYPES.NewExpression) {
+        const owner =
+          receiver.callee.type === AST_NODE_TYPES.Identifier
+            ? variableOf(receiver.callee)
+            : null;
+        return owner === null ? [] : [owner];
+      }
+      if (receiver.type !== AST_NODE_TYPES.Identifier) return [];
+      const variable = variableOf(receiver);
+      const def = variable?.defs[0];
+      if (
+        variable?.defs.length !== 1 ||
+        def?.type !== 'Variable' ||
+        def.node.init === null ||
+        variable.references.some((ref) => ref.isWrite() && !ref.init)
+      ) {
+        return [];
+      }
+      return ownersOfReceiver(def.node.init);
+    };
+
+    /**
+     * Is this call a method of a parser this very file implements, on a
+     * receiver that is an instance of it? `this.parseString(str, cb)` inside
+     * `Parser.prototype.parseStringPromise`, in the file that defines
+     * `Parser.prototype.parseString`, delegates to the implementation written a
+     * few lines up; what that implementation parses with is judged where it
+     * calls the real parser, not at each internal hop. A call on any other
+     * receiver — `libxmljs.parseXml(...)` beside an unrelated class that also
+     * has a `parseXml` — is still judged.
+     */
+    const callsOwnMethod = (node: TSESTree.CallExpression): boolean => {
+      const callee = node.callee;
+      if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+      // A runtime-keyed callee names no method: `Set#has(null)` is false.
+      const name = propertyName(callee) as string;
+      return ownersOfReceiver(callee.object).some((owner) =>
+        methodsByOwner().get(owner)?.has(name),
+      );
+    };
+
     return {
       before() {
         const [options] = currentOptions();
@@ -623,6 +768,7 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
         ]);
 
         sourceCode = context.sourceCode;
+        ownMethods = null;
       },
       CallExpression(node: TSESTree.CallExpression) {
         if (!isXmlParsingCall(node)) return;
@@ -672,6 +818,8 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
 
         if (isTrustedXmlSource(xmlInput) || isXmlInputValidated(xmlInput))
           return;
+
+        if (callsOwnMethod(node)) return;
 
         // Untrusted input is only half of it. The other half is a parser that
         // can reach the filesystem — see DEFAULT_EXTERNAL_ENTITY_MODULES.
