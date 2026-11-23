@@ -5,14 +5,14 @@ tags: ['security', 'express']
 category: security
 severity: medium
 cwe: CWE-489
-owasp: "A05:2021"
+owasp: 'A05:2021'
 autofix: false
 ---
 
 > **Keywords:** debug endpoint, admin path, exposed routes, express security, CWE-489, OWASP M8, test endpoints, health checks, information disclosure, unauthorized access, server security
 
-
 <!-- @rule-summary -->
+
 Identifies potential debug, administration, or testing endpoints that are often left exposed in production environmen...
 <!-- @/rule-summary -->
 
@@ -30,7 +30,7 @@ Identifies potential debug, administration, or testing endpoints that are often 
 | **CWE Reference** | [CWE-489](https://cwe.mitre.org/data/definitions/489.html) (Active Debug) |
 | **Severity**      | 🟠 HIGH (security misconfiguration)                                       |
 | **Auto-Fix**      | ❌ Not available (requires manual review/auth implementation)             |
-| **Category**   | Security |
+| **Category**      | Security                                                                  |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                   |
 | **Best For**      | Node.js applications, Express servers, API Gateways                       |
 
@@ -46,7 +46,7 @@ Identifies potential debug, administration, or testing endpoints that are often 
 
 ## Rule Details
 
-This rule scans for route *registrations* in Express-like frameworks (`app.get`, `router.use`, …) whose path argument is a string literal matching a known sensitive path. A string literal that merely equals a debug path in some other position — a constant, a redirect target, a comparison — is **not** reported: it is not an exposed endpoint.
+This rule scans for route _registrations_ in Express-like frameworks (`app.get`, `router.use`, …) whose path argument is a string literal matching a known sensitive path. A string literal that merely equals a debug path in some other position — a constant, a redirect target, a comparison — is **not** reported: it is not an exposed endpoint.
 
 ```mermaid
 %%{init: {
@@ -86,9 +86,9 @@ The rule provides **LLM-optimized error messages** with actionable security guid
 
 ## Configuration
 
-| Option        | Type       | Default           | Description                                  |
-| :------------ | :--------- | :---------------- | :------------------------------------------- |
-| `endpoints`   | `string[]` | `['/debug', ...]` | Custom list of debug/admin endpoints to flag |
+| Option        | Type       | Default           | Description                                                |
+| :------------ | :--------- | :---------------- | :--------------------------------------------------------- |
+| `endpoints`   | `string[]` | `['/debug', ...]` | Custom list of debug/admin endpoints to flag               |
 | `ignoreFiles` | `string[]` | `[]`              | Globs (`**/test/**`) or path substrings of files to ignore |
 
 ### Example Configuration
@@ -245,6 +245,14 @@ app[method]('/admin', handler);
 swaggerUi.register('/api-docs', app);
 ```
 
+## Health probes
+
+`/health` itself is still reported: a health route that returns memory, configuration or
+dependency detail is a disclosure. A path segment spelled as a **probe** is the load-balancer
+contract and is not: `health-check`, `healthcheck`, `health_check`, `healthz`
+(case-insensitive). The segment is removed before matching, so `/health-check/debug` still
+reaches `/debug`.
+
 ## Further Reading
 
 - **[CWE-489: Active Debug Code](https://cwe.mitre.org/data/definitions/489.html)**
@@ -253,7 +261,7 @@ swaggerUi.register('/api-docs', app);
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `endpoints` | `string[]` | — | Custom list of debug/admin endpoints to flag |
-| `ignoreFiles` | `string[]` | — | List of files or patterns to ignore |
+| Option        | Type       | Default | Description                                  |
+| ------------- | ---------- | ------- | -------------------------------------------- |
+| `endpoints`   | `string[]` | —       | Custom list of debug/admin endpoints to flag |
+| `ignoreFiles` | `string[]` | —       | List of files or patterns to ignore          |

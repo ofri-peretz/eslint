@@ -139,6 +139,14 @@ zip.extractAllTo(dest);
 }
 ```
 
+## Not an archive entry
+
+Three shapes the rule recognises as not being an archive entry reaching a path join:
+
+- `zlib.createGzip()` / `createGunzip()` compress or inflate **one** stream and carry no entry names, so they do not make a file an archive file. A real tarball still names itself (`tar`, `tarStream`, an archive module).
+- A bare `unzip(...)` / `extractArchive(...)` call whose callee is bound, through scope, to a **relative** module (`require('./unzip')`, `import unzip from './unzip.js'`) is the project's own code; the sink is judged where it is written. A binding that is reassigned, or imported from a package, still reports.
+- A member used as the **base** of a join whose last argument is an archive entry (`path.join(opts.path, entry.path)`) is the extraction destination, so normalising it (`opts.path = path.resolve(path.normalize(opts.path))`) is not an entry. The entry must come from a different binding than the base.
+
 ## Options
 
 | Option                        | Type       | Default                                                                                                                                                                                             | Description                                                                                            |

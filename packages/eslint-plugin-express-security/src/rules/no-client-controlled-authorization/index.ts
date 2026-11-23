@@ -221,6 +221,9 @@ function isAuthorizationDecision(node: TSESTree.Node): boolean {
   return false;
 }
 
+/** The slots a verifier stores the authenticated principal in (`req.user = user`). */
+const PRINCIPAL_SLOTS = new Set(['user', 'auth']);
+
 export const noClientControlledAuthorization = createRule<
   RuleOptions,
   MessageIds
@@ -271,6 +274,65 @@ export const noClientControlledAuthorization = createRule<
     currentOptions,
   ) {
     let extra: Set<string>;
+    /**
+     * Request binding -> bindings stored as its authenticated principal.
+     *
+     * `req.user = user`, where `user` is a PARAMETER of the verifying callback
+     * (`passport.authenticate('jwt', cb)`), is the server telling the request
+     * who the caller is: a client cannot choose a callback's arguments. A
+     * comparison of a client-supplied id against that principal's own id
+     * (`req.params.userId !== user.id`) is the "self or holder of the right"
+     * check, not a decision on a value the client controls.
+     */
+    let principals: Map<TSESLint.Scope.Variable, Set<TSESLint.Scope.Variable>>;
+    let pending: (() => void)[];
+
+    function variableOf(
+      identifier: TSESTree.Identifier,
+    ): TSESLint.Scope.Variable | undefined {
+      for (
+        let scope: TSESLint.Scope.Scope | null =
+          context.sourceCode.getScope(identifier);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.set.get(identifier.name);
+        if (variable) return variable;
+      }
+      return undefined;
+    }
+
+    function rootIdentifier(node: TSESTree.Node): TSESTree.Identifier | null {
+      let current: TSESTree.Node = node;
+      while (current.type === AST_NODE_TYPES.MemberExpression) {
+        current = current.object;
+      }
+      return current.type === AST_NODE_TYPES.Identifier ? current : null;
+    }
+
+    /**
+     * Is `member` compared for equality against the authenticated principal
+     * of the request it was read from?
+     */
+    function comparedToPrincipal(member: TSESTree.MemberExpression): boolean {
+      const comparison = member.parent;
+      if (
+        comparison?.type !== AST_NODE_TYPES.BinaryExpression ||
+        !['===', '!==', '==', '!='].includes(comparison.operator)
+      ) {
+        return false;
+      }
+      const other =
+        comparison.left === member ? comparison.right : comparison.left;
+      if (other.type !== AST_NODE_TYPES.MemberExpression) return false;
+      const requestRoot = rootIdentifier(member);
+      const otherRoot = rootIdentifier(other);
+      if (requestRoot === null || otherRoot === null) return false;
+      const request = variableOf(requestRoot);
+      const principal = variableOf(otherRoot);
+      if (request === undefined || principal === undefined) return false;
+      return principals.get(request)?.has(principal) ?? false;
+    }
 
     function isAuthorizationAttribute(
       property: string,
@@ -295,7 +357,40 @@ export const noClientControlledAuthorization = createRule<
         extra = new Set(
           (extraProperties ?? []).map((name) => name.toLowerCase()),
         );
+        principals = new Map();
+        pending = [];
         return true;
+      },
+      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        if (
+          node.operator !== '=' ||
+          node.left.type !== AST_NODE_TYPES.MemberExpression ||
+          node.left.object.type !== AST_NODE_TYPES.Identifier ||
+          node.right.type !== AST_NODE_TYPES.Identifier
+        ) {
+          return;
+        }
+        const slot = staticPropertyName(node.left);
+        if (slot === null || !PRINCIPAL_SLOTS.has(slot)) return;
+        const request = variableOf(node.left.object);
+        const value = variableOf(node.right);
+        // Only a parameter that is never reassigned: a `const user =
+        // req.body.user` is the client's word, and a rewritten parameter may
+        // hold anything.
+        if (
+          request === undefined ||
+          value === undefined ||
+          value.defs[0]?.type !== 'Parameter' ||
+          value.references.some((reference) => reference.isWrite())
+        ) {
+          return;
+        }
+        const stored = principals.get(request) ?? new Set();
+        stored.add(value);
+        principals.set(request, stored);
+      },
+      'Program:exit'() {
+        for (const report of pending) report();
       },
       CallExpression(node: TSESTree.CallExpression) {
         const header = headerAccessorName(node);
@@ -321,13 +416,18 @@ export const noClientControlledAuthorization = createRule<
         if (!isAuthorizationAttribute(property, container)) return;
         if (!isAuthorizationDecision(node)) return;
 
-        context.report({
-          node,
-          messageId: 'clientControlledAuthorization',
-          data: {
-            expression: context.sourceCode.getText(node),
-            property,
-          },
+        // Decided at the end of the file: the `req.user = user` that makes
+        // the other side a principal may sit after the comparison.
+        pending.push(() => {
+          if (comparedToPrincipal(node)) return;
+          context.report({
+            node,
+            messageId: 'clientControlledAuthorization',
+            data: {
+              expression: context.sourceCode.getText(node),
+              property,
+            },
+          });
         });
       },
     };

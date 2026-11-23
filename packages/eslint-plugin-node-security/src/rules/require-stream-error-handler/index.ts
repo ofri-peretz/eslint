@@ -211,6 +211,38 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    /**
+     * The name an `'error'` listener is attached to.
+     *
+     * `.on()` returns its emitter and `.pipe(dest)` returns `dest`, so in
+     * `src.pipe(dest).on('finish', f).on('error', h)` the listener is on
+     * `dest`. Reading only an identifier receiver missed that chain:
+     * unzipper's `PullStream.js` pipes into a `Transform` and ends the chain
+     * with `.on('error', reject)`, and the destination was reported as
+     * having no listener.
+     */
+    function listenedStream(receiver: TSESTree.Node): string | null {
+      let current: TSESTree.Node = receiver;
+      for (;;) {
+        if (current.type === AST_NODE_TYPES.Identifier) return current.name;
+        if (
+          current.type !== AST_NODE_TYPES.CallExpression ||
+          current.callee.type !== AST_NODE_TYPES.MemberExpression
+        ) {
+          return null;
+        }
+        const method = propertyName(current.callee);
+        if (method === 'pipe') {
+          const destination = current.arguments[0];
+          return destination?.type === AST_NODE_TYPES.Identifier
+            ? destination.name
+            : null;
+        }
+        if (method === null || !LISTENER_METHODS.has(method)) return null;
+        current = current.callee.object;
+      }
+    }
+
     return {
       before() {
         const [options = {}] = currentOptions();
@@ -243,6 +275,17 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
         }
       },
 
+      // `return entry` hands the stream to the caller, who owns its listeners:
+      // the same "unproven is not unhandled" as passing it to another call.
+      // unzipper's `Open/unzip.js` builds a PassThrough, forwards its sources'
+      // errors into it with `entry.emit('error', e)`, pipes into it, and
+      // returns it — the consumer is who listens.
+      ReturnStatement(node: TSESTree.ReturnStatement) {
+        if (node.argument?.type === AST_NODE_TYPES.Identifier) {
+          escaped.add(node.argument.name);
+        }
+      },
+
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
         const isPipe =
@@ -265,10 +308,10 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
           const event = node.arguments[0];
           if (
             event?.type === AST_NODE_TYPES.Literal &&
-            event.value === 'error' &&
-            callee.object.type === AST_NODE_TYPES.Identifier
+            event.value === 'error'
           ) {
-            handled.add(callee.object.name);
+            const listened = listenedStream(callee.object);
+            if (listened !== null) handled.add(listened);
           }
           return;
         }

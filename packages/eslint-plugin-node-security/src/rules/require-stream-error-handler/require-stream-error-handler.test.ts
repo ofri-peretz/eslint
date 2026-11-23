@@ -164,6 +164,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // A listener for a DIFFERENT event is not an error handler. Registering
     // 'close' is the commonest way to look handled while still crashing.
     {
+      name: 'a listener for a different event is not an error handler',
       code: "const s = fs.createReadStream(p); s.on('close', log); s.pipe(res);",
       errors: [{ messageId: 'unhandledStreamError' }],
     },

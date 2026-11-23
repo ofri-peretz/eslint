@@ -374,13 +374,133 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
      * (`Shopify/cli` `packages/e2e/setup/app.ts` and
      * `bin/bundling/esbuild-plugin-dedup-cli-kit.js`): neither contains the
      * substring `zip`, `tar` or `archive` anywhere.
+     *
+     * `gzip` and `gunzip` are not on the list: they compress or inflate ONE
+     * stream and carry no entry names, so `zlib.createGzip()` says nothing about
+     * an archive. winston's file transport calls it to rotate logs and then
+     * joined `this.dirname` with `this.filename` (its own constructor options),
+     * which this rule reported as an archive entry in three places. A real
+     * tarball still names itself: `gunzip().pipe(tar.extract())` contains `tar`.
      */
     const ARCHIVE_NAME =
-      /zip|tarball|archive|gzip|gunzip|untar|tarstream|\btar\b/i;
+      /(?<!g)(?<!gun)zip|tarball|archive|untar|tarstream|\btar\b/i;
     let pending: (() => void)[];
     let EXITS: Set<string>;
     const isArchiveModule = (specifier: string | null): boolean =>
       specifier !== null && archiveModuleSet.has(specifier.toLowerCase());
+    /**
+     * Is this identifier bound, through scope, to something a RELATIVE module
+     * exports (`const unzip = require('./unzip')`, `import { unzip } from
+     * './unzip'`)? That is the project's own code, whose body is judged where
+     * it is written; a call to it is not an archive library call, and its
+     * name is the project's choice. unzipper's `lib/Open/directory.js` calls
+     * its own `./unzip` module with an offset and a password, and was reported
+     * as an extraction without validation.
+     */
+    const isProjectLocalBinding = (node: TSESTree.Node): boolean => {
+      if (node.type !== 'Identifier') return false;
+      let variable: TSESLint.Scope.Variable | undefined;
+      for (
+        let scope: TSESLint.Scope.Scope | null =
+          context.sourceCode.getScope(node);
+        scope;
+        scope = scope.upper
+      ) {
+        variable = scope.set.get(node.name);
+        if (variable) break;
+      }
+      const def = variable?.defs[0];
+      if (!def) return false;
+      const relative = (specifier: string | null): boolean =>
+        specifier !== null && /^\.{1,2}(?:[/\\]|$)/.test(specifier);
+      if (def.type === 'ImportBinding') {
+        const parent = def.parent;
+        return (
+          parent?.type === 'ImportDeclaration' &&
+          relative(String(parent.source.value))
+        );
+      }
+      if (def.node.type !== 'VariableDeclarator') return false;
+      // A reassigned binding may hold something else by the time it is called.
+      if (variable?.references.filter((ref) => ref.isWrite()).length !== 1) {
+        return false;
+      }
+      let init: TSESTree.Node | null = def.node.init;
+      while (init?.type === 'MemberExpression') init = init.object;
+      return (
+        init?.type === 'CallExpression' &&
+        init.callee.type === 'Identifier' &&
+        init.callee.name === 'require' &&
+        relative(staticString(init.arguments[0]))
+      );
+    };
+    /** Identity for scope-resolved variables, so two spellings of one binding match. */
+    let variableIds: WeakMap<object, number>;
+    let variableCount: number;
+    let destinationBases: Set<string>;
+    const variableOf = (
+      identifier: TSESTree.Identifier,
+    ): TSESLint.Scope.Variable | undefined => {
+      for (
+        let scope: TSESLint.Scope.Scope | null =
+          context.sourceCode.getScope(identifier);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.set.get(identifier.name);
+        if (variable) return variable;
+      }
+      return undefined;
+    };
+    /**
+     * `opts.path` as `<binding id>.path`: the root resolved through scope, the
+     * rest by static property names. `null` when any link is dynamic or the
+     * root is unbound.
+     */
+    const memberKey = (node: TSESTree.Node): string | null => {
+      const chain: string[] = [];
+      let current: TSESTree.Node = node;
+      while (current.type === 'MemberExpression') {
+        const name = propertyName(current);
+        if (name === null) return null;
+        chain.unshift(name);
+        current = current.object;
+      }
+      if (current.type !== 'Identifier' || chain.length === 0) return null;
+      const variable = variableOf(current);
+      if (!variable) return null;
+      let id = variableIds.get(variable);
+      if (id === undefined) {
+        variableCount += 1;
+        id = variableCount;
+        variableIds.set(variable, id);
+      }
+      return `${id}.${chain.join('.')}`;
+    };
+    /** The member an archive entry exposes its path on, through `.replace(...)`-style calls. */
+    const entryFieldMember = (
+      node: TSESTree.Node,
+    ): TSESTree.MemberExpression | null => {
+      let current: TSESTree.Node = node;
+      for (;;) {
+        if (
+          current.type === 'MemberExpression' &&
+          namesOneOf(propertyName(current), archiveEntryFields)
+        ) {
+          return current;
+        }
+        if (
+          current.type === 'CallExpression' &&
+          current.callee.type === 'MemberExpression'
+        ) {
+          current = current.callee.object;
+        } else if (current.type === 'MemberExpression') {
+          current = current.object;
+        } else {
+          return null;
+        }
+      }
+    };
     const namesArchive = (node: TSESTree.Node): boolean => {
       if (node.type === 'Identifier') return ARCHIVE_NAME.test(node.name);
       if (node.type === 'MemberExpression') {
@@ -428,7 +548,8 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       // Check for standalone archive functions (e.g., extractArchive)
       if (
         callee.type === 'Identifier' &&
-        archiveFunctions.includes(callee.name)
+        archiveFunctions.includes(callee.name) &&
+        !isProjectLocalBinding(callee)
       ) {
         // A bare identifier carries strictly LESS evidence than the method
         // call above: there is no receiver to name an archive. So the same
@@ -740,6 +861,10 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
 
         /** Shapes deferred to Program:exit, once archive context is known. */
         pending = [];
+        variableIds = new WeakMap();
+        variableCount = 0;
+        /** Keys of members used as the BASE of a join whose last argument is an entry. */
+        destinationBases = new Set();
 
         /** Does this statement always leave the enclosing list? */
         EXITS = new Set([
@@ -782,7 +907,9 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         // trace-context propagation. Neither file contains the substring `zip`,
         // `tar` or `archive` anywhere. A password manager would have received a
         // pull request whose entire content was that mistake.
-        if (namesArchive(node.callee)) hasArchiveContext = true;
+        if (namesArchive(node.callee) && !isProjectLocalBinding(node.callee)) {
+          hasArchiveContext = true;
+        }
         if (isArchiveExtraction(node) && !isSafeLibrary(node)) {
           // An `@safe` annotation covers the statement it sits directly above
           // — and everything inside it, so one on a function covers that
@@ -896,6 +1023,21 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         ) {
           // Check arguments for potential archive entry usage
           const args = node.arguments;
+          // `path.join(opts.path, entry.path)`: every leading member is the
+          // directory the entry is joined onto, i.e. the extraction
+          // destination — the caller's value, not an entry name. Recorded
+          // here, consulted at Program:exit, so order does not matter.
+          const lastEntry =
+            args.length > 1 ? entryFieldMember(args[args.length - 1]) : null;
+          if (lastEntry !== null) {
+            const entryRoot = memberKey(lastEntry)?.split('.')[0];
+            for (const base of args.slice(0, -1)) {
+              const key = memberKey(base);
+              if (key !== null && key.split('.')[0] !== entryRoot) {
+                destinationBases.add(key);
+              }
+            }
+          }
           for (const arg of args) {
             if (
               arg.type === 'MemberExpression' &&
@@ -909,6 +1051,8 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
               if (!isPathValidated(arg)) {
                 pending.push(() => {
                   if (!hasArchiveContext) return;
+                  const key = memberKey(arg);
+                  if (key !== null && destinationBases.has(key)) return;
                   context.report({
                     node: arg,
                     messageId: 'unvalidatedArchivePath',

@@ -36,6 +36,24 @@ const DEFAULT_DEBUG_PATHS = [
   '/health',
 ];
 
+/**
+ * Path segments that name a liveness or readiness probe.
+ *
+ * `/health` itself stays a finding (a health route that reports memory, config
+ * or dependency detail is a disclosure — see the rule docs). A segment that is
+ * spelled as a PROBE — `health-check`, `healthcheck`, `health_check`,
+ * `healthz` — is the load-balancer contract, and matched `/health` only
+ * because the old test was a substring one: edwinhern/express-typescript
+ * mounts `app.use('/health-check', healthCheckRouter)` and was reported.
+ * Removed segment by segment, so `/health-check/debug` still reaches `/debug`.
+ */
+const HEALTH_PROBE_SEGMENTS: ReadonlySet<string> = new Set([
+  'health-check',
+  'healthcheck',
+  'health_check',
+  'healthz',
+]);
+
 // Express route-registration methods, incl. `use` for mounted sub-routers and
 // `route` for the chained builder (`app.route('/admin').delete(handler)`).
 const HTTP_METHODS = new Set([
@@ -180,7 +198,11 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
           pathArg.type === 'Literal' &&
           typeof pathArg.value === 'string'
         ) {
-          const path = pathArg.value.toLowerCase();
+          const path = pathArg.value
+            .toLowerCase()
+            .split('/')
+            .filter((segment) => !HEALTH_PROBE_SEGMENTS.has(segment))
+            .join('/');
           if (debugPaths.some((dp) => path.includes(dp.toLowerCase()))) {
             context.report({ node: pathArg, messageId: 'violationDetected' });
           }

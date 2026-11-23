@@ -243,6 +243,7 @@ describe('no-zip-slip', () => {
       valid: [],
       invalid: [
         {
+          name: 'a bare unzip into a dangerous system directory',
           code: 'unzip(zipFile, "/root/backups");',
           errors: [
             {

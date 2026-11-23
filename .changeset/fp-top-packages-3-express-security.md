@@ -1,0 +1,11 @@
+---
+'eslint-plugin-express-security': minor
+---
+
+False positives and coverage gaps found linting popular Node.js packages and Express/NestJS starters.
+
+**Decided behaviour change, `require-express-body-parser-limits`.** The rule now reports a body parser (`json`, `urlencoded`, `raw`, `text`) that sets **no** `limit`, and never reports an explicit `limit`, whatever its value: any number an author writes down is a deliberate choice. Before, it did the opposite: an explicit limit above `maxLimit` (5 MB by default) reported and a parser with no limit did not. The message id changes from `excessiveLimit` to `missingLimit`. `maxLimit` and `excessiveLimits` are still accepted so existing configs load, and are ignored. Options the rule cannot read (`express.json(opts)`, a spread, a computed key) abstain.
+
+- `no-client-controlled-authorization`: `req.params.userId !== user.id` is not reported when `user` is a never-reassigned parameter of the verifying callback that is stored on the same request (`req.user = user`). A local copy of client input, a parameter stored on another request, a rewritten parameter, and a comparison against a second client value still report.
+- `no-exposed-debug-endpoints`: a path segment spelled as a health probe (`health-check`, `healthcheck`, `health_check`, `healthz`) is not a debug endpoint. `/health` itself and `/health-check/debug` still report.
+- `require-helmet`: a call that hands the app to a function this file defines, and uses the parameter only as a receiver, is read instead of treated as the app leaving the file. Helmet applied through the parameter counts, and its absence is reported at `express()`. A module that only receives the app (the loader shape) is never reported, because helmet applied by its caller is not provable in the file; imported functions, method calls and parameters that are passed on, returned, stored or rewritten still count as an escape.
