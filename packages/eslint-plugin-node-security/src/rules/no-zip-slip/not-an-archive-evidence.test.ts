@@ -142,6 +142,16 @@ describe('no-zip-slip — not an archive entry', () => {
           }
         `,
       },
+      {
+        name: 'a canonicalization through a named import of the path module is the same statement',
+        code: `
+          import { normalize } from 'node:path';
+          import AdmZip from 'adm-zip';
+          function make(opts) {
+            opts.path = normalize(opts.path);
+          }
+        `,
+      },
     ],
     invalid: [
       {
@@ -374,6 +384,30 @@ describe('no-zip-slip — not an archive entry', () => {
           unzip(upload, destination);
         `,
         errors: [{ messageId: 'unsafeArchiveExtraction' }],
+      },
+      {
+        // Review: a method that shares a path function's name is not the path module.
+        name: 'a custom resolve method is not the path module, so the write-back is not a canonicalization',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          function make(opts, output) {
+            opts.path = output.resolve(opts.path);
+          }
+        `,
+        errors: [{ messageId: 'unvalidatedArchivePath' }],
+      },
+      {
+        // Review: the assignment's value feeds an unchecked join.
+        name: 'an assignment whose value is used as an argument is not a standalone canonicalization',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          function make(dest, entry) {
+            return path.join(dest, (entry.path = path.normalize(entry.path)));
+          }
+        `,
+        errors: [{ messageId: 'unvalidatedArchivePath' }],
       },
     ],
   });

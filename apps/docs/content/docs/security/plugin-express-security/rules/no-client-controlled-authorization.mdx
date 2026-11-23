@@ -131,8 +131,8 @@ request**. The evidence is a binding, resolved through scope and the module grap
 - the parameter belongs to the callback that `passport.authenticate(...)` calls (`passport`
   resolved to the module), passed inline or as the function a local factory returns when the
   factory's call is what is passed (`verifyCallback(req, ...)`);
-- the parameter is never reassigned and none of its properties is written (`user.id = ...`,
-  `user.n++`, `delete user.role`);
+- it is the callback's **second** parameter, the authenticated user (`info`, the third, is strategy metadata that may be built from request data);
+- the parameter is never reassigned and nothing below it is written, directly or through the request slot (`user.id = ...`, `user.profile.id = ...`, `req.user.id = ...`, `user.n++`, `delete user.role`);
 - it is stored as `req.user = user` / `req.auth = user` on the same request binding the client value was read from.
 
 A parameter of any other function proves nothing, since `check(req, req.body)` hands the client's

@@ -261,8 +261,9 @@ reaches `/debug`.
 The spelling is excused only when nothing shows the handler reporting on the host:
 
 - an **inline handler that reads the global `process`** (`res.json(process.env)`,
-  `process.memoryUsage()`) or **a binding of the `os` module** is an information endpoint whatever
-  the path is called, and still reports;
+  `process.memoryUsage()`; a configured global counts, a local declaration that shadows it does not),
+  **a binding of the `process` module** (`import runtime from 'node:process'`) or **a binding of the `os` module**
+  is an information endpoint whatever the path is called, and still reports;
 - a handler this file cannot read (an imported router mounted at `/health-check`) is excused by the
   spelling alone, which is the limit of what is provable here;
 - an `endpoints` list you configure is matched against the route as written, so

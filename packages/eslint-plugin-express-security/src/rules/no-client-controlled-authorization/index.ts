@@ -303,6 +303,17 @@ export const noClientControlledAuthorization = createRule<
       return undefined;
     }
 
+    /**
+     * `(err, user, info)`: passport hands the authenticated user as the SECOND
+     * argument; `info` is strategy metadata that may be built from request
+     * data, and `err` is not a principal at all.
+     */
+    function isUserParameter(variable: TSESLint.Scope.Variable): boolean {
+      const definition = variable.defs[0];
+      const parameters = (definition.node as TSESTree.FunctionLike).params;
+      return parameters[1] === definition.name;
+    }
+
     /** `passport.authenticate(...)`, with `passport` resolved to the module. */
     function isPassportAuthenticate(call: TSESTree.Node | undefined): boolean {
       if (call?.type !== AST_NODE_TYPES.CallExpression) return false;
@@ -379,20 +390,43 @@ export const noClientControlledAuthorization = createRule<
       );
     }
 
-    /** Is any property of `variable` written (`user.id = ...`, `user.id++`, `delete user.id`)? */
-    function hasMemberWrite(variable: TSESLint.Scope.Variable): boolean {
+    /**
+     * Is a property reached THROUGH `variable` written (`user.id = ...`,
+     * `user.profile.id = ...`, `user.n++`, `delete user.role`)? The member
+     * chain is followed to its outermost link, so a nested write counts.
+     * `slots`, when given, limits the chains considered to those whose first
+     * property is one of them: for the request binding only `req.user...` /
+     * `req.auth...` reaches the principal.
+     */
+    function hasWriteThrough(
+      variable: TSESLint.Scope.Variable,
+      slots?: ReadonlySet<string>,
+    ): boolean {
       return variable.references.some((reference) => {
-        const member = reference.identifier.parent;
+        let chain: TSESTree.Node = reference.identifier;
+        let first: string | null = null;
+        let depth = 0;
+        while (
+          chain.parent?.type === AST_NODE_TYPES.MemberExpression &&
+          chain.parent.object === chain
+        ) {
+          chain = chain.parent;
+          depth += 1;
+          first ??= staticPropertyName(chain as TSESTree.MemberExpression);
+        }
+        if (depth === 0) return false;
+        // `req.user = user` is the STORE, not a mutation of what it stores:
+        // only a write BELOW the slot (`req.user.id = ...`) reaches the object.
         if (
-          member?.type !== AST_NODE_TYPES.MemberExpression ||
-          member.object !== reference.identifier
+          slots !== undefined &&
+          (depth < 2 || first === null || !slots.has(first))
         ) {
           return false;
         }
-        const use = member.parent;
+        const use = chain.parent;
         return (
           (use?.type === AST_NODE_TYPES.AssignmentExpression &&
-            use.left === member) ||
+            use.left === chain) ||
           use?.type === AST_NODE_TYPES.UpdateExpression ||
           (use?.type === AST_NODE_TYPES.UnaryExpression &&
             use.operator === 'delete')
@@ -482,7 +516,9 @@ export const noClientControlledAuthorization = createRule<
           value === undefined ||
           value.defs[0]?.type !== 'Parameter' ||
           value.references.some((reference) => reference.isWrite()) ||
-          hasMemberWrite(value) ||
+          hasWriteThrough(value) ||
+          hasWriteThrough(request, PRINCIPAL_SLOTS) ||
+          !isUserParameter(value) ||
           !isVerifierCallback(value.defs[0].node)
         ) {
           return;

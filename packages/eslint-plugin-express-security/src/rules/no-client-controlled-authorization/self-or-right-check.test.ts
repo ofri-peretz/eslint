@@ -151,6 +151,20 @@ describe('no-client-controlled-authorization — self or right', () => {
           }
         `),
       },
+      {
+        name: 'a read through the request slot, and writes elsewhere on the request, do not invalidate the principal',
+        code: withPassport(`
+          function handler(req, k) {
+            passport.authenticate('jwt', (err, user) => {
+              req.user = user;
+              log(req.user.id);
+              req.params.page = 2;
+              req[k].flag = true;
+              if (req.params.userId === user.id) return;
+            });
+          }
+        `),
+      },
     ],
     invalid: [
       {
@@ -349,6 +363,47 @@ describe('no-client-controlled-authorization — self or right', () => {
             if (req.params.userId === user.id) grant();
           });
         
+          }
+        `),
+        errors: [report],
+      },
+      {
+        // Review: the write goes through the request slot, not the binding.
+        name: 'a write through req.user changes the object user.id reads',
+        code: withPassport(`
+          function handler(req) {
+            passport.authenticate('jwt', (err, user) => {
+              req.user = user;
+              req.user.id = req.body.userId;
+              if (req.params.userId === user.id) grant();
+            });
+          }
+        `),
+        errors: [report],
+      },
+      {
+        // Review: the write is on a nested property.
+        name: 'a write to a nested property of the principal',
+        code: withPassport(`
+          function handler(req) {
+            passport.authenticate('jwt', (err, user) => {
+              req.user = user;
+              user.profile.id = req.body.id;
+              if (req.params.userId === user.profile.id) grant();
+            });
+          }
+        `),
+        errors: [report],
+      },
+      {
+        // Review: info is strategy metadata, not the authenticated user.
+        name: 'info, the third callback argument, is not the principal',
+        code: withPassport(`
+          function handler(req) {
+            passport.authenticate('jwt', (err, user, info) => {
+              req.user = info;
+              if (req.params.userId === info.id) grant();
+            });
           }
         `),
         errors: [report],

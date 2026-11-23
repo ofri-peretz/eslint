@@ -191,19 +191,22 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
             return;
           }
           const scope = context.sourceCode.getScope(child);
-          let bound = false;
+          // A variable with no definition is a configured GLOBAL (ESLint adds
+          // `languageOptions.globals` to the global scope), not a declaration
+          // that shadows it.
+          let declared = false;
           for (let s: typeof scope | null = scope; s; s = s.upper) {
-            if (s.set.has(child.name)) {
-              bound = true;
+            if ((s.set.get(child.name)?.defs.length ?? 0) > 0) {
+              declared = true;
               break;
             }
           }
-          if (!bound) {
+          if (!declared) {
             found = child.name === 'process';
             return;
           }
           const module = resolveModuleBinding(child, scope)?.module;
-          found = module !== undefined && /^(node:)?os$/.test(module);
+          found = module !== undefined && /^(node:)?(os|process)$/.test(module);
         });
       }
       return found;

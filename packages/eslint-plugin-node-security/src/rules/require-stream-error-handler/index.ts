@@ -174,7 +174,7 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
     /** Destinations built in place that a chain-ending listener covers. */
     let handledNodes: Set<TSESTree.Node | null>;
     /** Bindings handed to the caller with `return name`. */
-    let returned: Set<TSESLint.Scope.Variable | undefined>;
+    let returned: Set<TSESLint.Scope.Variable>;
 
     function variableOf(
       identifier: TSESTree.Identifier,
@@ -209,7 +209,8 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
       if (handled.has(node.name) || escaped.has(node.name)) return null;
       // Returned BINDINGS, not names: a same-named stream in a sibling
       // function is a different variable and is still judged on its own.
-      if (returned.has(variableOf(node))) return null;
+      const variable = variableOf(node);
+      if (variable !== undefined && returned.has(variable)) return null;
       return node;
     }
 
@@ -311,8 +312,28 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
       // errors into it with `entry.emit('error', e)`, pipes into it, and
       // returns it — the consumer is who listens.
       ReturnStatement(node: TSESTree.ReturnStatement) {
-        if (node.argument?.type === AST_NODE_TYPES.Identifier) {
-          returned.add(variableOf(node.argument));
+        if (node.argument?.type !== AST_NODE_TYPES.Identifier) return;
+        const variable = variableOf(node.argument);
+        if (variable === undefined) return;
+        // The function that OWNS the binding must be the one returning it: a
+        // `return entry` in a nested function nobody calls hands nothing
+        // over. And the binding must be assigned once, or the returned value
+        // may not be the one that was piped into.
+        let owner: TSESTree.Node | undefined = node.parent;
+        while (
+          owner !== undefined &&
+          owner.type !== AST_NODE_TYPES.FunctionDeclaration &&
+          owner.type !== AST_NODE_TYPES.FunctionExpression &&
+          owner.type !== AST_NODE_TYPES.ArrowFunctionExpression
+        ) {
+          owner = owner.parent;
+        }
+        if (
+          owner === variable.scope.variableScope.block &&
+          variable.references.filter((reference) => reference.isWrite())
+            .length <= 1
+        ) {
+          returned.add(variable);
         }
       },
 

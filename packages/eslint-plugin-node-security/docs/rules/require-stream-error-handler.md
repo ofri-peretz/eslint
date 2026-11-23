@@ -165,7 +165,9 @@ s.pipe(res);
 and covers it, including a destination built in place
 (`src.pipe(fs.createWriteStream(p)).on('error', h)`). A stream binding that is **returned** from the
 function that built it (`return entry`, resolved by scope, not by name) is handed to the caller, who
-owns its listeners, exactly like a stream passed to another call. A stream that is piped into and never returned,
+owns its listeners, exactly like a stream passed to another call. The return must be in the function
+that owns the binding (a `return entry` in a nested function nobody calls hands nothing over), and the
+binding must be assigned once (a reassigned one may not be the stream that was piped into). A stream that is piped into and never returned,
 passed on or listened to still reports.
 
 ## Further Reading

@@ -272,6 +272,33 @@ describe('require-stream-error-handler — listener on the pipe result', () => {
         errors: reports,
       },
       {
+        // Review: an uncalled nested function's return hands nothing over.
+        name: 'a return inside a nested function that is never called is not an ownership transfer',
+        code: `
+          import { PassThrough } from 'stream';
+          export function copy(source) {
+            const entry = new PassThrough();
+            function unused() { return entry; }
+            source.pipe(entry);
+          }
+        `,
+        errors: reports,
+      },
+      {
+        // Review: the returned value may not be the piped one.
+        name: 'a binding reassigned after the pipe is not the stream that was piped into',
+        code: `
+          import { PassThrough } from 'stream';
+          export function open(source) {
+            let entry = new PassThrough();
+            source.pipe(entry);
+            entry = new PassThrough();
+            return entry;
+          }
+        `,
+        errors: reports,
+      },
+      {
         name: 'returning a different stream does not cover this one',
         code: `
           import { PassThrough } from 'stream';

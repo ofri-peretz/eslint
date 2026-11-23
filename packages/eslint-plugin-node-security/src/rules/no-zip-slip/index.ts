@@ -404,13 +404,13 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       )?.module.startsWith('.') === true;
     /** @vocabulary Node path API */
     const pathFns = ['join', 'resolve', 'relative', 'normalize'];
-    const isPathFunctionCallee = (callee: TSESTree.Node): boolean =>
+    const isPathFunctionCallee = (callee: TSESTree.Expression): boolean =>
       (callee.type === 'MemberExpression' &&
         namesOneOf(propertyName(callee), pathFns)) ||
       // `import { join } from 'node:path'` / `const { join } = require('path')`.
       // Resolved through the module graph, not matched on the callee's NAME:
       // a local function called `join` is not `path.join`.
-      (callee.type === 'Identifier' && isNamedPathFunction(callee, pathFns));
+      isNamedPathFunction(callee, pathFns);
     /**
      * `opts.path = path.resolve(path.normalize(opts.path))`: the member is
      * canonicalized and written back to itself. That statement is not a join
@@ -425,23 +425,32 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       let current: TSESTree.Node = arg;
       for (;;) {
         const parent: TSESTree.Node | undefined = current.parent;
+        const kind = parent?.type;
         // The same spelling on both sides of one statement is one binding:
         // a statement cannot shadow a name inside itself.
-        if (parent?.type === 'AssignmentExpression') {
+        if (kind === 'AssignmentExpression') {
+          const assignment = parent as TSESTree.AssignmentExpression;
+          // A STATEMENT, not an expression whose value feeds something else:
+          // `path.join(dest, (entry.path = path.normalize(entry.path)))` hands
+          // the unchecked entry to the join.
           return (
-            parent.operator === '=' &&
-            context.sourceCode.getText(parent.left) ===
+            assignment.parent.type === 'ExpressionStatement' &&
+            assignment.operator === '=' &&
+            context.sourceCode.getText(assignment.left) ===
               context.sourceCode.getText(arg)
           );
         }
+        if (kind !== 'CallExpression') return false;
+        // Resolved to the path module: a method that merely shares the name
+        // (`output.resolve(p)`) may do anything with the value.
+        const call = parent as TSESTree.CallExpression;
         if (
-          parent?.type !== 'CallExpression' ||
-          parent.arguments.length !== 1 ||
-          !isPathFunctionCallee(parent.callee)
+          call.arguments.length !== 1 ||
+          !isNamedPathFunction(call.callee, pathFns)
         ) {
           return false;
         }
-        current = parent;
+        current = call;
       }
     };
     const namesArchive = (node: TSESTree.Node): boolean => {
@@ -512,7 +521,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
 
     /** A bare callee bound to one of `fns` exported by `path` / `path/posix`. */
     const isNamedPathFunction = (
-      callee: TSESTree.Identifier,
+      callee: TSESTree.Expression,
       fns: readonly string[],
     ): boolean => {
       const binding = resolveModuleBinding(

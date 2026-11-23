@@ -274,6 +274,7 @@ describe('no-zip-slip', () => {
         },
         // Validated paths
         {
+          name: 'an entry name passed through validatePath before it is joined',
           code: `
             const safeName = validatePath(entry.name);
             fs.writeFileSync(path.join(dest, safeName), data);

@@ -125,6 +125,23 @@ describe('no-exposed-debug-endpoints — health probe segments', () => {
         options: [{ endpoints: ['/healthz'] }],
         errors: report,
       },
+      {
+        // Review: a configured global is not a local declaration that shadows it.
+        name: 'process supplied as a configured global is still the host',
+        code: "import 'express'; app.get('/healthz', (req, res) => res.json(process.env));",
+        languageOptions: { globals: { process: 'readonly' } },
+        errors: report,
+      },
+      {
+        // Review: an aliased import of the process module is the host too.
+        name: 'an aliased import of node:process is the host',
+        code: `
+          import 'express';
+          import runtime from 'node:process';
+          app.get('/healthz', (req, res) => res.json(runtime.env));
+        `,
+        errors: report,
+      },
     ],
   });
 });
