@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-conventions",
-  "version": "7.0.4",
+  "version": "7.1.0",
   "description": "Oxlint conventions rules for team code — enforces filename case, magic-number bans, commented-out code, expiring TODOs, and deprecated-API usage. Same rules and rule IDs as eslint-plugin-conventions, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
@@ -66,6 +66,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-conventions": "7.0.4"
+    "eslint-plugin-conventions": "7.1.0"
   }
 }
