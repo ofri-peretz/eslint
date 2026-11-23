@@ -26,6 +26,8 @@ import { describe, it, expect } from 'vitest';
 import markdown from '@eslint/markdown';
 import { ESLint } from 'eslint';
 
+import { probeConfig } from '../lib/preset-probe';
+
 // ---------------------------------------------------------------------------
 // The ecosystem under test.
 //
@@ -75,18 +77,17 @@ const PLUGIN_NAMES = [
 
 interface Loaded {
   readonly name: string;
-   
+
   readonly mod: any;
-   
+
   readonly plugin: any;
   readonly configs: Record<string, unknown>;
-   
+
   readonly rules: Record<string, any>;
 }
 
 const loaded: readonly Loaded[] = await Promise.all(
   PLUGIN_NAMES.map(async (name): Promise<Loaded> => {
-     
     const mod: any = await import(name);
     const plugin = mod.default ?? mod.plugin;
     return {
@@ -139,7 +140,10 @@ describe('barrel exports', () => {
     const published: string[] = [];
     const noManifest: string[] = [];
     for (const dir of pluginDirs) {
-      const pkgUrl = new URL(`../../packages/${dir}/package.json`, import.meta.url);
+      const pkgUrl = new URL(
+        `../../packages/${dir}/package.json`,
+        import.meta.url,
+      );
       let manifest: { private?: boolean } | null = null;
       try {
         manifest = JSON.parse(await readFile(pkgUrl, 'utf8')) as {
@@ -204,7 +208,10 @@ describe('barrel exports', () => {
       // Consumers wiring oxlint import `<plugin>/oxlint`; that subpath must be in
       // the published `exports` map. (Workspace subpath imports don't resolve
       // under vitest, so assert the manifest the published package ships.)
-      const pkgUrl = new URL(`../../packages/${name}/package.json`, import.meta.url);
+      const pkgUrl = new URL(
+        `../../packages/${name}/package.json`,
+        import.meta.url,
+      );
       const pkg = JSON.parse(await readFile(pkgUrl, 'utf8')) as {
         exports?: Record<string, unknown>;
       };
@@ -245,26 +252,7 @@ describe('config presets load into ESLint without throwing', () => {
       //   2. STRIP `files`/`ignores` from the preset's own blocks so a
       //      preset-internal narrowing (e.g. `files: ['**/*.ts']`) can't exclude
       //      our `.tsx` probe and re-introduce the "ignored" no-op.
-      const presetBlocks = (Array.isArray(config) ? config : [config]).map(
-        (c) => {
-          const {
-            files: _files,
-            ignores: _ignores,
-            ...rest
-          } = c as Record<string, unknown>;
-          return rest;
-        },
-      );
-      // A preset that runs on a Markdown language (`markdown/gfm`) documents
-      // that the consumer registers @eslint/markdown beside it: do the same.
-      const needsMarkdown = presetBlocks.some((c) =>
-        String(c.language ?? '').startsWith('markdown/'),
-      );
-      const overrideConfig = [
-        { files: ['**/*.{js,jsx,ts,tsx,cjs,mjs}'] },
-        ...(needsMarkdown ? [{ plugins: { markdown } }] : []),
-        ...presetBlocks,
-      ];
+      const overrideConfig = probeConfig(config, markdown);
       const eslint = new ESLint({ overrideConfigFile: true, overrideConfig });
       const results = await eslint.lintText('const _x = 1;\n', {
         filePath: 'probe.tsx',
