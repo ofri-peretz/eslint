@@ -136,4 +136,28 @@ describe('guard-bash hook: the repo config', () => {
   it('has no opinion on an edit outside the frozen globs', () => {
     expect(verdict({ file_path: join(dir, 'docs/guide.md') })).toBeNull();
   });
+  it('denies a frozen edit when Windows passes both paths with backslashes', () => {
+    // A real directory whose name holds backslashes stands in for a Windows path on any OS.
+    const win = join(dir, 'C:\\proj');
+    mkdirSync(join(win, '.claude'), { recursive: true });
+    writeFileSync(
+      join(win, '.claude/hookset.json'),
+      JSON.stringify({ frozen: ['docs/decisions/**'] }),
+    );
+    const r = spawnSync(process.execPath, [HOOK], {
+      input: JSON.stringify({
+        tool_input: { file_path: `${win}\\docs\\decisions\\D-1.md` },
+      }),
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDE_PROJECT_DIR: win },
+    });
+    expect(r.status).toBe(0);
+    expect(
+      (
+        JSON.parse(r.stdout) as {
+          hookSpecificOutput: { permissionDecision: string };
+        }
+      ).hookSpecificOutput.permissionDecision,
+    ).toBe('deny');
+  });
 });
