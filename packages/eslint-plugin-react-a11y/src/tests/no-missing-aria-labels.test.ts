@@ -30,12 +30,24 @@ describe('no-missing-aria-labels', () => {
     ruleTester.run('valid - elements with ARIA labels', noMissingAriaLabels, {
       valid: [
         // An intrinsic <img>/<area> with a non-empty alt is the button's name.
-        { code: '<button><img alt="Save" /></button>' },
-        { code: '<button><span><img alt="Save" /></span></button>' },
-        { code: '<button><area alt="Save" /></button>' },
+        {
+          name: "an img with alt is the button's name",
+          code: '<button><img alt="Save" /></button>',
+        },
+        {
+          name: 'an img with alt nested in a span names the button',
+          code: '<button><span><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'an area with alt names the button',
+          code: '<button><area alt="Save" /></button>',
+        },
         // A dynamic alt counts as a name (the file cannot prove it empty),
         // matching givesValue() and control-has-associated-label.
-        { code: '<button><img alt={label} /></button>' },
+        {
+          name: 'a dynamic alt counts as a name',
+          code: '<button><img alt={label} /></button>',
+        },
         // Button with aria-label
         {
           name: 'an aria-label is present',
@@ -117,22 +129,27 @@ describe('no-missing-aria-labels', () => {
         invalid: [
           // An img only names its parent through a non-empty, visible alt.
           {
+            name: 'an empty alt gives no name',
             code: '<button><img alt="" /></button>',
             errors: [{ messageId: 'missingAriaLabel' }],
           },
           {
+            name: 'an img without alt gives no name',
             code: '<button><img /></button>',
             errors: [{ messageId: 'missingAriaLabel' }],
           },
           {
+            name: 'an aria-hidden img gives no name',
             code: '<button><img alt="Save" aria-hidden="true" /></button>',
             errors: [{ messageId: 'missingAriaLabel' }],
           },
           {
+            name: 'an img inside a hidden wrapper gives no name',
             code: '<button><span aria-hidden="true"><img alt="Save" /></span></button>',
             errors: [{ messageId: 'missingAriaLabel' }],
           },
           {
+            name: 'a custom Img component is not proven to name the button',
             code: '<button><Img alt="Save" /></button>',
             errors: [{ messageId: 'missingAriaLabel' }],
           },
