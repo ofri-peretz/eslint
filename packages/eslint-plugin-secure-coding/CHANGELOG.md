@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.4.12
+
+### Patch Changes
+
+- **🧪 Tests** — no-hardcoded-credentials locks that a migration-shaped name in a secret slot still reports
+
+  Adds a boundary case (`const secret = 'AddMfaColumnsToUsers1784073600000'` reports) and documents the leading-zero floor in `isTimestampedName`. No behaviour change.
+
 ## 6.4.11
 
 ### Patch Changes

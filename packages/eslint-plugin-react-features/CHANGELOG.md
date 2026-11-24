@@ -5,6 +5,22 @@ All notable changes to `eslint-plugin-react-features` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.4.2
+
+### Patch Changes
+
+- **🐛 Fix** — `no-unescaped-entities` forbids upstream's default set; `display-name` reports the wrapper call
+
+  `no-unescaped-entities` forbids `>`, `"`, `'` and `}` by default, as eslint-plugin-react 7.37.5 does (`'` was not
+  reported), reports each occurrence on its own, and suggests each upstream alternative.
+
+  `display-name` reports a `memo` / `forwardRef` component on the wrapper call (the outermost one of a
+  `memo(forwardRef(...))` chain), as upstream does, not on the function inside it, and no longer reports the factory
+  that returns it: `export default (cls) => forwardRef(...)` gave two reports, one on the factory, where upstream gives
+  one on the `forwardRef` call.
+
+  On react-bootstrap's `src` and `test`, diagnostics now match upstream on all 237 files (236 before).
+
 ## 2.4.1
 
 ### Patch Changes
