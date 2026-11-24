@@ -22,8 +22,11 @@ import * as path from 'node:path';
  * `agent`: a subagent definition under `.claude/agents/`, or under a Claude
  *   Code plugin's `agents/` (a folder whose parent holds
  *   `.claude-plugin/plugin.json`).
+ * `command`: a slash command under `.claude/commands/` (subfolders namespace
+ *   it), or under a plugin's `commands/`. Its description is listed in every
+ *   session beside the skills', so it is budgeted the same way.
  */
-export type GuidanceKind = 'memory' | 'skill' | 'agent';
+export type GuidanceKind = 'memory' | 'skill' | 'agent' | 'command';
 
 const MEMORY_FILES: ReadonlySet<string> = new Set([
   'CLAUDE.md',
@@ -40,15 +43,22 @@ export function guidanceKind(filename: string): GuidanceKind | null {
   if (/(?:^|\/)\.claude\/agents\/[^/]+\.md$/.test(normalized)) return 'agent';
   if (
     /(?:^|\/)agents\/[^/]+\.md$/.test(normalized) &&
-    isPluginAgent(normalized)
+    isPluginFolder(normalized)
   ) {
     return 'agent';
+  }
+  if (/(?:^|\/)\.claude\/commands\/.+\.md$/.test(normalized)) return 'command';
+  if (
+    /(?:^|\/)commands\/[^/]+\.md$/.test(normalized) &&
+    isPluginFolder(normalized)
+  ) {
+    return 'command';
   }
   return null;
 }
 
-/** A plugin ships its subagents from `<plugin root>/agents/*.md`. */
-function isPluginAgent(normalized: string): boolean {
+/** A plugin ships its subagents and commands from `<plugin root>/agents|commands/*.md`. */
+function isPluginFolder(normalized: string): boolean {
   const pluginRoot = path.dirname(path.dirname(normalized));
   return fs.existsSync(path.join(pluginRoot, '.claude-plugin', 'plugin.json'));
 }

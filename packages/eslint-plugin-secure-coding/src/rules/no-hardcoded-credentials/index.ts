@@ -373,6 +373,32 @@ function isTestsModule(filename: string): boolean {
  * allowed but kept sparse, and every alphabetic token must still read as a
  * word — which is what rejects the random blob above (`qbp` has no vowel).
  */
+/**
+ * A migration class name: words, then the epoch timestamp the generator
+ * appended (`AddMfaColumnsToUsers1784073600000`). TypeORM and MikroORM write
+ * 13 digits (milliseconds); some generators write 10 (seconds).
+ *
+ * ToolJet lists about sixty of these as plain strings to order its upgrades,
+ * and each one passed every shape test for a random key: mixed case, digits,
+ * no ascending run, past the 32-character bar for context-free reporting. All
+ * were reported at CWE-798 / CVSS 9.8.
+ *
+ * The timestamp must fall between 2000 and 2100, and everything before it
+ * must read as words. A key with digits at the end has digits elsewhere too,
+ * or a prefix that does not read as words.
+ */
+const EPOCH_2000_S = 946_684_800;
+const EPOCH_2100_S = 4_102_444_800;
+
+function isTimestampedName(value: string): boolean {
+  const match = /^([A-Za-z]+)(\d{13}|\d{10})$/.exec(value);
+  if (!match) return false;
+  const [, name, stamp] = match;
+  const seconds = stamp.length === 13 ? Number(stamp) / 1000 : Number(stamp);
+  if (seconds < EPOCH_2000_S || seconds > EPOCH_2100_S) return false;
+  return isNaturalWordString(name);
+}
+
 export function isNaturalWordString(raw: string): boolean {
   // One trailing colon is how a key prefix is written (`huly-table-metadata:`,
   // a clipboard marker an adopter had to disable). It is a namespace, not a
@@ -464,6 +490,7 @@ export function looksRandom(value: string): boolean {
   // scored as a random blob and was reported at CVSS 9.8: 18 of this rule's 21
   // corpus findings, all one field name.
   if (isNaturalWordString(value)) return false;
+  if (isTimestampedName(value)) return false;
   return shannonEntropy(value) >= 3.5;
 }
 
@@ -547,8 +574,12 @@ export function isStyleToken(value: string): boolean {
  * written as a function call, and the qualifier test (a natural word, so
  * `default`, `primary`, `reports`) keeps `STRIPE_KEY(Xk9mP2vQ8zL4nR7w)` out.
  *
- * Only the shape is read. The slot name is not consulted, so the same string
- * in a `password` slot is also not a secret.
+ * Only the shape is read, not the slot name — a DI token is written the same
+ * way wherever it is stored. The one exception is a slot whose OWN inferred
+ * category is `password`: nothing stores a real DI token there, so the shape
+ * match is far more likely to be a badly generated password that happens to
+ * look like a call (#1686). `isSecretShaped`'s caller passes that category
+ * through for exactly this check.
  */
 export function isInjectionTokenName(value: string): boolean {
   const match = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\(([A-Za-z][A-Za-z.-]*)\)$/.exec(
@@ -653,7 +684,11 @@ function echoesItsOwnSlotName(value: string, slotName: string): boolean {
   return fold(value) === fold(slotName);
 }
 
-export function isSecretShaped(value: string, minLength: number): boolean {
+export function isSecretShaped(
+  value: string,
+  minLength: number,
+  category?: 'password' | 'token' | 'database' | 'apikey' | 'other',
+): boolean {
   if (value.length < minLength) return false;
   // Sentences and phrases are messages, never credentials.
   if (/\s/.test(value)) return false;
@@ -676,7 +711,8 @@ export function isSecretShaped(value: string, minLength: number): boolean {
   // CSS is written to be read; see isStyleToken.
   if (isStyleToken(value)) return false;
   // A DI token name is a lookup key written to be read; see isInjectionTokenName.
-  if (isInjectionTokenName(value)) return false;
+  // Not when the slot's own category is `password` — see that function's note.
+  if (category !== 'password' && isInjectionTokenName(value)) return false;
   // Pure word strings are identifiers / i18n keys / message constants.
   if (isNaturalWordString(value)) return false;
   if (isNamespacedKey(value) || isForeignWord(value)) return false;
@@ -1901,11 +1937,16 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         !isPlaceholder &&
         !echoesSlot &&
         !compiledIgnorePatterns.some((pattern) => pattern.test(value)) &&
-        isSecretShaped(value, detectionOptions.minLength) &&
-        isCredentialContext(value, parent)
-      ) {
+        isCredentialContext(value, parent) &&
         // isCredentialContext(value, parent) just returned true, which
-        // requires a truthy parent.
+        // requires a truthy parent. Computed before isSecretShaped so the
+        // slot's own category can veto the DI-token exemption (#1686).
+        isSecretShaped(
+          value,
+          detectionOptions.minLength,
+          inferCredentialTypeFromContext(parent!),
+        )
+      ) {
         const ctxType = inferCredentialTypeFromContext(parent!);
         const optionAllows =
           (ctxType === 'password' && detectionOptions.detectPasswords) ||
