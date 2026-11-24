@@ -1,10 +1,10 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-11-23",
+  "generatedAt": "2026-11-24",
   "totalPlugins": 32,
-  "totalRules": 512,
-  "oxlintCompatible": 512,
+  "totalRules": 515,
+  "oxlintCompatible": 515,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -2455,7 +2455,7 @@
       "short": "react-features",
       "shim": "tools/oxlint-plugins/interlace-react-features.cjs",
       "subpath": "eslint-plugin-react-features/oxlint",
-      "ruleCount": 65,
+      "ruleCount": 68,
       "rules": [
         {
           "name": "component-api/no-arbitrary-token-class",
@@ -2548,6 +2548,12 @@
           "isTypeAware": false
         },
         {
+          "name": "react/forbid-foreign-prop-types",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "react/hooks-exhaustive-deps",
           "portability": "compatible",
           "blockers": [],
@@ -2609,6 +2615,12 @@
         },
         {
           "name": "react/jsx-no-undef",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-pascal-case",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2837,6 +2849,12 @@
         },
         {
           "name": "react/static-property-placement",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/style-prop-object",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

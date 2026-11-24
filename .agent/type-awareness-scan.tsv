@@ -365,6 +365,9 @@ react-features	jsx-no-comment-textnodes	unaware
 react-features	jsx-no-undef	unaware	
 react-features	jsx-uses-react	unaware	
 react-features	jsx-uses-vars	unaware	
+react-features	style-prop-object	unaware	
+react-features	jsx-pascal-case	unaware	
+react-features	forbid-foreign-prop-types	unaware	
 reliability	no-unhandled-promise	unaware	
 reliability	no-silent-errors	unaware	
 reliability	error-message	unaware	

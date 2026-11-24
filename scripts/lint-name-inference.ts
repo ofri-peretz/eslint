@@ -510,6 +510,12 @@ const REGISTERED: RegistryEntry[] = [
       'An intrinsic element (<div />) is told from a component by /^[a-z]/: the JSX spec, which compiles it to a string rather than a binding.',
   },
   {
+    file: 'eslint-plugin-react-features/src/rules/react/jsx-pascal-case.ts',
+    direction: 'suppress',
+    reason:
+      'An intrinsic element (<div />) is told from a component by /^[a-z]/: the JSX spec, which compiles it to a string rather than a binding. The same test eslint-plugin-react uses.',
+  },
+  {
     file: 'eslint-plugin-react-features/src/rules/react/require-optimization.ts',
     direction: 'suppress',
     reason: 'Component-ness from /^[A-Z]/. The JSX convention.',

@@ -12,7 +12,7 @@ Guide for AI coding assistants using this plugin in a project. To change the plu
 npm install --save-dev eslint-plugin-react-features
 ```
 
-Requires ESLint ^8.40.0 || ^9.0.0 || ^10.0.0 and Node >=22.13.0.
+Requires ESLint ^8.40.0 || ^9.0.0 || ^10.0.0 and Node ^20.19.0 || ^22.13.0 || >=24.
 
 Flat config files (`eslint.config.*`) are found by ESLint 8.57 and newer; on ESLint 9 and 10 they are the default.
 
