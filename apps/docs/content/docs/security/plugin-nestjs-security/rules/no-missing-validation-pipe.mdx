@@ -224,14 +224,25 @@ if (process.env.NODE_ENV === 'production') {
 
 **Mitigation**: Always apply validation unconditionally.
 
-### Custom Validation Decorators
+### A project decorator that wraps the pipe
 
-**Why**: Custom decorators wrapping validation are not recognized.
+A decorator your project writes around `UsePipes` counts as the pipe itself.
+The rule follows it to its definition, in the same file or across relative
+imports and `export *` barrels, and accepts it when every path out of it
+returns `UsePipes(ValidationPipe)` or an `applyDecorators(…)` that includes one:
 
 ```typescript
-// ❌ NOT DETECTED - Custom decorator includes validation
-@CustomValidated() // Internally uses ValidationPipe
-class MyController {}
+// shared/pipes/use-validation.pipe.ts
+export function UseValidationPipe(options?: ValidationPipeOptions) {
+  return UsePipes(new ValidationPipe(options));
+}
+
+// users.controller.ts: not reported
+@UseValidationPipe({ whitelist: true })
+@Post()
+create(@Body() dto: CreateUserDto) {}
 ```
 
-**Mitigation**: Document custom decorators. Use standard @UsePipes.
+A helper imported through a path alias (`@app/shared`) or from a package is out
+of reach and is still reported; add a pipe the rule can see, or use
+`assumeGlobalPipes` if a global one covers the route.
