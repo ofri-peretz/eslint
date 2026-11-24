@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-24T02:09:00.470Z",
+  "generatedAt": "2026-11-24T12:07:36.298Z",
   "totals": {
     "plugins": 31,
-    "rules": 511,
+    "rules": 512,
     "recommended": 296,
     "deprecated": 9,
-    "withCwe": 325,
+    "withCwe": 326,
     "withSealRecord": 101,
     "sealed": 0,
     "firingOnCorpus": 47,
@@ -7078,6 +7078,26 @@
         "falsePositives": [],
         "competitors": []
       }
+    },
+    {
+      "plugin": "eslint-plugin-node-security",
+      "prefix": "node-security",
+      "rule": "require-emitter-error-handler",
+      "id": "node-security/require-emitter-error-handler",
+      "description": "Require an 'error' listener on the ClientRequest or ChildProcess returned by http.request, https.get, child_process.spawn and fork",
+      "cwe": "CWE-248",
+      "cvss": 7.5,
+      "confidence": null,
+      "type": "problem",
+      "fixable": false,
+      "hasSuggestions": false,
+      "deprecated": false,
+      "recommended": null,
+      "docsUrl": "https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-emitter-error-handler",
+      "corpusFindings": null,
+      "budgetReason": null,
+      "seal": null,
+      "detection": null
     },
     {
       "plugin": "eslint-plugin-node-security",

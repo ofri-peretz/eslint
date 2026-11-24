@@ -3,8 +3,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-11-24",
   "totalPlugins": 32,
-  "totalRules": 515,
-  "oxlintCompatible": 515,
+  "totalRules": 516,
+  "oxlintCompatible": 516,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1765,7 +1765,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 43,
+      "ruleCount": 44,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1997,6 +1997,12 @@
         },
         {
           "name": "require-dependency-integrity",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-emitter-error-handler",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

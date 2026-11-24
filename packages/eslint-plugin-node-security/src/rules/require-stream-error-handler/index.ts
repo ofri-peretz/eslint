@@ -96,6 +96,13 @@ const STREAM_CLASSES: ReadonlySet<string> = new Set([
   'Duplex',
 ]);
 
+/** `node:stream` classes with a static `fromWeb(webStream)` constructor. */
+const STREAM_CLASSES_WITH_FROM_WEB: ReadonlySet<string> = new Set([
+  'Readable',
+  'Writable',
+  'Duplex',
+]);
+
 /** Methods that register an event listener. */
 const LISTENER_METHODS: ReadonlySet<string> = new Set([
   'on',
@@ -230,6 +237,22 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
      */
     function constructsStreamHere(node: TSESTree.Node): boolean {
       if (constructsStream(node)) return true;
+      // `Readable.fromWeb(body)` wraps a web stream in a node stream that
+      // emits 'error' like any other. Without this the SOURCE of
+      // `Readable.fromWeb(x).pipe(dest)` was invisible and only `dest` was
+      // judged, so the report landed on the wrong stream.
+      if (node.type === AST_NODE_TYPES.CallExpression) {
+        const binding = resolveModuleBinding(
+          node.callee,
+          context.sourceCode.getScope(node),
+        );
+        return (
+          binding?.module === 'stream' &&
+          binding.path.length === 2 &&
+          STREAM_CLASSES_WITH_FROM_WEB.has(binding.path[0] as string) &&
+          binding.path[1] === 'fromWeb'
+        );
+      }
       if (node.type !== AST_NODE_TYPES.NewExpression) return false;
       const binding = resolveModuleBinding(
         node.callee,

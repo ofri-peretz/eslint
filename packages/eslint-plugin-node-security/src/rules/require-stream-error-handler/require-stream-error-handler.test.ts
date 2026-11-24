@@ -99,7 +99,10 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     "const s = createReadStream(p); s.on('error', log); s.pipe(res);",
     // A bare identifier with no visible binding: the handler may be attached in
     // another module. Unproven is not unhandled.
-    'incoming.pipe(outgoing);',
+    {
+      name: 'two bare names with no visible binding are not provably unhandled',
+      code: 'incoming.pipe(outgoing);',
+    },
     // A name bound to something that is not a stream constructor.
     'const s = getStream(); s.pipe(res);',
     // A computed callee names no method statically, so it constructs nothing

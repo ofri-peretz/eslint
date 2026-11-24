@@ -5327,6 +5327,88 @@
         }
       ],
       "peers": []
+    },
+    {
+      "id": "ILB-0185",
+      "added": "2026-11-24",
+      "title": "A proxied upload request with no error listener",
+      "rationale": "`http.request` returns a ClientRequest. A refused connection emits 'error'; with no listener Node throws it from the event loop, so the try/catch around the await never sees it and the process exits. Found in parse-server's GraphQL createFile, 2026-11-24.",
+      "cwe": "CWE-248",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": ["https://nodejs.org/api/events.html#error-events"],
+      "occurrences": [
+        {
+          "repo": "parse-community/parse-server"
+        }
+      ],
+      "code": "import http from 'http';\nexport function handleUpload(stream, url) {\n  return new Promise((resolve) => {\n    const req = http.request(url, { method: 'POST' }, resolve);\n    stream.pipe(req);\n  });\n}",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/require-emitter-error-handler",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-node-security/src/rules/require-emitter-error-handler/require-emitter-error-handler.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0186",
+      "added": "2026-11-24",
+      "title": "A spawned process with no error listener",
+      "rationale": "`spawn` emits 'error' when the binary is missing or the cwd is bad. A close listener does not handle it, and a surrounding try/catch cannot catch an event. Found in Eleventy's spawnAsync, 2026-11-24: a machine without git kills the build.",
+      "cwe": "CWE-248",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": ["https://nodejs.org/api/events.html#error-events"],
+      "occurrences": [
+        {
+          "repo": "11ty/eleventy"
+        }
+      ],
+      "code": "import { spawn } from 'node:child_process';\nexport function run(command, args) {\n  return new Promise((resolve, reject) => {\n    const child = spawn(command, args);\n    child.on('close', (code) => (code ? reject(code) : resolve()));\n  });\n}",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/require-emitter-error-handler",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-node-security/src/rules/require-emitter-error-handler/require-emitter-error-handler.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0187",
+      "added": "2026-11-24",
+      "title": "exec with no error listener",
+      "rationale": "NOT a defect. Node attaches its own 'error' listener inside exec and execFile, with or without a callback, so a missing binary or bad cwd cannot crash the process. Checked on Node 24. A rule that reported it would claim a crash that cannot happen.",
+      "cwe": "CWE-248",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        "https://nodejs.org/api/child_process.html#child_processexeccommand-options-callback"
+      ],
+      "occurrences": [],
+      "code": "import { exec } from 'node:child_process';\nexec('git log');",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/require-emitter-error-handler",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-node-security/src/rules/require-emitter-error-handler/require-emitter-error-handler.test.ts"
+        }
+      ],
+      "peers": []
     }
   ]
 }
