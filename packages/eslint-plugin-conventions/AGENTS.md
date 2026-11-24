@@ -68,17 +68,7 @@ export default [{ plugins: { markdown } }, conventions.configs.guidance];
 
 ### Rules in no preset
 
-Enable these by name (`'conventions/<rule>': 'error'`):
-
-- `prefer-code-point`: Prefer codePointAt over charCodeAt for proper Unicode character handling.
-- `prefer-dom-node-text-content`: Prefer textContent over innerText for better performance and reliability.
-- `no-console-spaces`: Prevent leading/trailing space between console.log parameters.
-- `prefer-dependency-version-strategy`: Enforce consistent version strategy (caret, tilde, exact, etc.) for package.json dependencies.
-- `filename-case`: Enforce filename case conventions for consistency.
-- `consistent-existence-index-check`: Enforce consistent style for checking object property existence.
-- `no-json-schema-tags`: Disallow JSON Schema keywords used as JSDoc tags (e.g. @minimum, @maximum).
-- `require-data-testid`: Require stable `data-testid` attributes on interactive elements and custom components for testability.
-- `no-magic-numbers`: Disallow magic numbers (numeric literals without a named constant).
+Enable these by name (`'conventions/<rule>': 'error'`); README.md describes each: `prefer-code-point`, `prefer-dom-node-text-content`, `no-console-spaces`, `prefer-dependency-version-strategy`, `filename-case`, `consistent-existence-index-check`, `no-json-schema-tags`, `require-data-testid`, `no-magic-numbers`.
 
 ## More
 
