@@ -1,6 +1,6 @@
 ---
 title: require-validation-pipe-whitelist
-description: Requires whitelist true on ValidationPipe, so properties the DTO never declared are stripped instead of reaching the service layer.
+description: Requires whitelist true on ValidationPipe, so undeclared and undecorated properties are stripped instead of reaching the service layer.
 tags: ['security', 'nestjs']
 category: security
 severity: high
@@ -13,7 +13,7 @@ autofix: false
 
 <!-- @rule-summary -->
 
-Requires `whitelist: true` on `ValidationPipe`, so properties the DTO never declared are stripped instead of reaching the service layer.
+Requires `whitelist: true` on `ValidationPipe`, so undeclared and undecorated properties are stripped instead of reaching the service layer.
 <!-- @/rule-summary -->
 
 ## Rule Details
