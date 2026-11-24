@@ -37,7 +37,10 @@ describe('no-unsafe-buffer-alloc', () => {
         name: 'a same-expression fill(0) zeroes the allocation',
         code: 'const buf = Buffer.allocUnsafe(64).fill(0);',
       },
-      { code: 'Buffer.allocUnsafeSlow(64).fill(0);' },
+      {
+        name: 'allocUnsafeSlow zero-filled at once leaves no stale bytes',
+        code: 'Buffer.allocUnsafeSlow(64).fill(0);',
+      },
       // Not the global Buffer.
       { code: 'pool.allocUnsafe(64)' },
       // A bare `allocUnsafe` whose binding this file cannot see is unresolved,

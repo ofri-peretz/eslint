@@ -80,6 +80,7 @@ describe('no-shell-injection', () => {
         },
         // Template literal with no expressions — just a tagged string
         {
+          name: 'a template literal with no expressions is a fixed command',
           code: "import { exec, execSync, spawn, spawnSync, execFile, execFileSync } from 'node:child_process';\nexec(`git status`);",
         },
         // member form with literal

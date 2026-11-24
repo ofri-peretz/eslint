@@ -24,6 +24,7 @@
  * @see https://nodejs.org/api/zlib.html#class-options
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { findVariable } from '../../utils/provenance';
 import {
   AST_NODE_TYPES,
   createRule,
@@ -37,6 +38,12 @@ import {
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unboundedDecompression';
+
+/**
+ * AEAD ciphers whose `final()` throws unless the tag verifies: what comes out
+ * was produced by someone holding the key.
+ */
+const AEAD_ALGORITHM = /-(gcm|ccm|ocb)$|^chacha20-poly1305$/i;
 
 export interface Options {
   /** Allow unbounded decompression in test files. Default: false */
@@ -230,6 +237,128 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    /** Every value this binding is ever assigned, or null if any is unseen. */
+    function writesOf(identifier: TSESTree.Identifier): TSESTree.Node[] | null {
+      const variable = findVariable(context.sourceCode, identifier);
+      if (variable === null || variable.defs[0]?.type !== 'Variable') {
+        return null;
+      }
+      const writes = variable.references
+        .filter((ref) => ref.isWrite())
+        .map((ref) => ref.writeExpr);
+      return writes.length > 0 && writes.every((w) => w != null)
+        ? (writes as TSESTree.Node[])
+        : null;
+    }
+
+    /**
+     * `createDecipheriv('aes-256-gcm', …)` from node:crypto, with its tag set
+     * through `setAuthTag` somewhere in the file.
+     */
+    function isAuthenticatingDecipher(
+      identifier: TSESTree.Identifier,
+    ): boolean {
+      const writes = writesOf(identifier);
+      if (writes === null || writes.length !== 1) return false;
+      const [init] = writes;
+      if (init.type !== AST_NODE_TYPES.CallExpression) return false;
+      const binding = resolveModuleBinding(
+        init.callee,
+        context.sourceCode.getScope(init),
+      );
+      const algorithm = init.arguments[0] && staticString(init.arguments[0]);
+      if (
+        binding?.module !== 'crypto' ||
+        binding.path.join('.') !== 'createDecipheriv' ||
+        !algorithm ||
+        !AEAD_ALGORITHM.test(algorithm)
+      ) {
+        return false;
+      }
+      return findVariable(context.sourceCode, identifier)!.references.some(
+        (ref) => {
+          const member = ref.identifier.parent;
+          return (
+            member.type === AST_NODE_TYPES.MemberExpression &&
+            member.object === ref.identifier &&
+            propertyName(member) === 'setAuthTag' &&
+            member.parent.type === AST_NODE_TYPES.CallExpression
+          );
+        },
+      );
+    }
+
+    /** `decipher.update(…)` or `decipher.final()` on an authenticating decipher. */
+    function decipherStep(node: TSESTree.Node): 'update' | 'final' | null {
+      if (
+        node.type !== AST_NODE_TYPES.CallExpression ||
+        node.callee.type !== AST_NODE_TYPES.MemberExpression ||
+        node.callee.object.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return null;
+      }
+      const step = propertyName(node.callee);
+      if (step !== 'update' && step !== 'final') return null;
+      return isAuthenticatingDecipher(node.callee.object) ? step : null;
+    }
+
+    /**
+     * Was this payload produced by an AEAD decipher whose `final()` ran?
+     *
+     * nestjs/workflows' `AesGcmPayloadCodec` inflates a payload only after
+     * `Buffer.concat([decipher.update(…), decipher.final()])` on an
+     * `aes-256-gcm` decipher with its tag set. `final()` throws unless the tag
+     * verifies, so a bomb has to be sealed with the codec's key: whoever can
+     * do that already writes the payloads. Followed through `const`/`let`
+     * bindings (every write must qualify) and `.subarray()` / `.slice()`.
+     */
+    function isAuthenticatedPlaintext(node: TSESTree.Node, depth = 0): boolean {
+      if (depth > 8) return false;
+      if (node.type === AST_NODE_TYPES.Identifier) {
+        const writes = writesOf(node);
+        return (
+          writes !== null &&
+          writes.every((write) => isAuthenticatedPlaintext(write, depth + 1))
+        );
+      }
+      if (node.type !== AST_NODE_TYPES.CallExpression) return false;
+      const callee = node.callee;
+      if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+      const method = propertyName(callee);
+      if (method === 'subarray' || method === 'slice') {
+        return isAuthenticatedPlaintext(callee.object, depth + 1);
+      }
+      // `Buffer.concat([d.update(x), d.final()])`: every part is a step of
+      // the decipher, and `final()` is one of them.
+      const array = node.arguments[0];
+      if (
+        method !== 'concat' ||
+        callee.object.type !== AST_NODE_TYPES.Identifier ||
+        callee.object.name !== 'Buffer' ||
+        array?.type !== AST_NODE_TYPES.ArrayExpression
+      ) {
+        return false;
+      }
+      const steps = array.elements.map((element) =>
+        element === null ? null : decipherStep(element),
+      );
+      if (!steps.every((step) => step !== null) || !steps.includes('final')) {
+        return false;
+      }
+      // One decipher: a `final()` on another one authenticates nothing here.
+      const receivers = new Set(
+        array.elements.map((element) =>
+          context.sourceCode.getText(
+            (
+              (element as TSESTree.CallExpression)
+                .callee as TSESTree.MemberExpression
+            ).object,
+          ),
+        ),
+      );
+      return receivers.size === 1;
+    }
+
     /**
      * Read the output ceiling off an options literal. `unknown` means a spread
      * could be carrying the cap — reporting that would be a guess, and the
@@ -258,6 +387,7 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
       const payload = args[0];
       if (payload === undefined) return;
       if (isLiteralPayload(payload)) return;
+      if (isAuthenticatedPlaintext(payload)) return;
 
       // Async form is `(buffer[, options], callback)`: with two arguments the
       // second is the callback. Otherwise zlib reads the second argument as

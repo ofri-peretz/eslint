@@ -226,6 +226,13 @@ const COUNT_NAMES: ReadonlySet<string> = new Set([
   'bytelength',
 ]);
 
+/** Declared types whose `.length` is the size of bytes already held. */
+const BYTE_TYPES: ReadonlySet<string> = new Set([
+  'Buffer',
+  'Uint8Array',
+  'ArrayBuffer',
+]);
+
 /** `Buffer.alloc` / `Buffer.allocUnsafe` / `Buffer.allocUnsafeSlow`. */
 const BUFFER_ALLOCATORS: ReadonlySet<string> = new Set([
   'alloc',
@@ -721,6 +728,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
           // parameter. The name arm stays for the wire-decoder vocabulary it
           // was actually built for.
           if (readsRequestShape(node, sourceCode)) return true;
+          if (isSizeOfBytesInMemory(node)) return false;
           return readsWire(node.object, seen);
         // `new URL(req.url, base)` is a request that has been through a
         // constructor; the searchParams read off it are still the peer's.
@@ -744,6 +752,44 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         default:
           return false;
       }
+    }
+
+    /**
+     * `.length` / `.byteLength` of a value DECLARED as bytes or text is the
+     * size of something already in memory, not a number the peer wrote.
+     *
+     * nestjs/mail's `toSmtpData(message: Buffer)` allocates
+     * `message.length * 2 + 5` for dot-stuffing: at most twice what already
+     * arrived, where the hazard here is a 12-byte length prefix that commits
+     * 229MB. The name `message` decided it. The declared type is required
+     * because an untyped `msg` may be `JSON.parse(data)`, and `msg.length` on
+     * that is whatever number the peer put in the field.
+     */
+    function isSizeOfBytesInMemory(node: TSESTree.MemberExpression): boolean {
+      if (
+        node.computed ||
+        node.object.type !== AST_NODE_TYPES.Identifier ||
+        !['length', 'byteLength'].includes(
+          (node.property as TSESTree.Identifier).name,
+        )
+      ) {
+        return false;
+      }
+      const defs = findVariable(sourceCode, node.object)?.defs ?? [];
+      return (
+        defs.length > 0 &&
+        defs.every((def) => {
+          // A def's name is always the bound Identifier, destructured or not.
+          const annotation = (def.name as TSESTree.Identifier).typeAnnotation
+            ?.typeAnnotation;
+          return (
+            annotation?.type === AST_NODE_TYPES.TSStringKeyword ||
+            (annotation?.type === AST_NODE_TYPES.TSTypeReference &&
+              annotation.typeName.type === AST_NODE_TYPES.Identifier &&
+              BYTE_TYPES.has(annotation.typeName.name))
+          );
+        })
+      );
     }
 
     /** The nearest enclosing function node, or null at module scope. */

@@ -36,7 +36,10 @@ describe('no-unbounded-decompression', () => {
       },
       { code: `${REQUIRE}zlib.gunzipSync(body, { 'maxOutputLength': 1024 });` },
       // Options this rule cannot read may already carry the cap.
-      { code: `${REQUIRE}zlib.gunzip(body, opts, cb);` },
+      {
+        name: 'options the rule cannot read may already carry the cap',
+        code: `${REQUIRE}zlib.gunzip(body, opts, cb);`,
+      },
       { code: `${REQUIRE}zlib.gunzipSync(body, { ...defaults });` },
       { code: `${REQUIRE}zlib.gunzipSync(body, a, b);` },
       // Compression, not decompression — no bomb to absorb.

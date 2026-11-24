@@ -44,6 +44,7 @@ describe('no-sensitive-data-exposure', () => {
           code: `logger.error('Operation failed');`,
         },
         {
+          name: 'a debug log of a fixed message exposes nothing',
           code: `logger.debug('Processing started');`,
         },
         // Errors without sensitive data

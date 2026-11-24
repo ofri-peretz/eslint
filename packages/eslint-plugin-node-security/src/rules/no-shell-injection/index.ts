@@ -142,6 +142,73 @@ function hasTruthyShellOption(node: TSESTree.CallExpression): boolean {
   return false;
 }
 
+/**
+ * A part of a built command that can only be a number, so it cannot carry a
+ * shell metacharacter.
+ *
+ * nest-cli's tree-kill runs `execSync('taskkill /pid ' + pid + ' /T /F')` with
+ * `pid: number`. A number interpolates as digits (or `NaN`/`Infinity`), so the
+ * command has no injectable part, but the rule only cleared literals and
+ * reported it. The evidence is the declared type (`: number`), a numeric
+ * coercion (`Number(x)`, `parseInt(x)`, `+x`), or a numeric literal. A wider
+ * type, a union with `string`, or no annotation still reports.
+ *
+ * @protocol-constant JavaScript's own global numeric coercion functions. The set
+ *   is fixed by the language, not by a naming habit, so no option needs to
+ *   extend it.
+ */
+const NUMERIC_COERCIONS = new Set(['Number', 'parseInt', 'parseFloat']);
+
+function isNumberAnnotated(id: TSESTree.Node): boolean {
+  return (
+    id.type === AST_NODE_TYPES.Identifier &&
+    id.typeAnnotation?.typeAnnotation.type === AST_NODE_TYPES.TSNumberKeyword
+  );
+}
+
+function makeIsNumericValued(
+  sourceCode: TSESLint.SourceCode,
+): (node: TSESTree.Node) => boolean {
+  return (node) => {
+    switch (node.type) {
+      case AST_NODE_TYPES.UnaryExpression:
+        return node.operator === '+' || node.operator === '-';
+      case AST_NODE_TYPES.CallExpression: {
+        const callee = node.callee;
+        if (callee.type === AST_NODE_TYPES.Identifier) {
+          if (!NUMERIC_COERCIONS.has(callee.name)) return false;
+          // A local function named `Number` is not the global.
+          const ref = sourceCode
+            .getScope(node)
+            .references.find((r) => r.identifier === callee);
+          return !ref?.resolved || ref.resolved.defs.length === 0;
+        }
+        return (
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          !callee.computed &&
+          callee.object.type === AST_NODE_TYPES.Identifier &&
+          callee.object.name === 'Number' &&
+          propertyName(callee) !== null &&
+          NUMERIC_COERCIONS.has(propertyName(callee) as string)
+        );
+      }
+      case AST_NODE_TYPES.Identifier: {
+        const ref = sourceCode
+          .getScope(node)
+          .references.find((r) => r.identifier === node);
+        const defs = ref?.resolved?.defs;
+        return (
+          !!defs &&
+          defs.length > 0 &&
+          defs.every((def) => isNumberAnnotated(def.name))
+        );
+      }
+      default:
+        return false;
+    }
+  };
+}
+
 function isStringConcatOrTemplate(node: TSESTree.Node): boolean {
   // A template with no expressions is let through too: `isLiteralConstant`
   // folds it to a literal and clears it.
@@ -211,11 +278,13 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
     currentOptions,
   ) {
     let isLiteralConstant: (node: TSESTree.Node) => boolean;
+    let isNumericValued: (node: TSESTree.Node) => boolean;
     let requireModuleEvidence: boolean;
     return {
       before() {
         const [options = {}] = currentOptions();
         isLiteralConstant = makeIsLiteralConstant(context.sourceCode);
+        isNumericValued = makeIsNumericValued(context.sourceCode);
         ({ requireModuleEvidence = true } = options);
       },
       CallExpression(node: TSESTree.CallExpression) {
@@ -261,12 +330,26 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
           (SHELL_OPTION_FUNCTIONS.has(fnName) && hasTruthyShellOption(node));
         if (!runsAShell) return;
 
-        /** A built string whose parts do not all fold to literals here. */
+        /**
+         * Every part folds to a literal written in this file, or can only be a
+         * number: there is nothing for an attacker to supply.
+         */
+        const isSafePart = (part: TSESTree.Node): boolean => {
+          if (isLiteralConstant(part) || isNumericValued(part)) return true;
+          if (part.type === AST_NODE_TYPES.TemplateLiteral) {
+            return part.expressions.every(isSafePart);
+          }
+          return (
+            part.type === AST_NODE_TYPES.BinaryExpression &&
+            part.operator === '+' &&
+            isSafePart(part.left) &&
+            isSafePart(part.right)
+          );
+        };
+
+        /** A built string whose parts are not all literal or numeric. */
         const isInjectable = (arg: TSESTree.Node): boolean =>
-          isStringConcatOrTemplate(arg) &&
-          // Every interpolated part folds to a literal written in this file:
-          // there is nothing for an attacker to supply. See the header note.
-          !isLiteralConstant(arg);
+          isStringConcatOrTemplate(arg) && !isSafePart(arg);
 
         const firstArg = node.arguments[0];
         if (firstArg && isInjectable(firstArg)) {
