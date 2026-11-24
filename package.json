@@ -294,7 +294,8 @@
     "nestjs:releases": "tsx scripts/nestjs-release-watch.mts",
     "fidelity": "node benchmarks/suites/fidelity/run.cjs",
     "lint:dogfood": "eslint --config eslint.dogfood.config.mjs \"packages/*/src/**/*.ts\"",
-    "lint:guidance": "eslint --config eslint.guidance.config.mjs --no-warn-ignored --max-warnings 0 ."
+    "lint:guidance": "eslint --config eslint.guidance.config.mjs --no-warn-ignored --max-warnings 0 .",
+    "lint:truepass": "eslint --config eslint.config.mjs --no-warn-ignored --max-warnings 0 --report-unused-disable-directives-severity off --rule 'local/require-vitest-watch-false: off' '**/*.{test,spec}.{ts,tsx,mts,cts,js,jsx,mjs,cjs}' '**/vitest.config.{ts,mts,js}' '**/vitest.*.config.{ts,mts}' '**/playwright.config.ts'"
   },
   "keywords": [
     "eslint",
@@ -409,6 +410,7 @@
     "sqlite3": "^6.0.1",
     "storybook": "^10.6.3",
     "triggerlist": "^0.3.0",
+    "truepass": "^1.0.0",
     "turbo": "^2.9.8",
     "typeorm": "^1.1.2",
     "typescript": "^6.0.3",
