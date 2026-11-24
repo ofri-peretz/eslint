@@ -21,6 +21,7 @@ import {
   unwrapTypeSyntax,
   propertyName,
   staticString,
+  valueFollow,
 } from '@interlace/eslint-devkit';
 import {
   bindingInit,
@@ -903,11 +904,25 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
 
     /** The same question, allowing one hop through a binding. */
     function isCryptoSecret(node: TSESTree.Node): boolean {
-      if (isCryptoDerivation(node)) return true;
       const bare = unwrapTypeSyntax(node);
-      if (bare.type !== AST_NODE_TYPES.Identifier) return false;
-      const init = bindingInit(sourceCode, bare);
-      return init !== undefined && containsCryptoDerivation(init);
+      const init =
+        bare.type === AST_NODE_TYPES.Identifier
+          ? bindingInit(sourceCode, bare)
+          : node;
+      if (init === undefined) return false;
+      const unkeyed = unkeyedDigestInputs(unwrapTypeSyntax(init));
+      if (unkeyed !== null) return hashesHiddenInput(unkeyed);
+      return init === node
+        ? isCryptoDerivation(node)
+        : containsCryptoDerivation(init);
+    }
+
+    /**
+     * Whether a plain digest hides anything: some input the caller does not
+     * supply. A digest of the request alone is one the caller computes too.
+     */
+    function hashesHiddenInput(inputs: TSESTree.Node[]): boolean {
+      return inputs.some((input) => !readsUntrusted(input));
     }
 
     /**
@@ -928,6 +943,32 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         );
       }
       return false;
+    }
+
+    /**
+     * The inputs of an unkeyed digest chain —
+     * `createHash('sha256').update(a).update(b).digest('hex')` gives `[a, b]` —
+     * or `null` when the node is not one. `createHash` is the only derivation
+     * in {@link CRYPTO_DERIVATIONS} that takes no secret, so it is the only one
+     * whose output an attacker can reproduce.
+     */
+    function unkeyedDigestInputs(node: TSESTree.Node): TSESTree.Node[] | null {
+      const inputs: TSESTree.Node[] = [];
+      let current: TSESTree.Node = node;
+      while (
+        current.type === AST_NODE_TYPES.CallExpression &&
+        current.callee.type === AST_NODE_TYPES.MemberExpression
+      ) {
+        if (propertyName(current.callee) === 'update') {
+          inputs.push(...current.arguments);
+        }
+        current = current.callee.object;
+      }
+      return current.type === AST_NODE_TYPES.CallExpression &&
+        current.callee.type === AST_NODE_TYPES.Identifier &&
+        current.callee.name === 'createHash'
+        ? inputs
+        : null;
     }
 
     /** Is this identifier bound by an `import` or a `require(...)` call? */
@@ -1310,6 +1351,13 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         return isServerDerived(assignedValue(node), visited);
       }
       if (node.type === AST_NODE_TYPES.AwaitExpression) return true;
+      const unkeyed = unkeyedDigestInputs(node);
+      // A plain digest takes no key: the caller can compute it from what they
+      // sent. Unleash `edge-hmac-verifier.ts:58` compares the SHA-256 of the
+      // request body with the `content-sha256` header the client sent — its
+      // own input against its own input. It crossed a boundary only if
+      // something it hashed did.
+      if (unkeyed !== null) return hashesHiddenInput(unkeyed);
       if (containsCryptoDerivation(node)) return true;
       if (node.type === AST_NODE_TYPES.MemberExpression) {
         // No `process.env` arm here on purpose: this function is only ever
@@ -1380,7 +1428,33 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     function isResolvedConstant(node: TSESTree.Node): boolean {
       if (isSourceConstant(node)) return true;
       if (node.type !== AST_NODE_TYPES.Identifier) return false;
-      return constLiteralOf(sourceCode, node) !== undefined;
+      if (constLiteralOf(sourceCode, node) !== undefined) return true;
+      return isImportedConstant(node);
+    }
+
+    /**
+     * An imported name that is a literal where it is written:
+     *
+     * ```js
+     * // events/index.js
+     * export const API_TOKEN_DELETED = 'api-token-deleted';
+     * // api-token-service.js
+     * if (event.type === API_TOKEN_DELETED) { … }
+     * ```
+     *
+     * Unleash `api-token-v2-service.ts:289` was reported because the event
+     * name contains `token`. The binding is followed across relative imports
+     * and read where it is declared; a value written there as anything but a
+     * literal (`process.env.API_KEY`, a call) is not a constant and stays
+     * reportable. A package or a path alias is out of reach and is judged as
+     * before.
+     */
+    function isImportedConstant(node: TSESTree.Identifier): boolean {
+      if (!isImportedBinding(node)) return false;
+      const landed = valueFollow.follow(
+        valueFollow.valueAt(node, valueFollow.envOf(context)),
+      );
+      return landed.env.module !== null && isSourceConstant(landed.node);
     }
 
     /** The function a callee identifier resolves to, if it is a local one. */
