@@ -57,8 +57,10 @@ export class SampleDto {
 ```
 
 So check every DTO the pipe reaches before you flip the flag, and give each field
-the rule it needs (`@IsString()`, `@IsOptional()`, or `@Allow()` for a field you
-accept as-is). Found on NestJS's own samples: three of the ten this rule flags
+the rule it needs: `@IsString()` and the like, `@IsOptional()` together with a value
+check (on its own it keeps the field but validates nothing), or `@Allow()` for a
+field you accept as-is. If the pipe sets `groups`, a decorator only counts when its
+group matches or it has `always: true`; otherwise the field is stripped anyway. Found on NestJS's own samples: three of the ten this rule flags
 would lose request fields if `whitelist: true` were added without that step.
 
 Measured on five real NestJS applications, three used a bare `new ValidationPipe()`.

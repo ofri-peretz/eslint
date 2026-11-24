@@ -18,6 +18,10 @@ describe('require-validation-pipe-whitelist message', () => {
     expect(message).toMatch(/@Allow\(\)/);
   });
 
+  it('warns that a pipe with groups strips fields whose decorators miss the group', () => {
+    expect(message).toMatch(/always: true/);
+  });
+
   it('does not claim only undeclared properties are stripped', () => {
     expect(message).not.toMatch(/never declared/);
   });
