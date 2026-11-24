@@ -759,9 +759,17 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         ) {
           return false;
         }
+        // The buffer must reach this comparison untouched: any read of it
+        // before here could have changed its bytes (`decoded.set(other)`) or
+        // handed it to code that does.
+        const usedBefore = variableOf(callee.object)?.references.some(
+          (ref) => !ref.isWrite() && ref.identifier.range[0] < call.range[0],
+        );
         return (
+          usedBefore === false &&
           sourceCode.getText(init.arguments[0]) ===
-            sourceCode.getText(original) && isStableValue(original)
+            sourceCode.getText(original) &&
+          isStableValue(original)
         );
       };
 

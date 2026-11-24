@@ -224,6 +224,21 @@ ruleTester.run('re-encode and re-read edges', noInsecureComparison, {
       ),
     },
     {
+      name: 'a buffer changed before the re-encoding still reports',
+      ...timing(
+        `
+        function verify(presented, expectedSignature) {
+          const signature = Buffer.from(presented, 'utf8');
+          signature.set(Buffer.from(expectedSignature, 'utf8'));
+          return signature.toString('utf8') === presented;
+        }
+      `,
+        "signature.toString('utf8')",
+        '===',
+        'presented',
+      ),
+    },
+    {
       name: 'a lookup and a trim are not a re-encoding',
       ...timing(
         `
