@@ -1,0 +1,65 @@
+---
+title: forbid-foreign-prop-types
+description: "Disallow using another component's propTypes"
+tags: ['quality', 'react']
+category: quality
+autofix: none
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+`Foo.propTypes` is not safe to read from another component: production builds that strip `propTypes` leave `undefined` behind. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and follows [`eslint-plugin-react/forbid-foreign-prop-types`](https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/forbid-foreign-prop-types.md) in behaviour and options. Its upstream test cases (eslint-plugin-react 7.37.5, MIT) run against it: 38 of 38 agree.
+
+## Quick Summary
+
+| Aspect         | Details                                 |
+| -------------- | --------------------------------------- |
+| **Severity**   | Warning (best practice)                 |
+| **Auto-Fix**   | ❌ No auto-fix                          |
+| **Category**   | React                                   |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For**   | Projects that still use prop-types      |
+
+## Rule Details
+
+The rule reports a read of `.propTypes` (also `['propTypes']`) and a destructured `propTypes` key (`const { propTypes } = Foo`). Writing a component's own `Foo.propTypes = {...}` is fine.
+
+## Examples
+
+### ❌ Incorrect
+
+```jsx
+var propTypes = Foo.propTypes;
+
+var { propTypes } = SomeComponent;
+
+var foo = { propTypes: SomeComponent.propTypes };
+
+Bar.propTypes = Foo.propTypes;
+```
+
+### ✅ Correct
+
+```jsx
+Foo.propTypes = { a: PropTypes.string };
+
+var sharedShape = { a: PropTypes.string };
+```
+
+## Options
+
+| Option             | Type      | Default | Description                                                                                                                                      |
+| ------------------ | --------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `allowInPropTypes` | `boolean` | `false` | Allow the read when it sits inside a `X.propTypes = {...}` assignment or a `static propTypes = {...}` class field (shape reuse in a declaration) |
+
+```js
+'react/forbid-foreign-prop-types': ['error', { allowInPropTypes: true }]
+```
+
+## When Not To Use It
+
+When production builds keep `propTypes`, or the project has no `propTypes` at all.

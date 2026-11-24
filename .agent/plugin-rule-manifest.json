@@ -2151,6 +2151,21 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in"
+    },
+    "style-prop-object": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "jsx-pascal-case": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "forbid-foreign-prop-types": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
     }
   },
   "eslint-plugin-reliability": {

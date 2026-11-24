@@ -10,6 +10,7 @@
 
 import type { TSESLint } from '@interlace/eslint-devkit';
 import { withCanonicalDocsUrls } from '@interlace/eslint-devkit';
+import { isInstalledAsReact } from './utils/alias-install';
 
 // React rules
 import { requiredAttributes } from './rules/react/required-attributes';
@@ -66,6 +67,11 @@ import { jsxNoCommentTextnodes } from './rules/react/jsx-no-comment-textnodes';
 import { jsxNoUndef } from './rules/react/jsx-no-undef';
 import { jsxUsesReact } from './rules/react/jsx-uses-react';
 import { jsxUsesVars } from './rules/react/jsx-uses-vars';
+
+// Style and naming rules (eslint-plugin-react's react-app set)
+import { stylePropObject } from './rules/react/style-prop-object';
+import { jsxPascalCase } from './rules/react/jsx-pascal-case';
+import { forbidForeignPropTypes } from './rules/react/forbid-foreign-prop-types';
 
 // Deprecated API rules
 import { noFindDomNode } from './rules/react/no-find-dom-node';
@@ -144,6 +150,11 @@ export const rules = {
   'jsx-no-undef': jsxNoUndef,
   'jsx-uses-react': jsxUsesReact,
   'jsx-uses-vars': jsxUsesVars,
+
+  // Style and naming rules
+  'style-prop-object': stylePropObject,
+  'jsx-pascal-case': jsxPascalCase,
+  'forbid-foreign-prop-types': forbidForeignPropTypes,
   
   // Deprecated API rules
   'no-find-dom-node': noFindDomNode,
@@ -218,6 +229,11 @@ export const rules = {
   'react/jsx-no-undef': jsxNoUndef,
   'react/jsx-uses-react': jsxUsesReact,
   'react/jsx-uses-vars': jsxUsesVars,
+
+  // Style and naming rules (categorized)
+  'react/style-prop-object': stylePropObject,
+  'react/jsx-pascal-case': jsxPascalCase,
+  'react/forbid-foreign-prop-types': forbidForeignPropTypes,
 
   // Deprecated API rules (categorized)
   'react/no-find-dom-node': noFindDomNode,
@@ -410,6 +426,11 @@ const aliasPlugins = ['react'];
 
 /** Legacy-shaped, as in eslint-plugin-react: `.rules` is what callers spread. */
 const aliasLegacy = {
+  recommended: {
+    plugins: aliasPlugins,
+    parserOptions: jsxParserOptions,
+    rules: aliasRecommendedRules,
+  },
   all: {
     plugins: aliasPlugins,
     parserOptions: jsxParserOptions,
@@ -425,8 +446,8 @@ const aliasLegacy = {
 const aliasFlat = {
   recommended: {
     plugins: { react: plugin },
-    rules: aliasRecommendedRules,
-    languageOptions: { parserOptions: jsxParserOptions },
+    rules: aliasLegacy.recommended.rules,
+    languageOptions: { parserOptions: aliasLegacy.recommended.parserOptions },
   },
   all: {
     plugins: { react: plugin },
@@ -440,7 +461,24 @@ const aliasFlat = {
   },
 };
 
-const enumerableConfigs = { ...nativeConfigs };
+/**
+ * Installed as `eslint-plugin-react` (an npm alias), `configs.recommended` is
+ * eslint-plugin-react's: legacy-shaped, `react/<rule>` ids. That is what
+ * `plugin:react/recommended` through `FlatCompat` and a spread of
+ * `react.configs.recommended.rules` read, and a `react-features/` key under a
+ * plugin registered as `react` fails at config load. Under its own name the
+ * package keeps its own `react-features/` preset. Either way both are reachable
+ * by name: `configs['react-recommended']` is the upstream shape and
+ * `configs['react-features-recommended']` the native one.
+ */
+const installedAsReact = isInstalledAsReact(__dirname);
+
+const enumerableConfigs = {
+  ...nativeConfigs,
+  ...(installedAsReact
+    ? { recommended: aliasLegacy.recommended as unknown as typeof nativeConfigs.recommended }
+    : {}),
+};
 
 /**
  * `all`, `jsx-runtime` and `flat` are non-enumerable on purpose: they carry
@@ -451,10 +489,17 @@ const enumerableConfigs = { ...nativeConfigs };
  * The alias test loads each of them through ESLint instead.
  */
 export const configs = Object.defineProperties(enumerableConfigs, {
+  'react-recommended': { value: aliasLegacy.recommended },
+  'react-features-recommended': { value: nativeConfigs.recommended },
   all: { value: aliasLegacy.all },
   'jsx-runtime': { value: aliasLegacy['jsx-runtime'] },
   flat: { value: aliasFlat },
-}) as typeof enumerableConfigs & typeof aliasLegacy & { flat: typeof aliasFlat };
+}) as typeof enumerableConfigs &
+  Omit<typeof aliasLegacy, 'recommended'> &
+  Record<'react-recommended', typeof aliasLegacy.recommended> &
+  Record<'react-features-recommended', typeof nativeConfigs.recommended> & {
+    flat: typeof aliasFlat;
+  };
 
 // eslint-plugin-react exposes its presets on the plugin object (`react.configs.flat.recommended`).
 // Not part of the declared type: `configs.flat` is a dictionary, which ESLint's
