@@ -97,7 +97,8 @@ describe('no-hardcoded-credentials', () => {
           code: 'const key = "short";',
         },
         {
-          code: 'const pass = "1234567";', // 7 chars, below default minLength of 8
+          name: 'a 7-character value is below the default minLength of 8',
+          code: 'const pass = "1234567";',
         },
         // Non-credential strings
         {
@@ -105,6 +106,7 @@ describe('no-hardcoded-credentials', () => {
           code: 'const message = "Hello, world!";',
         },
         {
+          name: 'a URL is not a secret',
           code: 'const url = "https://example.com/api";',
         },
         // Ignored patterns
