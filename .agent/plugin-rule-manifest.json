@@ -1633,6 +1633,11 @@
     }
   },
   "eslint-plugin-react-a11y": {
+    "accessible-emoji": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
     "anchor-ambiguous-text": {
       "environment": "universal",
       "detection": "structural-pattern",
@@ -1687,6 +1692,11 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "enforcement"
+    },
+    "label-has-for": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
     },
     "mouse-events-have-key-events": {
       "environment": "universal",
@@ -1749,6 +1759,11 @@
       "confidence": "review-prompt"
     },
     "no-noninteractive-tabindex": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-onchange": {
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "review-prompt"

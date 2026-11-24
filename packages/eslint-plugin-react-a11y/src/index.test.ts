@@ -19,7 +19,11 @@ describe('eslint-plugin-react-a11y plugin interface', () => {
     expect(ruleKeys).toContain('anchor-has-content');
     expect(ruleKeys).toContain('aria-props');
     
-    expect(ruleKeys.length).toBe(37);
+    // 37 rules of ours, plus the three deprecated jsx-a11y no-ops.
+    expect(ruleKeys.length).toBe(40);
+    expect(ruleKeys).toContain('accessible-emoji');
+    expect(ruleKeys).toContain('label-has-for');
+    expect(ruleKeys).toContain('no-onchange');
   });
 
   describe('configurations', () => {
@@ -45,7 +49,10 @@ describe('eslint-plugin-react-a11y plugin interface', () => {
       });
       
       expect(strictRules['react-a11y/alt-text']).toBe('error');
-      expect(Object.keys(strictRules).length).toBe(Object.keys(rules).length);
+      // Every rule but the three deprecated no-ops (see deprecated-stubs.test.ts).
+      expect(Object.keys(strictRules).length).toBe(
+        Object.keys(rules).length - 3,
+      );
     });
 
     it.each(['flagship', 'recommended', 'strict', 'wcag-a', 'wcag-aa'])(
