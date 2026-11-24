@@ -3794,6 +3794,7 @@
       "no-unscoped-mutation"
     ],
     "react-a11y": [
+      "accessible-emoji",
       "alt-text",
       "anchor-ambiguous-text",
       "anchor-has-content",
@@ -3811,6 +3812,7 @@
       "img-redundant-alt",
       "interactive-supports-focus",
       "label-has-associated-control",
+      "label-has-for",
       "lang",
       "media-has-caption",
       "mouse-events-have-key-events",
@@ -3824,6 +3826,7 @@
       "no-noninteractive-element-interactions",
       "no-noninteractive-element-to-interactive-role",
       "no-noninteractive-tabindex",
+      "no-onchange",
       "no-redundant-roles",
       "no-static-element-interactions",
       "prefer-tag-over-role",
