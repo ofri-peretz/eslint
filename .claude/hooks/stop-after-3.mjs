@@ -87,11 +87,12 @@ export function record(session, command, failed) {
   return { continue: false, stopReason: reason, systemMessage: reason };
 }
 
+/** True for a failed run, false for a pass, null for an interrupted run (it says nothing either way). */
 function failedResponse(payload) {
   if (payload.hook_event_name === "PostToolUseFailure") return true;
   const r = payload.tool_response;
   if (!r || typeof r !== "object") return false;
-  if (r.interrupted === true) return false;
+  if (r.interrupted === true) return null;
   const code = r.exitCode ?? r.exit_code ?? r.returnCode ?? r.code;
   return typeof code === "number" ? code !== 0 : r.is_error === true || r.isError === true;
 }
@@ -148,7 +149,10 @@ else if (isMain) {
     }
     const command = payload.tool_input?.command;
     if (typeof command !== "string") process.exit(0);
-    const out = record(payload.session_id, command, failedResponse(payload));
+    const failed = failedResponse(payload);
+    // An interrupted run neither fails nor passes: it leaves the count where it was.
+    if (failed === null) process.exit(0);
+    const out = record(payload.session_id, command, failed);
     if (out) process.stdout.write(JSON.stringify(out));
   });
 }

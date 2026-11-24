@@ -22,6 +22,8 @@
 // Reads the PreToolUse payload on stdin. Prints a deny or ask decision, or nothing (no opinion).
 // `node guard-bash.mjs --self-test` runs the cases at the bottom.
 
+import { posix } from "node:path";
+
 const SEPARATORS = new Set([";", "&", "|", "\n", "(", ")"]);
 
 /** Drop heredoc bodies: everything after a `<<WORD` line until the line that is WORD. */
@@ -161,6 +163,25 @@ function hasPhrase(words, phrase) {
 
 export const PUBLISH = ["npm publish", "pnpm publish", "yarn npm publish", "changeset publish"];
 
+/**
+ * True when `words` runs `npm` or `pnpm` with `publish` as its subcommand after global options:
+ * `npm --access=public publish`, `npm --registry https://r publish`. An option without `=`
+ * may take the next word as its value, so that word is skipped unless it is `publish` itself.
+ */
+function publishesAfterOptions(words) {
+  for (let i = 0; i < words.length; i++) {
+    if (words[i] !== "npm" && words[i] !== "pnpm") continue;
+    let j = i + 1;
+    while (j < words.length && words[j].startsWith("-")) {
+      const valued = words[j].startsWith("--") && !words[j].includes("=");
+      j++;
+      if (valued && j < words.length && !words[j].startsWith("-") && words[j] !== "publish") j++;
+    }
+    if (words[j] === "publish") return `${words[i]} publish`;
+  }
+  return null;
+}
+
 const RULES = [
   {
     id: "no-verify",
@@ -202,7 +223,9 @@ export function decide(command, ask = []) {
   const cmds = commands(command);
   for (const r of RULES)
     if (r.test(cmds)) return { decision: "deny", id: r.id, reason: r.reason };
-  const phrase = PUBLISH.find((p) => cmds.some((w) => hasPhrase(w, p)));
+  const phrase =
+    PUBLISH.find((p) => cmds.some((w) => hasPhrase(w, p))) ??
+    cmds.map(publishesAfterOptions).find(Boolean);
   if (phrase)
     return {
       decision: "ask",
@@ -231,7 +254,8 @@ export function decideHooked(command, { timeout, run_in_background } = {}) {
   if (run_in_background === true || (Number(timeout) || 0) >= HOOKED_MIN_TIMEOUT_MS) return null;
   const hooked = commands(command).find((w) => {
     const s = gitSub(w);
-    return s !== -1 && (w[s] === "commit" || w[s] === "push") && !w.includes("--help") && !w.includes("--dry-run");
+    // `git commit --dry-run` runs no hooks; `git push --dry-run` still runs pre-push.
+    return s !== -1 && (w[s] === "commit" ? !w.includes("--dry-run") : w[s] === "push") && !w.includes("--help");
   });
   if (!hooked) return null;
   const sub = hooked[gitSub(hooked)];
@@ -262,7 +286,8 @@ export function globToRegExp(glob) {
 
 /** The verdict for an Edit/Write on `file` (relative to the repo), or null. */
 export function decideEdit(file, frozen = []) {
-  const rel = String(file ?? "").replaceAll("\\", "/").replace(/^\.\//, "");
+  // posix.normalize folds `a/../b` and `./a`, so a dotted path cannot step around a frozen glob.
+  const rel = posix.normalize(String(file ?? "").replaceAll("\\", "/")).replace(/^\.\//, "");
   const hit = frozen.find((g) => globToRegExp(g).test(rel));
   return hit
     ? {
@@ -310,7 +335,14 @@ export const CASES = {
     "git config --get core.hooksPath",
     'echo "npm publish" > notes.txt',
   ],
-  ask: ["npm publish --access public", "cd pkg && npx changeset publish", "pnpm publish"],
+  ask: [
+    "npm publish --access public",
+    "cd pkg && npx changeset publish",
+    "pnpm publish",
+    "npm --access=public publish",
+    "npm --registry https://registry.npmjs.org publish",
+    "pnpm --filter pkg publish",
+  ],
   // decideHooked: [command, Bash input, denied?]
   hooked: [
     ["git push origin main", {}, true],
@@ -318,7 +350,8 @@ export const CASES = {
     ["cd a && git push", { timeout: 299999 }, true],
     ["git push", { timeout: 600000 }, false],
     ["git commit -m x", { run_in_background: true }, false],
-    ["git push --dry-run", {}, false],
+    ["git push --dry-run", {}, true],
+    ["git commit --dry-run -m x", {}, false],
     ["git log -n 3", {}, false],
     ["git commit -F - <<'EOF'\nx\nEOF", { timeout: 300000 }, false],
     ["echo 'git push'", {}, false],
@@ -380,7 +413,7 @@ else if (isMain) {
       const file = input.file_path ?? input.notebook_path;
       if (typeof file === "string") {
         // Windows hands both paths over with backslashes: compare them with forward slashes.
-        const [f, d] = [file, config.dir].map((p) => p.replaceAll("\\", "/"));
+        const [f, d] = [file, config.dir].map((p) => posix.normalize(p.replaceAll("\\", "/")));
         const rel = f.startsWith(`${d}/`) ? f.slice(d.length + 1) : f;
         hit = decideEdit(rel, config.frozen);
       }
