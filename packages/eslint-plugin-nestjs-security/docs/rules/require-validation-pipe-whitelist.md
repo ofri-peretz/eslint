@@ -42,6 +42,22 @@ the DTO looks like it prevented it.
 rather than silently dropping it. Useful, but optional here — stripping is what
 closes the hole, so only `whitelist` is required by default.
 
+### Before you turn it on
+
+`whitelist` keeps a property only if it carries at least one class-validator
+decorator. A property the DTO declares but never decorates is stripped too:
+
+```ts
+export class SampleDto {
+  name: string; // declared, undecorated: whitelist removes it
+}
+```
+
+So check every DTO the pipe reaches before you flip the flag, and give each field
+the rule it needs (`@IsString()`, `@IsOptional()`, or `@Allow()` for a field you
+accept as-is). Found on NestJS's own samples: three of the ten this rule flags
+would lose request fields if `whitelist: true` were added without that step.
+
 Measured on five real NestJS applications, three used a bare `new ValidationPipe()`.
 The two that got it right were the most mature boilerplates in the set.
 
