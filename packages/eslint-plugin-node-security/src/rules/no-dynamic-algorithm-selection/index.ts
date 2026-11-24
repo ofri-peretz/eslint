@@ -21,6 +21,8 @@
  *   crypto.createHash('sha256')         → silent (literal, checked separately)
  *   crypto.createHash(`sha256`)         → silent (static template)
  *   crypto.createHash(algo)             → silent when `algo` folds to a literal
+ *   crypto.createHash(hashOf(alg))      → silent when the local helper returns a
+ *                                         closed union of string literals
  *
  * ## Why folding, and not just "is it a literal at the call site"
  *
@@ -76,6 +78,78 @@ const CRYPTO_ALGORITHM_FUNCTIONS = new Set([
   'createDecipheriv',
 ]);
 
+/** A string literal type, or a union made only of them: a set the author wrote down. */
+function isClosedLiteralType(type: TSESTree.TypeNode | undefined): boolean {
+  if (!type) return false;
+  if (type.type === AST_NODE_TYPES.TSLiteralType) {
+    return (
+      type.literal.type === AST_NODE_TYPES.Literal &&
+      typeof type.literal.value === 'string'
+    );
+  }
+  return (
+    type.type === AST_NODE_TYPES.TSUnionType &&
+    type.types.every((member) => isClosedLiteralType(member))
+  );
+}
+
+/** `x as 'sha256' | 'sha512'` or `x satisfies 'sha256' | 'sha512'`. */
+function isClosedLiteralCast(node: TSESTree.Node): boolean {
+  return (
+    (node.type === AST_NODE_TYPES.TSAsExpression ||
+      node.type === AST_NODE_TYPES.TSSatisfiesExpression) &&
+    isClosedLiteralType(node.typeAnnotation)
+  );
+}
+
+type FunctionNode =
+  | TSESTree.ArrowFunctionExpression
+  | TSESTree.FunctionDeclaration
+  | TSESTree.FunctionExpression;
+
+/** A function whose declared return type, or whose expression body, is a closed literal set. */
+function returnsClosedLiteral(fn: FunctionNode): boolean {
+  if (isClosedLiteralType(fn.returnType?.typeAnnotation)) return true;
+  return (
+    fn.type === AST_NODE_TYPES.ArrowFunctionExpression &&
+    fn.expression &&
+    isClosedLiteralCast(fn.body)
+  );
+}
+
+/**
+ * The same-file function a call names, when the binding can never point anywhere else:
+ * a function declaration, or a `const` initialised with a function.
+ */
+function calledLocalFunction(
+  sourceCode: Readonly<TSESLint.SourceCode>,
+  call: TSESTree.CallExpression,
+): FunctionNode | null {
+  if (call.callee.type !== AST_NODE_TYPES.Identifier) return null;
+  const name = call.callee.name;
+  let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(call);
+  while (scope) {
+    const variable = scope.set.get(name);
+    if (variable) {
+      if (variable.defs.length !== 1) return null;
+      const [def] = variable.defs;
+      if (def.node.type === AST_NODE_TYPES.FunctionDeclaration) return def.node;
+      if (
+        def.node.type === AST_NODE_TYPES.VariableDeclarator &&
+        def.parent?.type === AST_NODE_TYPES.VariableDeclaration &&
+        def.parent.kind === 'const' &&
+        (def.node.init?.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+          def.node.init?.type === AST_NODE_TYPES.FunctionExpression)
+      ) {
+        return def.node.init;
+      }
+      return null;
+    }
+    scope = scope.upper;
+  }
+  return null;
+}
+
 export const noDynamicAlgorithmSelection = createRule<[], MessageIds>({
   name: 'no-dynamic-algorithm-selection',
   meta: {
@@ -123,6 +197,14 @@ export const noDynamicAlgorithmSelection = createRule<[], MessageIds>({
       // The documented allowlist: a lookup into a const table of string
       // literals can only yield an algorithm the author wrote down.
       if (isClosedStringTableLookup(sourceCode, node)) return true;
+      // A union of string literals is the same allowlist written as a type:
+      // `name as 'sha256' | 'sha512'`, or a same-file helper whose return is
+      // one (nestjs/authentication's `hashOf(alg)`).
+      if (isClosedLiteralCast(node)) return true;
+      if (node.type === AST_NODE_TYPES.CallExpression) {
+        const fn = calledLocalFunction(sourceCode, node);
+        if (fn && returnsClosedLiteral(fn)) return true;
+      }
       return (
         node.type === AST_NODE_TYPES.Identifier &&
         parameterIsAlwaysDefault(sourceCode, node, isLiteralConstant)

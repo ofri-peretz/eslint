@@ -1190,6 +1190,20 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    /** Is the identifier this value is read from bound by an `import`? */
+    function isImportedRoot(node: TSESTree.Node): boolean {
+      const bare = unwrapChain(unwrapTypeSyntax(node));
+      const root =
+        bare.type === AST_NODE_TYPES.Identifier ? bare : memberRoot(bare);
+      if (!root) return false;
+      const variable = findVariable(sourceCode, root);
+      return (
+        variable !== null &&
+        variable.defs.length > 0 &&
+        variable.defs.every((def) => def.type === 'ImportBinding')
+      );
+    }
+
     /**
      * Is this identifier the element parameter of `receiver.find(cb)` (or
      * `filter`, `some`, `every`, `findIndex`) over a server-held receiver?
@@ -1677,6 +1691,12 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         // Only a binding written once counts, so a later write cannot make
         // the initializer a stale answer.
         readsUntrusted = (node) => {
+          // An imported binding is a module's export, never the request this
+          // handler is serving, whatever it is called. NestJS's injector
+          // compares a provider's DI token with the imported `REQUEST` token
+          // (`packages/core/injector/injector.ts:2044`), and the name alone
+          // made `REQUEST` read as the request object.
+          if (isImportedRoot(node)) return false;
           if (readsRequest(node)) return true;
           const bare = unwrapTypeSyntax(node);
           if (bare.type !== AST_NODE_TYPES.Identifier) return false;

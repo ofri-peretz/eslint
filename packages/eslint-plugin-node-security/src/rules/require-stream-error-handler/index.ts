@@ -122,6 +122,16 @@ export function constructsStream(node: TSESTree.Node): boolean {
   return name !== undefined && STREAM_CONSTRUCTORS.has(name);
 }
 
+/** Is this call's value returned from the function it is in? */
+function returnsToCaller(node: TSESTree.CallExpression): boolean {
+  const parent = node.parent;
+  if (parent?.type === AST_NODE_TYPES.ReturnStatement) return true;
+  return (
+    parent?.type === AST_NODE_TYPES.ArrowFunctionExpression &&
+    parent.body === node
+  );
+}
+
 export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
   name: 'require-stream-error-handler',
   meta: {
@@ -284,8 +294,14 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
           const destinationArg = node.arguments[0];
           // A spread destination (`src.pipe(...dests)`) is neither a call
           // nor an identifier, so unhandledStream already says null.
+          // `return src.pipe(dest)` hands `dest` to the caller: `.pipe()`
+          // returns its destination, and the caller is where the listener goes.
+          // NestJS's adapters build a checking Transform and return the pipe
+          // into it (`platform-express/adapters/express-adapter.ts:829`); the
+          // caller attaches the error handler. The SOURCE is not handed back,
+          // so it is still judged here.
           const destination =
-            destinationArg === undefined
+            destinationArg === undefined || returnsToCaller(node)
               ? null
               : unhandledStream(destinationArg);
           const offender = source ?? destination;

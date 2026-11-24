@@ -59,6 +59,7 @@ describe('no-insecure-comparison', () => {
         },
         // Ignored patterns
         {
+          name: 'a comparison matching an ignorePatterns entry is not reported',
           code: 'if (x == y) {}',
           options: [{ ignorePatterns: ['x == y'] }],
         },

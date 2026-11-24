@@ -88,6 +88,14 @@ const INTERPOLATION = '\u0001';
  * concatenation's right-hand side — which is why that path must keep using
  * the plain word match.
  */
+/**
+ * @protocol-constant The four ECMAScript keywords a configuration value is
+ * written with when it is not data: two booleans, `null` and `undefined`. They
+ * are the language's, not a vocabulary a codebase could spell differently, and
+ * none of them can be a credential.
+ */
+const OPTION_KEYWORDS = new Set(['true', 'false', 'null', 'undefined']);
+
 function literalCarriesSecret(text: string, patterns: string[]): boolean {
   const normalized = text.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
   return patterns.some((pattern) => {
@@ -145,12 +153,23 @@ function literalCarriesSecret(text: string, patterns: string[]): boolean {
     // `resumption token: ${eventId}` an event id. Whether a runtime value is a
     // secret is the value path's question (`namedValueExposure`), answered from
     // its name; the label in front of it is prose.
+    //
+    // And the value is not a boolean or null keyword. nestjs/authentication
+    // lib/jwt/jws.util.ts:209 tells the developer how to opt in:
+    // "… set `allowShortSecret: true` next to the key". That is an option name
+    // and its setting, quoted in prose; `true` is never anyone's credential.
+    const trailingValue = new RegExp(
+      `[:=]\\s*([^\\s${INTERPOLATION}]+)\\s*$`,
+    ).exec(text);
     return (
       new RegExp(
         `\\b${flexPattern}\\b[ _-]{0,2}(?:[a-z0-9]{1,12}[ _-]{0,2})?[:=][ \\t]*[^\\s${INTERPOLATION}]`,
         'i',
       ).test(normalized) &&
-      new RegExp(`[:=]\\s*[^\\s${INTERPOLATION}]+\\s*$`).test(text)
+      trailingValue !== null &&
+      !OPTION_KEYWORDS.has(
+        trailingValue[1].replace(/^[`'"]+|[`'".,;)]+$/g, '').toLowerCase(),
+      )
     );
   });
 }

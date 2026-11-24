@@ -50,6 +50,33 @@ const fileUsesAstTooling = createModuleEvidence({
   ],
 });
 
+/**
+ * Last words that make a field an identifier or a label of its record rather
+ * than its content: `userId`, `familyId`, `purpose`, `kind`, `type`, `status`,
+ * `createdAt`. Exact segments, compared against the field's last word only.
+ */
+const RECORD_METADATA_TAILS: readonly string[] = [
+  'id',
+  'ids',
+  'purpose',
+  'kind',
+  'type',
+  'status',
+  'at',
+];
+
+function isRecordMetadataField(
+  name: string,
+  tails: ReadonlySet<string>,
+): boolean {
+  const words = name
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean);
+  const last = words.at(-1)?.toLowerCase();
+  return last !== undefined && tails.has(last);
+}
+
 type MessageIds =
   | 'insecureComparison'
   | 'useStrictEquality'
@@ -82,6 +109,15 @@ export interface Options {
    * error code.
    */
   reportLooseEquality?: boolean;
+
+  /**
+   * Last words of a field name that make it an identifier or a label of its
+   * record, so `token.userId` is judged by `userId` alone and not by the
+   * container's name. Default: `RECORD_METADATA_TAILS` (`id`, `ids`,
+   * `purpose`, `kind`, `type`, `status`, `at`). Replace it when a codebase
+   * stores a secret under one of those words.
+   */
+  recordMetadataTails?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -196,6 +232,13 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             description:
               'Report `==` between non-secret operands. Turn off to keep only the secret-comparison findings and leave generic type coercion to eqeqeq.',
           },
+          recordMetadataTails: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...RECORD_METADATA_TAILS],
+            description:
+              'Last words of a field name (`userId`, `purpose`) that make it a label of its record, judged by its own name rather than its container’s.',
+          },
         },
         additionalProperties: false,
       },
@@ -219,6 +262,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
       ignorePatterns: [],
       reportLooseEquality: true,
+      recordMetadataTails: [...RECORD_METADATA_TAILS],
     },
   ],
   createOnce(
@@ -228,6 +272,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
     let allowInTests: boolean;
     let ignorePatterns: string[];
     let reportLooseEquality: boolean;
+    let metadataTails: ReadonlySet<string>;
     let isTestFile: boolean;
     let sourceCode: Readonly<TSESLint.SourceCode>;
     let isCodemodFile: boolean;
@@ -468,6 +513,19 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             out.push(n.name);
             resolveIdentifier(n);
           } else if (n.type === 'MemberExpression') {
+            // `token.userId` is the user's id, a different value from the token,
+            // as `const { kind } = token` is below. A field whose last word says
+            // it is an identifier or a label of its record is named by that
+            // field alone: nestjs/authentication compares `token.userId` and
+            // `record.userId` (a row of `this.tokens`) with a user id.
+            const fieldName = propertyName(n);
+            if (
+              fieldName !== null &&
+              isRecordMetadataField(fieldName, metadataTails)
+            ) {
+              out.push(fieldName);
+              return;
+            }
             walk(n.object);
             // `req.headers['x-api-key']` names the same property as
             // `req.headers.xApiKey`, just spelled with brackets — so both
@@ -575,6 +633,103 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
        *
        * See CLAUDE.md, "A rule decides by evidence. Never by a name."
        */
+      /** The single-write binding a name was initialised with, if any. */
+      const singleInit = (
+        identifier: TSESTree.Identifier,
+      ): TSESTree.Expression | null => {
+        for (
+          let scope: TSESLint.Scope.Scope | null = scopeAtNode;
+          scope;
+          scope = scope.upper
+        ) {
+          const variable = scope.variables.find(
+            (v) => v.name === identifier.name,
+          );
+          if (!variable) continue;
+          const writes = variable.references.filter((ref) => ref.isWrite());
+          const def = variable.defs[0];
+          if (
+            variable.defs.length !== 1 ||
+            writes.length !== 1 ||
+            def.type !== 'Variable' ||
+            def.node.id.type !== AST_NODE_TYPES.Identifier
+          ) {
+            return null;
+          }
+          return def.node.init;
+        }
+        return null;
+      };
+
+      /** The identifier a chain of reads and calls starts from. */
+      const chainRoot = (expr: TSESTree.Node): TSESTree.Identifier | null => {
+        let current: TSESTree.Node = expr;
+        for (;;) {
+          if (current.type === AST_NODE_TYPES.ChainExpression) {
+            current = current.expression;
+          } else if (current.type === AST_NODE_TYPES.MemberExpression) {
+            current = current.object;
+          } else if (current.type === AST_NODE_TYPES.CallExpression) {
+            current = current.callee;
+          } else {
+            break;
+          }
+        }
+        return current.type === AST_NODE_TYPES.Identifier ? current : null;
+      };
+
+      /** `encoded` is a call chain on a binding built from exactly `original`. */
+      const reEncodes = (
+        encoded: TSESTree.Expression,
+        original: TSESTree.Expression,
+      ): boolean => {
+        if (encoded.type !== AST_NODE_TYPES.CallExpression) return false;
+        const root = chainRoot(encoded);
+        if (!root) return false;
+        const init = singleInit(root);
+        if (init?.type !== AST_NODE_TYPES.CallExpression) return false;
+        const first = init.arguments[0];
+        return (
+          first !== undefined &&
+          sourceCode.getText(first) === sourceCode.getText(original)
+        );
+      };
+
+      /**
+       * The text of every `await <call>` this operand's value comes from, or
+       * null when any part of it comes from something else.
+       */
+      const awaitedSources = (expr: TSESTree.Node): string[] | null => {
+        const sources: string[] = [];
+        const seen = new Set<TSESTree.Node>();
+        const visit = (n: TSESTree.Node): boolean => {
+          // Already followed: its sources are recorded once.
+          if (seen.has(n)) return true;
+          seen.add(n);
+          switch (n.type) {
+            case AST_NODE_TYPES.ChainExpression:
+              return visit(n.expression);
+            case AST_NODE_TYPES.MemberExpression:
+              return !n.computed && visit(n.object);
+            case AST_NODE_TYPES.ConditionalExpression:
+              return visit(n.consequent) && visit(n.alternate);
+            case AST_NODE_TYPES.Identifier: {
+              const init = singleInit(n);
+              return init !== null && visit(init);
+            }
+            case AST_NODE_TYPES.AwaitExpression:
+              if (n.argument.type !== AST_NODE_TYPES.CallExpression) {
+                return false;
+              }
+              sources.push(sourceCode.getText(n.argument));
+              return true;
+            default:
+              return false;
+          }
+        };
+        return visit(expr) && sources.length > 0 ? sources : null;
+      };
+
       const isPotentialSecret = (expr: TSESTree.Expression): boolean =>
         namesIn(expr)
           .flatMap(nameSegments)
@@ -644,6 +799,33 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             expr.name === 'undefined');
 
         if (isNonSecretLiteral(node.left) || isNonSecretLiteral(node.right)) {
+          return;
+        }
+
+        // SKIP: one value against a re-encoding of itself. nestjs/authentication
+        // `jws.util.ts:306` decodes a JWS signature segment and checks that it
+        // re-encodes to the same text (`Buffer.from(parts[2], 'base64url')
+        // .toString('base64url') !== parts[2]`): a canonical-form check on the
+        // token the caller sent, with no second value to discover.
+        if (
+          reEncodes(node.left, node.right) ||
+          reEncodes(node.right, node.left)
+        ) {
+          return;
+        }
+
+        // SKIP: a stored value against a fresh read of the same store. The MFA
+        // service reads `await this.store.getTotp(userId)` twice and compares
+        // the secret between the reads, to notice a concurrent change. Both
+        // sides come from one store call; nothing the caller typed is on
+        // either. Only when every source on both sides is that same call.
+        const leftSources = awaitedSources(node.left);
+        const rightSources = awaitedSources(node.right);
+        if (
+          leftSources !== null &&
+          rightSources !== null &&
+          new Set([...leftSources, ...rightSources]).size === 1
+        ) {
           return;
         }
 
@@ -754,6 +936,11 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           ignorePatterns = [],
           reportLooseEquality = true,
         } = options as Options);
+        metadataTails = new Set(
+          (
+            (options as Options).recordMetadataTails ?? RECORD_METADATA_TAILS
+          ).map((word) => word.toLowerCase()),
+        );
 
         const filename = context.filename;
         isTestFile = allowInTests && isTestFilePath(filename);
