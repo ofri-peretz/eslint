@@ -271,3 +271,12 @@ pre-push:
       # Shims are generated from rule sources and the manifest.
       glob: '{packages/eslint-plugin-*/src/**,tools/oxlint-plugins/**,.agent/plugin-rule-manifest.json}'
       run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent oxlint:shims:check
+
+# provedone: a commit message must carry a `Verified-by:` receipt. Local until the hookset preset
+# takes this station over at hookset@0.4.0; delete this block then (`hookset check` flags the
+# duplicate). Merges in the remote commit-msg preset, which runs commitlint.
+commit-msg:
+  commands:
+    provedone:
+      run: npm run --silent hook:provedone -- {1}
+      fail_text: "Add a trailer: 'Verified-by: <command> -> exit 0' or 'Verified-by: none (<reason>)'"
