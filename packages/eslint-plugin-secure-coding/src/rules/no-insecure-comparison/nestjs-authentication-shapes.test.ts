@@ -196,8 +196,179 @@ ruleTester.run('re-encode and re-read edges', noInsecureComparison, {
         }
       `,
     },
+    {
+      name: 'a store re-read through optional chains and a fixed index',
+      code: `
+        async function reencrypt(store, ids, user) {
+          const record = await store.totp.get(ids[0], 'totp', user?.id);
+          const latest = await store.totp.get(ids[0], 'totp', user?.id);
+          if (latest?.secret !== record.secret) return false;
+        }
+      `,
+    },
   ],
   invalid: [
+    {
+      name: 'a value re-encoded after the original was reassigned still reports',
+      ...timing(
+        `
+        function check(presented, expectedSignature) {
+          const signature = Buffer.from(presented, 'base64url');
+          presented = expectedSignature;
+          return signature.toString('base64url') === presented;
+        }
+      `,
+        "signature.toString('base64url')",
+        '===',
+        'presented',
+      ),
+    },
+    {
+      name: 'a lookup and a trim are not a re-encoding',
+      ...timing(
+        `
+        const readSecret = (_input) => process.env.API_SECRET;
+        function check(presented) {
+          const secret = readSecret(presented);
+          return secret.trim() === presented;
+        }
+      `,
+        'secret.trim()',
+        '===',
+        'presented',
+      ),
+    },
+    {
+      name: 'a round trip through two different encodings still reports',
+      ...timing(
+        `
+        function check(signature) {
+          const decoded = Buffer.from(signature, 'base64url');
+          return decoded.toString('hex') !== signature;
+        }
+      `,
+        "decoded.toString('hex')",
+        '!==',
+        'signature',
+      ),
+    },
+    {
+      name: 'a re-encoding of a global value still reports',
+      ...timing(
+        `
+        function check() {
+          const decoded = Buffer.from(globalSignature, 'base64url');
+          return decoded.toString('base64url') !== globalSignature;
+        }
+      `,
+        "decoded.toString('base64url')",
+        '!==',
+        'globalSignature',
+      ),
+    },
+    {
+      name: 'a re-encoding of a value read with a dynamic index still reports',
+      ...timing(
+        `
+        function check(msg, i) {
+          const decoded = Buffer.from(msg.signature[i], 'base64url');
+          return decoded.toString('base64url') !== msg.signature[i];
+        }
+      `,
+        "decoded.toString('base64url')",
+        '!==',
+        'msg.signature[i]',
+      ),
+    },
+    {
+      name: 'two reads of a store with an argument reassigned between them still report',
+      ...timing(
+        `
+        async function check(store, userId, otherId) {
+          const record = await store.getTotp(userId);
+          userId = otherId;
+          const latest = await store.getTotp(userId);
+          return record.secret === latest.secret;
+        }
+      `,
+        'record.secret',
+        '===',
+        'latest.secret',
+      ),
+    },
+    {
+      name: 'two reads of a store with a computed argument still report',
+      ...timing(
+        `
+        async function check(store, userId) {
+          const record = await store.getTotp(userId + 1);
+          const latest = await store.getTotp(userId + 1);
+          if (latest?.secret !== record.secret) return false;
+        }
+      `,
+        'latest?.secret',
+        '!==',
+        'record.secret',
+      ),
+    },
+    {
+      name: 'a numeric toString is not a re-encoding',
+      ...timing(
+        `
+        function check(signature) {
+          const decoded = Buffer.from(signature, 'base64url');
+          return decoded.toString(16) !== signature;
+        }
+      `,
+        'decoded.toString(16)',
+        '!==',
+        'signature',
+      ),
+    },
+    {
+      name: 'two reads of a store picked by a dynamic key still report',
+      ...timing(
+        `
+        async function check(stores, kind, userId) {
+          const record = await stores[kind].getTotp(userId);
+          const latest = await stores[kind].getTotp(userId);
+          if (latest?.secret !== record.secret) return false;
+        }
+      `,
+        'latest?.secret',
+        '!==',
+        'record.secret',
+      ),
+    },
+    {
+      name: 'bindings that refer to each other are not followed forever',
+      ...timing(
+        `
+        async function check() {
+          const record = latest.next;
+          const latest = record.next;
+          if (latest.secret !== record.secret) return false;
+        }
+      `,
+        'latest.secret',
+        '!==',
+        'record.secret',
+      ),
+    },
+    {
+      name: 'two different fields of one awaited record still report',
+      ...timing(
+        `
+        async function check(secret, presented) {
+          const record = await Promise.resolve({ secret, presented });
+          return record.secret === record.presented;
+        }
+      `,
+        'record.secret',
+        '===',
+        'record.presented',
+      ),
+    },
     {
       name: 'an awaited value that is not a call is not a store re-read',
       ...timing(

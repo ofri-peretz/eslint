@@ -63,6 +63,16 @@ describe('no-sensitive-data-exposure — an option setting is not a secret', () 
         errors: exposure,
       },
       {
+        name: 'a keyword that belongs to a later label does not hide the password',
+        code: "console.log('password: hunter2 debug: true')",
+        errors: exposure,
+      },
+      {
+        name: 'an uppercase NULL is a value, not the null keyword',
+        code: "throw new Error('password: NULL')",
+        errors: exposure,
+      },
+      {
         name: 'a value that only starts with a keyword still reports',
         code: "throw new Error('password: true123')",
         errors: exposure,

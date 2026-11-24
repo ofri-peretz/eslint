@@ -53,8 +53,50 @@ ruleTester.run(
         const wrap = (src) => src.pipe(new PassThrough());
       `,
       },
+      {
+        name: 'a method that returns the pipe from inside a branch',
+        code: `
+        import { PassThrough } from 'stream';
+        class Adapter {
+          toStream(src, raw) {
+            if (raw) {
+              return src.pipe(new PassThrough());
+            }
+            return src;
+          }
+        }
+      `,
+      },
     ],
     invalid: [
+      {
+        name: 'a callback whose result forEach discards still reports',
+        code: `
+        import { createWriteStream } from 'node:fs';
+        function copy(src, path) {
+          [src].forEach(s => s.pipe(createWriteStream(path)));
+        }
+      `,
+        errors: unhandled,
+      },
+      {
+        name: 'a returned pipe inside a callback function still reports',
+        code: `
+        import { PassThrough } from 'stream';
+        function copy(sources) {
+          sources.forEach(function (s) { return s.pipe(new PassThrough()); });
+        }
+      `,
+        errors: unhandled,
+      },
+      {
+        name: 'a returned pipe inside a constructor callback still reports',
+        code: `
+        import { PassThrough } from 'stream';
+        const done = new Promise(function (resolve) { return src.pipe(new PassThrough()); });
+      `,
+        errors: unhandled,
+      },
       {
         name: 'the same pipe not returned still reports',
         code: `

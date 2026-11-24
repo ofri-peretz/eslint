@@ -78,9 +78,11 @@ The rule asks a narrow question: can the algorithm be steered to a value the aut
 not choose? A lookup into a `const` object literal whose values are all string literals
 cannot be — the closed set is visible at the call site and reviewable in the diff.
 
-A union of string literal types is the same allowlist written as a type. The rule accepts
-`name as 'sha256' | 'sha512'`, and a call to a same-file helper (a function declaration or a
-`const`) whose return type, or whose arrow body cast, is such a union:
+A union of string literal types is the same allowlist written as a type, when the compiler
+holds the value to it. The rule accepts `name satisfies 'sha256' | 'sha512'`, and a call to a
+same-file helper (a function declaration or a `const`) whose declared return type is such a
+union, or whose arrow body casts a value built only from literals and parameters typed with
+such a union:
 
 ```ts
 const hashOf = (alg: 'HS256' | 'HS512') =>
@@ -88,8 +90,8 @@ const hashOf = (alg: 'HS256' | 'HS512') =>
 createHmac(hashOf(alg), key);
 ```
 
-A cast to `string`, a union that admits `string`, or a helper that can be reassigned still
-reports.
+An `as` cast is erased at runtime, so `req.query.algorithm as 'sha256'` still reports. So do a
+cast to `string`, a union that admits `string`, and a helper that can be reassigned.
 
 ## Legacy interoperability
 

@@ -158,17 +158,25 @@ function literalCarriesSecret(text: string, patterns: string[]): boolean {
     // lib/jwt/jws.util.ts:209 tells the developer how to opt in:
     // "… set `allowShortSecret: true` next to the key". That is an option name
     // and its setting, quoted in prose; `true` is never anyone's credential.
+    // Only when that setting is the line's one label-and-value pair: in
+    // `password: hunter2 debug: true` the keyword belongs to `debug`, and the
+    // password before it is still on the line. The keywords are lowercase in
+    // the language, so `password: NULL` is a value, not a keyword.
     const trailingValue = new RegExp(
       `[:=]\\s*([^\\s${INTERPOLATION}]+)\\s*$`,
     ).exec(text);
+    const pairCount = text.match(/[:=][ \t]*[^\s:=]/g)?.length ?? 0;
     return (
       new RegExp(
         `\\b${flexPattern}\\b[ _-]{0,2}(?:[a-z0-9]{1,12}[ _-]{0,2})?[:=][ \\t]*[^\\s${INTERPOLATION}]`,
         'i',
       ).test(normalized) &&
       trailingValue !== null &&
-      !OPTION_KEYWORDS.has(
-        trailingValue[1].replace(/^[`'"]+|[`'".,;)]+$/g, '').toLowerCase(),
+      !(
+        pairCount === 1 &&
+        OPTION_KEYWORDS.has(
+          trailingValue[1].replace(/^[`'"]+|[`'".,;)]+$/g, ''),
+        )
       )
     );
   });

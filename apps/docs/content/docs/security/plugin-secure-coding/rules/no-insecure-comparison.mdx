@@ -260,7 +260,7 @@ The timing finding is about comparing a secret. Three shapes read like one and a
 | Code | Why it is silent |
 | --- | --- |
 | `token.userId === userId` | The field's last word (`Id`) makes it an identifier of the record. The container's name does not make it a secret. See `recordMetadataTails`. |
-| `signature.toString('base64url') !== parts[2]` | A value compared with its own re-encoding is a canonical-form check, not a timing oracle. |
-| `latest.secret === record.secret` | Two reads of the same store call, compared to notice a concurrent change. |
+| `signature.toString('base64url') !== parts[2]` | `signature` was written once as `Buffer.from(parts[2], 'base64url')`: a value compared with its own round trip through one encoding is a canonical-form check, not a timing oracle. |
+| `latest.secret === record.secret` | The same field from two reads of the same store call, with arguments that cannot change between them, compared to notice a concurrent change. |
 
 The token value of a record compared with presented input, such as `token.value === presented.tokenValue`, still reports.

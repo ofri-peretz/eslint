@@ -57,10 +57,27 @@ describe('no-dynamic-algorithm-selection — a closed literal type is an allowli
         `,
       },
       {
-        name: 'the argument itself cast to a union of literals',
+        name: 'the argument checked with satisfies against a union of literals',
         code: `
           import crypto from 'node:crypto';
-          crypto.createHash(name as 'sha256' | 'sha384');
+          crypto.createHash(name satisfies 'sha256' | 'sha384');
+        `,
+      },
+      {
+        name: 'a cast of a choice between literals',
+        code: `
+          import crypto from 'node:crypto';
+          const hashOf = (bits: 256 | 512) => (bits === 512 ? \`sha\${512}\` : 'sha256') as 'sha256' | 'sha512';
+          crypto.createHash(hashOf(n));
+        `,
+      },
+      {
+        name: 'a cast of a closed-typed parameter',
+        code: `
+          import crypto from 'node:crypto';
+          export function digest(alg: 'sha256' | 'sha384', data: Buffer) {
+            return crypto.createHash(alg as 'sha256' | 'sha384').update(data).digest();
+          }
         `,
       },
       {
@@ -73,6 +90,88 @@ describe('no-dynamic-algorithm-selection — a closed literal type is an allowli
       },
     ],
     invalid: [
+      {
+        name: 'a cast of request data to a closed union is erased at runtime',
+        code: `
+          import crypto from 'node:crypto';
+          crypto.createHash(req.query.algorithm as 'sha256' | 'sha512');
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a cast of an unknown name to a closed union proves nothing',
+        code: `
+          import crypto from 'node:crypto';
+          crypto.createHash(name as 'sha256' | 'sha384');
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a helper whose cast body reads an open parameter still reports',
+        code: `
+          import crypto from 'node:crypto';
+          const hashOf = (alg: string) => \`sha\${alg.slice(2)}\` as 'sha256' | 'sha512';
+          crypto.createHash(hashOf(req.query.alg));
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a closed-typed parameter that is reassigned is not closed',
+        code: `
+          import crypto from 'node:crypto';
+          const hashOf = (alg: 'HS256' | 'HS512') => { alg = req.query.alg; return 0; };
+          const pick = (alg: 'HS256' | 'HS512') => (alg = req.query.alg, alg) as 'sha256';
+          crypto.createHash(pick(x));
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a callback parameter is not the function that declares it',
+        code: `
+          import crypto from 'node:crypto';
+          function build(pick: () => string): 'sha256' {
+            crypto.createHash(pick());
+            return 'sha256';
+          }
+          build(() => req.query.algorithm);
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a cast of a global name is not closed',
+        code: `
+          import crypto from 'node:crypto';
+          const hashOf = () => \`sha\${globalBits}\` as 'sha256';
+          crypto.createHash(hashOf());
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a cast of a name declared twice is not closed',
+        code: `
+          import crypto from 'node:crypto';
+          var bits = 256; var bits = 1;
+          crypto.createHash(\`sha\${bits}\` as 'sha256');
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a cast of a method call with a non-literal argument is not closed',
+        code: `
+          import crypto from 'node:crypto';
+          const hashOf = (alg: 'HS256') => \`sha\${alg.slice(n)}\` as 'sha256';
+          crypto.createHash(hashOf('HS256'));
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a cast of a boolean is not a closed string',
+        code: `
+          import crypto from 'node:crypto';
+          crypto.createHash(\`sha\${true}\` as 'sha256');
+        `,
+        errors: dynamic,
+      },
       {
         name: 'a cast to string is not a closed set',
         code: `

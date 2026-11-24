@@ -1190,12 +1190,20 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       }
     }
 
-    /** Is the identifier this value is read from bound by an `import`? */
+    /**
+     * Is this value an import itself: a bound name, or a chain of property
+     * reads from one? A call is not, because its arguments can carry the
+     * request (`Buffer.from(req.headers.token)` is rooted at `Buffer`).
+     */
     function isImportedRoot(node: TSESTree.Node): boolean {
-      const bare = unwrapChain(unwrapTypeSyntax(node));
-      const root =
-        bare.type === AST_NODE_TYPES.Identifier ? bare : memberRoot(bare);
-      if (!root) return false;
+      let root: TSESTree.Node = unwrapChain(unwrapTypeSyntax(node));
+      while (root.type === AST_NODE_TYPES.MemberExpression) {
+        if (root.computed && root.property.type !== AST_NODE_TYPES.Literal) {
+          return false;
+        }
+        root = unwrapChain(unwrapTypeSyntax(root.object));
+      }
+      if (root.type !== AST_NODE_TYPES.Identifier) return false;
       const variable = findVariable(sourceCode, root);
       return (
         variable !== null &&

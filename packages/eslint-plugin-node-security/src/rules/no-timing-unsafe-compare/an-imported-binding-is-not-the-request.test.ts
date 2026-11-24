@@ -45,8 +45,29 @@ ruleTester.run(
           }
         `,
       },
+      {
+        name: 'a property of an imported constant is not the request either',
+        code: `
+          import { TOKENS } from './tokens';
+          class Injector {
+            isRequestScoped(dependency) {
+              return dependency.token === TOKENS.request?.['scoped'];
+            }
+          }
+        `,
+      },
     ],
     invalid: [
+      {
+        name: 'an imported callee does not clean the request data it is given',
+        code: `
+          import { Buffer } from 'node:buffer';
+          function check(req, stored) {
+            return Buffer.from(req.headers.token).toString() === stored.secretToken;
+          }
+        `,
+        errors: unsafe,
+      },
       {
         name: 'a local named REQUEST is still read by its name',
         code: `

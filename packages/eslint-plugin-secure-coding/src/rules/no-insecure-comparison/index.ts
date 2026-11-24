@@ -661,73 +661,172 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         return null;
       };
 
-      /** The identifier a chain of reads and calls starts from. */
-      const chainRoot = (expr: TSESTree.Node): TSESTree.Identifier | null => {
-        let current: TSESTree.Node = expr;
-        for (;;) {
-          if (current.type === AST_NODE_TYPES.ChainExpression) {
-            current = current.expression;
-          } else if (current.type === AST_NODE_TYPES.MemberExpression) {
-            current = current.object;
-          } else if (current.type === AST_NODE_TYPES.CallExpression) {
-            current = current.callee;
-          } else {
-            break;
-          }
+      /** The variable a name resolves to from the comparison's scope. */
+      const variableOf = (
+        identifier: TSESTree.Identifier,
+      ): TSESLint.Scope.Variable | null => {
+        for (
+          let scope: TSESLint.Scope.Scope | null = scopeAtNode;
+          scope;
+          scope = scope.upper
+        ) {
+          const variable = scope.variables.find(
+            (v) => v.name === identifier.name,
+          );
+          if (variable) return variable;
         }
-        return current.type === AST_NODE_TYPES.Identifier ? current : null;
+        return null;
       };
 
-      /** `encoded` is a call chain on a binding built from exactly `original`. */
+      /**
+       * Does this expression read the same value wherever it is written in the
+       * function? A parameter never assigned, or a binding written once, and
+       * fixed property reads from one. Equal source text is not enough on its
+       * own: `presented = expected` between two reads makes them differ.
+       */
+      const isStableValue = (expr: TSESTree.Node): boolean => {
+        switch (expr.type) {
+          case AST_NODE_TYPES.Literal:
+            return true;
+          case AST_NODE_TYPES.ChainExpression:
+            return isStableValue(expr.expression);
+          case AST_NODE_TYPES.MemberExpression:
+            return (
+              (!expr.computed ||
+                expr.property.type === AST_NODE_TYPES.Literal) &&
+              isStableValue(expr.object)
+            );
+          case AST_NODE_TYPES.Identifier: {
+            const variable = variableOf(expr);
+            if (!variable || variable.defs.length !== 1) return false;
+            const writes = variable.references.filter((ref) =>
+              ref.isWrite(),
+            ).length;
+            return variable.defs[0].type === 'Parameter'
+              ? writes === 0
+              : writes === 1;
+          }
+          default:
+            return false;
+        }
+      };
+
+      const unwrapChainNode = (n: TSESTree.Node): TSESTree.Node =>
+        n.type === AST_NODE_TYPES.ChainExpression ? n.expression : n;
+
+      /** A string literal argument's value, or null. */
+      const stringArg = (n: TSESTree.Node): string | null =>
+        n.type === AST_NODE_TYPES.Literal && typeof n.value === 'string'
+          ? n.value
+          : null;
+
+      /**
+       * `encoded` is `decoded.toString(enc)` where `decoded` was written once as
+       * `Buffer.from(original, enc)`, and `original` is the same value at both
+       * places: a round trip through one encoding, which can only test whether
+       * `original` was already in canonical form.
+       */
       const reEncodes = (
         encoded: TSESTree.Expression,
         original: TSESTree.Expression,
       ): boolean => {
-        if (encoded.type !== AST_NODE_TYPES.CallExpression) return false;
-        const root = chainRoot(encoded);
-        if (!root) return false;
-        const init = singleInit(root);
-        if (init?.type !== AST_NODE_TYPES.CallExpression) return false;
-        const first = init.arguments[0];
+        const call = unwrapChainNode(encoded);
+        if (call.type !== AST_NODE_TYPES.CallExpression) return false;
+        const callee = unwrapChainNode(call.callee);
+        if (
+          callee.type !== AST_NODE_TYPES.MemberExpression ||
+          callee.computed ||
+          callee.property.type !== AST_NODE_TYPES.Identifier ||
+          callee.property.name !== 'toString' ||
+          callee.object.type !== AST_NODE_TYPES.Identifier ||
+          call.arguments.length !== 1
+        ) {
+          return false;
+        }
+        const encoding = stringArg(call.arguments[0]);
+        const init = singleInit(callee.object);
+        if (
+          encoding === null ||
+          init?.type !== AST_NODE_TYPES.CallExpression ||
+          init.callee.type !== AST_NODE_TYPES.MemberExpression ||
+          init.callee.computed ||
+          init.callee.object.type !== AST_NODE_TYPES.Identifier ||
+          init.callee.object.name !== 'Buffer' ||
+          init.callee.property.type !== AST_NODE_TYPES.Identifier ||
+          init.callee.property.name !== 'from' ||
+          init.arguments.length !== 2 ||
+          stringArg(init.arguments[1]) !== encoding
+        ) {
+          return false;
+        }
         return (
-          first !== undefined &&
-          sourceCode.getText(first) === sourceCode.getText(original)
+          sourceCode.getText(init.arguments[0]) ===
+            sourceCode.getText(original) && isStableValue(original)
+        );
+      };
+
+      /** A call whose receiver and arguments are the same values at every read. */
+      const isRepeatableCall = (call: TSESTree.CallExpression): boolean => {
+        let callee: TSESTree.Node = unwrapChainNode(call.callee);
+        while (callee.type === AST_NODE_TYPES.MemberExpression) {
+          if (callee.computed) return false;
+          callee = unwrapChainNode(callee.object);
+        }
+        return (
+          (callee.type === AST_NODE_TYPES.ThisExpression ||
+            isStableValue(callee)) &&
+          call.arguments.every((arg) => isStableValue(arg))
         );
       };
 
       /**
-       * The text of every `await <call>` this operand's value comes from, or
-       * null when any part of it comes from something else.
+       * Every `await <call>` this operand's value comes from, with the field
+       * path read from its result, or null when any part of it comes from
+       * something else.
        */
-      const awaitedSources = (expr: TSESTree.Node): string[] | null => {
-        const sources: string[] = [];
-        const seen = new Set<TSESTree.Node>();
-        const visit = (n: TSESTree.Node): boolean => {
-          // Already followed: its sources are recorded once.
-          if (seen.has(n)) return true;
-          seen.add(n);
+      const awaitedSources = (
+        expr: TSESTree.Node,
+      ): { call: string; path: string }[] | null => {
+        const sources: { call: string; path: string }[] = [];
+        const visit = (
+          n: TSESTree.Node,
+          path: string,
+          depth: number,
+        ): boolean => {
+          // A binding chain this deep is a cycle or not worth following.
+          if (depth > 16) return false;
           switch (n.type) {
             case AST_NODE_TYPES.ChainExpression:
-              return visit(n.expression);
+              return visit(n.expression, path, depth + 1);
             case AST_NODE_TYPES.MemberExpression:
-              return !n.computed && visit(n.object);
+              return (
+                !n.computed &&
+                n.property.type === AST_NODE_TYPES.Identifier &&
+                visit(n.object, `.${n.property.name}${path}`, depth + 1)
+              );
             case AST_NODE_TYPES.ConditionalExpression:
-              return visit(n.consequent) && visit(n.alternate);
+              return (
+                visit(n.consequent, path, depth + 1) &&
+                visit(n.alternate, path, depth + 1)
+              );
             case AST_NODE_TYPES.Identifier: {
               const init = singleInit(n);
-              return init !== null && visit(init);
+              return init !== null && visit(init, path, depth + 1);
             }
             case AST_NODE_TYPES.AwaitExpression:
-              if (n.argument.type !== AST_NODE_TYPES.CallExpression) {
+              if (
+                n.argument.type !== AST_NODE_TYPES.CallExpression ||
+                !isRepeatableCall(n.argument)
+              ) {
                 return false;
               }
-              sources.push(sourceCode.getText(n.argument));
+              sources.push({ call: sourceCode.getText(n.argument), path });
               return true;
             default:
               return false;
           }
         };
-        return visit(expr) && sources.length > 0 ? sources : null;
+        return visit(expr, '', 0) && sources.length > 0 ? sources : null;
       };
 
       const isPotentialSecret = (expr: TSESTree.Expression): boolean =>
@@ -819,12 +918,16 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         // the secret between the reads, to notice a concurrent change. Both
         // sides come from one store call; nothing the caller typed is on
         // either. Only when every source on both sides is that same call.
+        // The two sides must also be able to name the same field: `record.secret`
+        // against `record.presented` reads one record and compares two values.
         const leftSources = awaitedSources(node.left);
         const rightSources = awaitedSources(node.right);
         if (
           leftSources !== null &&
           rightSources !== null &&
-          new Set([...leftSources, ...rightSources]).size === 1
+          new Set([...leftSources, ...rightSources].map((src) => src.call))
+            .size === 1 &&
+          leftSources.some((l) => rightSources.some((r) => r.path === l.path))
         ) {
           return;
         }

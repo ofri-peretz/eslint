@@ -93,12 +93,90 @@ function isClosedLiteralType(type: TSESTree.TypeNode | undefined): boolean {
   );
 }
 
-/** `x as 'sha256' | 'sha512'` or `x satisfies 'sha256' | 'sha512'`. */
-function isClosedLiteralCast(node: TSESTree.Node): boolean {
+/**
+ * A parameter declared with a closed literal type and never reassigned. The
+ * compiler holds every caller to that set; a caller that escapes it needs a cast
+ * of its own, which is where a finding belongs.
+ */
+function isClosedParameter(
+  sourceCode: Readonly<TSESLint.SourceCode>,
+  identifier: TSESTree.Identifier,
+): boolean {
+  let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(identifier);
+  while (scope) {
+    const variable = scope.set.get(identifier.name);
+    if (variable) {
+      if (variable.defs.length !== 1) return false;
+      const [def] = variable.defs;
+      return (
+        def.type === 'Parameter' &&
+        def.name.type === AST_NODE_TYPES.Identifier &&
+        isClosedLiteralType(def.name.typeAnnotation?.typeAnnotation) &&
+        variable.references.every((ref) => !ref.isWrite())
+      );
+    }
+    scope = scope.upper;
+  }
+  return false;
+}
+
+/**
+ * Can this expression only produce values computed from string literals and
+ * closed-typed parameters? `` `sha${alg.slice(2)}` `` over
+ * `alg: 'HS256' | 'HS512'` can; `req.query.algorithm` cannot.
+ */
+function derivesFromClosedValues(
+  sourceCode: Readonly<TSESLint.SourceCode>,
+  node: TSESTree.Node,
+): boolean {
+  switch (node.type) {
+    case AST_NODE_TYPES.Literal:
+      return typeof node.value === 'string' || typeof node.value === 'number';
+    case AST_NODE_TYPES.TemplateLiteral:
+      return node.expressions.every((expr) =>
+        derivesFromClosedValues(sourceCode, expr),
+      );
+    case AST_NODE_TYPES.Identifier:
+      return isClosedParameter(sourceCode, node);
+    case AST_NODE_TYPES.ConditionalExpression:
+      return (
+        derivesFromClosedValues(sourceCode, node.consequent) &&
+        derivesFromClosedValues(sourceCode, node.alternate)
+      );
+    case AST_NODE_TYPES.CallExpression:
+      // `alg.slice(2)`: a method of a closed value, with literal arguments.
+      return (
+        node.callee.type === AST_NODE_TYPES.MemberExpression &&
+        !node.callee.computed &&
+        derivesFromClosedValues(sourceCode, node.callee.object) &&
+        node.arguments.every(
+          (arg) =>
+            arg.type === AST_NODE_TYPES.Literal &&
+            derivesFromClosedValues(sourceCode, arg),
+        )
+      );
+    default:
+      return false;
+  }
+}
+
+/**
+ * `x satisfies 'sha256' | 'sha512'`, which the compiler checks, or
+ * `x as 'sha256' | 'sha512'` when `x` itself is built only from closed values.
+ * An `as` is erased at runtime, so on its own it proves nothing:
+ * `req.query.algorithm as 'sha256'` is still whatever the request sent.
+ */
+function isClosedLiteralCast(
+  sourceCode: Readonly<TSESLint.SourceCode>,
+  node: TSESTree.Node,
+): boolean {
+  if (node.type === AST_NODE_TYPES.TSSatisfiesExpression) {
+    return isClosedLiteralType(node.typeAnnotation);
+  }
   return (
-    (node.type === AST_NODE_TYPES.TSAsExpression ||
-      node.type === AST_NODE_TYPES.TSSatisfiesExpression) &&
-    isClosedLiteralType(node.typeAnnotation)
+    node.type === AST_NODE_TYPES.TSAsExpression &&
+    isClosedLiteralType(node.typeAnnotation) &&
+    derivesFromClosedValues(sourceCode, node.expression)
   );
 }
 
@@ -107,13 +185,19 @@ type FunctionNode =
   | TSESTree.FunctionDeclaration
   | TSESTree.FunctionExpression;
 
-/** A function whose declared return type, or whose expression body, is a closed literal set. */
-function returnsClosedLiteral(fn: FunctionNode): boolean {
+/**
+ * A function whose declared return type (checked by the compiler against every
+ * return), or whose expression body, is a closed literal set.
+ */
+function returnsClosedLiteral(
+  sourceCode: Readonly<TSESLint.SourceCode>,
+  fn: FunctionNode,
+): boolean {
   if (isClosedLiteralType(fn.returnType?.typeAnnotation)) return true;
   return (
     fn.type === AST_NODE_TYPES.ArrowFunctionExpression &&
     fn.expression &&
-    isClosedLiteralCast(fn.body)
+    isClosedLiteralCast(sourceCode, fn.body)
   );
 }
 
@@ -133,8 +217,16 @@ function calledLocalFunction(
     if (variable) {
       if (variable.defs.length !== 1) return null;
       const [def] = variable.defs;
-      if (def.node.type === AST_NODE_TYPES.FunctionDeclaration) return def.node;
+      // `def.type` first: a parameter's definition also points at its
+      // enclosing function, and `pick` in `function build(pick)` is not `build`.
       if (
+        def.type === 'FunctionName' &&
+        def.node.type === AST_NODE_TYPES.FunctionDeclaration
+      ) {
+        return def.node;
+      }
+      if (
+        def.type === 'Variable' &&
         def.node.type === AST_NODE_TYPES.VariableDeclarator &&
         def.parent?.type === AST_NODE_TYPES.VariableDeclaration &&
         def.parent.kind === 'const' &&
@@ -200,10 +292,10 @@ export const noDynamicAlgorithmSelection = createRule<[], MessageIds>({
       // A union of string literals is the same allowlist written as a type:
       // `name as 'sha256' | 'sha512'`, or a same-file helper whose return is
       // one (nestjs/authentication's `hashOf(alg)`).
-      if (isClosedLiteralCast(node)) return true;
+      if (isClosedLiteralCast(sourceCode, node)) return true;
       if (node.type === AST_NODE_TYPES.CallExpression) {
         const fn = calledLocalFunction(sourceCode, node);
-        if (fn && returnsClosedLiteral(fn)) return true;
+        if (fn && returnsClosedLiteral(sourceCode, fn)) return true;
       }
       return (
         node.type === AST_NODE_TYPES.Identifier &&

@@ -122,13 +122,36 @@ export function constructsStream(node: TSESTree.Node): boolean {
   return name !== undefined && STREAM_CONSTRUCTORS.has(name);
 }
 
-/** Is this call's value returned from the function it is in? */
+/**
+ * Is this call's value returned to a caller that can listen on it? A function
+ * passed as an argument is called by the callee, which may drop the result
+ * (`[src].forEach(s => s.pipe(dest))`), so a callback does not count.
+ */
 function returnsToCaller(node: TSESTree.CallExpression): boolean {
   const parent = node.parent;
-  if (parent?.type === AST_NODE_TYPES.ReturnStatement) return true;
-  return (
+  let fn: TSESTree.Node | undefined;
+  if (parent?.type === AST_NODE_TYPES.ReturnStatement) {
+    fn = parent.parent;
+    while (
+      fn &&
+      fn.type !== AST_NODE_TYPES.FunctionDeclaration &&
+      fn.type !== AST_NODE_TYPES.FunctionExpression &&
+      fn.type !== AST_NODE_TYPES.ArrowFunctionExpression
+    ) {
+      fn = fn.parent;
+    }
+  } else if (
     parent?.type === AST_NODE_TYPES.ArrowFunctionExpression &&
     parent.body === node
+  ) {
+    fn = parent;
+  }
+  if (!fn) return false;
+  const holder = fn.parent;
+  return !(
+    (holder?.type === AST_NODE_TYPES.CallExpression ||
+      holder?.type === AST_NODE_TYPES.NewExpression) &&
+    holder.arguments.includes(fn as TSESTree.CallExpressionArgument)
   );
 }
 
