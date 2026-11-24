@@ -99,8 +99,35 @@ function check(token) {
   return claims;
 }`,
       },
+      {
+        name: 'a module-level decode followed by an unconditional module-level verify',
+        code: `${jsonwebtoken}
+const token = read();
+const claims = jwt.decode(token);
+jwt.verify(token, key, { algorithms: ['HS256'] });`,
+      },
     ],
     invalid: [
+      {
+        name: "algorithms: ['none'] accepts an unsigned token, so it verifies nothing",
+        code: `${jsonwebtoken}
+function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, null, { algorithms: ['none'] });
+  return claims.sub;
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: "a pinned list that also allows 'none' still lets an unsigned token through",
+        code: `${jsonwebtoken}
+function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, key, { algorithms: ['HS256', 'None'] });
+  return claims.sub;
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
       {
         name: 'a verify that only runs in a branch does not protect the decode',
         code: `${jsonwebtoken}

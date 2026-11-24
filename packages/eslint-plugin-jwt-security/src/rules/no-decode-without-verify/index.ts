@@ -379,7 +379,10 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
           algorithms.elements.length > 0 &&
           algorithms.elements.every(
             (element) =>
-              element?.type === 'Literal' && typeof element.value === 'string',
+              element?.type === 'Literal' &&
+              typeof element.value === 'string' &&
+              // `none` accepts an unsigned token: it verifies nothing.
+              element.value.toLowerCase() !== 'none',
           )
         );
       });
