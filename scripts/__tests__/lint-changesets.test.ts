@@ -386,6 +386,18 @@ describe('CS010 — foreign rule ownership (#1688)', () => {
     expect(found).not.toContain('CS009');
   });
 
+  it('reports a rule named only in the title, not just the body', () => {
+    // parse() splits the title out of `body` entirely, so a scan that only
+    // reads `body` misses a rule named in a one-line summary with no body
+    // paragraph at all.
+    write(
+      'foreign-title.md',
+      `'${JWT}': patch\n'${NODE}': patch`,
+      'fix: tighten `detect-object-injection`',
+    );
+    expect(rules(lint(dir, PRIVACY))).toContain('CS010');
+  });
+
   it('does not report when every named rule belongs to a listed package', () => {
     write(
       'in-scope.md',

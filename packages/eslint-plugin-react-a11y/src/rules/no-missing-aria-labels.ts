@@ -84,7 +84,8 @@ function isTextLikeExpression(
     expr.type === 'TemplateLiteral' ||
     expr.type === 'Identifier' ||
     (expr.type === 'Literal' &&
-      (typeof expr.value === 'string' || typeof expr.value === 'number'))
+      (typeof expr.value === 'number' ||
+        (typeof expr.value === 'string' && expr.value.trim() !== '')))
   )
     return true;
   return (

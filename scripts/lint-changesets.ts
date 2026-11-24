@@ -465,8 +465,12 @@ export function checkForeignRuleOwnership(
       .filter((x): x is string => Boolean(x));
     if (listed.length < 2) continue;
 
+    // `cs.summary` (title + body), not `cs.body` alone: a rule named only in
+    // the title (`fix: tighten \`detect-object-injection\``) is just as
+    // published a claim as one named in the body, and `parse()` splits the
+    // title out of `body` entirely.
     const foreign = new Set<string>();
-    for (const [, token] of cs.body.matchAll(/`([^`]+)`/g)) {
+    for (const [, token] of cs.summary.matchAll(/`([^`]+)`/g)) {
       const rule = token.slice(token.lastIndexOf('/') + 1);
       const owner = owners.get(rule);
       if (owner && !listed.includes(owner)) foreign.add(`${rule} (${owner})`);
