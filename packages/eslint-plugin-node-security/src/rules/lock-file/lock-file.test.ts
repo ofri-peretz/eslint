@@ -107,6 +107,7 @@ ruleTester.run('lock-file', lockFile, {
     // `any` also accepts a pnpm-only project — proof the arm really searches
     // all three names rather than falling back to package-lock.json.
     {
+      name: "'any' accepts a pnpm-only project, so it searches all three names",
       code: 'const anyAcceptsPnpm = 1',
       filename: deeplyNestedFileInLockedProject(),
       options: [{ packageManager: 'any' }],
@@ -233,6 +234,72 @@ ruleTester.run('lock-file: the search stops at the repository root', lockFile, {
       name: 'a .git FILE (worktree, submodule) marks the repository root too',
       code: 'const strayHomeLockWorktree = 1',
       filename: repoBelowAStrayLockFile('file'),
+      errors: [{ messageId: 'violationDetected' }],
+    },
+  ],
+});
+
+/**
+ * A project whose manifest is `manifest` (written verbatim when a string) and
+ * that commits no lock file.
+ */
+function projectWithManifest(manifest: object | string): string {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lock-file-manifest-'));
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, 'package.json'),
+    typeof manifest === 'string' ? manifest : JSON.stringify(manifest),
+  );
+  return path.join(dir, 'src', 'index.js');
+}
+
+ruleTester.run('lock-file: published libraries commit no lock file', lockFile, {
+  valid: [
+    {
+      // @source expressjs/express index.js:9 (package.json declares `files`)
+      // @found real-source scan of the expressjs/* packages, 2026-11-24
+      name: 'a published package declaring `files` (express) is not reported',
+      code: 'const expressShape = 1',
+      filename: projectWithManifest({ name: 'express', version: '5.1.0', files: ['index.js', 'lib/'] }),
+    },
+    {
+      // @source expressjs/body-parser index.js:7 (package.json declares `exports`)
+      // @found real-source scan of the expressjs/* packages, 2026-11-24
+      name: 'a published package declaring `exports` (body-parser) is not reported',
+      code: 'const bodyParserShape = 1',
+      filename: projectWithManifest({ name: 'body-parser', version: '2.2.0', exports: './index.js' }),
+    },
+    {
+      // @source expressjs/cors lib/index.js:1 (package.json declares `main`)
+      // @found real-source scan of the expressjs/* packages, 2026-11-24
+      name: 'a published package declaring `main` (cors) is not reported',
+      code: 'const corsShape = 1',
+      filename: projectWithManifest({ name: 'cors', version: '2.8.5', main: './lib/index.js' }),
+    },
+  ],
+  invalid: [
+    {
+      name: 'a private package still needs its lock file, whatever it declares',
+      code: 'const privateWithEntry = 1',
+      filename: projectWithManifest({ name: 'app', private: true, main: 'index.js', files: ['dist'] }),
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'an app manifest with no entry point or files list is still reported',
+      code: 'const appShape = 1',
+      filename: projectWithManifest({ name: 'app', version: '1.0.0', scripts: { start: 'node .' } }),
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a manifest that is not valid JSON does not exempt the project',
+      code: 'const brokenManifest = 1',
+      filename: projectWithManifest('{ "name": "broken", "main": '),
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a manifest that parses to null does not exempt the project',
+      code: 'const nullManifest = 1',
+      filename: projectWithManifest('null'),
       errors: [{ messageId: 'violationDetected' }],
     },
   ],

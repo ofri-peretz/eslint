@@ -57,6 +57,27 @@ function claimsFinding(key: string, filename: string): boolean {
   return false;
 }
 
+/**
+ * Is the manifest at `manifestPath` a published library: not `"private": true`,
+ * and declaring an entry point (`main`, `exports`) or a `files` list? A
+ * manifest that cannot be read or parsed is not, so the finding stands.
+ */
+function isPublishedLibrary(
+  fs: { readFileSync(file: string, encoding: 'utf8'): string },
+  manifestPath: string,
+): boolean {
+  let manifest: unknown;
+  try {
+    manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  } catch {
+    return false;
+  }
+  if (typeof manifest !== 'object' || manifest === null) return false;
+  const pkg = manifest as Record<string, unknown>;
+  if (pkg['private'] === true) return false;
+  return 'main' in pkg || 'exports' in pkg || 'files' in pkg;
+}
+
 export const lockFile = createRule<RuleOptions, MessageIds>({
   name: 'lock-file',
   meta: {
@@ -198,6 +219,14 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
             'package.json',
           ]);
           if (root === undefined) return;
+          // A package published as a library has no lock file to commit: npm
+          // never installs from a dependency's lock file, so its consumers
+          // resolve against their own. expressjs/express, body-parser,
+          // cookie-parser, cors, morgan, multer, serve-static and session all
+          // ship without one on purpose, and were each reported. Apps and
+          // private packages, which install from their own lock file, still
+          // report.
+          if (isPublishedLibrary(fs, path.join(root, 'package.json'))) return;
           // Keyed by the lock file required too: `packageManager: 'yarn'` and
           // `'pnpm'` are two different facts about the same root.
           if (!claimsFinding(`${root}\0${targetLockFile}`, context.filename)) {
