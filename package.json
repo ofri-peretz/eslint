@@ -26,6 +26,8 @@
     "preinstall": "node --experimental-strip-types scripts/guard-borrowed-node-modules.mts",
     "prepare": "[ -d .git ] && lefthook install || true",
     "ci:local": "lefthook run pre-push --all-files --force",
+    "hook:staged": "sh -c \"npm run --silent oxlint\" hook-staged",
+    "hook:verify": "perl -e \"alarm 300; exec @ARGV\" -- npm run --silent typecheck",
     "lint:triage-sampling": "tsx scripts/lint-triage-sampling.ts",
     "lint:taxonomy": "tsx scripts/lint-plugin-taxonomy.ts",
     "rule-ledger": "tsx scripts/build-rule-ledger.ts",
