@@ -187,7 +187,7 @@ export const requireEmitterErrorHandler = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/require-emitter-error-handler.md',
       description:
-        "Require an 'error' listener on the ClientRequest or ChildProcess returned by http.request, https.get, child_process.spawn and fork",
+        "Require an 'error' listener on http(s) requests and spawned processes",
       cwe: 'CWE-248',
       cvss: 7.5,
     },

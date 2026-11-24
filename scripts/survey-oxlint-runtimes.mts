@@ -46,6 +46,11 @@ function runSuite(pkg: string): Promise<void> {
         stdio: 'ignore',
       },
     );
+    // npx failing to start must not kill the whole survey.
+    child.on('error', () => {
+      console.log(`  could not start ${pkg}`);
+      resolve();
+    });
     child.on('close', () => {
       console.log(`  surveyed ${pkg}`);
       resolve();

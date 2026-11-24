@@ -76,6 +76,7 @@ describe('no-ssrf', () => {
         },
         // axios.get with user-controlled endpoint
         {
+          name: 'axios.get with an endpoint identifier is reported when names alone decide',
           code: 'import axios from "axios";\naxios.get(endpoint);',
           options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],

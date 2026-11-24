@@ -215,7 +215,7 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-dynamic-command-string.md',
       description:
-        'Disallow dynamically assembled command strings passed to a shell flag or to a command-runner that does not escape (CWE-77)',
+        'Disallow dynamically built command strings passed to a shell flag or a non-escaping command-runner (CWE-77)',
       cwe: 'CWE-77',
       cvss: 9.8,
       confidence: 'high',

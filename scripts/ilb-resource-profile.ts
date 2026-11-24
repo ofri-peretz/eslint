@@ -144,6 +144,9 @@ async function profileRun(
   });
 
   const exitCode: number = await new Promise((resolve) => {
+    // A command that cannot start emits 'error'; without a listener it is an
+    // uncaught exception instead of a failed profile row.
+    child.on('error', () => resolve(-1));
     child.on('close', (code) => resolve(code ?? -1));
   });
 

@@ -82,6 +82,7 @@ describe('no-dynamic-command-string', () => {
         code: `const BUILD = 'npm ci && npm run build'; spawn('bash', ['-c', BUILD]);`,
       },
       {
+        name: 'a script looked up in a constant object is a fixed command',
         code: `const SCRIPTS = { build: 'npm run build' }; spawn('sh', ['-c', SCRIPTS.build]);`,
       },
       {

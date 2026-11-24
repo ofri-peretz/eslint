@@ -1,6 +1,6 @@
 ---
 title: require-emitter-error-handler
-description: Require an error listener on the ClientRequest or ChildProcess returned by http.request, https.get, child_process.spawn and fork
+description: Require an error listener on http(s) requests and spawned processes
 tags: ['security', 'events', 'cwe-248', 'nodejs', 'denial-of-service']
 category: security
 severity: high
@@ -15,7 +15,7 @@ autofix: false
 
 <!-- @rule-summary -->
 
-Require an error listener on the ClientRequest or ChildProcess returned by http.request, https.get, child_process.spawn and fork
+Require an error listener on http(s) requests and spawned processes
 <!-- @/rule-summary -->
 
 Detects a `ClientRequest` or `ChildProcess` that is created and never given an `'error'` listener. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.

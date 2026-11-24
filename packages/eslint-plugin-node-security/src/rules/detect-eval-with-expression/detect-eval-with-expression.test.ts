@@ -75,6 +75,7 @@ describe('detect-eval-with-expression', () => {
             errors: [{ messageId: 'strategyRefactor' }],
           },
           {
+            name: 'eval of a function parameter is reported',
             code: `
             function process(code) {
               return eval(code);

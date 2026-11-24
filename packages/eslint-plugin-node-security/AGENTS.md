@@ -39,8 +39,8 @@ Use it alongside `eslint-plugin-security`, not instead of it: keep that plugin i
 31 rules:
 
 - `detect-child-process` (error): Detects child_process usage that may allow command injection.
-- `detect-eval-with-expression` (error): Detects strings turned into running code — eval(variable), the Function constructor, and the vm / vm2 sinks that are mistaken for sandboxes.
-- `detect-non-literal-fs-filename` (warn): Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system.
+- `detect-eval-with-expression` (error): Detects strings turned into running code: eval(variable), the Function constructor, and vm / vm2 sinks mistaken for sandboxes.
+- `detect-non-literal-fs-filename` (warn): Detects a variable in an fs call's filename, which may let an attacker reach any file.
 - `no-unsafe-dynamic-require` (error): Prevent unsafe dynamic require() calls that could enable code injection.
 - `no-buffer-overread` (warn): Detects buffer access beyond bounds.
 - `no-deprecated-buffer` (error): Disallow the deprecated `new Buffer()` constructor and `Buffer()` factory call.
@@ -49,10 +49,10 @@ Use it alongside `eslint-plugin-security`, not instead of it: keep that plugin i
 - `no-zip-slip` (error): Detects zip slip/archive extraction vulnerabilities.
 - `no-arbitrary-file-access` (error): Prevent file access from user input.
 - `no-data-in-temp-storage` (error): Prevent sensitive data in temp directories.
-- `no-ssrf` (warn): Flags HTTP calls whose URL argument is a user-input-named identifier or reads off a request object — a heuristic prompt for code review, not a proof of SSRF.
-- `no-shell-injection` (error): Disallow string concatenation or template expressions in shell command arguments (CWE-78).
-- `no-dynamic-command-string` (error): Disallow dynamically assembled command strings passed to a shell flag or to a command-runner that does not escape (CWE-77).
-- `no-env-injection` (error): Disallow writing process.env under a key the caller controls, which can overwrite PATH, NODE_OPTIONS or LD_PRELOAD (CWE-99).
+- `no-ssrf` (warn): Flags HTTP calls whose URL is a user-input-named identifier or read off a request object: a heuristic for review, not proof of SSRF.
+- `no-shell-injection` (error): Disallow concatenated or templated shell command arguments (CWE-78).
+- `no-dynamic-command-string` (error): Disallow dynamically built command strings passed to a shell flag or a non-escaping command-runner (CWE-77).
+- `no-env-injection` (error): Disallow writing process.env under a caller-controlled key, which can overwrite PATH, NODE_OPTIONS or LD_PRELOAD (CWE-99).
 - `no-dynamic-algorithm-selection` (error): Disallow dynamic algorithm names in Node.js crypto functions (CWE-327).
 - `no-timing-unsafe-compare` (warn): Disallow timing-unsafe comparison of secrets.
 - `detect-suspicious-dependencies` (warn): Detect typosquatting in package names.
@@ -81,12 +81,12 @@ Everything in `recommended` plus 13 more (some shared rules run at a different s
 - `require-storage-encryption` (error): Require encryption for persistent storage.
 - `no-dynamic-require` (error): Forbid `require()` calls with expressions.
 - `no-cryptojs-weak-random` (error): Disallow crypto-js WordArray.random() (CVE-2020-36732).
-- `no-deprecated-cipher-method` (error): Disallow deprecated crypto.createCipher/createDecipher methods (use createCipheriv/createDecipheriv instead).
+- `no-deprecated-cipher-method` (error): Disallow deprecated crypto.createCipher/createDecipher (use createCipheriv/createDecipheriv).
 - `no-insecure-key-derivation` (error): Disallow PBKDF2 with insufficient iterations (< 100,000).
 - `no-insecure-rsa-padding` (error): Disallow RSA PKCS#1 v1.5 padding (CVE-2023-46809 Marvin Attack).
 - `no-sha1-hash` (error): Disallow sha1() from crypto-hash package (use sha256 or sha512).
 - `prefer-native-crypto` (error): Prefer native crypto over third-party libraries.
-- `require-emitter-error-handler` (error): Require an 'error' listener on the ClientRequest or ChildProcess returned by http.request, https.get, child_process.spawn and fork.
+- `require-emitter-error-handler` (error): Require an 'error' listener on http(s) requests and spawned processes.
 
 ## Other Interlace plugins by dependency
 

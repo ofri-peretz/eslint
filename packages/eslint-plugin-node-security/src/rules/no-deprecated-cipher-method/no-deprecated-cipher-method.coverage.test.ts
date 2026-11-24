@@ -32,6 +32,7 @@ describe('no-deprecated-cipher-method coverage gaps', () => {
       },
       // allowInTests but not a test file, safe call → regex operand false
       {
+        name: 'createCipheriv in a non-test file stays silent with allowInTests on',
         code: 'crypto.createCipheriv("aes-256-gcm", key, iv);',
         options: [{ allowInTests: true }],
         filename: 'cipher.ts',
