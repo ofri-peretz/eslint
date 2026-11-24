@@ -8,6 +8,8 @@
  * The same cases also run under @typescript-eslint/parser from upstream-parity/.
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
+import { Linter } from 'eslint';
+import { describe, expect, it } from 'vitest';
 import { jsxPascalCase } from '../../rules/react/jsx-pascal-case';
 
 const ruleTester = new RuleTester({
@@ -231,4 +233,22 @@ ruleTester.run('jsx-pascal-case', jsxPascalCase, {
       errors: [{ messageId: 'usePascalCase', data: { name: 'Foo_bar' } }],
     },
   ],
+});
+
+describe('jsx-pascal-case option schema', () => {
+  const lint = (ignore: unknown) =>
+    new Linter({ configType: 'flat' }).verify('<Foo_bar />', {
+      files: ['**/*.js'],
+      plugins: { react: { rules: { 'jsx-pascal-case': jsxPascalCase } } },
+      languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
+      rules: { 'react/jsx-pascal-case': ['error', { ignore }] },
+    } as unknown as Linter.Config);
+
+  it('accepts a list of strings', () => {
+    expect(lint(['Foo_bar'])).toEqual([]);
+  });
+
+  it('rejects an entry that is not a string, wherever it sits in the list', () => {
+    expect(() => lint(['Foo_bar', 42])).toThrow(/Value 42 should be string/);
+  });
 });

@@ -5255,6 +5255,78 @@
         }
       ],
       "peers": []
+    },
+    {
+      "id": "ILB-0182",
+      "added": "2026-11-24",
+      "title": "A style prop written as a CSS string",
+      "rationale": "`style=\"color: red\"` is HTML. React throws at render time, because its `style` prop takes an object of CSS properties. The mistake is common when markup is pasted into JSX.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "<div style=\"color: red\" />",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "react-features/style-prop-object",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-react-features/src/tests/react/style-prop-object.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0183",
+      "added": "2026-11-24",
+      "title": "A component named with an underscore",
+      "rationale": "`<My_component />` is a component reference that is not PascalCase. The naming convention is what tells readers, and tools, a tag is a component, and it is what `eslint-config-react-app` enforces.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "<My_component />",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "react-features/jsx-pascal-case",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-react-features/src/tests/react/jsx-pascal-case.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0184",
+      "added": "2026-11-24",
+      "title": "Reading another component's propTypes",
+      "rationale": "Production builds strip `propTypes`, so `Foo.propTypes` is `undefined` there and anything built from it breaks only in production.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const shape = Foo.propTypes;",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "react-features/forbid-foreign-prop-types",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-react-features/src/tests/react/forbid-foreign-prop-types.test.ts"
+        }
+      ],
+      "peers": []
     }
   ]
 }

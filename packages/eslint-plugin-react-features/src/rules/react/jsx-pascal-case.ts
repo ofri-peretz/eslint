@@ -86,7 +86,7 @@ export const jsxPascalCase = createRule<Options, MessageIds>({
           allowLeadingUnderscore: { type: 'boolean' },
           allowNamespace: { type: 'boolean' },
           ignore: {
-            items: [{ type: 'string' }],
+            items: { type: 'string' },
             minItems: 0,
             type: 'array',
             uniqueItems: true,
