@@ -18,7 +18,17 @@ type MessageIds = 'noUnescapedEntities' | 'replaceWithAlt';
 type Forbidden = string | { char?: string; alternatives?: readonly string[] };
 type Options = [{ forbid?: readonly Forbidden[] }?];
 
-const UNESCAPED_ENTITIES = /[<>"]/;
+/**
+ * What `forbid` holds when no option is given: eslint-plugin-react 7.37.5's
+ * default set, with its alternatives. `<` and `{` are left out because they
+ * are a syntax error in JSX text, so no rule ever sees them there.
+ */
+const DEFAULT_FORBID: readonly Forbidden[] = [
+  { char: '>', alternatives: ['&gt;'] },
+  { char: '"', alternatives: ['&quot;', '&ldquo;', '&#34;', '&rdquo;'] },
+  { char: "'", alternatives: ['&apos;', '&lsquo;', '&#39;', '&rsquo;'] },
+  { char: '}', alternatives: ['&#125;'] },
+];
 
 export const noUnescapedEntities = createRule<Options, MessageIds>({
   name: 'no-unescaped-entities',
@@ -40,7 +50,7 @@ export const noUnescapedEntities = createRule<Options, MessageIds>({
         issueName: 'Unescaped Entity',
         description: 'Unescaped HTML entity in JSX text',
         severity: 'MEDIUM',
-        fix: 'Use HTML entities (&lt;, &gt;, &quot;) or wrap in curly braces',
+        fix: 'Use an HTML entity (&gt;, &quot;, &apos;, &#125;) or wrap the text in curly braces',
         documentationLink:
           'https://react.dev/learn/javascript-in-jsx-with-curly-braces',
       }),
@@ -75,13 +85,12 @@ export const noUnescapedEntities = createRule<Options, MessageIds>({
   },
   defaultOptions: [{}],
   createOnce(context: TSESLint.RuleContext<MessageIds, Options>, options) {
-    let forbid: readonly Forbidden[] | undefined;
+    let forbid: readonly Forbidden[] = DEFAULT_FORBID;
 
     /**
      * `forbid` replaces the default set, as it does in eslint-plugin-react, and
-     * reports every occurrence of every listed character where it stands (the
-     * default set reports a text node once). A listed `{ char, alternatives }`
-     * also suggests each alternative.
+     * the rule reports every occurrence of every listed character where it
+     * stands. A listed `{ char, alternatives }` also suggests each alternative.
      */
     function reportForbidden(
       node: TSESTree.JSXText,
@@ -116,30 +125,12 @@ export const noUnescapedEntities = createRule<Options, MessageIds>({
 
     return {
       before() {
-        forbid = options()[0]?.forbid;
+        forbid = options()[0]?.forbid ?? DEFAULT_FORBID;
       },
+      // The source as written: `value` is the decoded text, in which `&quot;`
+      // and `&gt;` have already become the characters they escape.
       JSXText(node: TSESTree.JSXText) {
-        if (forbid) {
-          reportForbidden(node, forbid);
-          return;
-        }
-
-        // The source as written: `value` is the decoded text, in which
-        // `&quot;` and `&gt;` have already become the characters they escape.
-        const text = node.raw;
-
-        // Skip whitespace-only text
-        if (!text.trim()) {
-          return;
-        }
-
-        // Check for unescaped entities
-        if (UNESCAPED_ENTITIES.test(text)) {
-          context.report({
-            node,
-            messageId: 'noUnescapedEntities',
-          });
-        }
+        reportForbidden(node, forbid);
       },
     };
   },
