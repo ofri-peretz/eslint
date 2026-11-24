@@ -679,22 +679,50 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       };
 
       /**
+       * Is a property of this binding assigned, updated or deleted anywhere?
+       * `parts.signature = x` changes what `parts.signature` reads without
+       * reassigning `parts`.
+       */
+      const propertyWritten = (variable: TSESLint.Scope.Variable): boolean =>
+        variable.references.some((ref) => {
+          let top: TSESTree.Node = ref.identifier;
+          while (
+            top.parent.type === AST_NODE_TYPES.MemberExpression &&
+            top.parent.object === top
+          ) {
+            top = top.parent;
+          }
+          const holder = top.parent;
+          return (
+            top !== ref.identifier &&
+            ((holder.type === AST_NODE_TYPES.AssignmentExpression &&
+              holder.left === top) ||
+              holder.type === AST_NODE_TYPES.UpdateExpression ||
+              (holder.type === AST_NODE_TYPES.UnaryExpression &&
+                holder.operator === 'delete'))
+          );
+        });
+
+      /**
        * Does this expression read the same value wherever it is written in the
        * function? A parameter never assigned, or a binding written once, and
        * fixed property reads from one. Equal source text is not enough on its
        * own: `presented = expected` between two reads makes them differ.
        */
-      const isStableValue = (expr: TSESTree.Node): boolean => {
+      const isStableValue = (
+        expr: TSESTree.Node,
+        readThrough = false,
+      ): boolean => {
         switch (expr.type) {
           case AST_NODE_TYPES.Literal:
             return true;
           case AST_NODE_TYPES.ChainExpression:
-            return isStableValue(expr.expression);
+            return isStableValue(expr.expression, readThrough);
           case AST_NODE_TYPES.MemberExpression:
             return (
               (!expr.computed ||
                 expr.property.type === AST_NODE_TYPES.Literal) &&
-              isStableValue(expr.object)
+              isStableValue(expr.object, true)
             );
           case AST_NODE_TYPES.Identifier: {
             const variable = variableOf(expr);
@@ -702,6 +730,8 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             const writes = variable.references.filter((ref) =>
               ref.isWrite(),
             ).length;
+            // Read through a property, the property must not be written either.
+            if (readThrough && propertyWritten(variable)) return false;
             return variable.defs[0].type === 'Parameter'
               ? writes === 0
               : writes === 1;

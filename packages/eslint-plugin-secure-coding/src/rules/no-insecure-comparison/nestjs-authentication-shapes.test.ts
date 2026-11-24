@@ -197,6 +197,18 @@ ruleTester.run('re-encode and re-read edges', noInsecureComparison, {
       `,
     },
     {
+      name: 'reading a property of the original elsewhere does not change it',
+      code: `
+        function check(parts) {
+          const decoded = Buffer.from(parts.signature, 'base64url');
+          let seen;
+          seen = parts.signature;
+          void typeof parts.signature;
+          return decoded.toString('base64url') !== parts.signature;
+        }
+      `,
+    },
+    {
       name: 'a store re-read through optional chains and a fixed index',
       code: `
         async function reencrypt(store, ids, user) {
@@ -221,6 +233,37 @@ ruleTester.run('re-encode and re-read edges', noInsecureComparison, {
         "signature.toString('base64url')",
         '===',
         'presented',
+      ),
+    },
+    {
+      name: 'a property of the original assigned before the comparison still reports',
+      ...timing(
+        `
+        function check(parts, expectedSignature) {
+          const signature = Buffer.from(parts.signature, 'base64url');
+          parts.signature = expectedSignature;
+          return signature.toString('base64url') === parts.signature;
+        }
+      `,
+        "signature.toString('base64url')",
+        '===',
+        'parts.signature',
+      ),
+    },
+    {
+      name: 'a property of the original updated or deleted still reports',
+      ...timing(
+        `
+        function check(msg) {
+          const decoded = Buffer.from(msg.signature, 'base64url');
+          msg.count++;
+          delete msg.signature;
+          return decoded.toString('base64url') !== msg.signature;
+        }
+      `,
+        "decoded.toString('base64url')",
+        '!==',
+        'msg.signature',
       ),
     },
     {
