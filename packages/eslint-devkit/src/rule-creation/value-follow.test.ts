@@ -275,6 +275,32 @@ describe('exportedValue', () => {
     expect(text(exportedValue(load(dir, 'cjs3.js'), 'via', parser))).toBe('8');
   });
 
+  it('reads a barrel of `export *`, where an explicit export wins', () => {
+    const barrel = files({
+      'index.ts': [
+        "export * from './a';",
+        "export * from './b';",
+        "export * as ns from './a';",
+        "export * from 'some-package';",
+        "export * from './missing';",
+        'export const shadowed = 0;',
+      ].join('\n'),
+      'a.ts':
+        'export const fromA = 1;\nexport const shadowed = 9;\nexport default 7;',
+      'b.ts': "export * from './c';",
+      'c.ts': 'export function fromC() { return 3; }',
+    });
+    const index = load(barrel, 'index.ts');
+    expect(text(exportedValue(index, 'fromA', parser))).toBe('1');
+    expect(text(exportedValue(index, 'fromC', parser))).toMatch(
+      /^function fromC/,
+    );
+    expect(text(exportedValue(index, 'shadowed', parser))).toBe('0');
+    // `export *` never carries `default`, and `export * as ns` binds only `ns`.
+    expect(exportedValue(index, 'default', parser)).toBeNull();
+    expect(exportedValue(index, 'absent', parser)).toBeNull();
+  });
+
   it('stops a re-export chain at the depth bound', () => {
     const chain: Record<string, string> = { 'r0.ts': 'export const v = 1;' };
     for (let i = 1; i <= 12; i++)

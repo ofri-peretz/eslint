@@ -440,6 +440,22 @@ export function exportedValue(
       }
     }
   }
+  // `export * from './x'` re-exports every named export of `./x` except
+  // `default`. A name declared here wins over one a star re-export carries,
+  // so these are read only after every explicit export missed.
+  if (name === 'default') return null;
+  for (const statement of module.ast.body) {
+    if (
+      statement.type !== AST_NODE_TYPES.ExportAllDeclaration ||
+      statement.exported !== null
+    )
+      continue;
+    const target = resolveRelative(module.file, String(statement.source.value));
+    const next = target === null ? null : loadModule(target, parser);
+    const found =
+      next === null ? null : exportedValue(next, name, parser, depth + 1);
+    if (found !== null) return found;
+  }
   return null;
 }
 

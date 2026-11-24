@@ -38,6 +38,7 @@ import {
   hasParserServices,
   getParserServices,
   resolveModuleBinding,
+  valueFollow,
 } from '@interlace/eslint-devkit';
 import type ts from 'typescript';
 import { loadTypeScript } from '../../utils/typescript-peer';
@@ -271,6 +272,91 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         return resolveModuleBinding(target, scope) === undefined
           ? expressionName(target) === pipe
           : isModuleExport(target, scope, '@nestjs/common', pipe);
+      });
+    }
+
+    /**
+     * Whether `node`, read where it was written, installs the named pipe:
+     * `UsePipes(new ValidationPipe())`, or `applyDecorators(…)` composing one.
+     * `env` is the file the node sits in, which for a helper imported from
+     * another module is that module, so its own imports decide the names.
+     */
+    function installsPipe(
+      start: valueFollow.Value,
+      pipe: string,
+      depth = 0,
+    ): boolean {
+      // `const D = applyDecorators(D)` would otherwise never end.
+      if (depth > 2) return false;
+      const { node, env } = valueFollow.follow(start);
+      if (node.type !== AST_NODE_TYPES.CallExpression) return false;
+      const scope = env.scopeOf(node);
+      if (isModuleExport(node.callee, scope, '@nestjs/common', 'UsePipes')) {
+        return node.arguments.some((arg) => {
+          const target =
+            arg.type === AST_NODE_TYPES.NewExpression ? arg.callee : arg;
+          return isModuleExport(
+            target,
+            env.scopeOf(target),
+            '@nestjs/common',
+            pipe,
+          );
+        });
+      }
+      return (
+        isModuleExport(
+          node.callee,
+          scope,
+          '@nestjs/common',
+          'applyDecorators',
+        ) &&
+        node.arguments.some((arg) =>
+          installsPipe(valueFollow.valueAt(arg, env), pipe, depth + 1),
+        )
+      );
+    }
+
+    /**
+     * Whether a decorator on this node is the project's own helper around
+     * `UsePipes`:
+     *
+     *   export function UseValidationPipe(options?: ValidationPipeOptions) {
+     *     return UsePipes(new ValidationPipe(options));
+     *   }
+     *
+     * The helper is followed to its definition, in this file or across
+     * relative imports and `export *` barrels, and read there; its name says
+     * nothing. Ever Gauzy wraps its pipe this way on 1,386 route parameters, and
+     * every one was reported as unvalidated. A helper this cannot reach (a path
+     * alias, a package) is not assumed to validate.
+     */
+    function wrapsPipe(
+      decorators: TSESTree.Decorator[],
+      pipe: string,
+    ): boolean {
+      const env = valueFollow.envOf(context);
+      return decorators.some((dec) => {
+        const call = decoratorCall(dec);
+        const callee = call ? call.callee : dec.expression;
+        if (callee.type !== AST_NODE_TYPES.Identifier) return false;
+        const helper = valueFollow.follow(valueFollow.valueAt(callee, env));
+        // `@UseValidation` with `export const UseValidation = UsePipes(…)`.
+        if (!call) return installsPipe(helper, pipe);
+        const fn = helper.node;
+        if (
+          fn.type !== AST_NODE_TYPES.FunctionDeclaration &&
+          fn.type !== AST_NODE_TYPES.FunctionExpression &&
+          fn.type !== AST_NODE_TYPES.ArrowFunctionExpression
+        )
+          return false;
+        // Every way out of the helper must install the pipe.
+        const results = valueFollow.returnedValues(fn);
+        return (
+          results !== null &&
+          results.every((result) =>
+            installsPipe(valueFollow.valueAt(result, helper.env), pipe),
+          )
+        );
       });
     }
 
@@ -509,7 +595,9 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         // Skip if class or method has ValidationPipe
         if (
           usesPipe(cls.decorators, 'ValidationPipe') ||
-          usesPipe(node.decorators, 'ValidationPipe')
+          usesPipe(node.decorators, 'ValidationPipe') ||
+          wrapsPipe(cls.decorators, 'ValidationPipe') ||
+          wrapsPipe(node.decorators, 'ValidationPipe')
         )
           return;
         const routeSchemaPipe =
