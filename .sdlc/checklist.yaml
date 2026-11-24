@@ -1,0 +1,85 @@
+# The review checklist (triggerlist). Each item fires only when its trigger matches the diff, so a
+# reviewer reads the handful that apply, never the whole list. Read from the base branch: a pull
+# request cannot change the checks it is held to.
+# After editing: `npx triggerlist compile` rewrites REVIEW.md. `npx triggerlist seed` drafted no
+# items here (0 on 2026-11-24); these are written from the locks and rules they cite.
+
+# Files that judge code. A pull request changing one of these and the code it judges together is
+# flagged by `triggerlist protect` (`npm run hook:triggerlist`).
+gates:
+  - REVIEW.md
+  - .sdlc/checklist.yaml
+  - lefthook.yml
+  - .github/workflows/claude-code-review.yml
+  - .claude/hooks/**
+  - scripts/__tests__/*lock*.test.ts
+  - apps/docs/src/__tests__/*-lock.test.ts
+  - apps/docs/src/__tests__/*-lock.test.tsx
+
+items:
+  - id: dependency-in-ledger
+    trigger:
+      paths: ['**/package.json']
+      pattern: '"[@a-z0-9][^"]*":\s*"[~^]?\d'
+    question: Does every external dependency added here have a classified line (core, subject, owned-soon) in .agent/dependency-ledger.json?
+    check: npx vitest run --config scripts/__tests__/vitest.config.mts scripts/__tests__/dependency-ledger.lock.test.ts
+    sources:
+      [
+        scripts/__tests__/dependency-ledger.lock.test.ts,
+        docs/intents/2026-11-03-our-code-owns-the-tree,
+      ]
+
+  - id: fix-without-lock
+    trigger:
+      paths:
+        [
+          'packages/eslint-plugin-*/src/rules/**/*.ts',
+          'packages/eslint-plugin-*/src/utils/**/*.ts',
+        ]
+    question: Does a rule fix carry a test that fails when the fix is reverted, and does the rule leave the audit ratchet no worse?
+    check: npm run --silent rule-audit:gate -- --changed
+    sources: [CLAUDE.md, scripts/rule-audit-gate.ts]
+
+  - id: changeset-for-publishable-source
+    trigger:
+      paths: ['packages/*/src/**', 'packages/*/package.json']
+    question: Does a change to publishable package source carry a changeset with an upgrade path for anything breaking?
+    check: npm run --silent changeset:coverage && npm run --silent changeset:lint
+    sources: [scripts/check-changeset-coverage.ts, lefthook.yml]
+
+  - id: csp-and-image-hosts
+    trigger:
+      paths: ['apps/docs/next.config.mjs']
+      pattern: 'Content-Security-Policy|remotePatterns|hostname|\*'
+    question: Does the change loosen the CSP, or add an image host as a wildcard instead of an explicit images.remotePatterns entry?
+    check: cd apps/docs && npx vitest run src/__tests__/csp-report-endpoint-lock.test.ts
+    sources:
+      [CLAUDE.md, apps/docs/src/__tests__/csp-report-endpoint-lock.test.ts]
+
+  - id: hooks-bypassed
+    trigger:
+      paths: ['**']
+      pattern: '--no-verify|LEFTHOOK=0|core\.hooksPath'
+    question: Does the change bypass or teach bypassing the git hooks, which guard-bash denies?
+    check: npx vitest run --config scripts/__tests__/vitest.config.mts scripts/__tests__/guard-bash-hook.test.ts
+    sources: [scripts/__tests__/guard-bash-hook.test.ts, CLAUDE.md]
+
+  - id: one-turbo-invocation-per-hook
+    trigger:
+      paths: ['lefthook.yml']
+      pattern: 'turbo\s+run'
+    question: Does pre-push still run build and test in one turbo invocation, so two processes never race on .turbo/cache?
+    check: npx vitest run --config scripts/__tests__/vitest.config.mts scripts/__tests__/lefthook-turbo-cache-race.test.ts
+    sources: [scripts/__tests__/lefthook-turbo-cache-race.test.ts]
+
+  - id: lock-still-bites
+    trigger:
+      paths:
+        [
+          'scripts/__tests__/*lock*.test.ts',
+          'apps/docs/src/__tests__/*-lock.test.ts',
+          'apps/docs/src/__tests__/*-lock.test.tsx',
+        ]
+    question: Does the changed lock still fail when the invariant it guards is broken, or was it loosened to pass?
+    check: break the invariant by hand and run the lock; it must go red
+    sources: [CLAUDE.md, apps/docs/src/__tests__/lock-integrity.test.ts]
