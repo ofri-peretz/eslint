@@ -51,6 +51,16 @@ write(
     'export const apiToken = loadToken();',
   ].join('\n'),
 );
+write(
+  'auth/routes.js',
+  [
+    'export const ROUTES = {',
+    "  resetPassword: '/reset-password',",
+    "  nested: { changePassword: '/change-password' },",
+    '};',
+    'export const SECRETS = { apiToken: process.env.API_TOKEN };',
+  ].join('\n'),
+);
 const service = join(root, 'tokens/service.js');
 
 ruleTester.run(
@@ -113,8 +123,43 @@ ruleTester.run(
           }
         `,
       },
+      {
+        // @source Ghost ghost/core/server/auth/better-auth/plugins/staff-lifecycle.ts:162
+        // @found real-source scan
+        name: 'FP: a request path against a route in an imported object of literals',
+        filename: service,
+        code: `
+          import { ROUTES } from '../auth/routes.js';
+          export function isReset(req) {
+            return req.path === ROUTES.resetPassword || req.path === ROUTES.nested.changePassword;
+          }
+        `,
+      },
     ],
     invalid: [
+      {
+        name: 'an imported object property read from the environment is not a constant',
+        filename: service,
+        code: `
+          import { SECRETS } from '../auth/routes.js';
+          export function check(req) {
+            return req.headers['x-api-token'] === SECRETS.apiToken;
+          }
+        `,
+        errors: unsafe,
+      },
+      {
+        name: 'a property of this is not followed as an import',
+        filename: service,
+        code: `
+          export class Check {
+            run(req) {
+              return req.headers['x-api-token'] === this.secrets.apiToken;
+            }
+          }
+        `,
+        errors: unsafe,
+      },
       {
         name: 'a hasher returned by a call is not known to take no key',
         code: `

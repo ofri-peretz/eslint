@@ -1424,6 +1424,9 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
      */
     function isResolvedConstant(node: TSESTree.Node): boolean {
       if (isSourceConstant(node)) return true;
+      if (node.type === AST_NODE_TYPES.MemberExpression) {
+        return isImportedConstant(node);
+      }
       if (node.type !== AST_NODE_TYPES.Identifier) return false;
       if (constLiteralOf(sourceCode, node) !== undefined) return true;
       return isImportedConstant(node);
@@ -1446,8 +1449,16 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
      * reportable. A package or a path alias is out of reach and is judged as
      * before.
      */
-    function isImportedConstant(node: TSESTree.Identifier): boolean {
-      if (!isImportedBinding(node)) return false;
+    function isImportedConstant(
+      node: TSESTree.Identifier | TSESTree.MemberExpression,
+    ): boolean {
+      // `ROUTES.resetPassword`, with `ROUTES` an imported object of literals
+      // (Ghost `server/auth/better-auth/routes.ts`): the import decides, and
+      // the property is read where the object is written.
+      let root: TSESTree.Node = node;
+      while (root.type === AST_NODE_TYPES.MemberExpression) root = root.object;
+      if (root.type !== AST_NODE_TYPES.Identifier || !isImportedBinding(root))
+        return false;
       const landed = valueFollow.follow(
         valueFollow.valueAt(node, valueFollow.envOf(context)),
       );

@@ -221,6 +221,10 @@ import { API_TOKEN_DELETED } from '../events';
 if (event.type === API_TOKEN_DELETED) { ... }  // not a secret
 ```
 
+The same holds for a property of an imported object of literals, such as `req.path === ROUTES.resetPassword`
+with `export const ROUTES = { resetPassword: '/reset-password' }`. A property written as an env
+read still reports.
+
 A plain digest (`createHash`) of what the caller sent is a value the caller can compute too, so
 comparing it with a digest the client supplied leaks nothing. A digest that also takes something
 the caller did not send, or any keyed derivation (`createHmac`), is still a secret:
