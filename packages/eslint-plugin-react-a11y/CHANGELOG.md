@@ -5,6 +5,50 @@ All notable changes to `eslint-plugin-react-a11y` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.0.10
+
+### Patch Changes
+
+- **🐛 Fix** — `no-missing-aria-labels` accepts a button or link whose text is a JSX expression
+
+  `<button>{_('Open')}</button>`, `<button>{t('save')}</button>`, `<a>{label ?? 'Back'}</a>` and a template literal with
+  an expression are named by their children at runtime. Any expression child now counts as text, as in
+  eslint-plugin-jsx-a11y, except one proven to render nothing: `undefined`, `null`, `void 0`, a boolean, a blank string,
+  an element, or a conditional or logical expression of those. That was most of the 485 hits on readest/readest.
+  `role-supports-aria-props` accepts `aria-posinset`, `aria-setsize` and `aria-expanded` on role `tab` (aria-query).
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.1.2`
+
+## 3.0.9
+
+### Patch Changes
+
+- **🐛 Fix** — `no-missing-aria-labels`: no longer reports `<button><img alt="Save" /></button>`. An intrinsic `<img>` or `<area>` with a non-empty (or dynamic) `alt` names its parent, as `control-has-associated-label` already agreed. An empty or missing `alt`, `aria-hidden`, and a hidden wrapper still report.
+
+## 3.0.8
+
+### Patch Changes
+
+- **🐛 Fix** — an empty descendant and a ternary between text literals in accessible-name checks
+
+  - `control-has-associated-label` and `no-missing-aria-labels` no longer treat
+    an empty intrinsic descendant (`<label><span /></label>`) as label content —
+    a `<span>` with nothing inside gives a screen reader nothing to announce. A
+    custom component descendant still counts, since its render output isn't
+    visible here.
+  - `no-missing-aria-labels` now also recognizes a ternary between two
+    text-like expressions (`{on ? "Turn off" : "Turn on"}`) as text content,
+    closing a gap in the prior fix for text-like expression children.
+
+## 3.0.7
+
+### Patch Changes
+
+- **🐛 Fix** — Fix false positives found linting popular React packages.
+
+  - `no-missing-aria-labels`: an `aria-hidden="true"` control is not in the accessibility tree and needs no name; a `<button>` is named by text in a descendant element (`<button><span>Sign in</span></button>`), unless that element is `aria-hidden`; and a control whose `id` equals the `htmlFor` of a `<label>` with content in the same JSX tree is named, whether the value is a static string or the same template literal written twice. A label with no content, a different template, a label in a nested function, and a `<select>` with only options still report.
+  - `control-has-associated-label`: the same `id` / `htmlFor` naming is recognised.
+
 ## 3.0.6
 
 ### Patch Changes

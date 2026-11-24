@@ -1,0 +1,529 @@
+{
+  "rule": "forbid-foreign-prop-types",
+  "source": "eslint-plugin-react@7.37.5 tests/lib/rules/forbid-foreign-prop-types.js (MIT)",
+  "cases": [
+    {
+      "kind": "valid",
+      "n": 1,
+      "code": "import { propTypes } from \"SomeComponent\";\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 2,
+      "code": "import { propTypes } from \"SomeComponent\";\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 3,
+      "code": "import { propTypes as someComponentPropTypes } from \"SomeComponent\";\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 4,
+      "code": "import { propTypes as someComponentPropTypes } from \"SomeComponent\";\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 5,
+      "code": "const foo = propTypes\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 6,
+      "code": "const foo = propTypes\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 7,
+      "code": "foo(propTypes)\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 8,
+      "code": "foo(propTypes)\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 9,
+      "code": "foo + propTypes\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 10,
+      "code": "foo + propTypes\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 11,
+      "code": "const foo = [propTypes]\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 12,
+      "code": "const foo = [propTypes]\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 13,
+      "code": "const foo = { propTypes }\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 14,
+      "code": "const foo = { propTypes }\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 15,
+      "code": "Foo.propTypes = propTypes\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 16,
+      "code": "Foo.propTypes = propTypes\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 17,
+      "code": "Foo[\"propTypes\"] = propTypes\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 18,
+      "code": "Foo[\"propTypes\"] = propTypes\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 19,
+      "code": "const propTypes = \"bar\"; Foo[propTypes];\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 20,
+      "code": "const propTypes = \"bar\"; Foo[propTypes];\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 21,
+      "code": "\n        const Message = (props) => (<div>{props.message}</div>);\n        Message.propTypes = {\n          message: PropTypes.string\n        };\n        const Hello = (props) => (<Message>Hello {props.name}</Message>);\n        Hello.propTypes = {\n          name: Message.propTypes.message\n        };\n      \n// features: [], parser: default, options: [{\"allowInPropTypes\":true}]",
+      "options": [
+        {
+          "allowInPropTypes": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 22,
+      "code": "\n        const Message = (props) => (<div>{props.message}</div>);\n        Message.propTypes = {\n          message: PropTypes.string\n        };\n        const Hello = (props) => (<Message>Hello {props.name}</Message>);\n        Hello.propTypes = {\n          name: Message.propTypes.message\n        };\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"allowInPropTypes\":true}]",
+      "options": [
+        {
+          "allowInPropTypes": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 23,
+      "code": "\n        class MyComponent extends React.Component {\n          static propTypes = {\n            baz: Qux.propTypes.baz\n          };\n        }\n      \n// features: [class fields], parser: default, parserOptions: {\"ecmaVersion\":2022}, options: [{\"allowInPropTypes\":true}]",
+      "options": [
+        {
+          "allowInPropTypes": true
+        }
+      ],
+      "ecmaVersion": 2022,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 24,
+      "code": "\n        class MyComponent extends React.Component {\n          static propTypes = {\n            baz: Qux.propTypes.baz\n          };\n        }\n      \n// features: [class fields], parser: @typescript-eslint/parser, options: [{\"allowInPropTypes\":true}]",
+      "options": [
+        {
+          "allowInPropTypes": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 1,
+      "code": "\n        var Foo = createReactClass({\n          propTypes: Bar.propTypes,\n          render: function() {\n            return <Foo className=\"bar\" />;\n          }\n        });\n      \n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 2,
+      "code": "\n        var Foo = createReactClass({\n          propTypes: Bar.propTypes,\n          render: function() {\n            return <Foo className=\"bar\" />;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 3,
+      "code": "\n        var Foo = createReactClass({\n          propTypes: Bar[\"propTypes\"],\n          render: function() {\n            return <Foo className=\"bar\" />;\n          }\n        });\n      \n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 4,
+      "code": "\n        var Foo = createReactClass({\n          propTypes: Bar[\"propTypes\"],\n          render: function() {\n            return <Foo className=\"bar\" />;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 5,
+      "code": "\n        var { propTypes } = SomeComponent\n        var Foo = createReactClass({\n          propTypes,\n          render: function() {\n            return <Foo className=\"bar\" />;\n          }\n        });\n      \n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 6,
+      "code": "\n        var { propTypes } = SomeComponent\n        var Foo = createReactClass({\n          propTypes,\n          render: function() {\n            return <Foo className=\"bar\" />;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 7,
+      "code": "\n        var { propTypes: things, ...foo } = SomeComponent\n        var Foo = createReactClass({\n          propTypes,\n          render: function() {\n            return <Foo className=\"bar\" />;\n          }\n        });\n      \n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 8,
+      "code": "\n        var { propTypes: things, ...foo } = SomeComponent\n        var Foo = createReactClass({\n          propTypes,\n          render: function() {\n            return <Foo className=\"bar\" />;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 9,
+      "code": "\n        class MyComponent extends React.Component {\n          static fooBar = {\n            baz: Qux.propTypes.baz\n          };\n        }\n      \n// features: [class fields,no-ts], parser: default, parserOptions: {\"ecmaVersion\":2022}",
+      "errors": 1,
+      "ecmaVersion": 2022,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 10,
+      "code": "\n        var { propTypes: typesOfProps } = SomeComponent\n        var Foo = createReactClass({\n          propTypes: typesOfProps,\n          render: function() {\n            return <Foo className=\"bar\" />;\n          }\n        });\n      \n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 11,
+      "code": "\n        var { propTypes: typesOfProps } = SomeComponent\n        var Foo = createReactClass({\n          propTypes: typesOfProps,\n          render: function() {\n            return <Foo className=\"bar\" />;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 12,
+      "code": "\n        const Message = (props) => (<div>{props.message}</div>);\n        Message.propTypes = {\n          message: PropTypes.string\n        };\n        const Hello = (props) => (<Message>Hello {props.name}</Message>);\n        Hello.propTypes = {\n          name: Message.propTypes.message\n        };\n      \n// features: [], parser: default, options: [{\"allowInPropTypes\":false}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowInPropTypes": false
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 13,
+      "code": "\n        const Message = (props) => (<div>{props.message}</div>);\n        Message.propTypes = {\n          message: PropTypes.string\n        };\n        const Hello = (props) => (<Message>Hello {props.name}</Message>);\n        Hello.propTypes = {\n          name: Message.propTypes.message\n        };\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"allowInPropTypes\":false}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowInPropTypes": false
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 14,
+      "code": "\n        class MyComponent extends React.Component {\n          static propTypes = {\n            baz: Qux.propTypes.baz\n          };\n        }\n      \n// features: [class fields,no-ts], parser: default, parserOptions: {\"ecmaVersion\":2022}, options: [{\"allowInPropTypes\":false}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowInPropTypes": false
+        }
+      ],
+      "ecmaVersion": 2022,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    }
+  ]
+}

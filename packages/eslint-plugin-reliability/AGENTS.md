@@ -41,14 +41,7 @@ Each preset is one flat config object: put it in the array as an element, do not
 
 ### Rules in no preset
 
-Enable these by name (`'reliability/<rule>': 'error'`):
-
-- `no-unhandled-promise`: Detects unhandled Promise rejections.
-- `no-missing-error-context`: Detects thrown errors without context.
-- `error-message`: Enforce providing a message when creating built-in Error objects for better debugging.
-- `no-unsafe-type-narrowing`: Detects unsafe type narrowing patterns.
-- `no-await-in-loop`: Disallow await inside loops and suggest appropriate concurrency patterns.
-- `no-jsdoc-terminator-in-example`: Detects `*/` sequences inside JSDoc @example blocks that prematurely close the comment.
+Enable these by name (`'reliability/<rule>': 'error'`); README.md describes each: `no-unhandled-promise`, `no-missing-error-context`, `error-message`, `no-unsafe-type-narrowing`, `no-await-in-loop`, `no-jsdoc-terminator-in-example`.
 
 ## More
 

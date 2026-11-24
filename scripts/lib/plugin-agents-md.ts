@@ -243,11 +243,9 @@ export async function renderAgentsMd(
     out.push(
       '### Rules in no preset',
       '',
-      `Enable these by name (\`'${f.pluginKey}/<rule>': 'error'\`):`,
-      '',
-      ...unlisted.map(
-        (r) => `- \`${r}\`: ${cap(f.rules[r] || 'no description')}`,
-      ),
+      // Names only: an agent enabling one reads its README entry anyway, and a description per
+      // rule here grew every plugin's AGENTS.md past its guidance budget (2026-11-24).
+      `Enable these by name (\`'${f.pluginKey}/<rule>': 'error'\`); README.md describes each: ${unlisted.map((r) => `\`${r}\``).join(', ')}.`,
       '',
     );
 

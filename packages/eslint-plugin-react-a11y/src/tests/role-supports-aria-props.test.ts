@@ -31,6 +31,20 @@ describe('role-supports-aria-props', () => {
     ruleTester.run('valid - elements with supported ARIA properties', roleSupportsAriaProps, {
       valid: [
         {
+          // @found readest/readest 2026-11-24 (aria-query tab role, ARIA 1.2)
+          name: 'FP: tab supports aria-posinset',
+          code: '<div role="tab" aria-posinset="1" />',
+        },
+        {
+          // @found readest/readest 2026-11-24 (aria-query tab role, ARIA 1.2)
+          name: 'FP: tab supports aria-setsize',
+          code: '<div role="tab" aria-setsize="3" />',
+        },
+        {
+          name: 'tab supports aria-expanded',
+          code: '<div role="tab" aria-expanded="true" />',
+        },
+        {
           // @found corpus scan (okta-signin-widget): not extended to components
           name: 'a braced role on a component is not judged',
           code: '<Comp role={"button"} aria-checked="true" />',
@@ -48,6 +62,7 @@ describe('role-supports-aria-props', () => {
           code: '<li role="radio" aria-checked="false"></li>',
         },
         {
+          name: 'a button supports aria-pressed',
           code: '<div role="button" aria-pressed="false"></div>',
         },
         // Global ARIA props valid on any role (regression: was flagged on button/link)

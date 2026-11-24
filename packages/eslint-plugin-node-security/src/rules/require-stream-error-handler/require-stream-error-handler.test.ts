@@ -82,6 +82,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // source and filename: that pair is what proves the option decides
     // something rather than merely being read.
     {
+      name: 'allowInTests silences an unhandled pipe in a test file',
       code: 'fs.createReadStream(p).pipe(res);',
       filename: '/proj/stream.test.ts',
       options: [{ allowInTests: true }],

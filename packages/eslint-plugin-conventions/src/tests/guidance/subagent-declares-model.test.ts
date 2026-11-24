@@ -58,8 +58,26 @@ markdownRuleTester().run('subagent-declares-model', rule, {
       filename: '.claude/agents/x/notes.md',
       code: 'x\n',
     },
+    {
+      // MCP tools are not known in advance: denying the built-ins that write is the restriction.
+      name: 'disallowedTools denying Edit, Write and Bash inline restricts writes',
+      filename: '/repo/.claude/agents/mcp-reader.md',
+      code: '---\nmodel: haiku\ndisallowedTools: Edit, Write, NotebookEdit, Bash\n---\nRead.\n',
+    },
+    {
+      name: 'disallowedTools as a block list denying every write tool restricts writes',
+      filename: '/repo/.claude/agents/mcp-reader.md',
+      code: '---\nmodel: haiku\ndisallowedTools:\n  - Edit\n  - Write\n  - Bash\n---\nRead.\n',
+    },
   ],
   invalid: [
+    {
+      // Denying Edit and Write still leaves Bash, which writes.
+      name: 'disallowedTools that leaves Bash allowed still needs a tools list',
+      filename: '/repo/.claude/agents/mcp-reader.md',
+      code: '---\nmodel: haiku\ndisallowedTools: Edit, Write\n---\nRead.\n',
+      errors: [{ messageId: 'missingKey' }],
+    },
     {
       name: 'no frontmatter at all',
       filename: '.claude/agents/reviewer.md',

@@ -485,6 +485,20 @@ export const requirePostmessageOriginCheck = createRule<
             isMessageListener = true;
             receiver = key;
             receiverBinding = binding;
+            // `navigator.serviceWorker` is the page's ServiceWorkerContainer:
+            // its `message` event comes only from the same-origin worker that
+            // controls the page, so there is no foreign sender to check. Only
+            // the platform's own `navigator` counts — a local of that name does
+            // not.
+            if (
+              callee.object.type === 'MemberExpression' &&
+              propertyName(callee.object) === 'serviceWorker' &&
+              callee.object.object.type === 'Identifier' &&
+              callee.object.object.name === 'navigator' &&
+              declaredVariable(callee.object.object, sourceCode) === undefined
+            ) {
+              return;
+            }
             // `new WebSocket(url).addEventListener('message', …)` — the
             // receiver names its own type and needs no binding to resolve.
             if (

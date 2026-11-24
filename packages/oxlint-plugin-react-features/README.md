@@ -26,7 +26,7 @@
 
 ## Covered natively by oxlint
 
-oxlint already ships 33 of these 65 rules as built-ins. Enable the built-in instead: it is the same check, runs natively, and running both would report every finding twice. Each rule carries the mapping as `meta.interop.nativeEquivalent`.
+oxlint already ships 33 of these 68 rules as built-ins. Enable the built-in instead: it is the same check, runs natively, and running both would report every finding twice. Each rule carries the mapping as `meta.interop.nativeEquivalent`.
 
 | This plugin                                            | oxlint built-in                               |
 | :----------------------------------------------------- | :-------------------------------------------- |
@@ -64,7 +64,7 @@ oxlint already ships 33 of these 65 rules as built-ins. Enable the built-in inst
 | `react-features/state-in-constructor`                  | `react/state-in-constructor`                  |
 | `react-features/void-dom-elements-no-children`         | `react/void-dom-elements-no-children`         |
 
-What this package adds to oxlint is the other 32: every rule in the table below that is not listed here.
+What this package adds to oxlint is the other 35: every rule in the table below that is not listed here.
 
 - **Why** — a linter nobody reads protects nothing. We would rather miss a finding
   than spend your attention on one that was never real.
@@ -123,7 +123,7 @@ Install [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-pl
 | :------ | :--------------------------------------------------------------- |
 | oxlint  | verified on `1.90.0`: CI loads every rule ID through `jsPlugins` |
 | Vite+   | `lint.jsPlugins` in `vite.config.ts`                             |
-| Node.js | `>=22.13.0`                                                      |
+| Node.js | `^20.19.0 \|\| ^22.13.0 \|\| >=24`                               |
 
 ## Rules
 
@@ -145,6 +145,7 @@ Install [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-pl
 | [checked-requires-onchange-or-readonly](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/checked-requires-onchange-or-readonly?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features) |        |       |      | checked-requires-onchange-or-readonly rule                                                                   | 🟢  |     |     |     | 💡  |     |
 | [default-props-match-prop-types](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/default-props-match-prop-types?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)               |        |       |      | default-props-match-prop-types rule                                                                          | 🟢  |     |     |     | 💡  |     |
 | [display-name](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/display-name?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                   |        |       |      | display-name rule                                                                                            | 🟢  |     |     |     | 💡  |     |
+| [forbid-foreign-prop-types](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/forbid-foreign-prop-types?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                         |        |       |      | Disallow using another component's propTypes                                                                 | 🟢  |     |     |     |     |     |
 | [hooks-exhaustive-deps](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/hooks-exhaustive-deps?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                 |        |       |      | hooks-exhaustive-deps rule                                                                                   | 🟢  |     | ⚠️  |     | 💡  |     |
 | [jsx-handler-names](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-handler-names?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                         |        |       |      | jsx-handler-names rule                                                                                       | 🟢  |     |     |     | 💡  |     |
 | [jsx-key](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-key?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                             |        |       |      | jsx-key rule                                                                                                 | 🟢  | 💼  |     |     | 💡  |     |
@@ -156,6 +157,7 @@ Install [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-pl
 | [jsx-no-script-url](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-script-url?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                         |        |       |      | Prevent javascript: URLs in JSX. This rule is part of eslint-plugin-react-features and provides LLM-optimiz… | 🟢  | 💼  |     |     | 💡  |     |
 | [jsx-no-target-blank](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-target-blank?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                     |        |       |      | Require rel='noopener noreferrer' with target='_blank'. This rule is part of eslint-plugin-react-features a… | 🟢  | 💼  |     |     | 💡  |     |
 | [jsx-no-undef](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-undef?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                   |        |       |      | Disallow undeclared variables in JSX                                                                         | 🟢  |     |     |     |     |     |
+| [jsx-pascal-case](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-pascal-case?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                             |        |       |      | Enforce PascalCase for user-defined JSX components                                                           | 🟢  |     |     |     |     |     |
 | [jsx-uses-react](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-uses-react?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                               |        |       |      | Disallow React to be incorrectly marked as unused                                                            | 🟢  |     |     |     |     |     |
 | [jsx-uses-vars](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-uses-vars?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                 |        |       |      | Disallow variables used in JSX to be incorrectly marked as unused                                            | 🟢  |     |     |     |     |     |
 | [no-access-state-in-setstate](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-access-state-in-setstate?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                     |        |       |      | no-access-state-in-setstate rule                                                                             | 🟢  |     |     |     | 💡  |     |
@@ -206,6 +208,7 @@ Install [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-pl
 | [sort-comp](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/sort-comp?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                                         |        |       |      | sort-comp rule                                                                                               | 🟢  |     |     |     | 💡  |     |
 | [state-in-constructor](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/state-in-constructor?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                   |        |       |      | state-in-constructor rule                                                                                    | 🟢  |     |     |     | 💡  |     |
 | [static-property-placement](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/static-property-placement?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                         |        |       |      | static-property-placement rule                                                                               | 🟢  |     |     |     | 💡  |     |
+| [style-prop-object](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/style-prop-object?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                                         |        |       |      | Enforce style prop value is an object                                                                        | 🟢  |     |     |     |     |     |
 | [void-dom-elements-no-children](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/void-dom-elements-no-children?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-react-features)                 |        |       |      | Prevent void DOM elements from receiving children. This rule is part of eslint-plugin-react-features and pr… | 🟢  |     |     |     | 💡  |     |
 
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:START - Do not edit manually -->

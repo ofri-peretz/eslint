@@ -1,10 +1,10 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-11-23",
+  "generatedAt": "2026-11-24",
   "totalPlugins": 32,
-  "totalRules": 512,
-  "oxlintCompatible": 512,
+  "totalRules": 515,
+  "oxlintCompatible": 515,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -2455,7 +2455,7 @@
       "short": "react-features",
       "shim": "tools/oxlint-plugins/interlace-react-features.cjs",
       "subpath": "eslint-plugin-react-features/oxlint",
-      "ruleCount": 65,
+      "ruleCount": 68,
       "rules": [
         {
           "name": "component-api/no-arbitrary-token-class",
@@ -2548,6 +2548,12 @@
           "isTypeAware": false
         },
         {
+          "name": "react/forbid-foreign-prop-types",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "react/hooks-exhaustive-deps",
           "portability": "compatible",
           "blockers": [],
@@ -2609,6 +2615,12 @@
         },
         {
           "name": "react/jsx-no-undef",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-pascal-case",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2837,6 +2849,12 @@
         },
         {
           "name": "react/static-property-placement",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/style-prop-object",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3819,6 +3837,7 @@
       "component-api/require-data-slot",
       "default-props-match-prop-types",
       "display-name",
+      "forbid-foreign-prop-types",
       "hooks-exhaustive-deps",
       "jsx-handler-names",
       "jsx-key",
@@ -3830,6 +3849,7 @@
       "jsx-no-script-url",
       "jsx-no-target-blank",
       "jsx-no-undef",
+      "jsx-pascal-case",
       "jsx-uses-react",
       "jsx-uses-vars",
       "migration/react-class-to-hooks",
@@ -3879,6 +3899,7 @@
       "react/checked-requires-onchange-or-readonly",
       "react/default-props-match-prop-types",
       "react/display-name",
+      "react/forbid-foreign-prop-types",
       "react/hooks-exhaustive-deps",
       "react/jsx-handler-names",
       "react/jsx-key",
@@ -3890,6 +3911,7 @@
       "react/jsx-no-script-url",
       "react/jsx-no-target-blank",
       "react/jsx-no-undef",
+      "react/jsx-pascal-case",
       "react/jsx-uses-react",
       "react/jsx-uses-vars",
       "react/no-access-state-in-setstate",
@@ -3928,6 +3950,7 @@
       "react/sort-comp",
       "react/state-in-constructor",
       "react/static-property-placement",
+      "react/style-prop-object",
       "react/void-dom-elements-no-children",
       "require-data-slot",
       "require-default-props",
@@ -3937,6 +3960,7 @@
       "sort-comp",
       "state-in-constructor",
       "static-property-placement",
+      "style-prop-object",
       "void-dom-elements-no-children"
     ],
     "reliability": [

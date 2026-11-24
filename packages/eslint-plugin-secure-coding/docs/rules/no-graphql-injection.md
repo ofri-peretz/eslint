@@ -94,6 +94,12 @@ Interpolating another GraphQL document is composition, not input: a `const`
 holding a fragment clears its `${FRAGMENT}` whether the constant is a template
 or a plain string literal.
 
+The same holds for a `gql`/`graphql` tagged template, written in place or bound
+to a single-assignment `const`. A `gql` tag makes its template a document even
+when it has no static text, so a `gql` template that is nothing but an interpolation is checked, not exempt. An
+**imported** fragment still reports, whatever it is called: an import cannot be
+resolved within the file, so nothing shows it is a document.
+
 ### Why This Matters
 
 | Issue            | Impact                   | Solution                            |

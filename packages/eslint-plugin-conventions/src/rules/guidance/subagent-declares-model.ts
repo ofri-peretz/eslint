@@ -9,7 +9,9 @@
  * @description A subagent with no `model:` inherits the parent's — usually
  * the most expensive one, for a task picked precisely because it was narrow.
  * One with no `tools:` inherits every tool, including the ones that write.
- * Both are one frontmatter line each.
+ * Both are one frontmatter line each. A subagent whose tools are not known in
+ * advance (connected MCP tools) may instead deny the built-ins that write:
+ * `disallowedTools` naming Edit, Write and Bash.
  */
 
 import {
@@ -22,6 +24,16 @@ import { frontmatter, guidanceKind } from '../../lib/guidance-files';
 import { lineLoc } from '../../lib/report-loc';
 
 type MessageIds = 'missingKey';
+
+/** The built-in tools that change files or run commands. */
+const WRITE_TOOLS = ['Edit', 'Write', 'Bash'] as const;
+
+/** True when a `disallowedTools` value denies every built-in tool that writes. */
+function deniesWrites(value: string | undefined): boolean {
+  if (!value) return false;
+  const denied = new Set(value.split(/[\s,[\]"']+/).filter(Boolean));
+  return WRITE_TOOLS.every((tool) => denied.has(tool));
+}
 
 const DOCS =
   'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/subagent-declares-model.md';
@@ -70,14 +82,14 @@ export const subagentDeclaresModel = createRule<[], MessageIds>({
             },
           });
         }
-        if (!keys.get('tools')) {
+        if (!keys.get('tools') && !deniesWrites(keys.get('disallowedTools'))) {
           context.report({
             loc,
             messageId: 'missingKey',
             data: {
               key: 'tools',
               inherits: 'every tool, including the ones that write',
-              fix: 'Add `tools: Read, Grep, Glob` (the tools the task needs, and no more) to the frontmatter.',
+              fix: 'Add `tools: Read, Grep, Glob` (the tools the task needs, and no more) to the frontmatter, or, when its tools are not known in advance (MCP), `disallowedTools: Edit, Write, Bash`.',
             },
           });
         }

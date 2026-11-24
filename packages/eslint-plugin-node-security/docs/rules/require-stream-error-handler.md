@@ -124,6 +124,20 @@ async function downloadSafely(req, res) {
 | Uncaught Exception      | 248 | A04:2021 | 7.5 High | Process exit — remote denial of service |
 | Improper Error Handling | 391 | A04:2021 | 5.3 Med  | Partial writes, truncated responses     |
 
+## Not a finding
+
+`.pipe()` returns its destination. When a function returns that value, the destination is the
+caller's to listen to, and the caller attaches the error handler:
+
+```ts
+function check(stream: Readable) {
+  const checked = new Transform({ transform: verifyChunk });
+  return stream.pipe(checked); // the caller handles 'error'
+}
+```
+
+A source the function creates itself is not handed back, so it still reports.
+
 ## Related Rules
 
 - [`no-unbounded-decompression`](./no-unbounded-decompression.md) — Detect decompression with no output limit

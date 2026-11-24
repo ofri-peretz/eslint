@@ -123,8 +123,14 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
           name: 'a count compared with a number is not a secret comparison',
           code: 'if (count === 5) {}',
         },
-        { code: 'if (userId === targetId) {}' },
-        { code: 'if (status === "active") {}' },
+        {
+          code: 'if (userId === targetId) {}',
+          name: 'two identifiers that are not secrets',
+        },
+        {
+          code: 'if (status === "active") {}',
+          name: 'a status compared with a string constant',
+        },
         { code: 'if (index === 0) {}' },
         // Similar names that are NOT secrets (use specific non-matching names)
         {
@@ -171,7 +177,10 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
           `if (password === 'default_password') { warn(); }`,
           // A template literal with no interpolation is the same string constant
           // written longhand.
-          'if (token === `access`) { done(); }',
+          {
+            name: 'a template literal with no interpolation is a string constant',
+            code: 'if (token === `access`) { done(); }',
+          },
         ],
         invalid: [],
       },
@@ -208,6 +217,7 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
           // process.env in both spellings. The bracket form used to slip past an
           // explicit `process.env` check that only understood dot notation.
           {
+            name: 'a caller token against a configured API token is a timing oracle',
             code: 'if (userToken === process.env.API_TOKEN) grant();',
             errors: [{ messageId: 'timingUnsafeCompare' }],
           },
@@ -752,7 +762,10 @@ describe('no-timing-unsafe-compare rule-corpus regressions', () => {
     valid: [
       // Name collisions. `auth` must keep matching `authorization`, so the
       // subtraction is by WORD and by TAIL, never by loosening the pattern.
-      { code: 'if (req.body.authorId !== post.authorId) { deny(); }' },
+      {
+        name: 'author collides with auth by substring and blanket-masks the whole identifier, unlike the scheme/auth pairing (#1685)',
+        code: 'if (req.body.authorId !== post.authorId) { deny(); }',
+      },
       {
         code: 'if (req.body.postAuthorId !== comment.postAuthorId) { deny(); }',
       },

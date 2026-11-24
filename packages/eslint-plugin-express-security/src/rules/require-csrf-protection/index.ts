@@ -81,6 +81,9 @@ type RuleOptions = [Options?];
 
 const DEFAULT_PROTECTED_METHODS = ['post', 'put', 'patch', 'delete'];
 
+/** A module specifier that names a CSRF implementation (`./libs/csrf.js`, `csurf`). */
+const CSRF_MODULE = /csrf|csurf/i;
+
 /** This rule exposes no `authMiddleware` option; the shared helper takes a set. */
 const EMPTY: ReadonlySet<string> = new Set();
 
@@ -256,6 +259,83 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
     let allowInTests: boolean;
     let protectedMethods: string[];
     let ignorePatterns: string[];
+    /** Is this identifier bound by an import or require of a csrf module? */
+    function isCsrfModuleBinding(node: TSESTree.Identifier): boolean {
+      let scope: TSESLint.Scope.Scope | null =
+        context.sourceCode.getScope(node);
+      while (scope) {
+        const variable = scope.set.get(node.name);
+        if (variable) {
+          const def = variable.defs[0];
+          if (!def) return false;
+          if (def.type === 'ImportBinding') {
+            return (
+              def.parent.type === 'ImportDeclaration' &&
+              CSRF_MODULE.test(String(def.parent.source.value))
+            );
+          }
+          if (def.type !== 'Variable' || !def.node.init) return false;
+          const init = def.node.init;
+          return (
+            init.type === 'CallExpression' &&
+            init.callee.type === 'Identifier' &&
+            init.callee.name === 'require' &&
+            init.arguments[0]?.type === 'Literal' &&
+            CSRF_MODULE.test(String(init.arguments[0].value))
+          );
+        }
+        scope = scope.upper;
+      }
+      return false;
+    }
+
+    /**
+     * A mounted middleware function that hands the request on to a CSRF module
+     * it imported: `app.use(function (req, res, next) { csrf(req, res, next); })`.
+     * Mounted once for every route, so it protects them like `app.use(csrf())`.
+     * The callee must resolve to an import or `require` of a module whose path
+     * names csrf, and the call must pass the wrapper's own `next` on: a helper
+     * that merely reads a token does not protect anything.
+     */
+    function isDelegatingCsrfWrapper(node: TSESTree.Node): boolean {
+      if (
+        node.type !== 'FunctionExpression' &&
+        node.type !== 'ArrowFunctionExpression'
+      ) {
+        return false;
+      }
+      const next = node.params[2];
+      if (next?.type !== 'Identifier') return false;
+      let found = false;
+      const visit = (current: TSESTree.Node | null | undefined): void => {
+        if (found || !current || typeof current.type !== 'string') return;
+        if (
+          current.type === 'CallExpression' &&
+          current.callee.type === 'Identifier' &&
+          isCsrfModuleBinding(current.callee) &&
+          current.arguments.some(
+            (argument) =>
+              argument.type === 'Identifier' && argument.name === next.name,
+          )
+        ) {
+          found = true;
+          return;
+        }
+        for (const [key, value] of Object.entries(
+          current as unknown as Record<string, unknown>,
+        )) {
+          if (key === 'parent') continue;
+          if (Array.isArray(value)) {
+            for (const entry of value) visit(entry as TSESTree.Node);
+          } else if (value && typeof value === 'object' && 'type' in value) {
+            visit(value as TSESTree.Node);
+          }
+        }
+      };
+      visit(node.body);
+      return found;
+    }
+
     let hasGlobalCsrf: boolean;
     let candidates: {
       node: TSESTree.CallExpression;
@@ -343,6 +423,11 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
           for (const arg of flattenMiddleware(node.arguments)) {
             // app.use(csrf())
             if (arg.type === 'CallExpression' && isCsrfMiddleware(arg)) {
+              hasGlobalCsrf = true;
+              return;
+            }
+            // app.use((req, res, next) => csrf(req, res, next))
+            if (isDelegatingCsrfWrapper(arg)) {
               hasGlobalCsrf = true;
               return;
             }

@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-browser-security",
-  "version": "3.1.4",
+  "version": "3.1.5",
   "description": "ESLint browser security and XSS rules — detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps.",
   "type": "commonjs",
   "sideEffects": false,

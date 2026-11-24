@@ -13,5 +13,4 @@ failure message names the fix; skipped hooks and CI polling loops are denied by
 - Reproduce visual bugs at **~390px** before claiming a fix; mobile regresses most.
 - **Dev hits live APIs; prod serves cached JSON.** Broken-in-prod, fine-in-dev is the expected
   failure mode.
-- Only `main` deploys. Never loosen CSP in `next.config.mjs`; a new image host is an explicit
-  `images.remotePatterns` entry, never a wildcard.
+- Only `main` deploys.

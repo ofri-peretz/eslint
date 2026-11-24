@@ -5,6 +5,13 @@ All notable changes to `eslint-plugin-conventions` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 7.2.1
+
+### Patch Changes
+
+- **🐛 Fix** — AGENTS.md lists the rules in no preset by name on one line (README.md describes each), so the file an agent loads stays inside its guidance budget.
+- **🐛 Fix** — `subagent-declares-model` accepts a subagent that denies the built-in tools that write (`disallowedTools: Edit, Write, Bash`) in place of a `tools` allowlist, for subagents whose MCP tools are not known in advance.
+
 ## 7.2.0
 
 ### Minor Changes

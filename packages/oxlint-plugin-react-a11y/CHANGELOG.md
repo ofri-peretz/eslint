@@ -5,6 +5,30 @@ All notable changes to `oxlint-plugin-react-a11y` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.0.10
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-react-a11y@3.0.10`
+
+## 3.0.9
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-react-a11y@3.0.9`
+
+## 3.0.8
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-react-a11y@3.0.8`
+
+## 3.0.7
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-react-a11y@3.0.7`
+
 ## 3.0.6
 
 ### Patch Changes

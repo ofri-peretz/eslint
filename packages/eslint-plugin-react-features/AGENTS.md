@@ -12,7 +12,7 @@ Guide for AI coding assistants using this plugin in a project. To change the plu
 npm install --save-dev eslint-plugin-react-features
 ```
 
-Requires ESLint ^8.40.0 || ^9.0.0 || ^10.0.0 and Node >=22.13.0.
+Requires ESLint ^8.40.0 || ^9.0.0 || ^10.0.0 and Node ^20.19.0 || ^22.13.0 || >=24.
 
 Flat config files (`eslint.config.*`) are found by ESLint 8.57 and newer; on ESLint 9 and 10 they are the default.
 
@@ -72,62 +72,7 @@ Each preset is one flat config object: put it in the array as an element, do not
 
 ### Rules in no preset
 
-Enable these by name (`'react-features/<rule>': 'error'`):
-
-- `required-attributes`: Enforce required attributes on React components with customizable ignore lists.
-- `no-direct-mutation-state`: Prevent direct mutation of this.state that breaks React reconciliation.
-- `require-optimization`: Require performance optimizations for React components based on usage patterns.
-- `no-set-state`: Disallow usage of setState to encourage functional components with hooks.
-- `no-this-in-sfc`: Disallow this from being used in stateless functional components.
-- `no-access-state-in-setstate`: Disallow accessing this.state inside setState calls.
-- `checked-requires-onchange-or-readonly`: Ensure controlled inputs have onChange or readOnly.
-- `default-props-match-prop-types`: Validate default props match prop types.
-- `display-name`: Enforce component display names.
-- `jsx-handler-names`: Enforce event handler naming conventions.
-- `jsx-max-depth`: Limit JSX nesting depth.
-- `jsx-no-bind`: Prevent .bind() in JSX.
-- `jsx-no-literals`: Prevent string literals in JSX.
-- `no-adjacent-inline-elements`: Prevent adjacent inline elements.
-- `no-arrow-function-lifecycle`: Prevent arrow functions in lifecycle methods.
-- `no-did-mount-set-state`: Prevent setState in componentDidMount.
-- `no-did-update-set-state`: Prevent setState in componentDidUpdate.
-- `no-invalid-html-attribute`: Prevent invalid HTML attributes.
-- `no-is-mounted`: Prevent isMounted anti-pattern.
-- `no-multi-comp`: Prevent multiple components per file.
-- `no-namespace`: Prevent namespace imports.
-- `no-object-type-as-default-prop`: Prevent object types as default props.
-- `no-redundant-should-component-update`: Prevent redundant shouldComponentUpdate.
-- `no-render-return-value`: Prevent using render return value.
-- `no-typos`: Catch common typos.
-- `no-unescaped-entities`: Prevent unescaped entities.
-- `prefer-es6-class`: Prefer ES6 classes over createClass.
-- `prefer-stateless-function`: Prefer stateless functions.
-- `prop-types`: Enforce prop types usage.
-- `react-in-jsx-scope`: Ensure React is in scope.
-- `require-default-props`: Require default props.
-- `require-render-return`: Require render methods to return.
-- `sort-comp`: Enforce component method ordering.
-- `state-in-constructor`: Enforce state initialization in constructor.
-- `static-property-placement`: Enforce static property placement.
-- `jsx-no-comment-textnodes`: Disallow comments from being inserted as text nodes.
-- `jsx-no-undef`: Disallow undeclared variables in JSX.
-- `jsx-uses-react`: Disallow React to be incorrectly marked as unused.
-- `jsx-uses-vars`: Disallow variables used in JSX to be incorrectly marked as unused.
-- `no-find-dom-node`: Prevent using findDOMNode.
-- `no-unsafe`: Prevent usage of unsafe lifecycle methods.
-- `void-dom-elements-no-children`: Prevent void DOM elements from having children.
-- `react-class-to-hooks`: Suggest migrating React class components to hooks with detailed migration path.
-- `no-unnecessary-rerenders`: Detects prevented re-renders in React.
-- `react-render-optimization`: Detects unnecessary re-renders and expensive computations in React.
-- `react-no-inline-functions`: Prevent inline functions in React renders with performance metrics.
-- `no-default-test-id`: data-testid must be consumer-provided — no runtime default value (R5).
-- `require-data-slot`: Named composition parts must carry data-slot (R6).
-- `no-is-prefix-prop`: Boolean props must not be prefixed with `is` (R8).
-- `no-inline-style`: No inline `style={{}}` except for CSS-variable assignment (R18).
-- `no-raw-color-literal`: No raw hex / rgb / hsl / oklch color literals in source — use design tokens (R19).
-- `no-arbitrary-token-class`: No Tailwind arbitrary values when a token exists for that property (R19).
-- `no-kind-prop-discriminator`: Ban `type`/`kind` string-union props that select between rendered trees (R11).
-- `no-wrapper-sub-component`: Ban pure-passthrough wrapper sub-components — slot the primitive directly (R12).
+Enable these by name (`'react-features/<rule>': 'error'`); README.md describes each: `required-attributes`, `no-direct-mutation-state`, `require-optimization`, `no-set-state`, `no-this-in-sfc`, `no-access-state-in-setstate`, `checked-requires-onchange-or-readonly`, `default-props-match-prop-types`, `display-name`, `jsx-handler-names`, `jsx-max-depth`, `jsx-no-bind`, `jsx-no-literals`, `no-adjacent-inline-elements`, `no-arrow-function-lifecycle`, `no-did-mount-set-state`, `no-did-update-set-state`, `no-invalid-html-attribute`, `no-is-mounted`, `no-multi-comp`, `no-namespace`, `no-object-type-as-default-prop`, `no-redundant-should-component-update`, `no-render-return-value`, `no-typos`, `no-unescaped-entities`, `prefer-es6-class`, `prefer-stateless-function`, `prop-types`, `react-in-jsx-scope`, `require-default-props`, `require-render-return`, `sort-comp`, `state-in-constructor`, `static-property-placement`, `jsx-no-comment-textnodes`, `jsx-no-undef`, `jsx-uses-react`, `jsx-uses-vars`, `style-prop-object`, `jsx-pascal-case`, `forbid-foreign-prop-types`, `no-find-dom-node`, `no-unsafe`, `void-dom-elements-no-children`, `react-class-to-hooks`, `no-unnecessary-rerenders`, `react-render-optimization`, `react-no-inline-functions`, `no-default-test-id`, `require-data-slot`, `no-is-prefix-prop`, `no-inline-style`, `no-raw-color-literal`, `no-arbitrary-token-class`, `no-kind-prop-discriminator`, `no-wrapper-sub-component`.
 
 ## More
 

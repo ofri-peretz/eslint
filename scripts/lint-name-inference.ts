@@ -328,6 +328,14 @@ const REGISTERED: RegistryEntry[] = [
   // regress against it.
   // ═══════════════════════════════════════════════════════════════════════
 
+  // --- Names widen detection here; they never withhold a finding. ---
+  {
+    file: 'eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/index.ts',
+    direction: 'report',
+    reason:
+      'A secret-vocabulary word in an identifier (`token`, `signature`, `clientSecret`) is what makes a compare suspicious, and it only ever ADDS a report: a timing-unsafe compare cannot be typed, because the secret side carries no type marker, so vocabulary plus data-flow evidence (a request read, a server-held value, a configured `process.env` or imported `config` secret) is the only signal there is. `containsWord` / `isWordBoundary` keep the match to exact word boundaries: a six-letter pattern still matches `clientsecret`, a short one matches only a whole word, so `secretary`, `maxTokens` and `hashtag` stay out. The names exempting a compare (`nonSecretWords`, `nonSecretTails`) are exact word membership, not substring.',
+  },
+
   // --- The spelling IS the specification. Not a heuristic. ---
   {
     file: 'eslint-plugin-import-next/src/utils/order-upstream.ts',
@@ -508,6 +516,12 @@ const REGISTERED: RegistryEntry[] = [
     direction: 'suppress',
     reason:
       'An intrinsic element (<div />) is told from a component by /^[a-z]/: the JSX spec, which compiles it to a string rather than a binding.',
+  },
+  {
+    file: 'eslint-plugin-react-features/src/rules/react/jsx-pascal-case.ts',
+    direction: 'suppress',
+    reason:
+      'An intrinsic element (<div />) is told from a component by /^[a-z]/: the JSX spec, which compiles it to a string rather than a binding. The same test eslint-plugin-react uses.',
   },
   {
     file: 'eslint-plugin-react-features/src/rules/react/require-optimization.ts',

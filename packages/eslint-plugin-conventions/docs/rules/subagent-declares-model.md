@@ -19,6 +19,10 @@ A subagent with no `model:` inherits the parent session's model — usually the 
 for a task picked precisely because it was narrow. One with no `tools:` inherits every tool,
 including the ones that write. Both are one frontmatter line each.
 
+A subagent whose tools are not known in advance (it reads through connected MCP tools) cannot list
+them. It satisfies the rule by denying the built-ins that write instead:
+`disallowedTools: Edit, Write, Bash`. Denying fewer than those three is still reported.
+
 A Claude Code plugin's subagents count too: `agents/*.md` in a folder whose parent holds
 `.claude-plugin/plugin.json`. The `guidance` preset lints `**/agents/*.md` for them, and an
 `agents/` folder with no plugin manifest beside it is not read as subagents.
