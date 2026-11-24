@@ -41,17 +41,7 @@ Each preset is one flat config object: put it in the array as an element, do not
 
 ### Rules in no preset
 
-Enable these by name (`'maintainability/<rule>': 'error'`):
-
-- `nested-complexity-hotspots`: Identifies nested control structures that harm readability.
-- `no-lonely-if`: Prevent lone if statements inside else blocks - use else if instead.
-- `no-nested-ternary`: Prevent nested ternary expressions for better readability.
-- `consistent-function-scoping`: Move function definitions to the highest possible scope to improve readability and performance.
-- `no-unreadable-iife`: Prevent unreadable Immediately Invoked Function Expressions that harm code clarity.
-- `error-message`: Enforce providing a message when creating built-in Error objects for better debugging.
-- `no-missing-error-context`: Detects thrown errors without context.
-- `no-silent-errors`: Detects empty catch blocks.
-- `no-unhandled-promise`: Detects unhandled Promise rejections.
+Enable these by name (`'maintainability/<rule>': 'error'`); README.md describes each: `nested-complexity-hotspots`, `no-lonely-if`, `no-nested-ternary`, `consistent-function-scoping`, `no-unreadable-iife`, `error-message`, `no-missing-error-context`, `no-silent-errors`, `no-unhandled-promise`.
 
 ## More
 

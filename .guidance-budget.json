@@ -1,11 +1,4 @@
 {
-  "AGENTS.md": {
-    "bytes": 28005,
-    "lines": 578
-  },
-  "apps/docs/AGENTS.md": {
-    "bytes": 6497
-  },
   "packages/eslint-formatter/AGENTS.md": {
     "bytes": 6790
   },
@@ -25,8 +18,8 @@
     "bytes": 4169
   },
   "packages/eslint-plugin-import-next/AGENTS.md": {
-    "bytes": 11989,
-    "lines": 224
+    "bytes": 11325,
+    "lines": 212
   },
   "packages/eslint-plugin-jwt-security/AGENTS.md": {
     "bytes": 6160
@@ -65,7 +58,7 @@
     "bytes": 9084
   },
   "packages/eslint-plugin-react-features/AGENTS.md": {
-    "bytes": 7434
+    "bytes": 4881
   },
   "packages/eslint-plugin-secure-coding/AGENTS.md": {
     "bytes": 9044
