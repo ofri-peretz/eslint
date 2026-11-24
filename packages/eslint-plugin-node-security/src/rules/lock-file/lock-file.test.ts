@@ -297,6 +297,12 @@ ruleTester.run('lock-file: published libraries commit no lock file', lockFile, {
       errors: [{ messageId: 'violationDetected' }],
     },
     {
+      name: 'a manifest that parses to a string does not exempt the project',
+      code: 'const stringManifest = 1',
+      filename: projectWithManifest('"express"'),
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
       name: 'a manifest that parses to null does not exempt the project',
       code: 'const nullManifest = 1',
       filename: projectWithManifest('null'),

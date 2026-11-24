@@ -101,6 +101,10 @@ ruleTester.run('require-secure-deletion: local shallow copies', requireSecureDel
       code: 'const opts = Object.assign({}, options); delete opts.password;',
     },
     {
+      name: 'a spread copy that also adds its own keys is still a copy',
+      code: 'const opts = { ...options, algorithm: "HS256" }; delete opts.secret;',
+    },
+    {
       name: 'Reflect.deleteProperty on a spread copy is not reported',
       code: "const copy = { ...record }; Reflect.deleteProperty(copy, 'token');",
     },
@@ -133,6 +137,31 @@ ruleTester.run('require-secure-deletion: local shallow copies', requireSecureDel
     {
       name: 'an object literal with no spread is not a copy of anything',
       code: 'const opts = { secret: s }; delete opts.secret;',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'an assign() on something other than Object is not known to be a copy',
+      code: 'const opts = merger.assign({}, options); delete opts.secret;',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'an assign() on a member chain is not Object.assign',
+      code: 'const opts = utils.Object.assign({}, options); delete opts.secret;',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'another Object method is not a copy',
+      code: 'const opts = Object.create({}, options); delete opts.secret;',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'Object.assign() with no target is not a copy',
+      code: 'const opts = Object.assign(); delete opts.secret;',
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a delete through a member chain is checked as before',
+      code: 'const opts = { ...options }; delete opts.inner.secret;',
       errors: [{ messageId: 'violationDetected' }],
     },
     {

@@ -14,6 +14,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  readJsonFileSync,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
@@ -62,16 +63,8 @@ function claimsFinding(key: string, filename: string): boolean {
  * and declaring an entry point (`main`, `exports`) or a `files` list? A
  * manifest that cannot be read or parsed is not, so the finding stands.
  */
-function isPublishedLibrary(
-  fs: { readFileSync(file: string, encoding: 'utf8'): string },
-  manifestPath: string,
-): boolean {
-  let manifest: unknown;
-  try {
-    manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  } catch {
-    return false;
-  }
+function isPublishedLibrary(manifestPath: string): boolean {
+  const manifest = readJsonFileSync<unknown>(manifestPath);
   if (typeof manifest !== 'object' || manifest === null) return false;
   const pkg = manifest as Record<string, unknown>;
   if (pkg['private'] === true) return false;
@@ -226,7 +219,7 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
           // ship without one on purpose, and were each reported. Apps and
           // private packages, which install from their own lock file, still
           // report.
-          if (isPublishedLibrary(fs, path.join(root, 'package.json'))) return;
+          if (isPublishedLibrary(path.join(root, 'package.json'))) return;
           // Keyed by the lock file required too: `packageManager: 'yarn'` and
           // `'pnpm'` are two different facts about the same root.
           if (!claimsFinding(`${root}\0${targetLockFile}`, context.filename)) {
