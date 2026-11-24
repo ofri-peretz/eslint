@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.4.8
+
+### Patch Changes
+
+- **🐛 Fix** — Found linting open-source Node apps: fewer false positives in `no-hardcoded-credentials` (i18n keys, single foreign words, type tags, masked values, `tests.js` modules), `no-xpath-injection` (own `evaluate` method, log prefixes, usage strings), `no-sensitive-data-exposure` (a fact about a secret), `no-weak-password-recovery` (React components, log prose) and `no-privilege-escalation` (a role comparison guarding the write).
+
 ## 6.4.7
 
 ### Patch Changes
