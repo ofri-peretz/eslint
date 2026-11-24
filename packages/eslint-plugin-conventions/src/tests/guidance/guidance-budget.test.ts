@@ -12,6 +12,10 @@ import { markdownRuleTester } from './markdown-tester';
 const rule = guidanceBudget as unknown as Rule.RuleModule;
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'guidance-budget-'));
 const ratchetFile = path.join(tmp, 'ratchet.json');
+// A plugin's commands/ counts only beside <root>/.claude-plugin/plugin.json.
+const pluginRoot = path.join(tmp, 'plugin');
+fs.mkdirSync(path.join(pluginRoot, '.claude-plugin'), { recursive: true });
+fs.writeFileSync(path.join(pluginRoot, '.claude-plugin', 'plugin.json'), '{}');
 fs.writeFileSync(
   ratchetFile,
   JSON.stringify({
@@ -50,6 +54,11 @@ markdownRuleTester().run('guidance-budget', rule, {
       name: 'a skill under its body and description budgets',
       filename: '.claude/skills/ship/SKILL.md',
       code: '---\nname: ship\ndescription: Ship a PR.\n---\n\n# Ship\n',
+    },
+    {
+      name: 'a commands/ folder outside .claude and outside a plugin is not guidance',
+      filename: 'docs/commands/deploy.md',
+      code: `---\ndescription: ${'d'.repeat(2000)}\n---\n`,
     },
     {
       name: 'a skill with no description and no frontmatter',
@@ -153,6 +162,33 @@ markdownRuleTester().run('guidance-budget', rule, {
           },
         },
       ],
+    },
+    {
+      name: 'a namespaced slash command description over budget',
+      filename: '.claude/commands/ofri/audit.md',
+      code: `---\ndescription: ${'d'.repeat(30)}\n---\n\n# Audit\n`,
+      options: [{ descriptionChars: 20 }],
+      errors: [
+        {
+          messageId: 'overBudget',
+          line: 2,
+          data: {
+            kind: 'command',
+            measure: 'descriptionChars',
+            actual: '30',
+            budget: '20',
+            file: '.claude/commands/ofri/audit.md',
+            ratchetFile: '.guidance-budget.json',
+          },
+        },
+      ],
+    },
+    {
+      name: "a plugin's command (commands/ beside .claude-plugin/plugin.json) over budget",
+      filename: path.join(pluginRoot, 'commands/ship.md'),
+      code: `---\ndescription: ${'d'.repeat(30)}\n---\n`,
+      options: [{ descriptionChars: 20 }],
+      errors: [{ messageId: 'overBudget', line: 2 }],
     },
     {
       name: 'a block-scalar description is measured whole',
