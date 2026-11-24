@@ -759,7 +759,10 @@ describe('no-timing-unsafe-compare rule-corpus regressions', () => {
     valid: [
       // Name collisions. `auth` must keep matching `authorization`, so the
       // subtraction is by WORD and by TAIL, never by loosening the pattern.
-      { code: 'if (req.body.authorId !== post.authorId) { deny(); }' },
+      {
+        name: 'author collides with auth by substring and blanket-masks the whole identifier, unlike the scheme/auth pairing (#1685)',
+        code: 'if (req.body.authorId !== post.authorId) { deny(); }',
+      },
       {
         code: 'if (req.body.postAuthorId !== comment.postAuthorId) { deny(); }',
       },

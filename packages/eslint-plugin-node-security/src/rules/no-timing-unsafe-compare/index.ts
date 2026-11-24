@@ -837,17 +837,36 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     function nameLooksSecret(name: string): boolean {
       if (BOOLEAN_PREDICATE_NAME.test(name)) return false;
       const words = identifierWords(name);
-      if (words.some((word) => nonSecretWordSet.has(word))) return false;
       if (
         words.length > 0 &&
         nonSecretTailSet.has(words[words.length - 1] as string)
       ) {
         return false;
       }
-      return (
-        wordPatterns.some((word) => containsWord(name, word)) ||
-        patterns.some((p) => p.test(name))
+      const matchesPattern = (haystack: string) =>
+        wordPatterns.some((word) => containsWord(haystack, word)) ||
+        patterns.some((p) => p.test(haystack));
+
+      const nonSecretWordsPresent = words.filter((word) =>
+        nonSecretWordSet.has(word),
       );
+      if (nonSecretWordsPresent.length === 0) return matchesPattern(name);
+
+      // `scheme`/`schemes` names the public word before the credential in an
+      // `Authorization` header (`auth_scheme_lower === auth_params.scheme`,
+      // #1685's own fix) and masks only the `auth` pattern it pairs with —
+      // every other DEFAULT_NON_SECRET_WORDS entry is a pure substring
+      // collision (`author` swallowing `auth`, `hashtag` swallowing `hash`)
+      // and safely masks the whole name. Without this split, `scheme`
+      // blanket-masked an UNRELATED secret word elsewhere in the same
+      // identifier too: `schemeToken === req.headers.x` went unreported
+      // because `scheme` was present, even though `token` names a real
+      // credential (#1685).
+      const onlySchemeWords = nonSecretWordsPresent.every(
+        (word) => word === 'scheme' || word === 'schemes',
+      );
+      if (!onlySchemeWords) return false;
+      return matchesPattern(words.filter((word) => word !== 'auth').join(' '));
     }
 
     /**
