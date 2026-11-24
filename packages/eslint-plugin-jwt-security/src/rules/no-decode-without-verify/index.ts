@@ -387,15 +387,207 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
         );
       });
 
+    /*
+     * WHAT MAY HAPPEN TO THE CLAIMS BEFORE THE VERIFY.
+     *
+     * "A verify follows" is not enough: the decoded claims are forgeable until
+     * that verify returns, and a failing verify does not undo what ran first.
+     *
+     *   const claims = jwt.decode(token);
+     *   await grantRole(claims.sub, claims.role);   // already done
+     *   jwt.verify(token, key, { algorithms: ['HS256'] });
+     *
+     * The one use before the verify that is safe is selecting the key that
+     * verify checks the signature against (an identity lookup): a forged `sub`
+     * only picks a key the signature then fails against. So between the decode
+     * and the verify, a value derived from the decoded claims is allowed only
+     * while it flows, through member reads, an `await`, a template literal, an
+     * object literal, a lookup call's arguments, or a local binding, into the
+     * key argument of that same verify (`arguments[1]`, or `secret` /
+     * `publicKey` in an options object). Anything else reports:
+     *
+     *   - a call argument that is not a lookup feeding the key (`grantRole`);
+     *   - a branch condition outside the key (`if (claims.admin)`), a `&&` /
+     *     `||` / `?:` that is not itself inside the key argument;
+     *   - a write to anything but a local binding of the same function
+     *     (`req.user = claims`, a module variable, a property);
+     *   - a return, a throw, a spread, a callee (`claims.fn()`).
+     *
+     * THE CEILING. The flow is followed syntactically, inside one function:
+     * through the decode's own binding, `const`/`let`/destructuring and
+     * `x = ...` into a local, and through call arguments. It does not follow a
+     * lookup's side effects (a `findById(claims.sub)` that also logs or
+     * mutates is a lookup as far as this rule can tell), a value captured by a
+     * closure, a binding passed by reference, or any expression shape not
+     * listed in TRANSPARENT. A shape the analysis cannot place is a use that
+     * does not reach the key, so it reports: a security rule fails safe.
+     */
+    const TRANSPARENT = new Set([
+      'MemberExpression',
+      'ChainExpression',
+      'TSAsExpression',
+      'TSNonNullExpression',
+      'AwaitExpression',
+      'TemplateLiteral',
+      'Property',
+      'ObjectExpression',
+    ]);
+
+    /** The options-object names that carry the verification key (NestJS `JwtService`). */
+    const KEY_OPTIONS = ['secret', 'publicKey'];
+
+    /** Is this node inside the part of `verify(...)` that selects the key? */
+    const insideKey = (
+      node: TSESTree.Node,
+      verify: TSESTree.CallExpression,
+    ): boolean => {
+      const within = (outer: TSESTree.Node | undefined): boolean =>
+        outer !== undefined &&
+        node.range[0] >= outer.range[0] &&
+        node.range[1] <= outer.range[1];
+      const [, second] = verify.arguments;
+      if (second !== undefined && second.type !== 'ObjectExpression') {
+        if (within(second)) return true;
+      }
+      return verify.arguments.some(
+        (argument) =>
+          argument.type === 'ObjectExpression' &&
+          KEY_OPTIONS.some((name) => within(getOptionValue(argument, name))),
+      );
+    };
+
+    const variableNamed = (
+      from: TSESTree.Node,
+      name: string,
+    ): TSESLint.Scope.Variable | undefined => {
+      let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(from);
+      while (scope != null) {
+        const found = scope.set.get(name);
+        if (found !== undefined) return found;
+        scope = scope.upper;
+      }
+      return undefined;
+    };
+
+    /**
+     * Does every read of these bindings, from `after` until the verify, end in
+     * the verify's key? `requireKeyUse`: the value came out of a call, and a
+     * call's result that nobody feeds to the key was not a key lookup (the call
+     * ran for its effect), so it needs at least one such read. A plain alias
+     * (`const copy = claims`) has no effect of its own and may go unread.
+     */
+    const readsReachKey = (
+      variables: readonly TSESLint.Scope.Variable[],
+      verify: TSESTree.CallExpression,
+      after: number,
+      requireKeyUse: boolean,
+    ): boolean => {
+      let reached = false;
+      for (const variable of variables) {
+        for (const reference of variable.references) {
+          // `userId = claims.sub` and the initialiser are writes, not uses.
+          if (!reference.isRead()) continue;
+          const at = reference.identifier.range[0];
+          if (at < after || at >= verify.range[1]) continue;
+          if (!reachesKey(reference.identifier, verify, after)) return false;
+          reached = true;
+        }
+      }
+      return reached || !requireKeyUse;
+    };
+
+    /**
+     * The binding `x = <claims>` writes to, when it is a local of the same
+     * function. A module variable, a captured binding or an undeclared global
+     * outlives the function: that is a write, not a local.
+     */
+    const localTarget = (
+      assignment: TSESTree.AssignmentExpression,
+      name: string,
+    ): TSESLint.Scope.Variable | undefined => {
+      const target = variableNamed(assignment, name);
+      const declaration = target?.defs[0]?.node;
+      return declaration !== undefined &&
+        enclosingFunction(declaration) === enclosingFunction(assignment)
+        ? target
+        : undefined;
+    };
+
+    /** Where does a value derived from the claims go? Only the key is allowed. */
+    const reachesKey = (
+      node: TSESTree.Node,
+      verify: TSESTree.CallExpression,
+      after: number,
+      viaCall = false,
+    ): boolean => {
+      if (insideKey(node, verify)) return true;
+      const parent = node.parent!;
+      if (TRANSPARENT.has(parent.type)) {
+        return reachesKey(parent, verify, after, viaCall);
+      }
+      if (parent.type === 'CallExpression' || parent.type === 'NewExpression') {
+        // A lookup: `findById(claims.sub)`, `secretFor(claims.tenant)`. Its
+        // result must itself reach the key. The verify's own other arguments
+        // (`audience: claims.aud`) are not the key.
+        if (parent === verify || parent.callee === node) return false;
+        return reachesKey(parent, verify, after, true);
+      }
+      if (parent.type === 'VariableDeclarator' && parent.init === node) {
+        return readsReachKey(
+          context.sourceCode.getDeclaredVariables(parent),
+          verify,
+          after,
+          viaCall,
+        );
+      }
+      if (
+        parent.type === 'AssignmentExpression' &&
+        parent.operator === '=' &&
+        parent.right === node &&
+        parent.left.type === 'Identifier'
+      ) {
+        const target = localTarget(parent, parent.left.name);
+        if (target === undefined) return false;
+        return readsReachKey([target], verify, after, viaCall);
+      }
+      return false;
+    };
+
+    /** Is the decode's own result used for nothing, or only to reach the key? */
+    const decodedOnlyPicksKey = (
+      node: TSESTree.CallExpression,
+      verify: TSESTree.CallExpression,
+    ): boolean => {
+      const outer = skipTypeWrappers(node);
+      const parent = outer.parent!;
+      const after = node.range[1];
+      if (parent.type === 'ExpressionStatement') return true;
+      if (parent.type === 'VariableDeclarator' && parent.init === outer) {
+        return readsReachKey(
+          context.sourceCode.getDeclaredVariables(parent),
+          verify,
+          after,
+          false,
+        );
+      }
+      if (
+        parent.type === 'AssignmentExpression' &&
+        parent.operator === '=' &&
+        parent.right === outer &&
+        parent.left.type === 'Identifier'
+      ) {
+        const target = localTarget(parent, parent.left.name);
+        return (
+          target !== undefined && readsReachKey([target], verify, after, false)
+        );
+      }
+      return reachesKey(outer, verify, after);
+    };
+
     const verifiedLater = (node: TSESTree.CallExpression): boolean => {
       const [token] = node.arguments;
       if (token?.type !== 'Identifier') return false;
-      let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
-      let variable: TSESLint.Scope.Variable | undefined;
-      while (scope != null && variable === undefined) {
-        variable = scope.set.get(token.name);
-        scope = scope.upper;
-      }
+      const variable = variableNamed(node, token.name);
       if (variable === undefined) return false;
       if (variable.references.some((ref) => ref.isWrite() && !ref.init)) {
         return false;
@@ -410,7 +602,8 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
           isSignatureVerifyOperation(call, sourceCode) &&
           enclosingFunction(call) === fn &&
           runsUnconditionally(call, fn) &&
-          pinsAlgorithms(call)
+          pinsAlgorithms(call) &&
+          decodedOnlyPicksKey(node, call)
         );
       });
     };
