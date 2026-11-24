@@ -214,6 +214,7 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
           // process.env in both spellings. The bracket form used to slip past an
           // explicit `process.env` check that only understood dot notation.
           {
+            name: 'a caller token against a configured API token is a timing oracle',
             code: 'if (userToken === process.env.API_TOKEN) grant();',
             errors: [{ messageId: 'timingUnsafeCompare' }],
           },

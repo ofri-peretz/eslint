@@ -40,6 +40,7 @@ describe('no-sensitive-data-exposure', () => {
           code: `logger.info('Request received');`,
         },
         {
+          name: 'an error log with only static prose names no secret',
           code: `logger.error('Operation failed');`,
         },
         {

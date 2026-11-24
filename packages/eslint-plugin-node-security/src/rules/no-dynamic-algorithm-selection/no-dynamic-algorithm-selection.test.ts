@@ -27,8 +27,14 @@ describe('no-dynamic-algorithm-selection', () => {
           name: 'a literal cipher algorithm is not dynamic',
           code: 'crypto.createCipheriv("aes-256-gcm", key, iv)',
         },
-        { code: 'crypto.createSign("RSA-SHA256")' },
-        { code: 'crypto.createHash(`sha256`)' }, // static template literal
+        {
+          name: 'a literal signing algorithm is an auditable choice, not a dynamic one',
+          code: 'crypto.createSign("RSA-SHA256")',
+        },
+        {
+          name: 'a template literal with no expressions is a fixed algorithm name',
+          code: 'crypto.createHash(`sha256`)',
+        },
         // Not 'crypto' object — not checked
         { code: 'customCrypto.createHash(algo)' },
         // Different method — not checked

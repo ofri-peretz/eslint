@@ -122,6 +122,39 @@ export function constructsStream(node: TSESTree.Node): boolean {
   return name !== undefined && STREAM_CONSTRUCTORS.has(name);
 }
 
+/**
+ * Is this call's value returned to a caller that can listen on it? A function
+ * passed as an argument is called by the callee, which may drop the result
+ * (`[src].forEach(s => s.pipe(dest))`), so a callback does not count.
+ */
+function returnsToCaller(node: TSESTree.CallExpression): boolean {
+  const parent = node.parent;
+  let fn: TSESTree.Node | undefined;
+  if (parent?.type === AST_NODE_TYPES.ReturnStatement) {
+    fn = parent.parent;
+    while (
+      fn &&
+      fn.type !== AST_NODE_TYPES.FunctionDeclaration &&
+      fn.type !== AST_NODE_TYPES.FunctionExpression &&
+      fn.type !== AST_NODE_TYPES.ArrowFunctionExpression
+    ) {
+      fn = fn.parent;
+    }
+  } else if (
+    parent?.type === AST_NODE_TYPES.ArrowFunctionExpression &&
+    parent.body === node
+  ) {
+    fn = parent;
+  }
+  if (!fn) return false;
+  const holder = fn.parent;
+  return !(
+    (holder?.type === AST_NODE_TYPES.CallExpression ||
+      holder?.type === AST_NODE_TYPES.NewExpression) &&
+    holder.arguments.includes(fn as TSESTree.CallExpressionArgument)
+  );
+}
+
 export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
   name: 'require-stream-error-handler',
   meta: {
@@ -284,8 +317,14 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
           const destinationArg = node.arguments[0];
           // A spread destination (`src.pipe(...dests)`) is neither a call
           // nor an identifier, so unhandledStream already says null.
+          // `return src.pipe(dest)` hands `dest` to the caller: `.pipe()`
+          // returns its destination, and the caller is where the listener goes.
+          // NestJS's adapters build a checking Transform and return the pipe
+          // into it (`platform-express/adapters/express-adapter.ts:829`); the
+          // caller attaches the error handler. The SOURCE is not handed back,
+          // so it is still judged here.
           const destination =
-            destinationArg === undefined
+            destinationArg === undefined || returnsToCaller(node)
               ? null
               : unhandledStream(destinationArg);
           const offender = source ?? destination;

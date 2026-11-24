@@ -195,6 +195,19 @@ if (crypto.timingSafeEqual(Buffer.from(req.body.token), Buffer.from(validToken))
 }
 ```
 
+## Not a finding
+
+An imported binding is a module's export, never the request being served. NestJS compares a
+provider's DI token with the imported `REQUEST` token, and the name alone made it read as the
+request object:
+
+```ts
+import { REQUEST } from '@nestjs/core';
+if (token === REQUEST) { ... }  // not request data
+```
+
+A local or a parameter that holds the request under the same name still reports.
+
 ## Related Rules
 
 - [`no-hardcoded-credentials`](../secure-coding/no-hardcoded-credentials.md) - Detect hardcoded secrets
