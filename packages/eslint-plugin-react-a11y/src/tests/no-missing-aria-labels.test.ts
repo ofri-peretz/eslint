@@ -89,6 +89,13 @@ describe('no-missing-aria-labels', () => {
         {
           code: '<button>{label}</button>',
         },
+        // #1563: a ternary between two string literals is text either branch
+        // resolves to, so the button's accessible name is text regardless of
+        // which arm renders.
+        {
+          name: 'a ternary between two string literals is text content',
+          code: '<button>{on ? "Turn off" : "Turn on"}</button>',
+        },
       ],
       invalid: [],
     });
