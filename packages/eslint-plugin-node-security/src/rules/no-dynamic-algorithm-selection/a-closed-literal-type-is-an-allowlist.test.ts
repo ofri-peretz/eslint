@@ -63,6 +63,14 @@ describe('no-dynamic-algorithm-selection — a closed literal type is an allowli
           crypto.createHash(name as 'sha256' | 'sha384');
         `,
       },
+      {
+        name: 'a const function expression with a literal-union return type',
+        code: `
+          import crypto from 'node:crypto';
+          const hashFor = function (): 'sha256' | 'sha512' { return 'sha256'; };
+          crypto.createHash(hashFor());
+        `,
+      },
     ],
     invalid: [
       {
@@ -97,6 +105,41 @@ describe('no-dynamic-algorithm-selection — a closed literal type is an allowli
           let hashOf = (a: string) => a as 'sha256';
           hashOf = (a: string) => a as any;
           crypto.createHash(hashOf(x));
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a const bound to a call result is not a known helper',
+        code: `
+          import crypto from 'node:crypto';
+          const pick = makePicker();
+          crypto.createHash(pick(x));
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a helper declared nowhere in the file still reports',
+        code: `
+          import crypto from 'node:crypto';
+          crypto.createHash(globalPick(x));
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a method call is not a same-file helper',
+        code: `
+          import crypto from 'node:crypto';
+          crypto.createHash(this.pick(x));
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a helper declared twice is not trusted',
+        code: `
+          import crypto from 'node:crypto';
+          function pick(): 'sha256' { return 'sha256'; }
+          function pick(a) { return a; }
+          crypto.createHash(pick(x));
         `,
         errors: dynamic,
       },

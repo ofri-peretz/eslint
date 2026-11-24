@@ -75,7 +75,10 @@ describe('no-insecure-comparison', () => {
         // it to `=== null` drops the undefined case, so the rule must not
         // report it — core `eqeqeq` exempts it under `smart` for the same
         // reason. Regression guard for the behaviour-changing autofix.
-        'if (body == null) { return 0; }',
+        {
+          name: '== null matches null and undefined, so it is not rewritten to ===',
+          code: 'if (body == null) { return 0; }',
+        },
         'if (body != null) { send(body); }',
         'const size = length == null ? compute() : length;',
         'if (null == body) { return 0; }',

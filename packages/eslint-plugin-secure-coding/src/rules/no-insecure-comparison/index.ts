@@ -936,10 +936,10 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           ignorePatterns = [],
           reportLooseEquality = true,
         } = options as Options);
+        const { recordMetadataTails = RECORD_METADATA_TAILS } =
+          options as Options;
         metadataTails = new Set(
-          (
-            (options as Options).recordMetadataTails ?? RECORD_METADATA_TAILS
-          ).map((word) => word.toLowerCase()),
+          recordMetadataTails.map((word) => word.toLowerCase()),
         );
 
         const filename = context.filename;

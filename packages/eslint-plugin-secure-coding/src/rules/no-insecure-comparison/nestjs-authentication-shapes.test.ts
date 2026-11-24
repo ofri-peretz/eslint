@@ -184,3 +184,80 @@ ruleTester.run('record-metadata-tails option', noInsecureComparison, {
     },
   ],
 });
+
+ruleTester.run('re-encode and re-read edges', noInsecureComparison, {
+  valid: [
+    {
+      name: 'a re-encoding reached through a parenthesised optional chain',
+      code: `
+        function check(signature) {
+          const decoded = Buffer.from(signature, 'base64url');
+          return (decoded?.toString)('base64url') !== signature;
+        }
+      `,
+    },
+  ],
+  invalid: [
+    {
+      name: 'an awaited value that is not a call is not a store re-read',
+      ...timing(
+        `
+        async function verify(store, pending) {
+          const latest = await pending;
+          const record = await store.getTotp();
+          return latest.secret === record.secret;
+        }
+      `,
+        'latest.secret',
+        '===',
+        'record.secret',
+      ),
+    },
+    {
+      name: 'a re-encoding whose chain does not start at a binding still reports',
+      ...timing(
+        "function check(signature) { return this.sig.toString('base64url') !== signature; }",
+        "this.sig.toString('base64url')",
+        '!==',
+        'signature',
+      ),
+    },
+    {
+      name: 'a re-encoding of a parameter, not a local binding, still reports',
+      ...timing(
+        "function check(signature, decoded) { return decoded.toString('base64url') !== signature; }",
+        "decoded.toString('base64url')",
+        '!==',
+        'signature',
+      ),
+    },
+    {
+      name: 'a re-encoding of a binding that is not a call still reports',
+      ...timing(
+        "function check(signature) { const decoded = signature.raw; return decoded.toString('base64url') !== signature; }",
+        "decoded.toString('base64url')",
+        '!==',
+        'signature',
+      ),
+    },
+    {
+      name: 'a re-encoding of a call made with no arguments still reports',
+      ...timing(
+        "function check(signature) { const decoded = make(); return decoded.toString('base64url') !== signature; }",
+        "decoded.toString('base64url')",
+        '!==',
+        'signature',
+      ),
+    },
+    {
+      name: 'options without recordMetadataTails keep the default tails',
+      options: [{ allowInTests: false }],
+      ...timing(
+        'function find(token, secret) { return token.userId === secret; }',
+        'token.userId',
+        '===',
+        'secret',
+      ),
+    },
+  ],
+});
