@@ -37,6 +37,7 @@ describe('control-has-associated-label', () => {
         },
         // aria-label
         {
+          name: 'a button named by aria-label',
           code: '<button type="button" aria-label="Save"></button>',
         },
         {
@@ -389,5 +390,54 @@ describe('control-has-associated-label', () => {
         },
       ],
     });
+  });
+});
+
+/**
+ * Option shapes, from upstream's schema (`rules/control-has-associated-label.js`
+ * v6.10.2): `depth` is an integer from 0, with no upper bound in the schema and
+ * a clamp to 25 when read, and `includeRoles` (in both upstream presets) is
+ * accepted. Upstream 6.10.2 reads `includeRoles` nowhere, so it changes
+ * nothing here either.
+ */
+describe('control-has-associated-label options', () => {
+  ruleTester.run('depth and includeRoles', controlHasAssociatedLabel, {
+    valid: [
+      {
+        name: 'depth 0 still accepts the control\'s own aria-label',
+        code: '<button aria-label="Save"></button>',
+        options: [{ depth: 0 }],
+      },
+      {
+        name: 'depth above 25 is accepted and searches the whole subtree',
+        code: '<button><span>Save</span></button>',
+        options: [{ depth: 30 }],
+      },
+      {
+        name: 'includeRoles is accepted and ignored',
+        code: '<button>Save</button>',
+        options: [{ includeRoles: ['alert', 'dialog'] }],
+      },
+    ],
+    invalid: [
+      {
+        name: 'depth 0 does not look into children',
+        code: '<button>Save</button>',
+        options: [{ depth: 0 }],
+        errors: [{ messageId: 'missingLabel' }],
+      },
+      {
+        name: 'depth above 25 is clamped to 25, so a label 26 levels down is missed',
+        code: `<button>${'<span>'.repeat(26)}Save${'</span>'.repeat(26)}</button>`,
+        options: [{ depth: 100 }],
+        errors: [{ messageId: 'missingLabel' }],
+      },
+      {
+        name: 'includeRoles does not change the verdict on an unlabelled button role',
+        code: '<div role="button"></div>',
+        options: [{ includeRoles: ['alert', 'dialog'] }],
+        errors: [{ messageId: 'missingLabel' }],
+      },
+    ],
   });
 });

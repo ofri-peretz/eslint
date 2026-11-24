@@ -63,6 +63,24 @@ This rule helps ensure WCAG 2.1.1 compliance by enforcing: Require keyboard even
 }
 ```
 
+### Options
+
+| Option | Type | Default | Status |
+| :-- | :-- | :-- | :-- |
+| `hoverInHandlers` | `string[]` | `['onMouseOver']` | Honoured: a listed handler needs `onFocus`. An empty list checks none. |
+| `hoverOutHandlers` | `string[]` | `['onMouseOut']` | Honoured: a listed handler needs `onBlur`. An empty list checks none. |
+
+```javascript
+{
+  rules: {
+    'react-a11y/mouse-events-have-key-events': [
+      'error',
+      { hoverInHandlers: ['onPointerEnter'], hoverOutHandlers: ['onPointerLeave'] },
+    ],
+  },
+}
+```
+
 ## WCAG 2.1 Compliance
 
 This rule helps satisfy:

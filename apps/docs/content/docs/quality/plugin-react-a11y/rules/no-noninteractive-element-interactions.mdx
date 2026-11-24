@@ -63,6 +63,24 @@ This rule helps ensure WCAG 2.1.1 compliance by enforcing: Prevent event handler
 }
 ```
 
+### Options
+
+| Option | Type | Status |
+| :-- | :-- | :-- |
+| `handlers` | `string[]` | Honoured. |
+| any element name (`body`, `iframe`, `img`, ...) | `string[]` | Honoured: the handlers listed for an element are allowed on it, as in eslint-plugin-jsx-a11y. Keys that name a role, such as `alert` and `dialog` in its presets, are accepted and match nothing there or here: only element names are looked up. |
+
+```javascript
+{
+  rules: {
+    'react-a11y/no-noninteractive-element-interactions': [
+      'error',
+      { handlers: ['onClick', 'onLoad'], img: ['onLoad'] },
+    ],
+  },
+}
+```
+
 ## WCAG 2.1 Compliance
 
 This rule helps satisfy:
