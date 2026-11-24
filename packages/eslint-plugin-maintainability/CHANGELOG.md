@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-maintainability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.7
+
+### Patch Changes
+
+- **🐛 Fix** — AGENTS.md lists the rules in no preset by name on one line (README.md describes each), so the file an agent loads stays inside its guidance budget.
+
 ## 4.0.6
 
 ### Patch Changes

@@ -5,6 +5,27 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.4.9
+
+### Patch Changes
+
+- **🐛 Fix** — no-insecure-comparison checks value provenance before exempting a re-encoding or store re-read
+
+  An original written through an alias, a buffer changed later in a loop body, a store swapped through a
+  property between two reads, and a guard whose condition is reassigned after the choice no longer earn
+  the exemption.
+
+- **🐛 Fix** — stop flagging safe comparisons and messages found in nestjs/authentication
+
+  Each exemption is narrow, and a lookalike that is a real bug still reports.
+
+  - `no-insecure-comparison`: record identifiers such as `token.userId` are judged by the field name
+    (new `recordMetadataTails` option), a `Buffer.from(x, enc).toString(enc)` round trip over an
+    unchanged `x` is a canonical-form check, and the same field from two reads of one store call is a
+    concurrency check.
+  - `no-sensitive-data-exposure`: a message quoting an option with a `true`, `false`, `null` or
+    `undefined` setting, when that is the message's only label-and-value pair.
+
 ## 6.4.8
 
 ### Patch Changes
