@@ -95,10 +95,10 @@ holding a fragment clears its `${FRAGMENT}` whether the constant is a template
 or a plain string literal.
 
 The same holds for a `gql`/`graphql` tagged template, written in place or bound
-to a single-assignment `const`. An import spelled `*_FRAGMENT` or `*Fragment`
-from a relative module is trusted too — a **heuristic**, because its definition
-is in another file and cannot be read; a package import, or a relative import
-named anything else, still reports.
+to a single-assignment `const`. A `gql` tag makes its template a document even
+when it has no static text, so `gql\`${input}\`` is checked, not exempt. An
+**imported** fragment still reports, whatever it is called: an import cannot be
+resolved within the file, so nothing shows it is a document.
 
 ### Why This Matters
 

@@ -243,8 +243,6 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     let GRAPHQL_SCHEMA_KEYWORDS: string[];
     let GRAPHQL_TAG_NAMES: Set<string>;
     const GRAPHQL_SCHEMA_BINDING = /typedef|schema|sdl/i;
-    // Fragment constants by convention: `ASSET_FRAGMENT`, `assetFragment`.
-    const FRAGMENT_CONSTANT_NAME = /(?:_FRAGMENT|Fragment)$/;
 
     /**
      * Check if this is a GraphQL-related operation
@@ -508,6 +506,11 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       node.quasis.map((q) => q.value.cooked ?? q.value.raw).join('');
 
     const isGraphqlTemplate = (node: TSESTree.TemplateLiteral): boolean =>
+      // The tag declares a document whatever its static text: `gql\`${x}\``
+      // has no text at all and is still GraphQL, so its interpolations count.
+      (node.parent?.type === AST_NODE_TYPES.TaggedTemplateExpression &&
+        node.parent.quasi === node &&
+        isGraphqlTag(node.parent)) ||
       containsGraphqlText(templateText(node), hasGraphqlAttribution(node));
 
     /**
@@ -534,19 +537,8 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       if (variable === null || variable.defs.length !== 1) return false;
       // `defs.length === 1` above, so index 0 exists.
       const def = variable.defs[0] as TSESLint.Scope.Definition;
-      // An import is a document defined in another module, which this file
-      // cannot read. HEURISTIC, and the ceiling of this rule: it is trusted
-      // only when it is spelled like a fragment constant (`ASSET_FRAGMENT`,
-      // `assetFragment`) AND comes from a relative module, so a package
-      // export or a plain `userInput` import still reports.
-      if (def.type === 'ImportBinding') {
-        return (
-          def.node.type === AST_NODE_TYPES.ImportSpecifier &&
-          def.parent.type === AST_NODE_TYPES.ImportDeclaration &&
-          def.parent.source.value.startsWith('.') &&
-          FRAGMENT_CONSTANT_NAME.test(def.name.name)
-        );
-      }
+      // An import is defined in another module, which this file cannot read,
+      // so it resolves to nothing knowable and keeps reporting.
       if (def.type !== 'Variable') return false;
       if (variable.references.filter((ref) => ref.isWrite()).length > 1) {
         return false;

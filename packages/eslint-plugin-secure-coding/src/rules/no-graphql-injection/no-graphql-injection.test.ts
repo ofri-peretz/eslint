@@ -127,6 +127,7 @@ describe('no-graphql-injection', () => {
             ],
           },
           {
+            name: 'two interpolated filter values in one query report once',
             code: 'const complexQuery = `query { users(filter: { name: "${searchTerm}", status: "${status}" }) { id } }`;',
             errors: [
               {
@@ -1388,22 +1389,6 @@ describe('corpus regression — introspection, selection sets and SDL keywords',
           'const q = apollo.gql`query Q { asset { ...Asset } } ${FRAG}`;',
         ].join('\n'),
       },
-      // HEURISTIC: an import cannot be read from this file. A fragment-named
-      // binding from a relative module is trusted.
-      {
-        name: 'an imported _FRAGMENT constant from a relative module (heuristic)',
-        code: [
-          "import { ASSET_FRAGMENT } from './fragments.graphql';",
-          'const q = gql`query Q { asset { ...Asset } } ${ASSET_FRAGMENT}`;',
-        ].join('\n'),
-      },
-      {
-        name: 'an imported camelCase Fragment constant from a relative module (heuristic)',
-        code: [
-          "import { assetFragment } from '../fragments';",
-          'const q = gql`query Q { asset { ...Asset } } ${assetFragment}`;',
-        ].join('\n'),
-      },
     ],
     invalid: [
       // The one REAL finding: Shopify CLI app-management-client/graphql/
@@ -1488,7 +1473,44 @@ describe('corpus regression — introspection, selection sets and SDL keywords',
         errors: [{ messageId: 'unsafeVariableInterpolation' }],
       },
       {
-        name: 'a relative import not spelled like a fragment still reports',
+        name: 'a fragment-named relative import still reports: an import cannot be resolved in the file',
+        code: [
+          "import { ASSET_FRAGMENT } from './fragments.graphql';",
+          'const q = gql`query Q { asset { ...Asset } } ${ASSET_FRAGMENT}`;',
+        ].join('\n'),
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        name: 'a camelCase Fragment relative import still reports',
+        code: [
+          "import { assetFragment } from '../fragments';",
+          'const q = gql`query Q { asset { ...Asset } } ${assetFragment}`;',
+        ].join('\n'),
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        name: 'an input renamed to look like a fragment still reports',
+        code: [
+          "import { userInput as userFragment } from './input';",
+          'const q = gql`query Q { asset { ...Asset } } ${userFragment}`;',
+        ].join('\n'),
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        name: 'a gql template with no static text still checks its interpolation, via a constant',
+        code: [
+          'const FRAG = gql`${req.query.x}`;',
+          'const q = gql`query Q { a } ${FRAG}`;',
+        ].join('\n'),
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        name: 'a gql template with no static text still checks its interpolation, inline',
+        code: 'const q = gql`query Q { a } ${gql`${req.query.x}`}`;',
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        name: 'a relative import still reports',
         code: [
           "import { userInput } from './fragments';",
           'const q = gql`query Q { asset { ...Asset } } ${userInput}`;',
@@ -1496,7 +1518,7 @@ describe('corpus regression — introspection, selection sets and SDL keywords',
         errors: [{ messageId: 'unsafeVariableInterpolation' }],
       },
       {
-        name: 'a fragment-named import from a package is not trusted',
+        name: 'a fragment-named import from a package still reports',
         code: [
           "import { ASSET_FRAGMENT } from 'some-package';",
           'const q = gql`query Q { asset { ...Asset } } ${ASSET_FRAGMENT}`;',
@@ -1504,7 +1526,7 @@ describe('corpus regression — introspection, selection sets and SDL keywords',
         errors: [{ messageId: 'unsafeVariableInterpolation' }],
       },
       {
-        name: 'a fragment-named default import is not trusted',
+        name: 'a fragment-named default import still reports',
         code: [
           "import ASSET_FRAGMENT from './fragments';",
           'const q = gql`query Q { asset { ...Asset } } ${ASSET_FRAGMENT}`;',

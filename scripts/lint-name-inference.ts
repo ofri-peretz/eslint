@@ -697,10 +697,7 @@ const REGISTERED: RegistryEntry[] = [
     file: 'eslint-plugin-secure-coding/src/rules/no-graphql-injection/index.ts',
     direction: 'suppress',
     reason:
-      'trustedGraphqlLibraries substring-matched against a callee name to withhold a finding. ' +
-      'Also: an import spelled `*_FRAGMENT`/`*Fragment` from a relative module is taken as a ' +
-      'GraphQL document, because its definition is in another file. A name is not a type: ' +
-      'a `userFragment` that holds caller input would be missed.',
+      'trustedGraphqlLibraries substring-matched against a callee name to withhold a finding.',
   },
   {
     file: 'eslint-plugin-secure-coding/src/rules/no-directive-injection/index.ts',
