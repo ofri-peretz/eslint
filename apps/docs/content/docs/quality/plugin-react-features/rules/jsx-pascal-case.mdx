@@ -66,7 +66,7 @@ Letters are judged by Unicode case, so `<Año />` and `<Éurströmming />` pass.
 | `ignore`                 | `string[]` | `[]`    | Names to leave alone, each a name or a glob (`*`, `?`, `[ab]`, `{a,b}`, `+(a\|b)`). A part is matched on its own, not the whole `A.B` |
 
 ```js
-'react/jsx-pascal-case': ['error', { allowAllCaps: true, ignore: [] }]
+'react-features/jsx-pascal-case': ['error', { allowAllCaps: true, ignore: [] }]
 ```
 
 The `ignore` globs are matched by a small matcher inside the package (the package has no runtime dependencies), written to agree with minimatch for the patterns a component name can meet.

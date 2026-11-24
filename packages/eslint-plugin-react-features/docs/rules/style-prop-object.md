@@ -68,7 +68,7 @@ React.createElement('div', { style: { color: 'red' } });
 | `allow` | `string[]` | `[]`    | Component names whose `style` prop is not an object: `<Hello style="x" />` and `createElement(Hello, {...})` pass |
 
 ```js
-'react/style-prop-object': ['error', { allow: ['MyComponent'] }]
+'react-features/style-prop-object': ['error', { allow: ['MyComponent'] }]
 ```
 
 ## When Not To Use It
