@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-react-a11y` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.0.9
+
+### Patch Changes
+
+- **🐛 Fix** — `no-missing-aria-labels`: no longer reports `<button><img alt="Save" /></button>`. An intrinsic `<img>` or `<area>` with a non-empty (or dynamic) `alt` names its parent, as `control-has-associated-label` already agreed. An empty or missing `alt`, `aria-hidden`, and a hidden wrapper still report.
+
 ## 3.0.8
 
 ### Patch Changes
