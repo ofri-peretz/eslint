@@ -547,8 +547,12 @@ export function isStyleToken(value: string): boolean {
  * written as a function call, and the qualifier test (a natural word, so
  * `default`, `primary`, `reports`) keeps `STRIPE_KEY(Xk9mP2vQ8zL4nR7w)` out.
  *
- * Only the shape is read. The slot name is not consulted, so the same string
- * in a `password` slot is also not a secret.
+ * Only the shape is read, not the slot name — a DI token is written the same
+ * way wherever it is stored. The one exception is a slot whose OWN inferred
+ * category is `password`: nothing stores a real DI token there, so the shape
+ * match is far more likely to be a badly generated password that happens to
+ * look like a call (#1686). `isSecretShaped`'s caller passes that category
+ * through for exactly this check.
  */
 export function isInjectionTokenName(value: string): boolean {
   const match = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\(([A-Za-z][A-Za-z.-]*)\)$/.exec(
@@ -653,7 +657,11 @@ function echoesItsOwnSlotName(value: string, slotName: string): boolean {
   return fold(value) === fold(slotName);
 }
 
-export function isSecretShaped(value: string, minLength: number): boolean {
+export function isSecretShaped(
+  value: string,
+  minLength: number,
+  category?: 'password' | 'token' | 'database' | 'apikey' | 'other',
+): boolean {
   if (value.length < minLength) return false;
   // Sentences and phrases are messages, never credentials.
   if (/\s/.test(value)) return false;
@@ -676,7 +684,8 @@ export function isSecretShaped(value: string, minLength: number): boolean {
   // CSS is written to be read; see isStyleToken.
   if (isStyleToken(value)) return false;
   // A DI token name is a lookup key written to be read; see isInjectionTokenName.
-  if (isInjectionTokenName(value)) return false;
+  // Not when the slot's own category is `password` — see that function's note.
+  if (category !== 'password' && isInjectionTokenName(value)) return false;
   // Pure word strings are identifiers / i18n keys / message constants.
   if (isNaturalWordString(value)) return false;
   if (isNamespacedKey(value) || isForeignWord(value)) return false;
@@ -1901,11 +1910,16 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         !isPlaceholder &&
         !echoesSlot &&
         !compiledIgnorePatterns.some((pattern) => pattern.test(value)) &&
-        isSecretShaped(value, detectionOptions.minLength) &&
-        isCredentialContext(value, parent)
-      ) {
+        isCredentialContext(value, parent) &&
         // isCredentialContext(value, parent) just returned true, which
-        // requires a truthy parent.
+        // requires a truthy parent. Computed before isSecretShaped so the
+        // slot's own category can veto the DI-token exemption (#1686).
+        isSecretShaped(
+          value,
+          detectionOptions.minLength,
+          inferCredentialTypeFromContext(parent!),
+        )
+      ) {
         const ctxType = inferCredentialTypeFromContext(parent!);
         const optionAllows =
           (ctxType === 'password' && detectionOptions.detectPasswords) ||
