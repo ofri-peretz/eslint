@@ -19,6 +19,7 @@ import {
   MessageIcons,
   isTestFilePath,
   propertyName,
+  staticString,
   objectKeyName,
 } from '@interlace/eslint-devkit';
 import { createRule, createModuleEvidence } from '@interlace/eslint-devkit';
@@ -744,11 +745,8 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       const unwrapChainNode = (n: TSESTree.Node): TSESTree.Node =>
         n.type === AST_NODE_TYPES.ChainExpression ? n.expression : n;
 
-      /** A string literal argument's value, or null. */
-      const stringArg = (n: TSESTree.Node): string | null =>
-        n.type === AST_NODE_TYPES.Literal && typeof n.value === 'string'
-          ? n.value
-          : null;
+      /** A static string argument's value (literal or plain template), or null. */
+      const stringArg = (n: TSESTree.Node): string | null => staticString(n);
 
       /**
        * `encoded` is `decoded.toString(enc)` where `decoded` was written once as
@@ -765,9 +763,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         const callee = unwrapChainNode(call.callee);
         if (
           callee.type !== AST_NODE_TYPES.MemberExpression ||
-          callee.computed ||
-          callee.property.type !== AST_NODE_TYPES.Identifier ||
-          callee.property.name !== 'toString' ||
+          propertyName(callee) !== 'toString' ||
           callee.object.type !== AST_NODE_TYPES.Identifier ||
           call.arguments.length !== 1
         ) {
@@ -779,11 +775,9 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           encoding === null ||
           init?.type !== AST_NODE_TYPES.CallExpression ||
           init.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          init.callee.computed ||
           init.callee.object.type !== AST_NODE_TYPES.Identifier ||
           init.callee.object.name !== 'Buffer' ||
-          init.callee.property.type !== AST_NODE_TYPES.Identifier ||
-          init.callee.property.name !== 'from' ||
+          propertyName(init.callee) !== 'from' ||
           init.arguments.length !== 2 ||
           stringArg(init.arguments[1]) !== encoding
         ) {
@@ -856,12 +850,12 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           switch (n.type) {
             case AST_NODE_TYPES.ChainExpression:
               return visit(n.expression, path, depth + 1);
-            case AST_NODE_TYPES.MemberExpression:
+            case AST_NODE_TYPES.MemberExpression: {
+              const name = propertyName(n);
               return (
-                !n.computed &&
-                n.property.type === AST_NODE_TYPES.Identifier &&
-                visit(n.object, `.${n.property.name}${path}`, depth + 1)
+                name !== null && visit(n.object, `.${name}${path}`, depth + 1)
               );
+            }
             case AST_NODE_TYPES.ConditionalExpression: {
               const branch = sameCondition(n.test);
               if (branch !== null) return visit(n[branch], path, depth + 1);

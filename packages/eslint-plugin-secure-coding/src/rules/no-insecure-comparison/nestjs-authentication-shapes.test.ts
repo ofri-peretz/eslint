@@ -64,6 +64,16 @@ ruleTester.run('nestjs-authentication-shapes', noInsecureComparison, {
       `,
     },
     {
+      // The `status` entry of RECORD_METADATA_TAILS: a token's status is a label of
+      // its record, not the secret, so it is judged by its own name.
+      name: 'the status field of a token record is judged by its own name',
+      code: `
+        function active(tokens, status) {
+          return tokens.filter((token) => token.status === status);
+        }
+      `,
+    },
+    {
       // @source nestjs/authentication lib/jwt/in-memory-refresh-token.store.ts:43
       // @found real-source scan
       name: 'FP: the user id of a refresh-token row',
@@ -84,6 +94,19 @@ ruleTester.run('nestjs-authentication-shapes', noInsecureComparison, {
           const parts = token.split('.');
           const signature = Buffer.from(parts[2], 'base64url');
           if (signature.toString('base64url') !== parts[2]) throw new Error('malformed token');
+        }
+      `,
+    },
+    {
+      // Same round trip as above, spelled with a computed key and a template
+      // literal: `propertyName` and `staticString` resolve them, so the rule
+      // reads them as the dotted, quoted form.
+      name: 'a signature against its own re-encoding, computed-key and template spellings',
+      code: `
+        function decode(token) {
+          const parts = token.split('.');
+          const signature = Buffer['from'](parts[2], \`base64url\`);
+          if (signature['toString'](\`base64url\`) !== parts[2]) throw new Error('malformed token');
         }
       `,
     },
@@ -114,6 +137,20 @@ ruleTester.run('nestjs-authentication-shapes', noInsecureComparison, {
     },
   ],
   invalid: [
+    {
+      name: 'a re-encoding compared with a different value reports in computed-key spelling too',
+      ...timing(
+        `
+        function verify(parts, expected) {
+          const signature = Buffer['from'](parts[2], \`base64url\`);
+          return signature['toString'](\`base64url\`) !== expected;
+        }
+      `,
+        "signature['toString'](`base64url`)",
+        '!==',
+        'expected',
+      ),
+    },
     {
       name: 'the token VALUE of a record still reports',
       ...timing(

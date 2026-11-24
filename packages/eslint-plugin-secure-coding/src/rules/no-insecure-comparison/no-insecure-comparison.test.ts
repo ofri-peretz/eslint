@@ -53,6 +53,7 @@ describe('no-insecure-comparison', () => {
         },
         // Test files (when allowInTests is true)
         {
+          name: 'a loose comparison in a test file is allowed when allowInTests is on',
           code: 'if (x == y) {}',
           filename: 'test.spec.ts',
           options: [{ allowInTests: true }],
