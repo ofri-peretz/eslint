@@ -76,6 +76,11 @@ const decoded = jwt.decode(token, { complete: true });
 const key = await client.getSigningKey(decoded.header.kid);
 jwt.verify(token, key.getPublicKey(), { algorithms: ['RS256'] });
 
+// Decoding to find whose token it is, then verifying it with that user's key
+const { sub } = jwt.decode(token);
+const user = await users.find(sub);
+jwt.verify(token, user.resetSecret, { algorithms: ['HS256'] });
+
 // Not JWT decodes: a TextDecoder, jose's base64url codec
 const decoder = new TextDecoder();
 decoder.decode(bytes);
@@ -103,6 +108,11 @@ export async function POST(request) {
   return decodeJwt(data.id_token).sub;
 }
 ```
+
+A decode is also exempt when the same function goes on to verify the **same
+token binding**, unconditionally (not in an `if`, a `catch`, a callback or a
+nested function), with `algorithms` pinned to string literals. Without the
+pinned list, the token's own header would choose the algorithm.
 
 `header.kid` is exempt by default: a forged kid only selects a key the
 signature then fails against. `header.alg` and `header.jku` are not — choosing
