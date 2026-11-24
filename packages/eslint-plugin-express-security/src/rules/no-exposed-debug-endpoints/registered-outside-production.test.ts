@@ -52,6 +52,7 @@ new RuleTester().run(
     valid: [
       {
         // @source uptime-kuma server/server.js:291
+        // @found real-source scan
         name: 'FP: a dev-only helper imported from a relative module',
         filename: server,
         code: route('isDevEnv()', "import { isDevEnv } from '../src/util.js';"),
