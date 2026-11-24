@@ -5,6 +5,21 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.1.4
+
+### Patch Changes
+
+- **🐛 Fix** — Found linting open-source Node apps.
+
+  - `no-timing-unsafe-compare`: a value the server holds compared with another
+    value the server holds (`req.session.csrfSecret` against its own memo, a row
+    of `req.user.sessions` against the current session id) is no longer reported.
+    New detection: a configured secret (`process.env.*SECRET*`/`*KEY*`/`*TOKEN*`,
+    or a secret property of an imported `config`) compared with a parameter or a
+    constructor-supplied field is reported without a request in sight. Two secret
+    names alone stay silent, as before.
+  - `detect-eval-with-expression`: `new Function('s', 'return import(s)')` is skipped.
+
 ## 6.1.3
 
 ### Patch Changes
