@@ -127,7 +127,10 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
           code: 'if (userId === targetId) {}',
           name: 'two identifiers that are not secrets',
         },
-        { code: 'if (status === "active") {}' },
+        {
+          code: 'if (status === "active") {}',
+          name: 'a status compared with a string constant',
+        },
         { code: 'if (index === 0) {}' },
         // Similar names that are NOT secrets (use specific non-matching names)
         {
