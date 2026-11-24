@@ -1507,6 +1507,11 @@
       "environment": "node",
       "detection": "structural-pattern",
       "confidence": "enforcement"
+    },
+    "require-emitter-error-handler": {
+      "environment": "node",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
     }
   },
   "eslint-plugin-openai-security": {
