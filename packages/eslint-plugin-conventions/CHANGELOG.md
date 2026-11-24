@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-conventions` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 7.3.0
+
+### Minor Changes
+
+- **✨ Feature** — The `guidance` preset now lints slash commands (`.claude/commands/**/*.md`, and a plugin's `commands/*.md` beside `.claude-plugin/plugin.json`). A command's description is listed in every session beside the skills', so `guidance-budget` holds its description and body to the skill budgets, and `enforced-rule-in-prose` reads its prose.
+
 ## 7.2.1
 
 ### Patch Changes

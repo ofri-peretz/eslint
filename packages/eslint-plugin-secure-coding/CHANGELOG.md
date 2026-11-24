@@ -5,6 +5,24 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.4.11
+
+### Patch Changes
+
+- **🐛 Fix** — no-hardcoded-credentials stops exempting a DI-token-shaped value held in a password slot
+
+  `isInjectionTokenName`'s `SCREAMING_SNAKE(qualifier)` shape exemption used to apply regardless of
+  the slot it was assigned to, so `const password = 'BULLMQ_CONFIG(default)';` was not reported: the
+  same call-shaped string that correctly clears a `TOKEN`-named slot also cleared a `password`-named
+  one. Nothing stores a real dependency-injection token in a slot named `password`, so the exemption
+  now checks the slot's own inferred category and no longer applies there — a DI-token-shaped value
+  in any other slot (`token`, `apikey`, `database`, `other`) keeps the exemption exactly as before
+  (#1686).
+
+- **🐛 Fix** — no-hardcoded-credentials no longer reports migration class names as secret keys
+
+  A name made of words plus an epoch timestamp, such as `AddMfaColumnsToUsers1784073600000`, passed every random-key shape test and was reported at CVSS 9.8.
+
 ## 6.4.10
 
 ### Patch Changes
