@@ -24,9 +24,14 @@ import { pathToFileURL } from 'node:url';
 const REPO_ROOT = resolve(__dirname, '../..');
 const HOOK = join(REPO_ROOT, '.claude/hooks/guard-bash.mjs');
 
-function decision(command: string): string | null {
+// The content cases run with the timeout a hooked `git commit`/`git push` needs, so only the
+// command text decides them; the timeout rule has its own cases (`CASES.hooked`) below.
+function decision(
+  command: string,
+  bash: Record<string, unknown> = { timeout: 600_000 },
+): string | null {
   const r = spawnSync(process.execPath, [HOOK], {
-    input: JSON.stringify({ tool_input: { command } }),
+    input: JSON.stringify({ tool_input: { command, ...bash } }),
     encoding: 'utf8',
   });
   expect(r.status).toBe(0);
@@ -85,7 +90,12 @@ const CASES = JSON.parse(
     ],
     { encoding: 'utf8' },
   ).stdout,
-) as { deny: string[]; allow: string[]; ask: string[] };
+) as {
+  deny: string[];
+  allow: string[];
+  ask: string[];
+  hooked: [string, Record<string, unknown>, boolean][];
+};
 
 describe('guard-bash hook: its own self-test cases', () => {
   it.each(CASES.deny)('denies %j', (command) => {
@@ -97,6 +107,12 @@ describe('guard-bash hook: its own self-test cases', () => {
   it.each(CASES.ask)('asks a person before %j', (command) => {
     expect(decision(command)).toBe('ask');
   });
+  it.each(CASES.hooked)(
+    'a hooked git call %j with %j is denied: %s',
+    (command, bash, denied) => {
+      expect(decision(command, bash)).toBe(denied ? 'deny' : null);
+    },
+  );
 });
 
 // .claude/hookset.json adds phrases a person approves and globs no edit may touch.
