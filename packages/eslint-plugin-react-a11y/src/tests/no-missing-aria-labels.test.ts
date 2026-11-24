@@ -89,6 +89,13 @@ describe('no-missing-aria-labels', () => {
         {
           code: '<button>{label}</button>',
         },
+        // #1563: a ternary between two string literals is text either branch
+        // resolves to, so the button's accessible name is text regardless of
+        // which arm renders.
+        {
+          name: 'a ternary between two string literals is text content',
+          code: '<button>{on ? "Turn off" : "Turn on"}</button>',
+        },
       ],
       invalid: [],
     });
@@ -136,6 +143,13 @@ describe('no-missing-aria-labels', () => {
           },
           {
             code: '<textarea></textarea>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          // A ternary between two blank strings resolves to text on neither
+          // branch — only a non-whitespace string literal counts as a name.
+          {
+            name: 'a ternary between two blank string literals is not a name',
+            code: '<button>{on ? "" : " "}</button>',
             errors: [{ messageId: 'missingAriaLabel' }],
           },
         ],

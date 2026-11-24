@@ -378,6 +378,19 @@ jobs:
         with:
           path: _site
 
+      # #1689: `deploy-pages` queries the Actions artifact-list API for the
+      # artifact `upload-pages-artifact` just finished uploading, and on
+      # 2026-11-23 that query ran ~400ms after the upload's own "finalized"
+      # response and found 0 artifacts — a GitHub Actions API eventual-
+      # consistency race, not a workflow misconfiguration (badges generated,
+      # the artifact upload itself succeeded and was finalized; the very next
+      # step's lookup of that same run's artifact came back empty). 20 of the
+      # last 22 scheduled runs completed this step without incident, so the
+      # race is intermittent. A short settle delay is the standard mitigation
+      # for this class of race and costs nothing against a 90-minute job.
+      - name: Wait for artifact list propagation
+        run: sleep 10
+
       - name: Deploy to GitHub Pages
         id: pages
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

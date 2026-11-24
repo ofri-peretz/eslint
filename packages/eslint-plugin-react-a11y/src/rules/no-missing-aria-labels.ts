@@ -70,6 +70,31 @@ function insideLabel(node: TSESTree.JSXOpeningElement): boolean {
 /** input types that need no name: hidden is not rendered, submit/reset have a default one (HTML-AAM). */
 const UNNAMED_INPUT_TYPES = new Set(['hidden', 'submit', 'reset']);
 
+/**
+ * Whether an expression plausibly renders as visible text on its own
+ * (`{label}`, `{'Close'}`, `` {`Item ${n}`} ``, `{5}`), including a ternary
+ * between two such expressions (`{on ? "Turn off" : "Turn on"}`) — every
+ * branch of the conditional still resolves to text, so the element's
+ * accessible name is text either way (#1563).
+ */
+function isTextLikeExpression(
+  expr: TSESTree.Expression | TSESTree.JSXEmptyExpression,
+): boolean {
+  if (
+    expr.type === 'TemplateLiteral' ||
+    expr.type === 'Identifier' ||
+    (expr.type === 'Literal' &&
+      (typeof expr.value === 'number' ||
+        (typeof expr.value === 'string' && expr.value.trim() !== '')))
+  )
+    return true;
+  return (
+    expr.type === 'ConditionalExpression' &&
+    isTextLikeExpression(expr.consequent) &&
+    isTextLikeExpression(expr.alternate)
+  );
+}
+
 /** Returns true if any direct JSX child provides visible text content. */
 function hasTextContent(
   jsxElement: TSESTree.JSXElement,
@@ -78,18 +103,13 @@ function hasTextContent(
   return jsxElement.children.some((child) => {
     if (child.type === 'JSXText') return child.value.trim().length > 0;
     // {expression} containers: only expressions that plausibly render as
-    // visible text (e.g. {label}, {'Close'}, {`Item ${n}`}, {5}) are
-    // exempted. A JSXElement (e.g. {<Icon />}) has no accessible name of
-    // its own; React also renders booleans/null/undefined as nothing, so a
-    // literal like {true} or {null} isn't text content either — only
-    // string/number literals are.
+    // visible text are exempted. A JSXElement (e.g. {<Icon />}) has no
+    // accessible name of its own; React also renders booleans/null/undefined
+    // as nothing, so a literal like {true} or {null} isn't text content
+    // either — only string/number literals (and ternaries between them) are.
     if (
       child.type === 'JSXExpressionContainer' &&
-      (child.expression.type === 'TemplateLiteral' ||
-        child.expression.type === 'Identifier' ||
-        (child.expression.type === 'Literal' &&
-          (typeof child.expression.value === 'string' ||
-            typeof child.expression.value === 'number')))
+      isTextLikeExpression(child.expression)
     )
       return true;
     // `<button><span>Sign in</span></button>`: the name is the text of the
