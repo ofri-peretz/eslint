@@ -11,9 +11,9 @@
  * hooks and lint rules regrows unless something holds the size; this rule is
  * that something.
  *
- * Budgets: an always-loaded file has `memoryBytes` and `memoryLines`; a skill
- * has `skillLines` for its body and `descriptionChars` for its frontmatter
- * description. A per-repo ratchet file can hold a larger budget for one file
+ * Budgets: an always-loaded file has `memoryBytes` and `memoryLines`; a skill,
+ * subagent or slash command has `skillLines` for its body and
+ * `descriptionChars` for its frontmatter description (listed every session). A per-repo ratchet file can hold a larger budget for one file
  * (its size the day the rule was turned on) — and may only be lowered: when
  * the file shrinks below its ratchet entry, the rule asks for the entry to
  * follow it down.
