@@ -104,7 +104,10 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
       code: 'incoming.pipe(outgoing);',
     },
     // A name bound to something that is not a stream constructor.
-    'const s = getStream(); s.pipe(res);',
+    {
+      name: 'a stream returned by an unknown factory is not provably a stream constructor',
+      code: 'const s = getStream(); s.pipe(res);',
+    },
     // A computed callee names no method statically, so it constructs nothing
     // this rule can identify.
     'const s = factories[kind](p); s.pipe(res);',

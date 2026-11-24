@@ -85,18 +85,21 @@ export function save(body: any, p: string) { Readable.fromWeb(body).pipe(fs.crea
         errors: [{ messageId: 'unhandledStreamError', line: 3, column: 46 }],
       },
       {
+        // @found real-source scan
         name: 'FN: a Readable.fromWeb source is reported when the destination is a bare name',
         code: `import { Readable } from 'node:stream';
 export function save(body: any, res: any) { Readable.fromWeb(body).pipe(res); }`,
         errors: [{ messageId: 'unhandledStreamError', line: 2, column: 45 }],
       },
       {
+        // @found real-source scan
         name: 'FN: a Writable.fromWeb destination is reported',
         code: `import { Writable } from 'node:stream';
 export function save(src: any, web: any) { src.pipe(Writable.fromWeb(web)); }`,
         errors: [{ messageId: 'unhandledStreamError' }],
       },
       {
+        // @found real-source scan
         name: 'FN: a Duplex.fromWeb from a namespace import is reported',
         code: `import * as stream from 'node:stream';
 export function save(web: any, res: any) { stream.Duplex.fromWeb(web).pipe(res); }`,
