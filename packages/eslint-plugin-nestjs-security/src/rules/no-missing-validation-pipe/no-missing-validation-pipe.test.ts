@@ -457,6 +457,31 @@ ruleTester.run(
         }
       `,
         options: [{ assumeGlobalPipes: true }],
+        errors: [{ messageId: 'shapeWithoutClass' }],
+      },
+      {
+        // @source ghostfolio apps/api/src/app/endpoints/subscription/subscription.controller.ts:52
+        // @found real-source scan
+        name: 'a registered global pipe has no class to validate an inline body type against',
+        code: `
+        app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+        @Controller('subscription')
+        export class SubscriptionController {
+          @Post('redeem-coupon')
+          redeemCoupon(@Body() { couponCode }: { couponCode: string }) {}
+        }
+      `,
+        errors: [{ messageId: 'shapeWithoutClass' }],
+      },
+      {
+        name: 'with no pipe anywhere, an inline body type is reported as missing validation',
+        code: `
+        @Controller('subscription')
+        export class SubscriptionController {
+          @Post('redeem-coupon')
+          redeemCoupon(@Body() { couponCode }: { couponCode: string }) {}
+        }
+      `,
         errors: [{ messageId: 'missingValidation' }],
       },
       {

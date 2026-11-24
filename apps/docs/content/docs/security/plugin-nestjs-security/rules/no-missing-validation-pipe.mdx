@@ -124,7 +124,9 @@ controller, and:
   is the ❌ example above.
 - **a global pipe**: reported only when its shape carries no runtime class for
   the pipe to validate against (no annotation, `any`, `unknown`, `object`, an
-  inline type literal) — or always, under `requireExplicitPipe`.
+  inline type literal) — or always, under `requireExplicitPipe`. The message
+  then names the shape, not a missing pipe: the project has the pipe, and
+  `@Body() { couponCode }: { couponCode: string }` gives it no class to read.
 
 The parameter may be a name, a destructured object
 (`@Body() { email, password }: LoginDto`), or either with a default value

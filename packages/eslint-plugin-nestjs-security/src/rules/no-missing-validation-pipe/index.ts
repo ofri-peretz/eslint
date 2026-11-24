@@ -44,7 +44,11 @@ import type ts from 'typescript';
 import { loadTypeScript } from '../../utils/typescript-peer';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
-type MessageIds = 'missingValidation' | 'undecoratedDto' | 'schemaWithoutPipe';
+type MessageIds =
+  | 'missingValidation'
+  | 'undecoratedDto'
+  | 'schemaWithoutPipe'
+  | 'shapeWithoutClass';
 
 /** `app.useGlobalPipes(…)` or an `APP_PIPE` provider — the project scan's own test. */
 const GLOBAL_PIPE_REGISTRATION = /\buseGlobalPipes\s*\(|\bAPP_PIPE\b/;
@@ -161,6 +165,18 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
         // pipe to run them validate exactly as much as a pipe with no
         // decorators — nothing.
         fix: 'Decorate the DTO properties (@IsString() name: string;) AND apply a ValidationPipe — app.useGlobalPipes(new ValidationPipe()) or @UsePipes(new ValidationPipe()). Neither half validates anything on its own.',
+        documentationLink: 'https://docs.nestjs.com/techniques/validation',
+      }),
+      shapeWithoutClass: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Input Typed Without a Class',
+        cwe: 'CWE-20',
+        owasp: 'A03:2021',
+        cvss: 8.6,
+        description:
+          '{{param}} has no class type, so the ValidationPipe registered globally has no metatype to validate against and passes the value through unchecked',
+        severity: 'HIGH',
+        fix: 'Declare a DTO class with class-validator decorators (class RedeemCouponDto { @IsString() couponCode: string }) and type the parameter with it',
         documentationLink: 'https://docs.nestjs.com/techniques/validation',
       }),
       schemaWithoutPipe: formatLLMMessage({
@@ -714,9 +730,14 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
           if (hasGlobalPipe && !requireExplicitPipe && !isUnvalidatable(param))
             continue;
 
+          // A pipe is there, and the parameter gives it nothing to work with:
+          // say that, rather than ask for the pipe the project already has.
           context.report({
             node: param,
-            messageId: 'missingValidation',
+            messageId:
+              hasGlobalPipe && isUnvalidatable(param)
+                ? 'shapeWithoutClass'
+                : 'missingValidation',
             data: {
               param: `@${decoratorName(inputDecorator)}() ${paramLabel(param)}`,
             },
