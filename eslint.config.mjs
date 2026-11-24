@@ -4,6 +4,7 @@ import tseslint from 'typescript-eslint';
 import localPlugin from './tools/eslint-rules/index.js';
 import reactA11y from 'eslint-plugin-react-a11y';
 import reactFeatures from 'eslint-plugin-react-features';
+import { configs as truepass } from 'truepass/eslint';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Root ESLint config (flat, ESLint v9+).
@@ -173,6 +174,24 @@ export default [
     rules: {
       ...reactFeatures.configs.componentApi.rules,
     },
+  },
+
+  // ── truepass — test integrity over every test file ──────────────────────
+  // Focused, unexplained-skip, fixed-sleep and retried tests, at error. The
+  // findings that predate it sit in eslint-suppressions.json, a per-file count
+  // ESLint enforces: a new finding fails, and a fixed one fails until
+  // `npm run lint:truepass -- --prune-suppressions` drops it, so the counts only
+  // go down. CI runs it as `npm run lint:truepass` (quality.yml, Dogfood), and
+  // pre-push runs `truepass diff` for weakened assertions and unexplained
+  // snapshots. scripts/__tests__/truepass-dogfood.lock.test.ts holds the wiring.
+  {
+    ...truepass.recommended,
+    files: [
+      '**/*.{test,spec}.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
+      '**/vitest.config.{ts,mts,js}',
+      '**/vitest.*.config.{ts,mts}',
+      '**/playwright.config.ts',
+    ],
   },
 
   // ── oxlint integration ──────────────────────────────────────────────────

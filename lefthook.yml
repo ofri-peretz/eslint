@@ -267,6 +267,13 @@ pre-push:
       # see scripts/normalize-changelogs.ts for the failure this locks out.
       glob: '{packages/*/CHANGELOG.md,apps/*/CHANGELOG.md}'
       run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent changelog:check
+    truepass-diff:
+      # truepass diff: an assertion moved to a weaker matcher, or a snapshot
+      # changed with no `Snapshot: <why>` line, in the commits since
+      # origin/main. A deliberate weakening is accepted by an
+      # `Assertion: <why>` line in the commit message. The lint half of
+      # truepass runs in CI as `npm run lint:truepass`.
+      run: perl -e 'alarm 120; exec @ARGV' -- npx truepass diff --base origin/main
     shim-drift:
       # Shims are generated from rule sources and the manifest.
       glob: '{packages/eslint-plugin-*/src/**,tools/oxlint-plugins/**,.agent/plugin-rule-manifest.json}'
