@@ -1567,6 +1567,11 @@
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-node-security/require-emitter-error-handler": {
+      "cases": 45,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-node-security/require-secure-credential-storage": {
       "cases": 107,
       "failed": 0,

@@ -37,6 +37,7 @@ describe('no-ssrf', () => {
           code: 'fetch("https://api.example.com/data");',
         },
         {
+          name: 'an imported client called with a fixed host',
           code: 'import axios from "axios";\naxios.get("https://api.stripe.com/charges");',
         },
         {
@@ -76,6 +77,7 @@ describe('no-ssrf', () => {
         },
         // axios.get with user-controlled endpoint
         {
+          name: 'axios.get with an endpoint identifier is reported when names alone decide',
           code: 'import axios from "axios";\naxios.get(endpoint);',
           options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],

@@ -66,6 +66,13 @@ This rule helps ensure WCAG 2.1.1 compliance by enforcing: Prevent event handler
 }
 ```
 
+### Options
+
+| Option | Type | Status |
+| :-- | :-- | :-- |
+| `handlers` | `string[]` | Honoured. |
+| `allowExpressionValues` | `boolean` | Honoured: when `true`, an element whose `role` is an expression the rule cannot evaluate (`role={isLink ? 'link' : 'button'}`) is not reported. |
+
 ## WCAG 2.1 Compliance
 
 This rule helps satisfy:

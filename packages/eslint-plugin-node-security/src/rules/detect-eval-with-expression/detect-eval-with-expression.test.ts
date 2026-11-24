@@ -75,6 +75,7 @@ describe('detect-eval-with-expression', () => {
             errors: [{ messageId: 'strategyRefactor' }],
           },
           {
+            name: 'eval of a function parameter is reported',
             code: `
             function process(code) {
               return eval(code);
@@ -346,7 +347,10 @@ describe('detect-eval-with-expression', () => {
       {
         valid: [
           // eval with literal string is allowed by default (line 261)
-          'eval("literal string");',
+          {
+            name: 'eval of a double-quoted literal runs nothing the author did not write',
+            code: 'eval("literal string");',
+          },
           "eval('literal string');",
         ],
         invalid: [

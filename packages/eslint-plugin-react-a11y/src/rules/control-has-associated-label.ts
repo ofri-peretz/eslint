@@ -29,9 +29,18 @@ type Options = {
   ignoreElements?: string[];
   ignoreRoles?: string[];
   depth?: number;
+  /**
+   * Accepted for jsx-a11y's own presets (`includeRoles: ['alert', 'dialog']`).
+   * jsx-a11y 6.10.2 declares no such key and no rule code reads it; this rule
+   * does not either.
+   */
+  includeRoles?: string[];
 };
 
 type RuleOptions = [Options?];
+
+/** The deepest subtree searched for a label, whatever `depth` asks for. */
+const MAX_DEPTH = 25;
 
 const DEFAULT_IGNORE_ELEMENTS = ['audio', 'canvas', 'embed', 'tr', 'video'];
 
@@ -272,6 +281,10 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
         wcag: 'WCAG 1.3.1',
       }),
     },
+    // Shape of upstream's schema (rules/control-has-associated-label.js,
+    // v6.10.2): no `additionalProperties: false`, `depth` is an integer >= 0 and
+    // is clamped to 25 when read, as upstream does. `includeRoles` is accepted
+    // (it is in upstream's presets) and read by nothing, here or upstream.
     schema: [
       {
         type: 'object',
@@ -280,9 +293,9 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
           controlComponents: { type: 'array', items: { type: 'string' } },
           ignoreElements: { type: 'array', items: { type: 'string' } },
           ignoreRoles: { type: 'array', items: { type: 'string' } },
-          depth: { type: 'integer', minimum: 1, maximum: 25 },
+          includeRoles: { type: 'array', items: { type: 'string' } },
+          depth: { type: 'integer', minimum: 0 },
         },
-        additionalProperties: false,
       },
     ],
   },
@@ -307,8 +320,10 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
           ignoreRoles = DEFAULT_IGNORE_ROLES,
           // A real label is a label at any depth: search the whole subtree
           // (the schema maximum) unless the user caps it.
-          depth = 25,
+          depth = MAX_DEPTH,
         } = options ?? ({} as Options));
+        // Cap the recursion: upstream clamps to 25 rather than rejecting more.
+        depth = Math.min(depth, MAX_DEPTH);
       },
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;

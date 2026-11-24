@@ -187,6 +187,7 @@
     "node-security/require-dependency-integrity": [
       "unconfigurable-vocabulary"
     ],
+    "node-security/require-emitter-error-handler": [],
     "node-security/require-secure-credential-storage": [
       "duplicate-coverage",
       "unconfigurable-vocabulary"
