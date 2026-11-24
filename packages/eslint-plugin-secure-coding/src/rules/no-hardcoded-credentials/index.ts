@@ -373,6 +373,32 @@ function isTestsModule(filename: string): boolean {
  * allowed but kept sparse, and every alphabetic token must still read as a
  * word — which is what rejects the random blob above (`qbp` has no vowel).
  */
+/**
+ * A migration class name: words, then the epoch timestamp the generator
+ * appended (`AddMfaColumnsToUsers1784073600000`). TypeORM and MikroORM write
+ * 13 digits (milliseconds); some generators write 10 (seconds).
+ *
+ * ToolJet lists about sixty of these as plain strings to order its upgrades,
+ * and each one passed every shape test for a random key: mixed case, digits,
+ * no ascending run, past the 32-character bar for context-free reporting. All
+ * were reported at CWE-798 / CVSS 9.8.
+ *
+ * The timestamp must fall between 2000 and 2100, and everything before it
+ * must read as words. A key with digits at the end has digits elsewhere too,
+ * or a prefix that does not read as words.
+ */
+const EPOCH_2000_S = 946_684_800;
+const EPOCH_2100_S = 4_102_444_800;
+
+function isTimestampedName(value: string): boolean {
+  const match = /^([A-Za-z]+)(\d{13}|\d{10})$/.exec(value);
+  if (!match) return false;
+  const [, name, stamp] = match;
+  const seconds = stamp.length === 13 ? Number(stamp) / 1000 : Number(stamp);
+  if (seconds < EPOCH_2000_S || seconds > EPOCH_2100_S) return false;
+  return isNaturalWordString(name);
+}
+
 export function isNaturalWordString(raw: string): boolean {
   // One trailing colon is how a key prefix is written (`huly-table-metadata:`,
   // a clipboard marker an adopter had to disable). It is a namespace, not a
@@ -464,6 +490,7 @@ export function looksRandom(value: string): boolean {
   // scored as a random blob and was reported at CVSS 9.8: 18 of this rule's 21
   // corpus findings, all one field name.
   if (isNaturalWordString(value)) return false;
+  if (isTimestampedName(value)) return false;
   return shannonEntropy(value) >= 3.5;
 }
 
