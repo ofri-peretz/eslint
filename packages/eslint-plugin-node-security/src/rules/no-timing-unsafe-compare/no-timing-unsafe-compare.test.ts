@@ -123,7 +123,10 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
           name: 'a count compared with a number is not a secret comparison',
           code: 'if (count === 5) {}',
         },
-        { code: 'if (userId === targetId) {}' },
+        {
+          code: 'if (userId === targetId) {}',
+          name: 'two identifiers that are not secrets',
+        },
         { code: 'if (status === "active") {}' },
         { code: 'if (index === 0) {}' },
         // Similar names that are NOT secrets (use specific non-matching names)

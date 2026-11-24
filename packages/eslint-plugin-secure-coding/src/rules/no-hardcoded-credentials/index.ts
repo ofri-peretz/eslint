@@ -285,6 +285,72 @@ function isPronounceable(token: string): boolean {
 }
 
 /**
+ * Type names a schema or DTO writes as the VALUE of a field to describe it:
+ * `enableAuth: 'boolean?'` declares an optional boolean flag, and the slot name
+ * is what opened the credential gate.
+ *
+ * @protocol-constant These are the names of the ECMAScript and TypeScript
+ * built-in types themselves, a closed language surface rather than a vocabulary.
+ */
+const TYPE_TAG_NAMES: ReadonlySet<string> = new Set([
+  'string',
+  'number',
+  'boolean',
+  'bigint',
+  'object',
+  'array',
+  'date',
+]);
+
+/** A type tag, optionally marked optional: `boolean`, `boolean?`. */
+function isTypeTag(value: string): boolean {
+  const bare = value.endsWith('?') ? value.slice(0, -1) : value;
+  return TYPE_TAG_NAMES.has(bare);
+}
+
+/**
+ * A namespaced translation key, `apostrophe:enterPassword`: a lowercase
+ * namespace, one colon, and a camelCase key. The camelCase boundary is the
+ * evidence; `admin:hunter2` and `user:secret` are credential pairs and have none.
+ */
+function isNamespacedKey(value: string): boolean {
+  const match = /^([a-z][a-z0-9-]*):([a-z][a-z0-9]*[A-Z][A-Za-z0-9]*)$/.exec(
+    value,
+  );
+  return match !== null && isNaturalWordString(match[2] as string);
+}
+
+/**
+ * A single word of another language: letters only, at most a leading capital,
+ * at least one letter outside ASCII (`Contraseña`, `Lösenord`). A translated
+ * label for the slot, never a generated secret, which mixes classes and digits.
+ */
+function isForeignWord(value: string): boolean {
+  return /^\p{Lu}?\p{Ll}+$/u.test(value) && /\P{ASCII}/u.test(value);
+}
+
+/**
+ * Bullet glyphs a UI uses to MASK a stored secret (`••••••••7f2a`). A run of
+ * them is the display of a credential, never the credential.
+ *
+ * @protocol-constant U+2022 and U+25CF are two Unicode code points, characters
+ * rather than words, so there is no vocabulary here for a project to tune.
+ */
+const MASK_GLYPHS: readonly string[] = ['•', '●'];
+
+function isMaskedDisplay(value: string): boolean {
+  return MASK_GLYPHS.some((glyph) => value.includes(glyph.repeat(4)));
+}
+
+/**
+ * A module whose own basename is `tests` (`plugins/x/tests.js`): the suite
+ * entry point several frameworks use instead of a `*.test.js` suffix.
+ */
+function isTestsModule(filename: string): boolean {
+  return /(^|[\\/])tests\.(?:[cm]?[jt]s)$/.test(filename);
+}
+
+/**
  * True when the string is made purely of dictionary-ish words joined by word
  * separators or camelCase — i.e. an identifier, an i18n key, or an error
  * message constant. No digits, no symbols, every ≥3-character token
@@ -613,6 +679,8 @@ export function isSecretShaped(value: string, minLength: number): boolean {
   if (isInjectionTokenName(value)) return false;
   // Pure word strings are identifiers / i18n keys / message constants.
   if (isNaturalWordString(value)) return false;
+  if (isNamespacedKey(value) || isForeignWord(value)) return false;
+  if (isTypeTag(value) || isMaskedDisplay(value)) return false;
   // A credential mixes at least two character classes, or — for single-charset
   // secrets like a 21-character lowercase blob — is long and high-entropy.
   if (classCount(charClasses(value)) >= 2) return true;
@@ -1929,7 +1997,8 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         ]);
 
         const filename = context.filename;
-        isTestFile = allowInTests && isTestFilePath(filename);
+        isTestFile =
+          allowInTests && (isTestFilePath(filename) || isTestsModule(filename));
 
         // Compile ignore patterns to regex
         // Guarded: a user pattern reaches `new RegExp` here. Measured before this

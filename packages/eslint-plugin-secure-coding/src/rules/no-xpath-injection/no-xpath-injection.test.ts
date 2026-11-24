@@ -588,7 +588,7 @@ describe('no-xpath-injection', () => {
     ruleTester.run('coverage gaps - valid', noXpathInjection, {
       valid: [
         // id 15: non-req MemberExpression init → isUntrustedXpathInput second-inner-if false arm
-        { code: 'const xpathQuery = foo.bar;' },
+        { code: 'const xpathQuery = foo.bar;', name: 'a variable named xpathQuery holding a member read is no query' },
         // id 22: isXpathInputValidated true arm — validation function wraps the template
         { code: 'validateXPath(`/users/user[@id="${userInput}"]`)' },
         // id 31: XPath call with zero args → early return

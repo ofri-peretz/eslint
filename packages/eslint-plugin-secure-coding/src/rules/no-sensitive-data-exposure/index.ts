@@ -292,6 +292,24 @@ const VALUE_FREE_PROPERTIES = new Set([
 ]);
 
 /**
+ * Operators whose result is a boolean about two operands, never one of them.
+ *
+ * @protocol-constant ECMA-262's relational and equality operators.
+ */
+const COMPARISON_OPERATORS: ReadonlySet<string> = new Set([
+  '===',
+  '!==',
+  '==',
+  '!=',
+  '<',
+  '<=',
+  '>',
+  '>=',
+  'in',
+  'instanceof',
+]);
+
+/**
  * Properties that describe how an operation ENDED rather than what it carried.
  *
  * @protocol-constant Every entry is defined by a platform, not by a codebase:
@@ -606,7 +624,8 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
             isStaticExpression({
               node: property.value,
               scope: context.sourceCode.getScope(arg),
-            })
+            }) ||
+            isNonReplayableValue(property.value)
           ) {
             continue;
           }
@@ -640,6 +659,48 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
       }
 
       return namedValueExposure(arg);
+    }
+
+    /**
+     * Is this value one that cannot be replayed as the secret its key names?
+     *
+     * A key called `hasToken` or `passwordCount` names a secret and holds a fact
+     * ABOUT it: `Boolean(dto.token)`, `!!secret`, `secrets.length`,
+     * `actor === target`. The expression's own shape decides, never the key, and
+     * an identifier is read through its single initializer (`const required =
+     * actor.id === input.userId`).
+     */
+    function isNonReplayableValue(
+      node: TSESTree.Node,
+      seen: Set<TSESTree.Node> = new Set(),
+    ): boolean {
+      const value = unwrapTypeSyntax(node) as TSESTree.Node;
+      if (seen.has(value)) return false;
+      seen.add(value);
+      switch (value.type) {
+        case AST_NODE_TYPES.ChainExpression:
+          return isNonReplayableValue(value.expression, seen);
+        case AST_NODE_TYPES.UnaryExpression:
+          return value.operator === '!';
+        case AST_NODE_TYPES.BinaryExpression:
+          return COMPARISON_OPERATORS.has(value.operator);
+        case AST_NODE_TYPES.MemberExpression: {
+          const prop = propertyName(value);
+          return prop !== null && VALUE_FREE_PROPERTIES.has(prop);
+        }
+        case AST_NODE_TYPES.CallExpression:
+          return (
+            value.callee.type === AST_NODE_TYPES.Identifier &&
+            value.callee.name === 'Boolean' &&
+            !isShadowed('Boolean', value)
+          );
+        case AST_NODE_TYPES.Identifier: {
+          const init = resolveBindingInit(value);
+          return init ? isNonReplayableValue(init, seen) : false;
+        }
+        default:
+          return false;
+      }
     }
 
     /** Does anything in scope declare this name, rather than it being the global? */

@@ -48,6 +48,10 @@ This rule detects `===`, `==`, `!==`, and `!=` comparisons of a secret against a
 
 A secret pattern shorter than six letters (`token`, `auth`, `hash`, `jwt`, `mac`, …) matches only as a whole word of the identifier, on camelCase, acronym and separator boundaries: `accessToken`, `x_auth_token` and `JWTValue` match, `maxTokens`, `author` and `hashtag` do not. A longer pattern matches anywhere (`clientsecret`, `hashedpassword`). `authorization` is its own default pattern for that reason. A pattern with regex syntax in it keeps the substring semantics its author wrote.
 
+A value the server holds compared with another value the server holds (`req.session.csrfSecret` against a memo of itself, an element of `req.user.sessions` against the current session's id) has no attacker on either side and is not reported.
+
+A configured secret is the exception to the request requirement: `process.env.API_SECRET`, a variable aliasing it, or a secret-named property of an imported `config`/`conf`/`settings`/`secrets` object, compared with a parameter, a secret-named value or a field a constructor filled from a parameter, is reported with no request in sight. Two configured values compared with each other are not.
+
 Two secret-named values with no request operand (`submittedToken === validToken`) are not reported: nothing shows an attacker can time the comparison. `reportUnverifiedComparisons: true` reports on the secret-looking name alone.
 
 The same comparison through a helper counts too: `buf.equals(other)`, `Buffer.compare(a, b)`, `_.isEqual(a, b)` and its siblings — whose first two arguments are the values even when a customizer or options bag follows (`_.isEqualWith(a, b, fn)`, `deepEqual(a, b, { strict: true })`) — and a local wrapper that compares two of its parameters. A crypto derivation (`createHmac(…).digest()`, a `.sign()` or `#hmac()` method) is a secret by shape whatever it is named, and so is a value read from `req.session`/`req.user`/`await`, however many aliases away. A value compared with itself or a reading of itself (`token !== token.trim()`, `token !== token`) is one value, and is not reported.
