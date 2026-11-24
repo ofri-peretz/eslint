@@ -29,6 +29,61 @@ describe('no-missing-aria-labels', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - elements with ARIA labels', noMissingAriaLabels, {
       valid: [
+        // An intrinsic <img>/<area> with a non-empty alt is the button's name.
+        {
+          name: "an img with alt is the button's name",
+          code: '<button><img alt="Save" /></button>',
+        },
+        {
+          name: 'an img with alt nested in a span names the button',
+          code: '<button><span><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'the string alt="false" is still a name',
+          code: '<button><img alt="false" /></button>',
+        },
+        {
+          name: 'a visible styled wrapper still passes its img name through',
+          code: '<button><span style={{ display: \'block\' }}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a hidden={false} wrapper is visible',
+          code: '<button><span hidden={false}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a non-object style does not hide the wrapper',
+          code: '<button><span style={styles}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a computed style key is not read as hiding',
+          code: '<button><span style={{ [k]: "none" }}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a spread style does not hide the wrapper',
+          code: '<button><span style={{ ...s }}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a dynamic style value is not read as hiding',
+          code: '<button><span style={{ display }}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a string style value on another property is visible',
+          code: '<button><span style={{ color: "none" }}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a string literal alt expression names the button',
+          code: '<button><img alt={"Save"} /></button>',
+        },
+        {
+          name: 'an area with alt names the button',
+          code: '<button><area alt="Save" /></button>',
+        },
+        // A dynamic alt counts as a name (the file cannot prove it empty),
+        // matching givesValue() and control-has-associated-label.
+        {
+          name: 'a dynamic alt counts as a name',
+          code: '<button><img alt={label} /></button>',
+        },
         // Button with aria-label
         {
           name: 'an aria-label is present',
@@ -108,6 +163,72 @@ describe('no-missing-aria-labels', () => {
       {
         valid: [],
         invalid: [
+          // An img only names its parent through a non-empty, visible alt.
+          {
+            name: 'an empty alt gives no name',
+            code: '<button><img alt="" /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an img without alt gives no name',
+            code: '<button><img /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an aria-hidden img gives no name',
+            code: '<button><img alt="Save" aria-hidden="true" /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an img inside a hidden wrapper gives no name',
+            code: '<button><span aria-hidden="true"><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an img inside a display:none wrapper gives no name',
+            code: '<button><span style={{ display: \'none\' }}><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an img inside a visibility:hidden wrapper gives no name',
+            code: '<button><span style={{ visibility: \'hidden\' }}><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an img inside a hidden-attribute wrapper gives no name',
+            code: '<button><span hidden><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a boolean alt={false} is not rendered, so it gives no name',
+            code: '<button><img alt={false} /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a boolean alt={true} is not rendered, so it gives no name',
+            code: '<button><img alt={true} /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a hidden={true} wrapper gives no name',
+            code: '<button><span hidden={true}><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a quoted display key still hides the wrapper',
+            code: '<button><span style={{ "display": "none" }}><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a computed string display key still hides the wrapper',
+            code: '<button><span style={{ ["display"]: "none" }}><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a custom Img component is not proven to name the button',
+            code: '<button><Img alt="Save" /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
           // An empty aria-label yields no accessible name (accname 1.2)
           {
             name: 'empty aria-label is not a name',
