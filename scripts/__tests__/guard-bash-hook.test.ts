@@ -149,6 +149,15 @@ describe('guard-bash hook: the repo config', () => {
     );
     expect(verdict({ file_path: 'docs/decisions/sub/D-2.md' })).toBe('deny');
   });
+  it('denies a frozen edit reached through dot segments, absolute or relative', () => {
+    // Template strings, not join(): join would normalize the dots before the hook sees them.
+    expect(verdict({ file_path: `${dir}/docs/../docs/decisions/D-1.md` })).toBe(
+      'deny',
+    );
+    expect(verdict({ file_path: './guide/../docs/decisions/D-1.md' })).toBe(
+      'deny',
+    );
+  });
   it('has no opinion on an edit outside the frozen globs', () => {
     expect(verdict({ file_path: join(dir, 'docs/guide.md') })).toBeNull();
   });

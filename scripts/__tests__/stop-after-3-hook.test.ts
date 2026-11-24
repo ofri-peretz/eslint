@@ -64,6 +64,24 @@ describe('stop-after-3 hook', () => {
     run(s, 'npm test', false);
   });
 
+  it('keeps the count through an interrupted test run', () => {
+    const s = randomUUID();
+    run(s, 'npm test', true);
+    run(s, 'npm test', true);
+    const r = spawnSync(process.execPath, [HOOK], {
+      input: JSON.stringify({
+        hook_event_name: 'PostToolUse',
+        session_id: s,
+        tool_input: { command: 'npm test' },
+        tool_response: { interrupted: true },
+      }),
+      encoding: 'utf8',
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout.trim()).toBe('');
+    expect(run(s, 'npm test', true)?.continue).toBe(false);
+  });
+
   it('ignores failures of commands that are not test runs', () => {
     const s = randomUUID();
     for (let i = 0; i < 4; i++)
