@@ -1180,7 +1180,10 @@ describe('no-hardcoded-credentials', () => {
       noHardcodedCredentials,
       {
         valid: [
-          { code: 'let secretValue; secretValue = "SuperSecretPhrase!!";' },
+          {
+            name: 'a name that does not end in a credential word is not a credential slot',
+            code: 'let secretValue; secretValue = "SuperSecretPhrase!!";',
+          },
         ],
         invalid: [],
       },
