@@ -91,7 +91,9 @@ createHmac(hashOf(alg), key);
 ```
 
 An `as` cast is erased at runtime, so `req.query.algorithm as 'sha256'` still reports. So do a
-cast to `string`, a union that admits `string`, and a helper that can be reassigned.
+cast to `string`, a union that admits `string`, and a helper that can be reassigned. The same
+holds wherever the cast hides: a `satisfies` wrapped around one, or a helper whose declared return
+type is reached through `value as 'sha256'` in its body.
 
 ## Legacy interoperability
 

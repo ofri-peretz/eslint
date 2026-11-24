@@ -177,7 +177,10 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
           `if (password === 'default_password') { warn(); }`,
           // A template literal with no interpolation is the same string constant
           // written longhand.
-          'if (token === `access`) { done(); }',
+          {
+            name: 'a template literal with no interpolation is a string constant',
+            code: 'if (token === `access`) { done(); }',
+          },
         ],
         invalid: [],
       },

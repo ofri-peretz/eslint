@@ -36,7 +36,10 @@ describe('no-dynamic-algorithm-selection', () => {
           code: 'crypto.createHash(`sha256`)',
         },
         // Not 'crypto' object — not checked
-        { code: 'customCrypto.createHash(algo)' },
+        {
+          name: 'a createHash on a non-crypto receiver is not checked',
+          code: 'customCrypto.createHash(algo)',
+        },
         // Different method — not checked
         { code: 'crypto.randomBytes(32)' },
         {

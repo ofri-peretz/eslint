@@ -9,7 +9,7 @@
  * `nestjs/authentication` `lib/jwt/jws.util.ts` maps a JWS `alg` to its hash with
  *
  * ```ts
- * const hashOf = (alg: HashedAlgorithm) => `sha${alg.slice(2)}` as 'sha256' | 'sha384' | 'sha512';
+ * const hashOf = (alg: HashedAlgorithm) => \`sha\${alg.slice(2)}\` as 'sha256' | 'sha384' | 'sha512';
  * ```
  *
  * and calls `createHmac(hashOf(alg), key)` inside `case 'HS256': case 'HS384': case 'HS512':`.
@@ -88,8 +88,272 @@ describe('no-dynamic-algorithm-selection — a closed literal type is an allowli
           crypto.createHash(hashFor());
         `,
       },
+      {
+        name: 'a declared-return helper that maps through literals and as const',
+        code: `
+          import crypto from 'node:crypto';
+          const HASHES = { short: 'sha256', long: 'sha512' } as const;
+          function hashFor(long: boolean): 'sha256' | 'sha512' {
+            const choice = long ? HASHES.long : HASHES.short;
+            return choice;
+          }
+          crypto.createHash(hashFor(flag));
+        `,
+      },
+      {
+        name: 'a declared-return helper whose cast is of a literal',
+        code: `
+          import crypto from 'node:crypto';
+          function hashFor(): 'sha256' | 'sha512' { return 'sha256' as 'sha256'; }
+          crypto.createHash(hashFor());
+        `,
+      },
+      {
+        name: 'a declared-return helper with a nested callback keeps its own trust',
+        code: `
+          import crypto from 'node:crypto';
+          function hashFor(list: string[]): 'sha256' | 'sha512' {
+            list.forEach((x) => use(x as 'a'));
+            return 'sha512';
+          }
+          crypto.createHash(hashFor(xs));
+        `,
+      },
+      {
+        name: 'a declared-return helper that maps through an as const table in its body',
+        code: `
+          import crypto from 'node:crypto';
+          function hashFor(long: boolean): 'sha256' | 'sha512' {
+            const HASHES = { short: 'sha256', long: 'sha512' } as const;
+            return long ? HASHES.long : HASHES.short;
+          }
+          crypto.createHash(hashFor(flag));
+        `,
+      },
+      {
+        name: 'an angle-bracket cast of a closed-typed parameter',
+        code: `
+          import crypto from 'node:crypto';
+          export function digest(alg: 'sha256' | 'sha384') {
+            return crypto.createHash(<'sha256' | 'sha384'>alg);
+          }
+        `,
+      },
+      {
+        name: 'a declared-return helper with a nested function declaration keeps its own trust',
+        code: `
+          import crypto from 'node:crypto';
+          function hashFor(x: string): 'sha256' | 'sha512' {
+            function inner() { return x as 'a'; }
+            use(inner);
+            return 'sha512';
+          }
+          crypto.createHash(hashFor(xs));
+        `,
+      },
+      {
+        name: 'a declared-return helper with a nested function expression keeps its own trust',
+        code: `
+          import crypto from 'node:crypto';
+          function hashFor(list: string[]): 'sha256' | 'sha512' {
+            list.forEach(function (x) { use(x as 'a'); });
+            return 'sha512';
+          }
+          crypto.createHash(hashFor(xs));
+        `,
+      },
     ],
     invalid: [
+      {
+        name: 'an angle-bracket cast of request data is erased at runtime',
+        code: `
+          import crypto from 'node:crypto';
+          crypto.createHash(<'sha256' | 'sha512'>req.query.algorithm);
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'an arrow with a block body and no return type is not trusted',
+        code: `
+          import crypto from 'node:crypto';
+          const pick = (value: string) => { return value as 'sha256' | 'sha512'; };
+          crypto.createHash(pick(req.query.algorithm));
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a method argument that is a closed parameter, not a literal, is not closed',
+        code: `
+          import crypto from 'node:crypto';
+          export function d(alg: 'HS256' | 'HS512', prefix: 'HS' | 'hs') {
+            return crypto.createHash(\`sha\${alg.replace(prefix, '')}\` as 'sha256' | 'sha512');
+          }
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'satisfies a numeric literal is not a closed set of names',
+        code: `
+          import crypto from 'node:crypto';
+          crypto.createHash(name satisfies 256);
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'satisfies a union that admits string is not closed',
+        code: `
+          import crypto from 'node:crypto';
+          crypto.createHash(name satisfies 'sha256' | string);
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a closed-typed parameter redeclared with var is not closed',
+        code: `
+          import crypto from 'node:crypto';
+          export function d(alg: 'sha256' | 'sha384') {
+            var alg;
+            return crypto.createHash(alg as 'sha256' | 'sha384');
+          }
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'an ambient declaration is not a parameter the compiler checks at the call',
+        code: `
+          import crypto from 'node:crypto';
+          declare const alg: 'sha256' | 'sha384';
+          crypto.createHash(alg as 'sha256' | 'sha384');
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a cast of an untyped parameter is not closed',
+        code: `
+          import crypto from 'node:crypto';
+          export function d(alg) {
+            return crypto.createHash(alg as 'sha256' | 'sha384');
+          }
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a closed-typed parameter written in the body is not closed',
+        code: `
+          import crypto from 'node:crypto';
+          export function d(alg: 'sha256' | 'sha384', next: string) {
+            alg = next as 'sha256';
+            return crypto.createHash(alg as 'sha256' | 'sha384');
+          }
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a template with one open part is not closed',
+        code: `
+          import crypto from 'node:crypto';
+          export function d(alg: 'HS256' | 'HS512', suffix: string) {
+            return crypto.createHash(\`sha\${alg.slice(2)}\${suffix}\` as 'sha256' | 'sha512');
+          }
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a choice with one open branch is not closed',
+        code: `
+          import crypto from 'node:crypto';
+          crypto.createHash((fast ? 'sha256' : req.query.alg) as 'sha256' | 'sha512');
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a call to a bare function inside the cast is not closed',
+        code: `
+          import crypto from 'node:crypto';
+          crypto.createHash(\`sha\${pick(2)}\` as 'sha256' | 'sha512');
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a method call with one non-literal argument is not closed',
+        code: `
+          import crypto from 'node:crypto';
+          export function d(alg: 'HS256' | 'HS512', n: number) {
+            return crypto.createHash(\`sha\${alg.slice(2, n)}\` as 'sha256' | 'sha512');
+          }
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a method call whose argument is a parameter, not a literal, is not closed',
+        code: `
+          import crypto from 'node:crypto';
+          export function d(alg: 'HS256' | 'HS512', from: 2 | 3) {
+            return crypto.createHash(\`sha\${alg.slice(from)}\` as 'sha256' | 'sha512');
+          }
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a helper bound with let can be reassigned',
+        code: `
+          import crypto from 'node:crypto';
+          let hashOf = (alg: 'HS256' | 'HS512') => \`sha\${alg.slice(2)}\` as 'sha256' | 'sha512';
+          crypto.createHash(hashOf(req.query.alg));
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a helper bound with var can be reassigned',
+        code: `
+          import crypto from 'node:crypto';
+          var hashOf = (alg: 'HS256' | 'HS512') => \`sha\${alg.slice(2)}\` as 'sha256' | 'sha512';
+          crypto.createHash(hashOf(req.query.alg));
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a helper destructured from an object is not a known function',
+        code: `
+          import crypto from 'node:crypto';
+          const { hashOf } = { hashOf: (): 'sha256' => 'sha256' };
+          crypto.createHash(hashOf());
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a declared-return helper that asserts an open parameter still reports',
+        code: `
+          import crypto from 'node:crypto';
+          function pick(value: string): 'sha256' | 'sha512' {
+            return value as 'sha256' | 'sha512';
+          }
+          crypto.createHash(pick(req.query.algorithm));
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'a declared-return helper that asserts with angle brackets still reports',
+        code: `
+          import crypto from 'node:crypto';
+          const pick = function (value: string): 'sha256' | 'sha512' {
+            const v = <'sha256'>value;
+            return v;
+          };
+          crypto.createHash(pick(req.query.algorithm));
+        `,
+        errors: dynamic,
+      },
+      {
+        name: 'satisfies over an unchecked cast of request data still reports',
+        code: `
+          import crypto from 'node:crypto';
+          crypto.createHash(
+            (req.query.algorithm as 'sha256' | 'sha512') satisfies 'sha256' | 'sha512',
+          );
+        `,
+        errors: dynamic,
+      },
       {
         name: 'a cast of request data to a closed union is erased at runtime',
         code: `

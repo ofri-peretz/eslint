@@ -64,6 +64,14 @@ ruleTester.run('nestjs-authentication-shapes', noInsecureComparison, {
       `,
     },
     {
+      name: 'the status field of a token record',
+      code: `
+        function active(tokens, status) {
+          return tokens.filter((token) => token.status === status);
+        }
+      `,
+    },
+    {
       // @source nestjs/authentication lib/jwt/in-memory-refresh-token.store.ts:43
       // @found real-source scan
       name: 'FP: the user id of a refresh-token row',
@@ -458,6 +466,72 @@ ruleTester.run('re-encode and re-read edges', noInsecureComparison, {
         'record.secret',
         '===',
         'candidate',
+      ),
+    },
+    {
+      name: 'a guard whose condition changed after the choice does not settle it',
+      ...timing(
+        `
+        async function check(store, userId, useSecret) {
+          const record = await store.get(userId);
+          const candidate = useSecret ? record.secret : record.presented;
+          useSecret = true;
+          if (useSecret) return record.secret === candidate;
+          return false;
+        }
+      `,
+        'record.secret',
+        '===',
+        'candidate',
+      ),
+    },
+    {
+      name: 'a store swapped through a property between reads still reports',
+      ...timing(
+        `
+        async function check(stores, replacement, userId) {
+          const record = await stores.totp.getTotp(userId);
+          stores.totp = replacement;
+          const latest = await stores.totp.getTotp(userId);
+          return record.secret === latest.secret;
+        }
+      `,
+        'record.secret',
+        '===',
+        'latest.secret',
+      ),
+    },
+    {
+      name: 'a buffer changed later in a loop body still reports',
+      ...timing(
+        `
+        function verify(presented, expectedSignature) {
+          const signature = Buffer.from(presented, 'utf8');
+          for (let i = 0; i < 2; i++) {
+            if (i === 1) return signature.toString('utf8') === presented;
+            signature.set(Buffer.from(expectedSignature, 'utf8'));
+          }
+        }
+      `,
+        "signature.toString('utf8')",
+        '===',
+        'presented',
+      ),
+    },
+    {
+      name: 'a property of the original written through an alias still reports',
+      ...timing(
+        `
+        function check(parts, expectedSignature) {
+          const signature = Buffer.from(parts.signature, 'base64url');
+          const alias = parts;
+          alias.signature = expectedSignature;
+          return signature.toString('base64url') === parts.signature;
+        }
+      `,
+        "signature.toString('base64url')",
+        '===',
+        'parts.signature',
       ),
     },
     {

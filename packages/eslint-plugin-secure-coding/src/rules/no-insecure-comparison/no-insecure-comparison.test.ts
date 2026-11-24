@@ -811,7 +811,10 @@ ruleTester.run(
       {
         code: 'function f(token) { return verifyToken(token).valid === true; }',
       },
-      { code: 'function f(token) { return token.password === null; }' },
+      {
+        name: 'checking that a secret is absent compares nothing secret',
+        code: 'function f(token) { return token.password === null; }',
+      },
       { code: 'function f(token) { return token.secret === undefined; }' },
       { code: 'function f(token) { return undefined === token.apiKey; }' },
     ],

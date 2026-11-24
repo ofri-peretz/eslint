@@ -20,6 +20,7 @@ import {
   isTestFilePath,
   propertyName,
   objectKeyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { createRule, createModuleEvidence } from '@interlace/eslint-devkit';
 
@@ -679,12 +680,15 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       };
 
       /**
-       * Is a property of this binding assigned, updated or deleted anywhere?
-       * `parts.signature = x` changes what `parts.signature` reads without
-       * reassigning `parts`.
+       * Can a property of this binding change? `parts.signature = x` changes
+       * what `parts.signature` reads without reassigning `parts`, and so can a
+       * write through an alias: once the object is handed anywhere other than
+       * a property read (`const alias = parts`, `mutate(parts)`), its fields
+       * are no longer ours to vouch for.
        */
       const propertyWritten = (variable: TSESLint.Scope.Variable): boolean =>
         variable.references.some((ref) => {
+          if (ref.isWrite()) return false;
           let top: TSESTree.Node = ref.identifier;
           while (
             top.parent.type === AST_NODE_TYPES.MemberExpression &&
@@ -692,14 +696,15 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           ) {
             top = top.parent;
           }
+          // The bare binding, read as a value: it escapes.
+          if (top === ref.identifier) return true;
           const holder = top.parent;
           return (
-            top !== ref.identifier &&
-            ((holder.type === AST_NODE_TYPES.AssignmentExpression &&
+            (holder.type === AST_NODE_TYPES.AssignmentExpression &&
               holder.left === top) ||
-              holder.type === AST_NODE_TYPES.UpdateExpression ||
-              (holder.type === AST_NODE_TYPES.UnaryExpression &&
-                holder.operator === 'delete'))
+            holder.type === AST_NODE_TYPES.UpdateExpression ||
+            (holder.type === AST_NODE_TYPES.UnaryExpression &&
+              holder.operator === 'delete')
           );
         });
 
@@ -744,11 +749,8 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       const unwrapChainNode = (n: TSESTree.Node): TSESTree.Node =>
         n.type === AST_NODE_TYPES.ChainExpression ? n.expression : n;
 
-      /** A string literal argument's value, or null. */
-      const stringArg = (n: TSESTree.Node): string | null =>
-        n.type === AST_NODE_TYPES.Literal && typeof n.value === 'string'
-          ? n.value
-          : null;
+      /** A static string argument's value (`'hex'` or `` `hex` ``), or null. */
+      const stringArg = (n: TSESTree.Node): string | null => staticString(n);
 
       /**
        * `encoded` is `decoded.toString(enc)` where `decoded` was written once as
@@ -765,9 +767,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         const callee = unwrapChainNode(call.callee);
         if (
           callee.type !== AST_NODE_TYPES.MemberExpression ||
-          callee.computed ||
-          callee.property.type !== AST_NODE_TYPES.Identifier ||
-          callee.property.name !== 'toString' ||
+          propertyName(callee) !== 'toString' ||
           callee.object.type !== AST_NODE_TYPES.Identifier ||
           call.arguments.length !== 1
         ) {
@@ -779,21 +779,20 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           encoding === null ||
           init?.type !== AST_NODE_TYPES.CallExpression ||
           init.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          init.callee.computed ||
           init.callee.object.type !== AST_NODE_TYPES.Identifier ||
           init.callee.object.name !== 'Buffer' ||
-          init.callee.property.type !== AST_NODE_TYPES.Identifier ||
-          init.callee.property.name !== 'from' ||
+          propertyName(init.callee) !== 'from' ||
           init.arguments.length !== 2 ||
           stringArg(init.arguments[1]) !== encoding
         ) {
           return false;
         }
-        // The buffer must reach this comparison untouched: any read of it
-        // before here could have changed its bytes (`decoded.set(other)`) or
-        // handed it to code that does.
+        // The buffer must reach this comparison untouched: any other read of
+        // it could have changed its bytes (`decoded.set(other)`) or handed it
+        // to code that does. Source order is not execution order (a loop runs
+        // a later line first), so every other read counts.
         const usedBefore = variableOf(callee.object)?.references.some(
-          (ref) => !ref.isWrite() && ref.identifier.range[0] < call.range[0],
+          (ref) => !ref.isWrite() && ref.identifier !== callee.object,
         );
         return (
           usedBefore === false &&
@@ -806,13 +805,18 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       /** A call whose receiver and arguments are the same values at every read. */
       const isRepeatableCall = (call: TSESTree.CallExpression): boolean => {
         let callee: TSESTree.Node = unwrapChainNode(call.callee);
+        let throughMember = false;
         while (callee.type === AST_NODE_TYPES.MemberExpression) {
           if (callee.computed) return false;
+          throughMember = true;
           callee = unwrapChainNode(callee.object);
         }
+        // `stores.totp = other` between two `stores.totp.get()` reads swaps
+        // the receiver, so a receiver read through properties must not have
+        // them written.
         return (
           (callee.type === AST_NODE_TYPES.ThisExpression ||
-            isStableValue(callee)) &&
+            isStableValue(callee, throughMember)) &&
           call.arguments.every((arg) => isStableValue(arg))
         );
       };
@@ -831,6 +835,9 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         // the comparison sits in: in `c ? x === pick : y === pick` with
         // `pick = c ? a : b`, the first comparison only ever sees `a`.
         const sameCondition = (test: TSESTree.Node) => {
+          // Equal text is the same value only if nothing can change it in
+          // between: `useSecret = true` after the choice breaks the link.
+          if (!isStableValue(test)) return null;
           const text = sourceCode.getText(test).replace(/\?\./g, '.');
           let child: TSESTree.Node = comparison;
           for (let up = comparison.parent; up; up = up.parent) {
@@ -856,12 +863,12 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           switch (n.type) {
             case AST_NODE_TYPES.ChainExpression:
               return visit(n.expression, path, depth + 1);
-            case AST_NODE_TYPES.MemberExpression:
+            case AST_NODE_TYPES.MemberExpression: {
+              const name = propertyName(n);
               return (
-                !n.computed &&
-                n.property.type === AST_NODE_TYPES.Identifier &&
-                visit(n.object, `.${n.property.name}${path}`, depth + 1)
+                name !== null && visit(n.object, `.${name}${path}`, depth + 1)
               );
+            }
             case AST_NODE_TYPES.ConditionalExpression: {
               const branch = sameCondition(n.test);
               if (branch !== null) return visit(n[branch], path, depth + 1);
