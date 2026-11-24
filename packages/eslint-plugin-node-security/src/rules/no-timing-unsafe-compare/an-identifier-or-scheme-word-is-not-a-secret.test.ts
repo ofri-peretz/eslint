@@ -119,6 +119,11 @@ ruleTester.run(
         code: "function check(req) { const authScheme = 'bearer'; return req.headers.authorization === authToken; }",
         errors: [{ messageId: 'timingUnsafeCompare' }],
       },
+      {
+        name: 'a scheme word in the SAME identifier as a token must not mask the token (#1685)',
+        code: 'function check(req, schemeToken) { return schemeToken === req.body.value; }',
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
     ],
   },
 );
