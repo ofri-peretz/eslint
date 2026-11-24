@@ -12,7 +12,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, objectKeyName } from '@interlace/eslint-devkit';
 import {
   attributeValue,
   findAttribute,
@@ -107,9 +107,49 @@ function isTextLikeExpression(
  */
 function isNamedByAlt(opening: TSESTree.JSXOpeningElement): boolean {
   const name = intrinsicName(opening);
-  return (
-    (name === 'img' || name === 'area') &&
-    givesValue(findAttribute(opening, 'alt'))
+  if (name !== 'img' && name !== 'area') return false;
+  const alt = findAttribute(opening, 'alt');
+  // React renders no `alt` for a boolean (`alt={false}`, `alt={true}`), but
+  // givesValue stringifies it; a string `alt="false"` still names the image.
+  if (
+    alt?.value?.type === 'JSXExpressionContainer' &&
+    alt.value.expression.type === 'Literal' &&
+    typeof alt.value.expression.value === 'boolean'
+  )
+    return false;
+  return givesValue(alt);
+}
+
+/** Inline style declarations that remove an element from the accessibility tree. */
+const HIDING_STYLES = new Map([
+  ['display', 'none'],
+  ['visibility', 'hidden'],
+]);
+
+/**
+ * Statically hidden from the accessibility tree (accname 1.2: hidden content
+ * contributes no name): `aria-hidden="true"`, the `hidden` attribute, or an
+ * inline `style={{ display: 'none' }}` / `{{ visibility: 'hidden' }}`.
+ */
+function isStaticallyHidden(opening: TSESTree.JSXOpeningElement): boolean {
+  if (isAriaHidden(opening)) return true;
+  const hiddenAttr = findAttribute(opening, 'hidden');
+  if (
+    hiddenAttr &&
+    (hiddenAttr.value === null || staticAttributeValue(hiddenAttr) === 'true')
+  )
+    return true;
+  const style = findAttribute(opening, 'style')?.value;
+  if (
+    style?.type !== 'JSXExpressionContainer' ||
+    style.expression.type !== 'ObjectExpression'
+  )
+    return false;
+  return style.expression.properties.some(
+    (prop) =>
+      prop.type === 'Property' &&
+      prop.value.type === 'Literal' &&
+      HIDING_STYLES.get(objectKeyName(prop) ?? '') === prop.value.value,
   );
 }
 
@@ -138,7 +178,7 @@ function hasTextContent(
     if (!deep) return false;
     if (child.type === 'JSXElement')
       return (
-        !isAriaHidden(child.openingElement) &&
+        !isStaticallyHidden(child.openingElement) &&
         (isNamedByAlt(child.openingElement) || hasTextContent(child, deep))
       );
     if (child.type === 'JSXFragment')

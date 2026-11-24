@@ -39,6 +39,42 @@ describe('no-missing-aria-labels', () => {
           code: '<button><span><img alt="Save" /></span></button>',
         },
         {
+          name: 'the string alt="false" is still a name',
+          code: '<button><img alt="false" /></button>',
+        },
+        {
+          name: 'a visible styled wrapper still passes its img name through',
+          code: '<button><span style={{ display: \'block\' }}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a hidden={false} wrapper is visible',
+          code: '<button><span hidden={false}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a non-object style does not hide the wrapper',
+          code: '<button><span style={styles}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a computed style key is not read as hiding',
+          code: '<button><span style={{ [k]: "none" }}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a spread style does not hide the wrapper',
+          code: '<button><span style={{ ...s }}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a dynamic style value is not read as hiding',
+          code: '<button><span style={{ display }}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a string style value on another property is visible',
+          code: '<button><span style={{ color: "none" }}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a string literal alt expression names the button',
+          code: '<button><img alt={"Save"} /></button>',
+        },
+        {
           name: 'an area with alt names the button',
           code: '<button><area alt="Save" /></button>',
         },
@@ -146,6 +182,46 @@ describe('no-missing-aria-labels', () => {
           {
             name: 'an img inside a hidden wrapper gives no name',
             code: '<button><span aria-hidden="true"><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an img inside a display:none wrapper gives no name',
+            code: '<button><span style={{ display: \'none\' }}><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an img inside a visibility:hidden wrapper gives no name',
+            code: '<button><span style={{ visibility: \'hidden\' }}><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an img inside a hidden-attribute wrapper gives no name',
+            code: '<button><span hidden><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a boolean alt={false} is not rendered, so it gives no name',
+            code: '<button><img alt={false} /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a boolean alt={true} is not rendered, so it gives no name',
+            code: '<button><img alt={true} /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a hidden={true} wrapper gives no name',
+            code: '<button><span hidden={true}><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a quoted display key still hides the wrapper',
+            code: '<button><span style={{ "display": "none" }}><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a computed string display key still hides the wrapper',
+            code: '<button><span style={{ ["display"]: "none" }}><img alt="Save" /></span></button>',
             errors: [{ messageId: 'missingAriaLabel' }],
           },
           {
