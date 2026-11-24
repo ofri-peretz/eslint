@@ -91,6 +91,12 @@ describe('hasAccessibleChild', () => {
   it('a component descendant is content the file cannot see', () => {
     expect(hasAccessibleChild(element('<a><Icon /></a>').children)).toBe(true);
   });
+
+  it('an empty intrinsic descendant with its own accessible-name attribute is content', () => {
+    expect(
+      hasAccessibleChild(element('<a><img alt="photo" /></a>').children),
+    ).toBe(true);
+  });
 });
 
 describe('judgedValue', () => {

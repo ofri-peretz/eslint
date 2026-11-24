@@ -422,5 +422,6 @@ describe('CS010 — foreign rule ownership (#1688)', () => {
     // without interfering, not to assert CS010 on its own.
     const found = rules(lint(dir, PRIVACY));
     expect(found).toContain('CS009');
+    expect(found).not.toContain('CS010');
   });
 });

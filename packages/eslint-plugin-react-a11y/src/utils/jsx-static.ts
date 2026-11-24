@@ -183,16 +183,25 @@ export function hasAccessibleChild(children: TSESTree.JSXChild[]): boolean {
         return v === DYNAMIC || (v !== undefined && v.trim() !== '');
       }
       case AST_NODE_TYPES.JSXElement: {
-        if (isAriaHidden(child.openingElement)) return false;
+        const opening = child.openingElement;
+        if (isAriaHidden(opening)) return false;
         // A custom component's rendered output is not visible here, so it
         // still counts as content (the file cannot prove it renders
         // nothing). An intrinsic (DOM) element IS visible, so check whether
         // it itself has accessible content rather than counting its mere
         // presence — an empty `<span />` renders nothing a screen reader
-        // reads (#1687).
-        return intrinsicName(child.openingElement) === null
-          ? true
-          : hasAccessibleChild(child.children);
+        // reads (#1687). But an intrinsic element can carry its own
+        // accessible name via `alt`/`aria-label`/`title` with no text
+        // children at all (`<img alt="photo" />`), so check those before
+        // falling back to its children.
+        if (intrinsicName(opening) === null) return true;
+        if (
+          ['alt', 'aria-label', 'title'].some((name) =>
+            givesValue(findAttribute(opening, name)),
+          )
+        )
+          return true;
+        return hasAccessibleChild(child.children);
       }
       case AST_NODE_TYPES.JSXFragment:
         return hasAccessibleChild(child.children);
