@@ -395,6 +395,8 @@ function isTimestampedName(value: string): boolean {
   if (!match) return false;
   const [, name, stamp] = match;
   const seconds = stamp.length === 13 ? Number(stamp) / 1000 : Number(stamp);
+  // The floor matters only for a stamp with leading zeros (`0938475610`):
+  // the smallest 10-digit number without one is already September 2001.
   if (seconds < EPOCH_2000_S || seconds > EPOCH_2100_S) return false;
   return isNaturalWordString(name);
 }

@@ -52,6 +52,11 @@ ruleTester.run(
     ],
     invalid: [
       {
+        name: 'a migration-shaped value under a credential-named binding still reports',
+        code: `const secret = 'AddMfaColumnsToUsers1784073600000';`,
+        errors: 1,
+      },
+      {
         name: 'digits at the end do not excuse an opaque prefix',
         code: `const MIGRATIONS = ['KxQvTzWpRmNbYcLdHgFjSs1784073600000'];`,
         errors: 1,

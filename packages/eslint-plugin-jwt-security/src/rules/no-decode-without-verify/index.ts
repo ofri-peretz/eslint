@@ -28,6 +28,7 @@ import {
   getOptionValue,
   isDecodeOperation,
   isJwtLibraryCall,
+  isSignatureVerifyOperation,
 } from '../../utils';
 import { fromBackChannel } from '../../utils/provenance';
 import type { NoDecodeWithoutVerifyOptions } from '../../types';
@@ -310,6 +311,108 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
     };
 
     /*
+     * DECODE TO PICK THE KEY, THEN VERIFY.
+     *
+     * A password-reset token signed with a per-user secret cannot be verified
+     * until you know whose it is, so the service decodes it, loads that user,
+     * and verifies with the user's secret. brocoders/nestjs-boilerplate's
+     * `AuthService.resetPassword` does exactly this, and was reported here at
+     * CWE-345 although the same function calls `verifyAsync` on the same token
+     * before acting on it.
+     *
+     * The decode is accepted when, in the same function and after it, the SAME
+     * binding is verified unconditionally with the algorithm pinned to literal
+     * values. Each condition closes a way the verify could fail to protect it:
+     *
+     *   - a reassigned token binding could verify a different token;
+     *   - a verify in a branch, a callback or a nested function may never run;
+     *   - a verify whose `algorithms` is missing or computed lets the token's
+     *     own header choose it, and a header chosen by the attacker is the
+     *     substitution this plugin exists to catch.
+     */
+    const enclosingFunction = (node: TSESTree.Node): TSESTree.Node => {
+      let current = node.parent;
+      while (
+        current != null &&
+        current.type !== 'FunctionDeclaration' &&
+        current.type !== 'FunctionExpression' &&
+        current.type !== 'ArrowFunctionExpression'
+      ) {
+        current = current.parent;
+      }
+      return current ?? sourceCode.ast;
+    };
+
+    /** Every step from the call up to its function runs whenever the function does. */
+    const UNCONDITIONAL = new Set([
+      'AwaitExpression',
+      'ExpressionStatement',
+      'VariableDeclarator',
+      'VariableDeclaration',
+      'BlockStatement',
+      'ReturnStatement',
+      'AssignmentExpression',
+      'TSAsExpression',
+      // Reached only from the `try` block or the `finally`: a verify in the
+      // `catch` stops at its CatchClause first, which is not on this list.
+      'TryStatement',
+    ]);
+    const runsUnconditionally = (
+      call: TSESTree.Node,
+      fn: TSESTree.Node,
+    ): boolean => {
+      let current = call.parent!;
+      while (current !== fn) {
+        if (!UNCONDITIONAL.has(current.type)) return false;
+        current = current.parent!;
+      }
+      return true;
+    };
+
+    /** `{ algorithms: ['HS256'] }` among the call's arguments, every entry a string literal. */
+    const pinsAlgorithms = (call: TSESTree.CallExpression): boolean =>
+      call.arguments.some((argument) => {
+        if (argument.type !== 'ObjectExpression') return false;
+        const algorithms = getOptionValue(argument, 'algorithms');
+        return (
+          algorithms?.type === 'ArrayExpression' &&
+          algorithms.elements.length > 0 &&
+          algorithms.elements.every(
+            (element) =>
+              element?.type === 'Literal' && typeof element.value === 'string',
+          )
+        );
+      });
+
+    const verifiedLater = (node: TSESTree.CallExpression): boolean => {
+      const [token] = node.arguments;
+      if (token?.type !== 'Identifier') return false;
+      let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+      let variable: TSESLint.Scope.Variable | undefined;
+      while (scope != null && variable === undefined) {
+        variable = scope.set.get(token.name);
+        scope = scope.upper;
+      }
+      if (variable === undefined) return false;
+      if (variable.references.some((ref) => ref.isWrite() && !ref.init)) {
+        return false;
+      }
+      const fn = enclosingFunction(node);
+      return variable.references.some((ref) => {
+        const call = ref.identifier.parent;
+        return (
+          call?.type === 'CallExpression' &&
+          call.arguments[0] === ref.identifier &&
+          call.range[0] > node.range[1] &&
+          isSignatureVerifyOperation(call, sourceCode) &&
+          enclosingFunction(call) === fn &&
+          runsUnconditionally(call, fn) &&
+          pinsAlgorithms(call)
+        );
+      });
+    };
+
+    /*
      * PROVENANCE: where did this token come from?
      *
      * A token the client fetched from the authorization server itself — the
@@ -344,6 +447,9 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
             return;
           }
           if (readsOnlyAllowedClaims(node, returnsHeader(node))) {
+            return;
+          }
+          if (verifiedLater(node)) {
             return;
           }
           const [tokenArgument] = node.arguments;
