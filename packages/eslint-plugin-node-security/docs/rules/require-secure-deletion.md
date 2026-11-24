@@ -132,6 +132,22 @@ delete stats.children;     // ✅
 delete acc[dynamicKey];    // ✅ property name not statically known
 ```
 
+### Deleting from a local copy
+
+A `delete` on a local binding that holds a fresh shallow copy, made with
+`{ ...source }` or `Object.assign({}, source)` and never reassigned, is not
+reported. That is how code strips keys before handing options on, and the
+original object, which every other reference shares, still holds the value
+whatever the copy does. A `delete` on the original object, a parameter, an
+alias, or a reassigned binding is still reported.
+
+```javascript
+const opts = { ...options };
+delete opts.secret; // ✅ strips the key from this copy only
+
+delete options.secret; // ❌ still reported: this is the shared object
+```
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:

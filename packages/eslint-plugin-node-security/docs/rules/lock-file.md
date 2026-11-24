@@ -110,6 +110,16 @@ a stray `~/pnpm-lock.yaml`, say — is not committed with the project and pins
 none of its installs, so it does not count. With no `.git` anywhere above the
 file, the search continues to the filesystem root.
 
+### Published libraries
+
+A package published as a library is not reported. npm never installs from a
+dependency's lock file, so a library's consumers resolve against their own,
+and libraries such as `express`, `body-parser` and `cors` ship without one on
+purpose. The rule treats the nearest `package.json` as a library when it is not
+`"private": true` and declares `main`, `exports` or `files`. Apps and private
+packages, which do install from their own lock file, are still reported, and
+so is a manifest that cannot be parsed.
+
 ### How often it reports
 
 A missing lock file is one fact about a project, so it is reported **once per
