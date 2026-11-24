@@ -16,7 +16,9 @@ import { createRule } from '@interlace/eslint-devkit';
 import {
   attributeValue,
   findAttribute,
+  givesValue,
   hasSpreadAttribute,
+  intrinsicName,
   isAriaHidden,
   isNamedByLabelFor,
   staticAttributeValue,
@@ -95,6 +97,22 @@ function isTextLikeExpression(
   );
 }
 
+/**
+ * An intrinsic `<img>` / `<area>` with an `alt` is named by it, so as a child
+ * it contributes its `alt` to the parent's accessible name
+ * (`<button><img alt="Save" /></button>`). Same `givesValue` semantics as
+ * `hasAccessibleChild` and control-has-associated-label: a static blank or
+ * missing `alt` gives no name, a dynamic `alt={x}` counts (the file cannot
+ * prove it empty).
+ */
+function isNamedByAlt(opening: TSESTree.JSXOpeningElement): boolean {
+  const name = intrinsicName(opening);
+  return (
+    (name === 'img' || name === 'area') &&
+    givesValue(findAttribute(opening, 'alt'))
+  );
+}
+
 /** Returns true if any direct JSX child provides visible text content. */
 function hasTextContent(
   jsxElement: TSESTree.JSXElement,
@@ -119,7 +137,10 @@ function hasTextContent(
     // choices, not its name.
     if (!deep) return false;
     if (child.type === 'JSXElement')
-      return !isAriaHidden(child.openingElement) && hasTextContent(child, deep);
+      return (
+        !isAriaHidden(child.openingElement) &&
+        (isNamedByAlt(child.openingElement) || hasTextContent(child, deep))
+      );
     if (child.type === 'JSXFragment')
       return hasTextContent(child as unknown as TSESTree.JSXElement, deep);
     return false;

@@ -29,6 +29,13 @@ describe('no-missing-aria-labels', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - elements with ARIA labels', noMissingAriaLabels, {
       valid: [
+        // An intrinsic <img>/<area> with a non-empty alt is the button's name.
+        { code: '<button><img alt="Save" /></button>' },
+        { code: '<button><span><img alt="Save" /></span></button>' },
+        { code: '<button><area alt="Save" /></button>' },
+        // A dynamic alt counts as a name (the file cannot prove it empty),
+        // matching givesValue() and control-has-associated-label.
+        { code: '<button><img alt={label} /></button>' },
         // Button with aria-label
         {
           name: 'an aria-label is present',
@@ -108,6 +115,27 @@ describe('no-missing-aria-labels', () => {
       {
         valid: [],
         invalid: [
+          // An img only names its parent through a non-empty, visible alt.
+          {
+            code: '<button><img alt="" /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            code: '<button><img /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            code: '<button><img alt="Save" aria-hidden="true" /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            code: '<button><span aria-hidden="true"><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            code: '<button><Img alt="Save" /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
           // An empty aria-label yields no accessible name (accname 1.2)
           {
             name: 'empty aria-label is not a name',
