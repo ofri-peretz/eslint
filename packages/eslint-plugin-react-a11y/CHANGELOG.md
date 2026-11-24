@@ -5,6 +5,20 @@ All notable changes to `eslint-plugin-react-a11y` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.0.10
+
+### Patch Changes
+
+- **🐛 Fix** — `no-missing-aria-labels` accepts a button or link whose text is a JSX expression
+
+  `<button>{_('Open')}</button>`, `<button>{t('save')}</button>`, `<a>{label ?? 'Back'}</a>` and a template literal with
+  an expression are named by their children at runtime. Any expression child now counts as text, as in
+  eslint-plugin-jsx-a11y, except one proven to render nothing: `undefined`, `null`, `void 0`, a boolean, a blank string,
+  an element, or a conditional or logical expression of those. That was most of the 485 hits on readest/readest.
+  `role-supports-aria-props` accepts `aria-posinset`, `aria-setsize` and `aria-expanded` on role `tab` (aria-query).
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.1.2`
+
 ## 3.0.9
 
 ### Patch Changes
