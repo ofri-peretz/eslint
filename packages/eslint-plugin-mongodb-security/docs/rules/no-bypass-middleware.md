@@ -102,6 +102,8 @@ to a `mongodb`/`mongoose` import. PascalCase counts only for a module-level
 identifier, not for a property reached through `this` — `this.UserRepository`
 is an injected service, not a model.
 
+Middleware is a Mongoose feature, so the rule also needs Mongoose in the file: a Mongoose package or plugin import, a `mongoose` binding, `new Schema(...)`, `Types.ObjectId` or `.lean()`. A file that only uses the native `mongodb` driver is silent, and so is a `connection.collection('x')` handle in a file that uses both.
+
 It stays silent on:
 
 - Generic repository wrappers (`this.birdRepository.updateOne(...)`) — only a

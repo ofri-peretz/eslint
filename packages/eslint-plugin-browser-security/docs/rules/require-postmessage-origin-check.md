@@ -157,6 +157,10 @@ self.addEventListener('fetch', (event) =>
 
 `window` is never treated as a worker, whatever the file is called or listens to.
 
+## Not reported
+
+`navigator.serviceWorker.addEventListener('message', …)`, with `navigator` the platform global: the page's ServiceWorkerContainer only receives messages from the same-origin worker controlling it.
+
 ## Options
 
 | Option         | Type      | Default | Description                                     |

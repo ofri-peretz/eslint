@@ -30,6 +30,7 @@ import {
   resolveModuleBinding,
   staticString,
   namesOneOf,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -167,7 +168,17 @@ const XPATH_SYNTAX = new RegExp(
  * 7 of this rule's 9 wild-corpus findings were the `://` in a URL.
  */
 function looksLikeXpath(text: string): boolean {
-  return XPATH_SYNTAX.test(text.replace(/:\/\//g, ' '));
+  // `<nick>` is a usage-string placeholder (`/ignore <nick>[!ident][@host]`).
+  // XPath has no angle-bracket syntax: `<` is only a comparison, never glued to
+  // a name and closed by `>`.
+  if (/<[A-Za-z][\w-]*>/.test(text)) return false;
+  return XPATH_SYNTAX.test(
+    text
+      .replace(/:\/\//g, ' ')
+      // `[@scope/name]` is a log prefix naming an npm package. In XPath an
+      // attribute step cannot be followed by `/`, so no predicate has this shape.
+      .replace(/\[@[\w.-]+\/[\w.-]+\]/g, ' '),
+  );
 }
 
 /**
@@ -477,6 +488,29 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     }
 
     /**
+     * `this.evaluate(node, env, depth)` inside a class that declares `evaluate`
+     * itself is that class's own method (an interpreter's tree walk), not
+     * `document.evaluate`. Resolved against the enclosing class body, so
+     * `this.evaluate` in a class that never declares it still counts as the
+     * XPath evaluator it may have been assigned.
+     */
+    function isOwnMethodCall(callee: TSESTree.MemberExpression): boolean {
+      if (callee.object.type !== AST_NODE_TYPES.ThisExpression) return false;
+      const name = propertyName(callee);
+      let owner: TSESTree.Node | undefined = callee.parent;
+      while (owner && owner.type !== AST_NODE_TYPES.ClassBody) {
+        owner = owner.parent;
+      }
+      if (!owner) return false;
+      return owner.body.some(
+        (member) =>
+          (member.type === AST_NODE_TYPES.MethodDefinition ||
+            member.type === AST_NODE_TYPES.PropertyDefinition) &&
+          objectKeyName(member) === name,
+      );
+    }
+
+    /**
      * Does this string actually reach an XPath evaluator?
      *
      * `containsDangerousXpath` is a regex sweep over printed text — `//` or
@@ -641,6 +675,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         callee.type === AST_NODE_TYPES.MemberExpression &&
         namesOneOf(propertyName(callee), xpathFunctions)
       ) {
+        if (isOwnMethodCall(callee)) return false;
         if (propertyName(callee) !== 'select') {
           return true;
         }
