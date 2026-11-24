@@ -246,7 +246,9 @@ export const displayName = createRule<RuleOptions, MessageIds>({
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
         const declaration = node.declaration;
         if (!isFunctionNode(declaration) || declaration.id) return;
-        if (renders(declaration.body)) report(declaration);
+        // `export default (cls) => forwardRef(...)` is a factory, not a component:
+        // the wrapper call inside it is reported on its own.
+        if (rendersOwn(declaration.body)) report(declaration);
       },
 
       /**
@@ -271,7 +273,9 @@ export const displayName = createRule<RuleOptions, MessageIds>({
           !inner.id &&
           renders(inner.body)
         ) {
-          report(inner);
+          // The component is the call (the outermost of a memo(forwardRef(...))
+          // chain), and that is the node eslint-plugin-react reports.
+          report(outermostWrapper(node, scopeOf));
         }
       },
 
@@ -419,6 +423,16 @@ function isReactWrapperCall(
     isReactApi(node.callee, scope, 'memo') ||
     isReactApi(node.callee, scope, 'forwardRef')
   );
+}
+
+/** The call at the top of a `memo(forwardRef(...))` chain: the one component the chain makes. */
+function outermostWrapper(
+  node: TSESTree.CallExpression,
+  scopeOf: (node: TSESTree.Node) => Scope,
+): TSESTree.CallExpression {
+  let top = node;
+  while (isReactWrapperCall(top.parent, scopeOf)) top = top.parent;
+  return top;
 }
 
 /** `x as T`, `x satisfies T`, `x!`, `<T>x`: type syntax that changes nothing at runtime. */
