@@ -77,7 +77,9 @@ const UNNAMED_INPUT_TYPES = new Set(['hidden', 'submit', 'reset']);
  * branch of the conditional still resolves to text, so the element's
  * accessible name is text either way (#1563).
  */
-function isTextLikeExpression(expr: TSESTree.Expression): boolean {
+function isTextLikeExpression(
+  expr: TSESTree.Expression | TSESTree.JSXEmptyExpression,
+): boolean {
   if (
     expr.type === 'TemplateLiteral' ||
     expr.type === 'Identifier' ||
