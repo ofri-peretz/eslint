@@ -96,11 +96,18 @@ const STREAM_CLASSES: ReadonlySet<string> = new Set([
   'Duplex',
 ]);
 
-/** `node:stream` classes with a static `fromWeb(webStream)` constructor. */
+/**
+ * `node:stream` classes whose `fromWeb(webStream)` builds a node stream:
+ * `Readable` and `Writable` have their own, and `Transform` and `PassThrough`
+ * inherit `Duplex.fromWeb`, so `PassThrough.fromWeb(pair)` reaches the same
+ * constructor.
+ */
 const STREAM_CLASSES_WITH_FROM_WEB: ReadonlySet<string> = new Set([
   'Readable',
   'Writable',
   'Duplex',
+  'Transform',
+  'PassThrough',
 ]);
 
 /** Methods that register an event listener. */

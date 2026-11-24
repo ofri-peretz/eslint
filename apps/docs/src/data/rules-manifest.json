@@ -6674,7 +6674,7 @@
       "prefix": "node-security",
       "rule": "no-ssrf",
       "id": "node-security/no-ssrf",
-      "description": "Flags HTTP calls whose URL is a user-input-named identifier or read off a request object: a heuristic for review, not proof of SSRF",
+      "description": "Flags HTTP calls whose URL is read off a request object (a user-input-named identifier only with reportUnresolvedUrls): a heuristic",
       "cwe": "CWE-918",
       "cvss": 9.1,
       "confidence": null,

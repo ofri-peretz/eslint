@@ -142,7 +142,7 @@ A source the function creates itself is not handed back, so it still reports.
 
 ## Related Rules
 
-- [`require-emitter-error-handler`](./require-emitter-error-handler.md) — The same crash from `http.request` and `child_process.spawn`, with no pipe involved
+- [`require-emitter-error-handler`](./require-emitter-error-handler.md) — The same crash from `http.request` and `child_process.spawn`, including a request used as a pipe destination
 - [`no-unbounded-decompression`](./no-unbounded-decompression.md) — Detect decompression with no output limit
 - [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md) — Detect attacker-steerable filesystem paths
 

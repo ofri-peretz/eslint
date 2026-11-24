@@ -38,8 +38,13 @@ export function save(body: any, res: any) { const r = Readable.fromWeb(body); r.
 export function save(body: any, res: any) { Readable.fromWeb(body).pipe(res); }`,
       },
       {
-        name: 'fromWeb on a node:stream class that has none is not a stream constructor',
+        name: 'an inherited fromWeb with an error listener on the stream is fine',
         code: `import { PassThrough } from 'node:stream';
+export function save(body: any, res: any) { const s = PassThrough.fromWeb(body); s.on('error', () => res.end()); s.pipe(res); }`,
+      },
+      {
+        name: 'fromWeb on a local class that shares the name is not a node stream',
+        code: `class PassThrough { static fromWeb(body: any) { return body; } }
 export function save(body: any, res: any) { PassThrough.fromWeb(body).pipe(res); }`,
       },
       {
@@ -75,6 +80,18 @@ export function send(res: any) { new PassThrough().pipe(res); }`,
       },
     ],
     invalid: [
+      {
+        name: 'FN: PassThrough inherits Duplex.fromWeb, so its stream is a node stream with no listener',
+        code: `import { PassThrough } from 'node:stream';
+export function save(body: any, res: any) { PassThrough.fromWeb(body).pipe(res); }`,
+        errors: [{ messageId: 'unhandledStreamError', line: 2, column: 45 }],
+      },
+      {
+        name: 'FN: Transform inherits Duplex.fromWeb too',
+        code: `import { Transform } from 'node:stream';
+export function save(body: any, res: any) { Transform.fromWeb(body).pipe(res); }`,
+        errors: [{ messageId: 'unhandledStreamError', line: 2, column: 45 }],
+      },
       {
         // @source mockoon/mockoon update download, Readable.fromWeb(...).pipe(ws)
         // @found real-source scan

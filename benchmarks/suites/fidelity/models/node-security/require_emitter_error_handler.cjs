@@ -14,7 +14,7 @@ const FACTORY = {
 module.exports = {
   pkg: 'eslint-plugin-node-security',
   rule: 'require-emitter-error-handler',
-  domain: 216, // 8 factories x 9 uses x 3 import spellings
+  domain: 240, // 8 factories x 10 uses x 3 import spellings
   traces: 1500,
   key: (s) => `${tag(s.factory)}|${tag(s.use)}|${tag(s.spelling)}`,
   config: () => undefined,
@@ -34,6 +34,7 @@ module.exports = {
       OnClose: `const e = ${create};\n  e.on('close', log);`,
       ErrorAfterUse: `const e = ${create};\n  e.on('data', log);\n  e.on('error', log);`,
       PipeDest: `const e = ${create};\n  source.pipe(e);`,
+      PipeThenOnError: `const e = ${create};\n  source.pipe(e).on('error', log);`,
       Returned: `const e = ${create};\n  return e;`,
       PassedToFn: `const e = ${create};\n  attach(e);`,
     }[tag(s.use)];

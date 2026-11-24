@@ -49,7 +49,7 @@ Use it alongside `eslint-plugin-security`, not instead of it: keep that plugin i
 - `no-zip-slip` (error): Detects zip slip/archive extraction vulnerabilities.
 - `no-arbitrary-file-access` (error): Prevent file access from user input.
 - `no-data-in-temp-storage` (error): Prevent sensitive data in temp directories.
-- `no-ssrf` (warn): Flags HTTP calls whose URL is a user-input-named identifier or read off a request object: a heuristic for review, not proof of SSRF.
+- `no-ssrf` (warn): Flags HTTP calls whose URL is read off a request object (a user-input-named identifier only with reportUnresolvedUrls): a heuristic.
 - `no-shell-injection` (error): Disallow concatenated or templated shell command arguments (CWE-78).
 - `no-dynamic-command-string` (error): Disallow dynamically built command strings passed to a shell flag or a non-escaping command-runner (CWE-77).
 - `no-env-injection` (error): Disallow writing process.env under a caller-controlled key, which can overwrite PATH, NODE_OPTIONS or LD_PRELOAD (CWE-99).

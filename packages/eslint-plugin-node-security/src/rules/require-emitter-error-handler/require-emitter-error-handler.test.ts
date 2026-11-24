@@ -26,6 +26,46 @@ describe('require-emitter-error-handler', () => {
   ruleTester.run('require-emitter-error-handler', requireEmitterErrorHandler, {
     valid: [
       {
+        name: 'setHeader returns the request, so an error listener chained after it is on the request',
+        code: `import http from 'http';
+export function f(u: string) { const req = http.request(u); req.setHeader('Accept', 'application/json').on('error', log); req.end(); }`,
+      },
+      {
+        name: 'appendHeader returns the request too',
+        code: `import http from 'http';
+http.get(u).appendHeader('Accept', 'text/html').on('error', log);`,
+      },
+      {
+        name: 'pipe returns its destination, so a listener chained on the pipe result is on the request',
+        code: `import http from 'http';
+src.pipe(http.request(u)).on('error', log);`,
+      },
+      {
+        name: 'a listener on the pipe result of a bound request counts for the request',
+        code: `import http from 'http';
+const req = http.request(u); src.pipe(req).on('error', log);`,
+      },
+      {
+        name: 'a returned pipe result belongs to the caller',
+        code: `import http from 'http';
+export function upload(src: any, u: string) { return src.pipe(http.request(u)); }`,
+      },
+      {
+        name: 'a request bound after a fluent chain that has an error listener is handled',
+        code: `import http from 'http';
+const req = http.get(u).on('response', cb).on('error', log); req.end();`,
+      },
+      {
+        name: 'a request bound after a fluent chain is handled by a listener attached later',
+        code: `import http from 'http';
+const req = http.get(u).on('response', cb); req.on('error', log); req.end();`,
+      },
+      {
+        name: 'a request bound after a fluent chain and returned escapes',
+        code: `import http from 'http';
+export function open(u: string) { const req = http.get(u).on('response', cb); return req; }`,
+      },
+      {
         name: 'a request with an error listener is handled',
         code: `import http from 'node:http';
 export function f(u: string) { const req = http.request(u); req.on('error', log); req.end(); }`,
@@ -143,6 +183,36 @@ const { socket } = http.get(u);`,
       },
     ],
     invalid: [
+      {
+        name: 'a chain through setHeader that never listens for error is reported',
+        code: `import http from 'http';
+http.request(u).setHeader('Accept', 'application/json').on('response', cb);`,
+        errors: bad,
+      },
+      {
+        name: 'a bare pipe into a request has no listener on the pipe result',
+        code: `import http from 'http';
+src.pipe(http.request(u));`,
+        errors: bad,
+      },
+      {
+        name: 'a listener for another event on the pipe result is not an error listener',
+        code: `import http from 'http';
+src.pipe(http.request(u)).on('response', cb);`,
+        errors: bad,
+      },
+      {
+        name: 'a request bound after a fluent chain with only a response listener is reported',
+        code: `import http from 'http';
+const req = http.get(u).on('response', cb); req.end();`,
+        errors: bad,
+      },
+      {
+        name: 'a request bound after a setTimeout chain and never listened to is reported',
+        code: `import http from 'http';
+const req = http.get(u).setTimeout(5); req.end();`,
+        errors: bad,
+      },
       {
         // @source parse-community/parse-server src/GraphQL/loaders/filesMutations.js:24-47
         // @found real-source scan

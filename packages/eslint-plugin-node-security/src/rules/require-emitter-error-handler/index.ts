@@ -72,7 +72,7 @@ type RuleOptions = [];
  * can emit an unhandled `'error'`.
  *
  * `fork` and `spawn` emit `'error'` on a spawn failure (ENOENT, bad cwd);
- * `request`/`get` emit it on connect failure, reset and timeout. `exec` and
+ * `request`/`get` emit it on connect failure, reset and connect timeout. `exec` and
  * `execFile` are absent on purpose: see the file header.
  *
  * @protocol-constant Node core export names that return an EventEmitter which throws without an error listener; a fixed API surface, not a vocabulary a consumer could extend
@@ -99,7 +99,8 @@ const LISTENER_METHODS: ReadonlySet<string> = new Set([
 
 /**
  * Methods on a ClientRequest that return the request itself, so a chain such as
- * `http.get(u).setTimeout(t).on('error', h)` still ends in the emitter.
+ * `http.get(u).setTimeout(t).on('error', h)` or
+ * `req.setHeader('Accept', t).on('error', h)` still ends in the emitter.
  * Listener methods return `this` too.
  *
  * @protocol-constant Node's own ClientRequest methods that return the request itself; a fixed API surface of the platform, not a tunable word list
@@ -107,6 +108,8 @@ const LISTENER_METHODS: ReadonlySet<string> = new Set([
 const CHAINABLE_METHODS: ReadonlySet<string> = new Set([
   ...LISTENER_METHODS,
   'setTimeout',
+  'setHeader',
+  'appendHeader',
   'end',
 ]);
 
@@ -134,15 +137,28 @@ function isPipeDestination(node: TSESTree.Node): boolean {
 type Verdict = 'handled' | 'escapes' | 'bare';
 
 /**
- * Follow a value through member calls that return it. `handled` when one of
- * them registers an `'error'` listener; `escapes` when the value is used in a
- * way this rule cannot follow; `bare` when it is used and nothing listens.
+ * Follow a value through the calls that return it. `handled` when one of them
+ * registers an `'error'` listener; `escapes` when the value is used in a way
+ * this rule cannot follow; `bare` when it is used and nothing listens.
+ *
+ * `readsOf` resolves a variable the value is bound to into every read of it, so
+ * a chain that ends in a declaration (`const req = http.get(u).on('response',
+ * cb)`) is judged by how the binding is used, exactly as `const req =
+ * http.get(u)` is.
  */
-function judgeUse(node: TSESTree.Node): Verdict {
+function judgeUse(
+  node: TSESTree.Node,
+  readsOf: (declarator: TSESTree.VariableDeclarator) => TSESTree.Node[],
+): Verdict {
   let current: TSESTree.Node = node;
   for (;;) {
     const parent = current.parent as TSESTree.Node;
-    if (isPipeDestination(current)) return 'bare';
+    // `src.pipe(req)` evaluates to `req`: what happens to that result is what
+    // happens to the request (`.on('error', h)` listens, `return` escapes).
+    if (isPipeDestination(current)) {
+      current = parent;
+      continue;
+    }
     if (
       parent.type === AST_NODE_TYPES.MemberExpression &&
       parent.object === current
@@ -164,11 +180,19 @@ function judgeUse(node: TSESTree.Node): Verdict {
       return 'bare';
     }
     if (parent.type === AST_NODE_TYPES.ExpressionStatement) return 'bare';
-    if (parent.type === AST_NODE_TYPES.ChainExpression) {
-      current = parent;
-      continue;
+    if (
+      parent.type === AST_NODE_TYPES.VariableDeclarator &&
+      parent.init === current &&
+      parent.id.type === AST_NODE_TYPES.Identifier
+    ) {
+      for (const read of readsOf(parent)) {
+        const use = judgeUse(read, readsOf);
+        if (use !== 'bare') return use;
+      }
+      return 'bare';
     }
     if (
+      parent.type === AST_NODE_TYPES.ChainExpression ||
       parent.type === AST_NODE_TYPES.TSNonNullExpression ||
       parent.type === AST_NODE_TYPES.TSAsExpression
     ) {
@@ -236,23 +260,7 @@ export const requireEmitterErrorHandler = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         if (!isEmitterFactory(node)) return;
-
-        const parent = node.parent;
-        let verdict: Verdict;
-        if (
-          parent?.type === AST_NODE_TYPES.VariableDeclarator &&
-          parent.init === node
-        ) {
-          if (parent.id.type !== AST_NODE_TYPES.Identifier) return;
-          verdict = 'bare';
-          for (const read of readsOf(parent)) {
-            const use = judgeUse(read);
-            if (use === 'handled' || use === 'escapes') return;
-          }
-        } else {
-          verdict = judgeUse(node);
-        }
-        if (verdict !== 'bare') return;
+        if (judgeUse(node, readsOf) !== 'bare') return;
         context.report({ node, messageId: 'unhandledEmitterError' });
       },
     };

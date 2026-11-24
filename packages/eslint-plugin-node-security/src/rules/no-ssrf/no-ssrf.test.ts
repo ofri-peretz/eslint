@@ -37,6 +37,7 @@ describe('no-ssrf', () => {
           code: 'fetch("https://api.example.com/data");',
         },
         {
+          name: 'an imported client called with a fixed host',
           code: 'import axios from "axios";\naxios.get("https://api.stripe.com/charges");',
         },
         {

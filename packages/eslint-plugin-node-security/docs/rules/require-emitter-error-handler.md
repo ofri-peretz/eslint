@@ -36,16 +36,16 @@ Detects a `ClientRequest` or `ChildProcess` that is created and never given an `
 
 **Vulnerability:** An EventEmitter that emits `'error'` with no listener throws from the event loop. Node reports it as an uncaught exception and the process exits. A `try/catch` around the call, or around the `await`, never sees it: the throw happens later, not inside that call.
 
-**Risk:** A refused connection, a reset, a timeout, a missing `git` binary or a bad working directory is enough. Two production crashes of this shape were found on 2026-11-24: parse-server's GraphQL file upload (`http.request(...)` piped into, so a loopback failure kills the server instead of returning an error) and Eleventy's `spawn('git', ...)` helper (a machine without `git` kills the build, bypassing the fallback its `try/catch` was written for).
+**Risk:** A refused connection, a reset, a connect timeout (`ETIMEDOUT`), a missing `git` binary or a bad working directory is enough. An inactivity timeout (the `timeout` option or `setTimeout()`) emits only `'timeout'`, not `'error'`: it does not crash the process, and an error listener alone does not settle that request, which needs `req.destroy(error)`. Two production crashes of this shape were found on 2026-11-24: parse-server's GraphQL file upload (`http.request(...)` piped into, so a loopback failure kills the server instead of returning an error) and Eleventy's `spawn('git', ...)` helper (a machine without `git` kills the build, bypassing the fallback its `try/catch` was written for).
 
 ## Rule Details
 
 The callee is resolved by import provenance, never by spelling, so `import h from 'node:http'; h.request()`, `import { request as send } from 'https'`, `const { spawn: run } = require('child_process')` and `require('node:http').get()` are all the same fact. Reported factories:
 
-| Module          | Exports          | Emits `'error'` on                       |
-| --------------- | ---------------- | ---------------------------------------- |
-| `http`, `https` | `request`, `get` | connect failure, reset, timeout, DNS     |
-| `child_process` | `spawn`, `fork`  | spawn failure: missing binary, bad `cwd` |
+| Module          | Exports          | Emits `'error'` on                           |
+| --------------- | ---------------- | -------------------------------------------- |
+| `http`, `https` | `request`, `get` | connect failure, reset, connect timeout, DNS |
+| `child_process` | `spawn`, `fork`  | spawn failure: missing binary, bad `cwd`     |
 
 The emitter is reported when it is used inline or bound to a variable and no `.on('error')`, `.once('error')`, `.addListener('error')` (or a prepend form) is registered on it. Being the destination of `.pipe()` is not a listener; `.pipe()` forwards data, not errors.
 

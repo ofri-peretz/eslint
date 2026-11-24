@@ -434,7 +434,7 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-ssrf.md',
       description:
-        'Flags HTTP calls whose URL is a user-input-named identifier or read off a request object: a heuristic for review, not proof of SSRF',
+        'Flags HTTP calls whose URL is read off a request object (a user-input-named identifier only with reportUnresolvedUrls): a heuristic',
       cwe: 'CWE-918',
       cvss: 9.1,
     },
