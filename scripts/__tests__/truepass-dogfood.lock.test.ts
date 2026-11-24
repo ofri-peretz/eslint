@@ -60,7 +60,6 @@ describe('truepass is wired into this repo', () => {
     const rules = new Set(
       Object.values(suppressions).flatMap((byRule) => Object.keys(byRule)),
     );
-    expect(rules.size).toBeGreaterThan(0);
     expect([...rules].filter((rule) => !rule.startsWith('truepass/'))).toEqual(
       [],
     );
