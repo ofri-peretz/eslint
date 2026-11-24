@@ -77,6 +77,26 @@ function insideLabel(node: TSESTree.JSXOpeningElement): boolean {
 /** input types that need no name: hidden is not rendered, submit/reset have a default one (HTML-AAM). */
 const UNNAMED_INPUT_TYPES = new Set(['hidden', 'submit', 'reset']);
 
+const UNKNOWN = Symbol('unknown');
+
+/** The value an operand provably has (`null`, `"x"`, `undefined`, `void 0`), else UNKNOWN. */
+function staticValue(
+  expr: TSESTree.Expression,
+): string | number | bigint | boolean | RegExp | null | undefined | symbol {
+  switch (expr.type) {
+    case AST_NODE_TYPES.Literal:
+      return expr.value;
+    case AST_NODE_TYPES.Identifier:
+      return expr.name === 'undefined' ? undefined : UNKNOWN;
+    case AST_NODE_TYPES.UnaryExpression:
+      return expr.operator === 'void' ? undefined : UNKNOWN;
+    case AST_NODE_TYPES.TemplateLiteral:
+      return staticString(expr) ?? UNKNOWN;
+    default:
+      return UNKNOWN;
+  }
+}
+
 /**
  * Whether an expression can render visible text. Like upstream
  * eslint-plugin-jsx-a11y, any expression child counts (`{t('save')}`,
@@ -104,17 +124,31 @@ function isTextLikeExpression(
     case AST_NODE_TYPES.Identifier:
       return expr.name !== 'undefined';
     case AST_NODE_TYPES.UnaryExpression:
-      return expr.operator !== 'void';
+      // `!x` is a boolean, `delete x` a boolean, `void x` undefined: none
+      // renders. `-x`, `+x`, `~x` and `typeof x` render a number or string.
+      return !['!', 'delete', 'void'].includes(expr.operator);
     case AST_NODE_TYPES.ConditionalExpression:
       return (
         isTextLikeExpression(expr.consequent) ||
         isTextLikeExpression(expr.alternate)
       );
-    case AST_NODE_TYPES.LogicalExpression:
+    case AST_NODE_TYPES.LogicalExpression: {
+      const left = staticValue(expr.left);
+      if (left !== UNKNOWN) {
+        // A statically known left operand decides which side renders.
+        const rendersRight =
+          expr.operator === '&&'
+            ? Boolean(left)
+            : expr.operator === '||'
+              ? !left
+              : left === null || left === undefined;
+        return isTextLikeExpression(rendersRight ? expr.right : expr.left);
+      }
       // `cond && x` renders x or nothing: the guard is never the text.
       return expr.operator === '&&'
         ? isTextLikeExpression(expr.right)
         : isTextLikeExpression(expr.left) || isTextLikeExpression(expr.right);
+    }
     case AST_NODE_TYPES.TSAsExpression:
     case AST_NODE_TYPES.TSSatisfiesExpression:
     case AST_NODE_TYPES.TSNonNullExpression:
