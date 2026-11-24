@@ -43,6 +43,10 @@
  *                                   then advertises the others' rules.
  *   CS008  duplicate-title         — two changesets with the same title, usually
  *                                    a copy-paste that will render twice
+ *   CS010  foreign-rule-ownership — a multi-package changeset names a rule owned
+ *                                   by a package it does NOT list, so every
+ *                                   listed package's CHANGELOG advertises a fix
+ *                                   none of them shipped (#1688)
  *
  * Private workspaces are exempt from CS002/CS003: nobody installs `apps/docs`,
  * so there is no consumer with a build to migrate. The bump still has to say
@@ -344,7 +348,9 @@ export function lint(
     }
   }
 
-  findings.push(...checkCrossPackageScope(parsed, ruleOwners()));
+  const owners = ruleOwners();
+  findings.push(...checkCrossPackageScope(parsed, owners));
+  findings.push(...checkForeignRuleOwnership(parsed, owners));
 
   return findings;
 }
@@ -427,6 +433,55 @@ export function checkCrossPackageScope(
           `Covers ${listed.length} packages and describes rules from ${named.size} of them (${which}). ` +
           `Changesets copies this body into every listed package's CHANGELOG, so each would ` +
           `advertise the others' rules. Split into one changeset per package.`,
+      });
+    }
+  }
+
+  return findings;
+}
+
+/**
+ * CS010 — the complement of CS009. That check catches a rule correctly
+ * attributed to ONE of the listed packages bleeding into the others'
+ * CHANGELOGs; this one catches a rule attributed to a package the changeset
+ * does not list AT ALL — so every package the changeset DOES bump advertises a
+ * fix none of them shipped (#1688: one changeset bumped import-next,
+ * reliability and secure-coding for rule fixes none of the three register).
+ *
+ * Scoped to multi-package changesets, same as CS009 and for the same reason:
+ * `lint-changesets.test.ts`'s "never reports a single-package changeset" locks
+ * that a single-package changeset naming any rule is a cross-reference, not a
+ * mis-scope — one package cannot misattribute a fix to itself.
+ */
+export function checkForeignRuleOwnership(
+  changesets: Changeset[],
+  owners: Map<string, string>,
+): Finding[] {
+  const findings: Finding[] = [];
+
+  for (const cs of changesets) {
+    const listed = cs.releases
+      .map((r) => /^(?:@[^/]+\/)?eslint-plugin-(.+)$/.exec(r.name)?.[1])
+      .filter((x): x is string => Boolean(x));
+    if (listed.length < 2) continue;
+
+    const foreign = new Set<string>();
+    for (const [, token] of cs.body.matchAll(/`([^`]+)`/g)) {
+      const rule = token.slice(token.lastIndexOf('/') + 1);
+      const owner = owners.get(rule);
+      if (owner && !listed.includes(owner)) foreign.add(`${rule} (${owner})`);
+    }
+
+    if (foreign.size > 0) {
+      findings.push({
+        rule: 'CS010',
+        level: 'error',
+        file: cs.file,
+        message:
+          `Names rule(s) ${[...foreign].sort().join(', ')} owned by a package this ` +
+          `changeset does not list (it lists ${listed.join(', ')}). Every listed ` +
+          `package's CHANGELOG would advertise a fix it never shipped — list the ` +
+          `owning package too, or give that rule's description its own changeset.`,
       });
     }
   }
