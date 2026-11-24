@@ -142,7 +142,45 @@ describe('no-missing-aria-labels', () => {
         },
         // Expression containers with identifier/string/number are also text content.
         {
+          name: 'an identifier child is the visible text',
           code: '<button>{label}</button>',
+        },
+        {
+          /* @found readest/readest 2026-11-24 */ name: 'FP: an i18n call result is the visible text',
+          code: "<button>{_('Open')}</button>",
+        },
+        {
+          /* @found readest/readest 2026-11-24 */ name: 'FP: a translation call inside a child element is the visible text',
+          code: "<button><Icon /><div>{t('save')}</div></button>",
+        },
+        {
+          /* @found readest/readest 2026-11-24 */ name: 'FP: a nullish fallback to a string is the visible text',
+          code: "<a>{label ?? 'Back'}</a>",
+          options: [{ requireLabels: ['a'] }],
+        },
+        {
+          /* @found readest/readest 2026-11-24 */ name: 'FP: a template literal with an expression is the visible text',
+          code: '<button>{`${count} items`}</button>',
+        },
+        {
+          name: 'a member read is the visible text',
+          code: '<button>{props.title}</button>',
+        },
+        {
+          name: 'a guard with a text result is the visible text',
+          code: '<button>{open && "Close"}</button>',
+        },
+        {
+          name: 'a ternary with one text arm is the visible text',
+          code: '<button>{open ? "Close" : null}</button>',
+        },
+        {
+          name: 'a type assertion around a call is the visible text',
+          code: '<button>{t("save") as string}</button>',
+        },
+        {
+          name: 'a nullish fallback after undefined is the visible text',
+          code: '<button>{undefined ?? "Back"}</button>',
         },
         // #1563: a ternary between two string literals is text either branch
         // resolves to, so the button's accessible name is text regardless of
@@ -264,6 +302,56 @@ describe('no-missing-aria-labels', () => {
           },
           {
             code: '<textarea></textarea>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an empty string expression renders nothing',
+            code: "<button>{''}</button>",
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a null expression renders nothing',
+            code: '<button>{null}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an undefined expression renders nothing',
+            code: '<button>{undefined}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a false expression renders nothing',
+            code: '<button>{false}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a void expression renders nothing',
+            code: '<button>{void 0}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a guard whose result is an icon is not text',
+            code: '<button>{open && <Icon />}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an empty template literal renders nothing',
+            code: '<button>{``}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an empty button has no name',
+            code: '<button></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a comment-only expression renders nothing',
+            code: '<button>{/* label goes here */}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a fallback chain of empty values renders nothing',
+            code: "<button>{null || ''}</button>",
             errors: [{ messageId: 'missingAriaLabel' }],
           },
           // A ternary between two blank strings resolves to text on neither

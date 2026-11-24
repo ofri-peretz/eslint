@@ -12,7 +12,12 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule, objectKeyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  objectKeyName,
+  staticString,
+} from '@interlace/eslint-devkit';
 import {
   attributeValue,
   findAttribute,
@@ -73,28 +78,50 @@ function insideLabel(node: TSESTree.JSXOpeningElement): boolean {
 const UNNAMED_INPUT_TYPES = new Set(['hidden', 'submit', 'reset']);
 
 /**
- * Whether an expression plausibly renders as visible text on its own
- * (`{label}`, `{'Close'}`, `` {`Item ${n}`} ``, `{5}`), including a ternary
- * between two such expressions (`{on ? "Turn off" : "Turn on"}`) — every
- * branch of the conditional still resolves to text, so the element's
- * accessible name is text either way (#1563).
+ * Whether an expression can render visible text. Like upstream
+ * eslint-plugin-jsx-a11y, any expression child counts (`{t('save')}`,
+ * `{label ?? 'Back'}`, `` {`${n} items`} ``, `{props.title}`) except one the
+ * file proves renders nothing: `undefined`, `null`, `void 0`, a boolean, a
+ * blank string, an element (`{<Icon />}`), or a conditional or logical
+ * expression whose every possible result is one of those (#1563).
  */
 function isTextLikeExpression(
   expr: TSESTree.Expression | TSESTree.JSXEmptyExpression,
 ): boolean {
-  if (
-    expr.type === 'TemplateLiteral' ||
-    expr.type === 'Identifier' ||
-    (expr.type === 'Literal' &&
-      (typeof expr.value === 'number' ||
-        (typeof expr.value === 'string' && expr.value.trim() !== '')))
-  )
-    return true;
-  return (
-    expr.type === 'ConditionalExpression' &&
-    isTextLikeExpression(expr.consequent) &&
-    isTextLikeExpression(expr.alternate)
-  );
+  switch (expr.type) {
+    case AST_NODE_TYPES.JSXEmptyExpression:
+    case AST_NODE_TYPES.JSXElement:
+    case AST_NODE_TYPES.JSXFragment:
+      return false;
+    case AST_NODE_TYPES.Literal:
+      return typeof expr.value === 'string'
+        ? expr.value.trim() !== ''
+        : typeof expr.value === 'number' || typeof expr.value === 'bigint';
+    case AST_NODE_TYPES.TemplateLiteral: {
+      const text = staticString(expr);
+      return text === null || text.trim() !== '';
+    }
+    case AST_NODE_TYPES.Identifier:
+      return expr.name !== 'undefined';
+    case AST_NODE_TYPES.UnaryExpression:
+      return expr.operator !== 'void';
+    case AST_NODE_TYPES.ConditionalExpression:
+      return (
+        isTextLikeExpression(expr.consequent) ||
+        isTextLikeExpression(expr.alternate)
+      );
+    case AST_NODE_TYPES.LogicalExpression:
+      // `cond && x` renders x or nothing: the guard is never the text.
+      return expr.operator === '&&'
+        ? isTextLikeExpression(expr.right)
+        : isTextLikeExpression(expr.left) || isTextLikeExpression(expr.right);
+    case AST_NODE_TYPES.TSAsExpression:
+    case AST_NODE_TYPES.TSSatisfiesExpression:
+    case AST_NODE_TYPES.TSNonNullExpression:
+      return isTextLikeExpression(expr.expression);
+    default:
+      return true;
+  }
 }
 
 /**
@@ -164,7 +191,7 @@ function hasTextContent(
     // visible text are exempted. A JSXElement (e.g. {<Icon />}) has no
     // accessible name of its own; React also renders booleans/null/undefined
     // as nothing, so a literal like {true} or {null} isn't text content
-    // either — only string/number literals (and ternaries between them) are.
+    // either. Calls, members and templates may render text, so they count.
     if (
       child.type === 'JSXExpressionContainer' &&
       isTextLikeExpression(child.expression)
