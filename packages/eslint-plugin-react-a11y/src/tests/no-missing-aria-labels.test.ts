@@ -142,7 +142,101 @@ describe('no-missing-aria-labels', () => {
         },
         // Expression containers with identifier/string/number are also text content.
         {
+          name: 'an identifier child is the visible text',
           code: '<button>{label}</button>',
+        },
+        {
+          /* @found readest/readest 2026-11-24 */ name: 'FP: an i18n call result is the visible text',
+          code: "<button>{_('Open')}</button>",
+        },
+        {
+          /* @found readest/readest 2026-11-24 */ name: 'FP: a translation call inside a child element is the visible text',
+          code: "<button><Icon /><div>{t('save')}</div></button>",
+        },
+        {
+          /* @found readest/readest 2026-11-24 */ name: 'FP: a nullish fallback to a string is the visible text',
+          code: "<a>{label ?? 'Back'}</a>",
+          options: [{ requireLabels: ['a'] }],
+        },
+        {
+          /* @found readest/readest 2026-11-24 */ name: 'FP: a template literal with an expression is the visible text',
+          code: '<button>{`${count} items`}</button>',
+        },
+        {
+          name: 'a member read is the visible text',
+          code: '<button>{props.title}</button>',
+        },
+        {
+          name: 'a guard with a text result is the visible text',
+          code: '<button>{open && "Close"}</button>',
+        },
+        {
+          name: 'a ternary with one text arm is the visible text',
+          code: '<button>{open ? "Close" : null}</button>',
+        },
+        {
+          name: 'a type assertion around a call is the visible text',
+          code: '<button>{t("save") as string}</button>',
+        },
+        {
+          name: 'a nullish fallback after undefined is the visible text',
+          code: '<button>{undefined ?? "Back"}</button>',
+        },
+        {
+          name: 'a negative number renders',
+          code: '<button>{-1}</button>',
+        },
+        {
+          name: 'typeof renders a string',
+          code: '<button>{typeof x}</button>',
+        },
+        {
+          name: 'a null guard falls through ?? to the text',
+          code: '<button>{null ?? "Back"}</button>',
+        },
+        {
+          name: 'a known non-null left of ?? is the text',
+          code: '<button>{"x" ?? "Save"}</button>',
+        },
+        {
+          name: 'a true guard reaches the right of &&',
+          code: '<button>{true && "Save"}</button>',
+        },
+        {
+          name: 'an empty string falls through || to the text',
+          code: '<button>{"" || "Save"}</button>',
+        },
+        {
+          name: 'a known truthy left of || is the text',
+          code: '<button>{"x" || ""}</button>',
+        },
+        {
+          name: 'a zero guard renders 0',
+          code: '<button>{0 && "x"}</button>',
+        },
+        {
+          name: 'void 0 falls through ?? to the text',
+          code: '<button>{void 0 ?? "Back"}</button>',
+        },
+        {
+          name: 'a static template falls through || to the text',
+          code: '<button>{`` || "Save"}</button>',
+        },
+        {
+          name: 'an unknown member guard still reaches the text',
+          code: '<button>{props.ready && "Save"}</button>',
+        },
+        {
+          name: 'an unknown negated guard still reaches the text',
+          code: '<button>{!open && "Save"}</button>',
+        },
+        {
+          name: 'an unknown negated left of || falls through to the text',
+          code: '<button>{!open || "Save"}</button>',
+        },
+        {
+          name: 'a dynamic template is text even before a fallback',
+          code: '<button>{`${a}` || "Save"}</button>',
         },
         // #1563: a ternary between two string literals is text either branch
         // resolves to, so the button's accessible name is text regardless of
@@ -264,6 +358,86 @@ describe('no-missing-aria-labels', () => {
           },
           {
             code: '<textarea></textarea>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an empty string expression renders nothing',
+            code: "<button>{''}</button>",
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a null expression renders nothing',
+            code: '<button>{null}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an undefined expression renders nothing',
+            code: '<button>{undefined}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a false expression renders nothing',
+            code: '<button>{false}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a void expression renders nothing',
+            code: '<button>{void 0}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a guard whose result is an icon is not text',
+            code: '<button>{open && <Icon />}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an empty template literal renders nothing',
+            code: '<button>{``}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an empty button has no name',
+            code: '<button></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a comment-only expression renders nothing',
+            code: '<button>{/* label goes here */}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a fallback chain of empty values renders nothing',
+            code: "<button>{null || ''}</button>",
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a negation is a boolean and renders nothing',
+            code: '<button>{!open}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'delete is a boolean and renders nothing',
+            code: '<button>{delete o.k}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a false guard renders false, not the text',
+            code: '<button>{false && "Save"}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a true left of || renders true, not the text',
+            code: '<button>{true || "Save"}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'false is not nullish, so ?? renders false',
+            code: '<button>{false ?? "Save"}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a null guard renders nothing',
+            code: '<button>{null && label}</button>',
             errors: [{ messageId: 'missingAriaLabel' }],
           },
           // A ternary between two blank strings resolves to text on neither
