@@ -324,7 +324,7 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
      * callbacks and anything else have callers this file cannot enumerate.
      */
     function localFunctionVariable(
-      fn: TSESTree.Node,
+      fn: TSESTree.FunctionLike,
     ): TSESLint.Scope.Variable | null {
       let id: TSESTree.Identifier | null = null;
       let declaration: TSESTree.Node = fn;
@@ -334,9 +334,8 @@ export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({
         // A NAMED function expression has a second, internal binding that can
         // call it recursively (`const run = function inner(c) { inner(x) }`),
         // and those calls are not references to `run`.
-        !(fn.type === AST_NODE_TYPES.FunctionExpression && fn.id) &&
-        fn.parent?.type === AST_NODE_TYPES.VariableDeclarator &&
-        fn.parent.init === fn &&
+        !fn.id &&
+        fn.parent.type === AST_NODE_TYPES.VariableDeclarator &&
         fn.parent.id.type === AST_NODE_TYPES.Identifier &&
         fn.parent.parent.kind === 'const'
       ) {

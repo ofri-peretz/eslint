@@ -40,6 +40,22 @@ describe('no-deprecated-cipher-method coverage gaps', () => {
     ],
     invalid: [
       {
+        name: 'a test file is reported unless the allowInTests option is set',
+        code: 'crypto.createCipher("aes192", pw);',
+        filename: 'cipher.test.ts',
+        errors: [
+          {
+            messageId: 'deprecatedCipherMethod',
+            suggestions: [
+              {
+                messageId: 'useCipheriv',
+                output: 'crypto.createCipheriv("aes192", pw);',
+              },
+            ],
+          },
+        ],
+      },
+      {
         name: 'allowInTests does not exempt a file that is not a test',
         code: 'crypto.createCipher("aes192", pw);',
         options: [{ allowInTests: true }],
