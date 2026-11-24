@@ -928,8 +928,9 @@ export function UseValidationPipe(options?: Partial<ValidationPipeOptions>) {
   );
   write(
     'shared/pipes/compose.ts',
-    `import { applyDecorators, UsePipes, ValidationPipe } from '@nestjs/common';
+    `import { applyDecorators, ParseIntPipe, UsePipes, ValidationPipe } from '@nestjs/common';
 const pipe = UsePipes(ValidationPipe);
+export const ParseThenValidate = UsePipes(ParseIntPipe, new ValidationPipe());
 export const Validated = () => applyDecorators(ApiOk(), pipe);
 export const UseValidation = UsePipes(new ValidationPipe());
 export const Loop: any = applyDecorators(Loop);`,
@@ -997,6 +998,14 @@ class UsersController {
           name: 'a decorator value, applied without a call',
           filename: at,
           code: controller('@UseValidation', fromBarrel('UseValidation')),
+        },
+        {
+          name: 'ValidationPipe as one of several pipes in the list',
+          filename: at,
+          code: controller(
+            '@ParseThenValidate',
+            fromBarrel('ParseThenValidate'),
+          ),
         },
         {
           name: 'a helper written in the same file',

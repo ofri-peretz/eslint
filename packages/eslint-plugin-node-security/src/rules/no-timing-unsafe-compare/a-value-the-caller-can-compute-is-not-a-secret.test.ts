@@ -93,8 +93,70 @@ ruleTester.run(
           }
         `,
       },
+      {
+        name: 'a plain digest of the body is no secret even when every comparison is reported',
+        options: [{ reportUnverifiedComparisons: true }],
+        code: `
+          import { createHash } from 'node:crypto';
+          function verify(req) {
+            const v = createHash('sha256').update(req.body).digest('hex');
+            return v === req.headers['content-sha256'];
+          }
+        `,
+      },
+      {
+        name: 'the same digest through the crypto namespace',
+        code: `
+          import crypto from 'node:crypto';
+          function verify(req) {
+            return crypto.createHash('sha256').update(req.body).digest('hex') === req.headers['content-sha256'];
+          }
+        `,
+      },
     ],
     invalid: [
+      {
+        name: 'a hasher returned by a call is not known to take no key',
+        code: `
+          function verify(req) {
+            const v = hasherFor(req.tenant)(req.body).digest('hex');
+            return v === req.headers['x-signature'];
+          }
+        `,
+        errors: unsafe,
+      },
+      {
+        name: 'a digest that mixes in a value the caller does not send hides it',
+        code: `
+          import { createHash } from 'node:crypto';
+          function verify(req, pepper) {
+            const v = createHash('sha256').update(req.body).update(pepper).digest('hex');
+            return v === req.headers['x-hash'];
+          }
+        `,
+        errors: unsafe,
+      },
+      {
+        name: 'an HMAC written inside the template it is compared as',
+        code: `
+          import { createHmac } from 'node:crypto';
+          function verify(req, key) {
+            return \`sha256=\${createHmac('sha256', key).update(req.body).digest('hex')}\` === req.headers['x-hub-signature-256'];
+          }
+        `,
+        errors: unsafe,
+      },
+      {
+        name: 'only an imported binding is followed: a local let is judged as before',
+        filename: service,
+        code: `
+          let apiToken = 'abc';
+          export function check(req) {
+            return req.headers['x-api-token'] === apiToken;
+          }
+        `,
+        errors: unsafe,
+      },
       {
         name: 'a digest of a stored secret crosses the boundary',
         code: `

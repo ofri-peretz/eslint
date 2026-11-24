@@ -912,9 +912,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       if (init === undefined) return false;
       const unkeyed = unkeyedDigestInputs(unwrapTypeSyntax(init));
       if (unkeyed !== null) return hashesHiddenInput(unkeyed);
-      return init === node
-        ? isCryptoDerivation(node)
-        : containsCryptoDerivation(init);
+      return containsCryptoDerivation(init);
     }
 
     /**
@@ -955,20 +953,19 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     function unkeyedDigestInputs(node: TSESTree.Node): TSESTree.Node[] | null {
       const inputs: TSESTree.Node[] = [];
       let current: TSESTree.Node = node;
-      while (
-        current.type === AST_NODE_TYPES.CallExpression &&
-        current.callee.type === AST_NODE_TYPES.MemberExpression
-      ) {
-        if (propertyName(current.callee) === 'update') {
-          inputs.push(...current.arguments);
+      while (current.type === AST_NODE_TYPES.CallExpression) {
+        const callee = current.callee;
+        // `createHash(…)` or `crypto.createHash(…)` starts the chain.
+        if (callee.type === AST_NODE_TYPES.Identifier) {
+          return callee.name === 'createHash' ? inputs : null;
         }
-        current = current.callee.object;
+        if (callee.type !== AST_NODE_TYPES.MemberExpression) return null;
+        const name = propertyName(callee);
+        if (name === 'createHash') return inputs;
+        if (name === 'update') inputs.push(...current.arguments);
+        current = callee.object;
       }
-      return current.type === AST_NODE_TYPES.CallExpression &&
-        current.callee.type === AST_NODE_TYPES.Identifier &&
-        current.callee.name === 'createHash'
-        ? inputs
-        : null;
+      return null;
     }
 
     /** Is this identifier bound by an `import` or a `require(...)` call? */
@@ -1454,7 +1451,9 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       const landed = valueFollow.follow(
         valueFollow.valueAt(node, valueFollow.envOf(context)),
       );
-      return landed.env.module !== null && isSourceConstant(landed.node);
+      // An import that cannot be followed lands on itself, an identifier, so
+      // only a literal written in the imported module passes.
+      return isSourceConstant(landed.node);
     }
 
     /** The function a callee identifier resolves to, if it is a local one. */
