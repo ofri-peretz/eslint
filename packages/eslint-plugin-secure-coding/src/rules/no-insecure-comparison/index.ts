@@ -794,8 +794,28 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
        */
       const awaitedSources = (
         expr: TSESTree.Node,
+        comparison: TSESTree.Node,
       ): { call: string; path: string }[] | null => {
         const sources: { call: string; path: string }[] = [];
+        // A choice whose condition also guards the comparison takes the branch
+        // the comparison sits in: in `c ? x === pick : y === pick` with
+        // `pick = c ? a : b`, the first comparison only ever sees `a`.
+        const sameCondition = (test: TSESTree.Node) => {
+          const text = sourceCode.getText(test).replace(/\?\./g, '.');
+          let child: TSESTree.Node = comparison;
+          for (let up = comparison.parent; up; up = up.parent) {
+            if (
+              (up.type === AST_NODE_TYPES.ConditionalExpression ||
+                up.type === AST_NODE_TYPES.IfStatement) &&
+              child !== up.test &&
+              sourceCode.getText(up.test).replace(/\?\./g, '.') === text
+            ) {
+              return child === up.consequent ? 'consequent' : 'alternate';
+            }
+            child = up;
+          }
+          return null;
+        };
         const visit = (
           n: TSESTree.Node,
           path: string,
@@ -812,11 +832,14 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
                 n.property.type === AST_NODE_TYPES.Identifier &&
                 visit(n.object, `.${n.property.name}${path}`, depth + 1)
               );
-            case AST_NODE_TYPES.ConditionalExpression:
+            case AST_NODE_TYPES.ConditionalExpression: {
+              const branch = sameCondition(n.test);
+              if (branch !== null) return visit(n[branch], path, depth + 1);
               return (
                 visit(n.consequent, path, depth + 1) &&
                 visit(n.alternate, path, depth + 1)
               );
+            }
             case AST_NODE_TYPES.Identifier: {
               const init = singleInit(n);
               return init !== null && visit(init, path, depth + 1);
@@ -928,14 +951,18 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         // either. Only when every source on both sides is that same call.
         // The two sides must also be able to name the same field: `record.secret`
         // against `record.presented` reads one record and compares two values.
-        const leftSources = awaitedSources(node.left);
-        const rightSources = awaitedSources(node.right);
+        // Each side must resolve to one field, the same one; a choice between
+        // fields that no guard settles could compare two different values.
+        const leftSources = awaitedSources(node.left, node);
+        const rightSources = awaitedSources(node.right, node);
         if (
           leftSources !== null &&
           rightSources !== null &&
-          new Set([...leftSources, ...rightSources].map((src) => src.call))
-            .size === 1 &&
-          leftSources.some((l) => rightSources.some((r) => r.path === l.path))
+          new Set(
+            [...leftSources, ...rightSources].map(
+              (src) => `${src.call}${src.path}`,
+            ),
+          ).size === 1
         ) {
           return;
         }

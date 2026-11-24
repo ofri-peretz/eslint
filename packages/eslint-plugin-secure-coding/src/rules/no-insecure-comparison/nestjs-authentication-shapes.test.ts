@@ -371,6 +371,67 @@ ruleTester.run('re-encode and re-read edges', noInsecureComparison, {
       ),
     },
     {
+      name: 'a choice between two fields that no guard settles still reports',
+      ...timing(
+        `
+        async function check(store, userId, useSecret) {
+          const record = await store.get(userId);
+          const candidate = useSecret ? record.secret : record.presented;
+          return record.secret === candidate;
+        }
+      `,
+        'record.secret',
+        '===',
+        'candidate',
+      ),
+    },
+    {
+      name: 'a guard on a different condition does not settle the choice',
+      ...timing(
+        `
+        async function check(store, userId, a, b) {
+          const record = await store.get(userId);
+          const candidate = a ? record.secret : record.presented;
+          if (b) return record.secret === candidate;
+          return false;
+        }
+      `,
+        'record.secret',
+        '===',
+        'candidate',
+      ),
+    },
+    {
+      name: 'the branch the guard picks is a different field',
+      ...timing(
+        `
+        async function check(store, userId, useSecret) {
+          const record = await store.get(userId);
+          const candidate = useSecret ? record.secret : record.presented;
+          if (useSecret) return false;
+          else return record.secret === candidate;
+        }
+      `,
+        'record.secret',
+        '===',
+        'candidate',
+      ),
+    },
+    {
+      name: 'two different fields of one store read still report',
+      ...timing(
+        `
+        async function check(store, userId) {
+          const record = await store.get(userId);
+          return record.secret === record.presented;
+        }
+      `,
+        'record.secret',
+        '===',
+        'record.presented',
+      ),
+    },
+    {
       name: 'two different fields of one awaited record still report',
       ...timing(
         `
