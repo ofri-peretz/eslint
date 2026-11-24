@@ -46,6 +46,7 @@ describe('no-graphql-injection', () => {
         },
         // Safe schema definitions
         {
+          name: 'a typeDefs template with no interpolation',
           code: 'const typeDefs = `type User { id: ID! name: String }`;',
         },
         // Non-GraphQL strings
@@ -1358,6 +1359,51 @@ describe('corpus regression — introspection, selection sets and SDL keywords',
           '` as const;',
         ].join('\n'),
       },
+      // Composition through the graphql-tag idiom — vendure-ecommerce/vendure,
+      // 192 of 254 findings on one scan. A document built from other `gql`
+      // documents carries no caller input.
+      {
+        // @found vendure-ecommerce/vendure 2026-11-24 (build 594f74947), 192 of 254 hits
+        name: 'FP: a gql fragment constant interpolated into a gql query',
+        code: [
+          'const ASSET_FRAGMENT = gql`fragment Asset on Asset { id }`;',
+          'export const GET_ASSET = gql`query GetAsset($id: ID!) { asset(id: $id) { ...Asset } } ${ASSET_FRAGMENT}`;',
+        ].join('\n'),
+      },
+      {
+        name: 'a gql constant pinned with `as const` composes the same',
+        code: [
+          'const ASSET_FRAGMENT = gql`fragment Asset on Asset { id }` as const;',
+          'const GET_ASSET = gql`query GetAsset { asset { ...Asset } } ${ASSET_FRAGMENT}`;',
+        ].join('\n'),
+      },
+      {
+        name: 'a gql document written in place inside the interpolation',
+        code: 'const q = gql`query Q { asset { ...Asset } } ${gql`fragment Asset on Asset { id }`}`;',
+      },
+      {
+        name: 'a member-tagged gql constant composes like a bare one',
+        code: [
+          "const FRAG = apollo['gql']`fragment Asset on Asset { id }`;",
+          'const q = apollo.gql`query Q { asset { ...Asset } } ${FRAG}`;',
+        ].join('\n'),
+      },
+      // HEURISTIC: an import cannot be read from this file. A fragment-named
+      // binding from a relative module is trusted.
+      {
+        name: 'an imported _FRAGMENT constant from a relative module (heuristic)',
+        code: [
+          "import { ASSET_FRAGMENT } from './fragments.graphql';",
+          'const q = gql`query Q { asset { ...Asset } } ${ASSET_FRAGMENT}`;',
+        ].join('\n'),
+      },
+      {
+        name: 'an imported camelCase Fragment constant from a relative module (heuristic)',
+        code: [
+          "import { assetFragment } from '../fragments';",
+          'const q = gql`query Q { asset { ...Asset } } ${assetFragment}`;',
+        ].join('\n'),
+      },
     ],
     invalid: [
       // The one REAL finding: Shopify CLI app-management-client/graphql/
@@ -1414,6 +1460,63 @@ describe('corpus regression — introspection, selection sets and SDL keywords',
           '  query Header { shop { id } }',
           '  ${frag}',
           '`;',
+        ].join('\n'),
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      // The composition exemption is for documents, never for input.
+      {
+        name: 'gql with an interpolated req.query value still reports',
+        code: 'const q = gql`query Q { user(id: "${req.query.x}") { id } }`;',
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        name: 'a non-gql tag in the interpolation is not a document',
+        code: 'const q = gql`query Q { asset { ...Asset } } ${sql`select ${req.query.x}`}`;',
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        name: 'a gql constant that interpolates input is itself reported',
+        code: [
+          'const FRAG = gql`fragment Asset on Asset { id ${req.query.x} }`;',
+          'const q = gql`query Q { asset { ...Asset } } ${FRAG}`;',
+        ].join('\n'),
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        name: 'a plain user-input identifier is not a fragment constant',
+        code: 'const q = gql`query Q { user(id: "${userId}") { id } }`;',
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        name: 'a relative import not spelled like a fragment still reports',
+        code: [
+          "import { userInput } from './fragments';",
+          'const q = gql`query Q { asset { ...Asset } } ${userInput}`;',
+        ].join('\n'),
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        name: 'a fragment-named import from a package is not trusted',
+        code: [
+          "import { ASSET_FRAGMENT } from 'some-package';",
+          'const q = gql`query Q { asset { ...Asset } } ${ASSET_FRAGMENT}`;',
+        ].join('\n'),
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        name: 'a fragment-named default import is not trusted',
+        code: [
+          "import ASSET_FRAGMENT from './fragments';",
+          'const q = gql`query Q { asset { ...Asset } } ${ASSET_FRAGMENT}`;',
+        ].join('\n'),
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
+      },
+      {
+        name: 'a reassigned gql constant is still reported',
+        code: [
+          'let FRAG = gql`fragment Asset on Asset { id }`;',
+          'FRAG = untrusted;',
+          'const q = gql`query Q { asset { ...Asset } } ${FRAG}`;',
         ].join('\n'),
         errors: [{ messageId: 'unsafeVariableInterpolation' }],
       },

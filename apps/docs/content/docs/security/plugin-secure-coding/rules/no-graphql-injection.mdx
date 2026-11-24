@@ -94,6 +94,12 @@ Interpolating another GraphQL document is composition, not input: a `const`
 holding a fragment clears its `${FRAGMENT}` whether the constant is a template
 or a plain string literal.
 
+The same holds for a `gql`/`graphql` tagged template, written in place or bound
+to a single-assignment `const`. An import spelled `*_FRAGMENT` or `*Fragment`
+from a relative module is trusted too — a **heuristic**, because its definition
+is in another file and cannot be read; a package import, or a relative import
+named anything else, still reports.
+
 ### Why This Matters
 
 | Issue            | Impact                   | Solution                            |
