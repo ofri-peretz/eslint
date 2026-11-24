@@ -173,7 +173,8 @@ function publishesAfterOptions(words) {
     if (words[i] !== "npm" && words[i] !== "pnpm") continue;
     let j = i + 1;
     while (j < words.length && words[j].startsWith("-")) {
-      const valued = words[j].startsWith("--") && !words[j].includes("=");
+      // Any option without `=` may take the next word as its value (`--registry url`, `-F pkg`).
+      const valued = !words[j].includes("=");
       j++;
       if (valued && j < words.length && !words[j].startsWith("-") && words[j] !== "publish") j++;
     }
@@ -342,6 +343,8 @@ export const CASES = {
     "npm --access=public publish",
     "npm --registry https://registry.npmjs.org publish",
     "pnpm --filter pkg publish",
+    "pnpm -F pkg publish",
+    "npm -g publish",
   ],
   // decideHooked: [command, Bash input, denied?]
   hooked: [
