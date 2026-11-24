@@ -3,8 +3,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-11-24",
   "totalPlugins": 32,
-  "totalRules": 516,
-  "oxlintCompatible": 516,
+  "totalRules": 519,
+  "oxlintCompatible": 519,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -2230,8 +2230,14 @@
       "short": "react-a11y",
       "shim": "tools/oxlint-plugins/interlace-react-a11y.cjs",
       "subpath": "eslint-plugin-react-a11y/oxlint",
-      "ruleCount": 37,
+      "ruleCount": 40,
       "rules": [
+        {
+          "name": "accessible-emoji",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "alt-text",
           "portability": "compatible",
@@ -2335,6 +2341,12 @@
           "isTypeAware": false
         },
         {
+          "name": "label-has-for",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "lang",
           "portability": "compatible",
           "blockers": [],
@@ -2408,6 +2420,12 @@
         },
         {
           "name": "no-noninteractive-tabindex",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-onchange",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

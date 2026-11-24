@@ -250,14 +250,14 @@
     },
     {
       "name": "eslint-plugin-react-a11y",
-      "rules": 37,
+      "rules": 40,
       "description": "ESLint React a11y rules for React accessibility — WCAG 2.1 rules for ARIA, alt text, keyboard interaction, and focus management, with auto-fixes",
       "category": "react",
       "version": "3.0.9",
       "published": true
     }
   ],
-  "totalRules": 512,
+  "totalRules": 515,
   "totalPlugins": 31,
   "allPluginsCount": 32,
   "generatedAt": "2026-11-24"
