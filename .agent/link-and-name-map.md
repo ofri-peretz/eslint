@@ -29,7 +29,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :-: | :-: | :-: |
 | `eslint-plugin-anthropic-security` | 2.0.5 | `anthropic-security/` | — | `plugin-anthropic-security` | security | `claude` | ✅ | ✅ | ✅ |
 | `eslint-plugin-browser-security` | 3.1.5 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
-| `eslint-plugin-conventions` | 7.2.1 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-conventions` | 7.3.0 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-drizzle-security` | 2.0.4 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
 | `eslint-plugin-express-security` | 4.3.3 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
 | `eslint-plugin-gemini-security` | 2.0.4 | `gemini-security/` | — | `plugin-gemini-security` | security | `gemini` | ✅ | ✅ | ✅ |
@@ -52,7 +52,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-react-a11y` | 3.0.10 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-features` | 2.4.1 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-reliability` | 5.0.8 | `reliability/` | — | `plugin-reliability` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-secure-coding` | 6.4.10 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-secure-coding` | 6.4.11 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sequelize-security` | 2.0.4 | `sequelize-security/` | — | `plugin-sequelize-security` | security | `sequelize` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sqlite-security` | 2.0.4 | `sqlite-security/` | — | `plugin-sqlite-security` | security | `sqlite` | ✅ | ✅ | ✅ |
 | `eslint-plugin-supabase-security` | 2.0.4 | `supabase-security/` | — | `plugin-supabase-security` | security | `—` | ✅ | ✅ | ✅ |
