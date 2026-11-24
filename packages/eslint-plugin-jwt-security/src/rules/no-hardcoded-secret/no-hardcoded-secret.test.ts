@@ -24,6 +24,12 @@ describe('no-hardcoded-secret', () => {
   describe('Valid Code - Safe Key Sources', () => {
     ruleTester.run('valid - environment and config', noHardcodedSecret, {
       valid: [
+        {
+          // @source LibreChat packages/api/src/auth/share.ts:45
+          name: 'an empty fallback is no credential in the source',
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token ?? '', process.env.JWT_REFRESH_SECRET ?? '');`,
+        },
         // Environment variable
         {
           name: 'the secret comes from the environment',

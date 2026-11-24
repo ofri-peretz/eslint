@@ -1417,7 +1417,14 @@ export function keyLiterals(
 ): KeyLiteral[] {
   if (depth > MAX_RESOLUTION_DEPTH) return [];
   const value = unwrapTypeSyntax(node);
-  if (staticString(value) !== null) {
+  const text = staticString(value);
+  if (text !== null) {
+    // An empty key signs and verifies nothing: jsonwebtoken throws
+    // "secretOrPrivateKey must have a value", jose "Zero-length key is not
+    // supported". `process.env.JWT_SECRET ?? ''` is a fallback that fails
+    // closed, not a credential in the source (LibreChat
+    // packages/api/src/auth/limiter.ts:68).
+    if (text === '') return [];
     return [{ literal: value as TSESTree.Literal | TSESTree.TemplateLiteral }];
   }
   if (value.type === AST_NODE_TYPES.LogicalExpression) {

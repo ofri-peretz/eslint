@@ -29,6 +29,17 @@ describe('no-weak-secret', () => {
       valid: [
         // Environment variable
         {
+          // @source LibreChat packages/api/src/auth/limiter.ts:68
+          name: 'an empty fallback fails closed: both libraries refuse an empty key',
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, process.env.JWT_SECRET ?? '');`,
+        },
+        {
+          name: 'an empty fallback fed to jose as bytes',
+          code: `import { jwtVerify } from 'jose';
+await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET || \`\`));`,
+        },
+        {
           name: 'the secret comes from the environment, length unknown here',
           code: `import jwt from 'jsonwebtoken';
 jwt.sign(payload, process.env.JWT_SECRET);`,
