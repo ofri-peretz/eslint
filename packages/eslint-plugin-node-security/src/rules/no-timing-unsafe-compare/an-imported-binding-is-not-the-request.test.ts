@@ -56,8 +56,54 @@ ruleTester.run(
           }
         `,
       },
+      {
+        name: 'an imported binding named like the request is not the request',
+        code: `
+          import { req } from './constants';
+          function isScoped(dependency) {
+            return dependency.token !== req;
+          }
+        `,
+      },
+      {
+        name: 'a dotted property of an imported binding is not the request',
+        code: `
+          import { request } from './constants';
+          function isScoped(dependency) {
+            return dependency.token !== request.scoped;
+          }
+        `,
+      },
+      {
+        name: 'a fixed computed property of an imported binding is not the request',
+        code: `
+          import { req } from './constants';
+          function isScoped(dependency) {
+            return dependency.token !== req['scoped'];
+          }
+        `,
+      },
     ],
     invalid: [
+      {
+        name: 'a property of an imported binding read with a dynamic key still reports',
+        code: `
+          import { req } from './constants';
+          function isScoped(dependency, key) {
+            return dependency.token !== req[key];
+          }
+        `,
+        errors: unsafe,
+      },
+      {
+        name: 'a global named like the request is not an import',
+        code: `
+          function isScoped(dependency) {
+            return dependency.token !== req;
+          }
+        `,
+        errors: unsafe,
+      },
       {
         name: 'an imported callee does not clean the request data it is given',
         code: `

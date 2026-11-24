@@ -171,12 +171,60 @@ function isClosedLiteralCast(
   node: TSESTree.Node,
 ): boolean {
   if (node.type === AST_NODE_TYPES.TSSatisfiesExpression) {
-    return isClosedLiteralType(node.typeAnnotation);
+    // `satisfies` is checked, but against the type an inner `as` claims:
+    // `(req.query.alg as 'sha256') satisfies 'sha256'` is still the request.
+    return (
+      isClosedLiteralType(node.typeAnnotation) &&
+      !hasUncheckedAssertion(sourceCode, node.expression)
+    );
   }
+  // `<'sha256'>x` is the same assertion as `x as 'sha256'`, spelled the old way.
   return (
-    node.type === AST_NODE_TYPES.TSAsExpression &&
+    (node.type === AST_NODE_TYPES.TSAsExpression ||
+      node.type === AST_NODE_TYPES.TSTypeAssertion) &&
     isClosedLiteralType(node.typeAnnotation) &&
     derivesFromClosedValues(sourceCode, node.expression)
+  );
+}
+
+/**
+ * Does this subtree (outside nested functions) hold a type assertion the
+ * compiler takes on trust? `value as 'sha256'` and `<'sha256'>value` are erased
+ * at runtime, so a declared closed return type proves nothing once the body
+ * asserts its way there. `as const` and a cast of a closed value are fine.
+ */
+function hasUncheckedAssertion(
+  sourceCode: Readonly<TSESLint.SourceCode>,
+  node: TSESTree.Node,
+): boolean {
+  if (
+    node.type === AST_NODE_TYPES.TSAsExpression ||
+    node.type === AST_NODE_TYPES.TSTypeAssertion
+  ) {
+    const asConst = sourceCode.getText(node.typeAnnotation) === 'const';
+    if (!asConst && !derivesFromClosedValues(sourceCode, node.expression)) {
+      return true;
+    }
+  }
+  return sourceCode.visitorKeys[node.type].some((key) => {
+    const child = (node as unknown as Record<string, unknown>)[key];
+    const children = Array.isArray(child) ? child : [child];
+    return children.some(
+      (c: unknown) =>
+        typeof c === 'object' &&
+        c !== null &&
+        'type' in c &&
+        !isFunctionNode(c as TSESTree.Node) &&
+        hasUncheckedAssertion(sourceCode, c as TSESTree.Node),
+    );
+  });
+}
+
+function isFunctionNode(node: TSESTree.Node): boolean {
+  return (
+    node.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+    node.type === AST_NODE_TYPES.FunctionDeclaration ||
+    node.type === AST_NODE_TYPES.FunctionExpression
   );
 }
 
@@ -193,7 +241,9 @@ function returnsClosedLiteral(
   sourceCode: Readonly<TSESLint.SourceCode>,
   fn: FunctionNode,
 ): boolean {
-  if (isClosedLiteralType(fn.returnType?.typeAnnotation)) return true;
+  if (isClosedLiteralType(fn.returnType?.typeAnnotation)) {
+    return !hasUncheckedAssertion(sourceCode, fn.body);
+  }
   return (
     fn.type === AST_NODE_TYPES.ArrowFunctionExpression &&
     fn.expression &&
