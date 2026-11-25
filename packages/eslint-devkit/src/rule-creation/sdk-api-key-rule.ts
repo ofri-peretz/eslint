@@ -23,7 +23,7 @@
  * the option names, and the remediation copy.
  */
 
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '../types/estree/utils/index';
 import { createRule } from './rule-creator';
 import {
   createModuleListEvidence,

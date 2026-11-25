@@ -1,6 +1,6 @@
 ---
 title: no-unhandled-promise
-description: Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This rule detects promises that are created but never have
+description: Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling.
 tags: ['quality', 'maintainability', 'async']
 category: quality
 autofix: suggestions

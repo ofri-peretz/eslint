@@ -8,8 +8,6 @@ interface VisitPatternOptions extends PatternVisitorOptions {
     processRightHandNodes?: boolean;
 }
 export declare class Visitor extends VisitorBase {
-    #private;
     constructor(optionsOrVisitor: Visitor | VisitorOptions);
-    protected visitPattern(node: TSESTree.Node, callback: PatternVisitorCallback, options?: VisitPatternOptions): void;
 }
 export { VisitorBase, type VisitorOptions } from './VisitorBase';
