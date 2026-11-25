@@ -116,6 +116,30 @@ if (process.env.NODE_ENV === 'development') { noop(); } else { app.get('/debug',
         errors: exposed,
       },
       {
+        name: 'an async helper returns a Promise, which is always truthy',
+        code: route(
+          'isDev()',
+          "const isDev = async () => process.env.NODE_ENV === 'development';",
+        ),
+        errors: exposed,
+      },
+      {
+        name: 'a generator helper returns an iterator, which is always truthy',
+        code: route(
+          'isDev()',
+          "function* isDev() { return process.env.NODE_ENV === 'development'; }",
+        ),
+        errors: exposed,
+      },
+      {
+        name: 'a local process object is not the Node global',
+        code: route(
+          "process.env.NODE_ENV === 'development'",
+          "const process = { env: { NODE_ENV: 'development' } };",
+        ),
+        errors: exposed,
+      },
+      {
         name: 'a call that is not a function',
         code: route('flags()', 'const flags = 1;'),
         errors: exposed,

@@ -200,7 +200,7 @@ finds an app-wide registration, so this is _not_ a false positive:
 app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 ```
 
-A registration in a helper that `main.ts` (or `bootstrap.ts`) imports directly counts too:
+A registration in a helper that `main.ts` (or `bootstrap.ts`) imports directly and calls (or imports for its side effects) counts too:
 
 ```typescript
 // main.ts
@@ -213,7 +213,7 @@ export function setupApp(app: INestApplication) {
 }
 ```
 
-Only one hop is followed, and only project-local specifiers (`./`, `../`, `src/`, `@/`).
+Only one hop is followed, and only project-local specifiers (`./`, `../`, `src/`, `@/`). An `import type`, or a helper imported but never called, registers nothing and is not read.
 
 Turn the scan off with `detectGlobalPipes: false` if you want the routes reported anyway.
 What the scan still cannot resolve is a registration built at runtime or

@@ -223,11 +223,16 @@ if (event.type === API_TOKEN_DELETED) { ... }  // not a secret
 
 The same holds for a property of an imported object of literals, such as `req.path === ROUTES.resetPassword`
 with `export const ROUTES = { resetPassword: '/reset-password' }`. A property written as an env
-read still reports.
+read still reports, and so does any property of an object its module writes to again
+(`KEYS.api = process.env.KEY`, `Object.assign(KEYS, …)`, `delete KEYS.api`): the literal was a
+placeholder.
 
 A plain digest (`createHash`) of what the caller sent is a value the caller can compute too, so
 comparing it with a digest the client supplied leaks nothing. A digest that also takes something
-the caller did not send, or any keyed derivation (`createHmac`), is still a secret:
+the caller did not send, or any keyed derivation (`createHmac`), is still a secret. So is an input
+that joins the request with a server value (`req.body + pepper`), and a chain with a call other
+than `digest`, `toString`, `toLowerCase` or `toUpperCase` (`.concat(secret)`). The encoding
+argument of `.update(data, 'utf8')` is not an input:
 
 ```ts
 const computed = createHash('sha256').update(JSON.stringify(req.body)).digest('hex');

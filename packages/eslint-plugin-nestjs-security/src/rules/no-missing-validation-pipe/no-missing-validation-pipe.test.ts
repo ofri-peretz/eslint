@@ -1044,6 +1044,16 @@ const Check = () => UsePipes(new ValidationPipe());`,
       ]),
       invalid: nest([
         {
+          name: 'a parameter named ValidationPipe is whatever the caller passes',
+          filename: at,
+          code: controller(
+            '@Check(ParseIntPipe)',
+            `import { ParseIntPipe, UsePipes } from '@nestjs/common';
+const Check = (ValidationPipe) => UsePipes(new ValidationPipe());`,
+          ),
+          errors: [{ messageId: 'missingValidation' }],
+        },
+        {
           name: 'a helper that installs a different pipe',
           filename: at,
           code: controller('@UseParse()', fromBarrel('UseParse')),

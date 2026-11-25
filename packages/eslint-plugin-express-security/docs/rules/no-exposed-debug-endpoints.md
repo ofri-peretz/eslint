@@ -178,7 +178,8 @@ if (isDevEnv()) {
 ```
 
 The `else` branch, an `||`, and a helper whose return value the rule cannot read are
-still reported.
+still reported. So are an `async` or generator helper, whose Promise or iterator is always
+truthy, and a `process` that is a local object rather than the Node global.
 
 ## Security Impact
 

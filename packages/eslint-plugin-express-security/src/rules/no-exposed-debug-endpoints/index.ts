@@ -84,16 +84,27 @@ function fileMatches(filename: string, pattern: string): boolean {
 /** `NODE_ENV` values that name an environment other than production. */
 const NON_PRODUCTION_ENVS = new Set(['development', 'dev', 'test', 'local']);
 
-/** `process.env.NODE_ENV`, dotted or quoted. */
-function isNodeEnvRead(node: TSESTree.Node): boolean {
-  return (
-    node.type === 'MemberExpression' &&
-    propertyName(node) === 'NODE_ENV' &&
-    node.object.type === 'MemberExpression' &&
-    propertyName(node.object) === 'env' &&
-    node.object.object.type === 'Identifier' &&
-    node.object.object.name === 'process'
+/**
+ * `process.env.NODE_ENV`, dotted or quoted, where `process` is the Node global:
+ * a local `const process = { env: { NODE_ENV: 'development' } }` says nothing
+ * about where the app runs.
+ */
+function isNodeEnvRead(node: TSESTree.Node, env: valueFollow.Env): boolean {
+  if (
+    node.type !== 'MemberExpression' ||
+    propertyName(node) !== 'NODE_ENV' ||
+    node.object.type !== 'MemberExpression' ||
+    propertyName(node.object) !== 'env' ||
+    node.object.object.type !== 'Identifier' ||
+    node.object.object.name !== 'process'
+  ) {
+    return false;
+  }
+  const binding = valueFollow.lookup(
+    'process',
+    env.scopeOf(node.object.object),
   );
+  return binding === null || binding.defs.length === 0;
 }
 
 /**
@@ -120,10 +131,10 @@ function holdsOnlyOutsideProduction(
     );
   }
   if (node.type === 'BinaryExpression') {
-    const [read, other] = isNodeEnvRead(node.left)
+    const [read, other] = isNodeEnvRead(node.left, env)
       ? [node.left, node.right]
       : [node.right, node.left];
-    const value = isNodeEnvRead(read) ? staticString(other) : null;
+    const value = isNodeEnvRead(read, env) ? staticString(other) : null;
     if (value === null) return false;
     if (node.operator === '===' || node.operator === '==') {
       return NON_PRODUCTION_ENVS.has(value);
@@ -148,6 +159,9 @@ function holdsOnlyOutsideProduction(
   ) {
     return false;
   }
+  // An async helper returns a Promise and a generator returns an iterator:
+  // both are truthy objects, so `if (isDev())` runs in production too.
+  if (fn.node.async || fn.node.generator) return false;
   const results = valueFollow.returnedValues(fn.node);
   return (
     results !== null &&

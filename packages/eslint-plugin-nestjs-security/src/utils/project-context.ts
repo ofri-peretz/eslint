@@ -499,7 +499,61 @@ interface MutableContext {
 /** The bootstrap file, by name: where `app` is created and handed to helpers. */
 const BOOTSTRAP_FILE = /(?:^|[\\/])(?:main|bootstrap)\.ts$/;
 /** A project-local import: `./setup`, `src/config/app-validation`, `@/setup`. */
-const LOCAL_IMPORT_RE = /\b(?:from|import)\s*['"]((?:\.{1,2}\/|src\/|@\/)[^'"]+)['"]/g;
+const LOCAL_SPECIFIER = /^(?:\.{1,2}\/|src\/|@\/)/;
+/** `import <clause> from '<specifier>'`: the clause, then the specifier. */
+const IMPORT_FROM_RE = /\bimport\s+([^;'"]+)from\s*['"]([^'"]+)['"]/g;
+/** `import '<specifier>'`: a side-effect import, which runs the module. */
+const SIDE_EFFECT_IMPORT_RE = /\bimport\s*['"]([^'"]+)['"]/g;
+const IDENTIFIER = /^[A-Za-z_$][\w$]*$/;
+
+/**
+ * The local specifiers whose module `source` runs: side-effect imports, and
+ * value imports with a binding the file calls (`setupApp(app)`) or reads a
+ * member of (`setup.apply(app)`). `import type` brings in no code, and an
+ * import never called does not register anything on this app.
+ */
+function invokedLocalImports(source: string): string[] {
+  const specifiers: string[] = [];
+  for (const [, specifier] of source.matchAll(SIDE_EFFECT_IMPORT_RE)) {
+    specifiers.push(specifier);
+  }
+  for (const [, clause, specifier] of source.matchAll(IMPORT_FROM_RE)) {
+    const names = importedNames(clause);
+    if (names.some((name) => isInvoked(source, name))) {
+      specifiers.push(specifier);
+    }
+  }
+  return specifiers.filter((specifier) => LOCAL_SPECIFIER.test(specifier));
+}
+
+/** The local value bindings an import clause creates; none for `import type`. */
+function importedNames(clause: string): string[] {
+  const text = clause.trim();
+  if (/^type\s/.test(text)) return [];
+  const names: string[] = [];
+  const braceStart = text.indexOf('{');
+  const head = braceStart === -1 ? text : text.slice(0, braceStart);
+  for (const part of head.split(',')) {
+    const name = part.trim().replace(/^\*\s*as\s+/, '');
+    if (IDENTIFIER.test(name)) names.push(name);
+  }
+  if (braceStart !== -1) {
+    const body = text.slice(braceStart + 1, text.indexOf('}', braceStart));
+    for (const entry of body.split(',')) {
+      const words = entry.trim().split(/\s+/);
+      if (words[0] === 'type') continue;
+      const name = words[words.length - 1];
+      if (IDENTIFIER.test(name)) names.push(name);
+    }
+  }
+  return names;
+}
+
+/** Is `name` called, or a member of it read, anywhere in `source`? */
+function isInvoked(source: string, name: string): boolean {
+  const escaped = name.replace(/\$/g, '\\$');
+  return new RegExp(`(?<![\\w$.])${escaped}\\s*[(.]`).test(source);
+}
 
 /**
  * A pipe registered in a helper the bootstrap file imports.
@@ -516,7 +570,7 @@ function registerHelperPipes(
   into: MutableContext,
 ): void {
   if (into.hasGlobalValidationPipe) return;
-  for (const [, specifier] of source.matchAll(LOCAL_IMPORT_RE)) {
+  for (const specifier of invokedLocalImports(source)) {
     const helper = readLocalModule(specifier, file, root);
     if (helper && USE_GLOBAL_PIPES_RE.test(helper.source)) {
       into.hasGlobalValidationPipe = true;

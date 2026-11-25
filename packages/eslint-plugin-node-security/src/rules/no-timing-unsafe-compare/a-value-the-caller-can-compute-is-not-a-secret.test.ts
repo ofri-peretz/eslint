@@ -59,6 +59,17 @@ write(
     "  nested: { changePassword: '/change-password' },",
     '};',
     'export const SECRETS = { apiToken: process.env.API_TOKEN };',
+    "export const LATE = { apiToken: '', nested: { key: '' } };",
+    'LATE.apiToken = process.env.API_TOKEN;',
+    "export const MERGED = { apiToken: '' };",
+    'Object.assign(MERGED, loadSecrets());',
+    "export const DELETED = { apiToken: 'x' };",
+    'delete DELETED.apiToken;',
+    "export const COUNTED = { hits: 0, name: 'hits' };",
+    'COUNTED.hits++;',
+    "export const READ_ONLY = { name: 'api' };",
+    'Object.keys(READ_ONLY);',
+    'console.log(READ_ONLY.name);',
   ].join('\n'),
 );
 const service = join(root, 'tokens/service.js');
@@ -135,8 +146,138 @@ ruleTester.run(
           }
         `,
       },
+      {
+        name: 'an imported object only read in its module keeps its literals',
+        filename: service,
+        code: `
+          import { READ_ONLY } from '../auth/routes.js';
+          export function check(req) {
+            return req.headers['x-api-token'] === READ_ONLY.name;
+          }
+        `,
+      },
+      {
+        name: "a digest of the body joined with literals is still the caller's",
+        code: `
+          import { createHash } from 'node:crypto';
+          function verify(req) {
+            const v = createHash('sha256').update(\`v1:\${req.body}\`, 'utf8').digest('hex').toLowerCase();
+            return v === req.headers['x-hash'];
+          }
+        `,
+      },
     ],
     invalid: [
+      {
+        name: 'a placeholder overwritten from the environment in its module is not a constant',
+        filename: service,
+        code: `
+          import { LATE } from '../auth/routes.js';
+          export function check(req) {
+            return req.headers['x-api-token'] === LATE.apiToken;
+          }
+        `,
+        errors: unsafe,
+      },
+      {
+        name: 'a nested placeholder of an object written later is not a constant',
+        filename: service,
+        code: `
+          import { LATE } from '../auth/routes.js';
+          export function check(req) {
+            return req.headers['x-api-token'] === LATE.nested.key;
+          }
+        `,
+        errors: unsafe,
+      },
+      {
+        name: 'an object filled by Object.assign in its module is not a constant',
+        filename: service,
+        code: `
+          import { MERGED } from '../auth/routes.js';
+          export function check(req) {
+            return req.headers['x-api-token'] === MERGED.apiToken;
+          }
+        `,
+        errors: unsafe,
+      },
+      {
+        name: 'a property deleted in its module is not a constant',
+        filename: service,
+        code: `
+          import { DELETED } from '../auth/routes.js';
+          export function check(req) {
+            return req.headers['x-api-token'] === DELETED.apiToken;
+          }
+        `,
+        errors: unsafe,
+      },
+      {
+        name: 'a property updated in its module is not a constant',
+        filename: service,
+        code: `
+          import { COUNTED } from '../auth/routes.js';
+          export function check(req) {
+            return req.headers['x-api-token'] === COUNTED.name;
+          }
+        `,
+        errors: unsafe,
+      },
+      {
+        name: 'a server value mixed into the body before hashing hides it',
+        code: `
+          import { createHash } from 'node:crypto';
+          function verify(req, pepper) {
+            const v = createHash('sha256').update(req.body + pepper).digest('hex');
+            return v === req.headers['x-hash'];
+          }
+        `,
+        errors: unsafe,
+      },
+      {
+        name: 'a template that joins a server value hides it',
+        code: `
+          import { createHash } from 'node:crypto';
+          function verify(req, pepper) {
+            const v = createHash('sha256').update(\`\${req.body}\${pepper}\`).digest('hex');
+            return v === req.headers['x-hash'];
+          }
+        `,
+        errors: unsafe,
+      },
+      {
+        name: 'an encoding argument is not an input, but a second update is',
+        code: `
+          import { createHash } from 'node:crypto';
+          function verify(req, pepper) {
+            const v = createHash('sha256').update(req.body, 'utf8').update(pepper, 'utf8').digest('hex');
+            return v === req.headers['x-hash'];
+          }
+        `,
+        errors: unsafe,
+      },
+      {
+        name: 'a chain call this cannot read may add an input',
+        code: `
+          import { createHash } from 'node:crypto';
+          function verify(req, pepper) {
+            const v = createHash('sha256').update(req.body).digest('hex').concat(pepper);
+            return v === req.headers['x-hash'];
+          }
+        `,
+        errors: unsafe,
+      },
+      {
+        name: 'an update with no argument adds nothing the caller does not know',
+        code: `
+          import { createHash } from 'node:crypto';
+          function verify(req, pepper) {
+            const v = createHash('sha256').update().update(pepper).digest('hex');
+            return v === req.headers['x-hash'];
+          }
+        `,
+        errors: unsafe,
+      },
       {
         name: 'an imported object property read from the environment is not a constant',
         filename: service,

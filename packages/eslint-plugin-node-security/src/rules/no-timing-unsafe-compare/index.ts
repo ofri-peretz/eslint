@@ -636,6 +636,17 @@ const CRYPTO_DERIVATIONS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Calls a plain digest chain may carry without adding an input:
+ * `createHash('sha256').update(body).digest('hex').toLowerCase()`.
+ */
+const DIGEST_CHAIN_METHODS: ReadonlySet<string> = new Set([
+  'digest',
+  'toString',
+  'toLowerCase',
+  'toUpperCase',
+]);
+
+/**
  * Comparison APIs that are memcmp wearing a method name.
  *
  * `buf.equals(other)` and `Buffer.compare(a, b)` return at the first differing
@@ -993,7 +1004,42 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
      * supply. A digest of the request alone is one the caller computes too.
      */
     function hashesHiddenInput(inputs: TSESTree.Node[]): boolean {
-      return inputs.some((input) => !readsUntrusted(input));
+      return inputs.some((input) => !callerSupplies(input));
+    }
+
+    /**
+     * Does the caller know all of this input? `req.body` does; so does
+     * `` `${req.body}:` ``. `req.body + SECRET` does not: one operand read
+     * the request, the other is the server's, and the digest hides it.
+     */
+    function callerSupplies(input: TSESTree.Node): boolean {
+      const operands = digestOperands(input);
+      return (
+        operands.some((operand) => readsUntrusted(operand)) &&
+        operands.every(
+          (operand) =>
+            operand.type === AST_NODE_TYPES.Literal || readsUntrusted(operand),
+        )
+      );
+    }
+
+    /** The leaves of a `+` or template-literal join; the node itself otherwise. */
+    function digestOperands(node: TSESTree.Node): TSESTree.Node[] {
+      if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+        return node.expressions.flatMap((expression) =>
+          digestOperands(expression),
+        );
+      }
+      if (
+        node.type === AST_NODE_TYPES.BinaryExpression &&
+        node.operator === '+'
+      ) {
+        return [
+          ...digestOperands(node.left as TSESTree.Node),
+          ...digestOperands(node.right),
+        ];
+      }
+      return [node];
     }
 
     /**
@@ -1035,7 +1081,14 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         if (callee.type !== AST_NODE_TYPES.MemberExpression) return null;
         const name = propertyName(callee);
         if (name === 'createHash') return inputs;
-        if (name === 'update') inputs.push(...current.arguments);
+        if (name === 'update') {
+          // `.update(data, 'utf8')`: the second argument is an encoding.
+          if (current.arguments.length > 0) inputs.push(current.arguments[0]);
+        } else if (name === null || !DIGEST_CHAIN_METHODS.has(name)) {
+          // `.concat(SECRET)` and anything else this cannot read may add an
+          // input the caller does not know: not a plain digest.
+          return null;
+        }
         current = callee.object;
       }
       return null;
@@ -1537,7 +1590,69 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       );
       // An import that cannot be followed lands on itself, an identifier, so
       // only a literal written in the imported module passes.
-      return isSourceConstant(landed.node);
+      return isSourceConstant(landed.node) && !rewrittenLater(landed);
+    }
+
+    /**
+     * Is the object property this literal initialises written again in its
+     * module? `export const KEYS = { api: '' }; KEYS.api = process.env.KEY;`
+     * declares a placeholder: the value compared at runtime is the env read.
+     * Any member write, delete or `Object.assign` on the object counts.
+     */
+    function rewrittenLater(landed: valueFollow.Value): boolean {
+      let property: TSESTree.Node = landed.node;
+      while (
+        property.parent?.type === AST_NODE_TYPES.Property &&
+        property.parent.parent?.type === AST_NODE_TYPES.ObjectExpression
+      ) {
+        property = property.parent.parent;
+      }
+      const declarator = property.parent;
+      if (
+        property === landed.node ||
+        declarator?.type !== AST_NODE_TYPES.VariableDeclarator ||
+        declarator.id.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return false;
+      }
+      const variable = valueFollow.lookup(
+        declarator.id.name,
+        landed.env.scopeOf(declarator.id),
+      );
+      return (
+        variable !== null &&
+        variable.references.some((reference) =>
+          mutatesObject(reference.identifier),
+        )
+      );
+    }
+
+    /** Is this read of an object the target of a write into it? */
+    function mutatesObject(read: TSESTree.Node): boolean {
+      let node = read;
+      while (
+        node.parent?.type === AST_NODE_TYPES.MemberExpression &&
+        node.parent.object === node
+      ) {
+        node = node.parent;
+      }
+      const parent = node.parent;
+      if (node === read) {
+        // `Object.assign(KEYS, …)` writes into its first argument.
+        return (
+          parent?.type === AST_NODE_TYPES.CallExpression &&
+          parent.arguments[0] === read &&
+          parent.callee.type === AST_NODE_TYPES.MemberExpression &&
+          propertyName(parent.callee) === 'assign'
+        );
+      }
+      return (
+        (parent?.type === AST_NODE_TYPES.AssignmentExpression &&
+          parent.left === node) ||
+        parent?.type === AST_NODE_TYPES.UpdateExpression ||
+        (parent?.type === AST_NODE_TYPES.UnaryExpression &&
+          parent.operator === 'delete')
+      );
     }
 
     /** The function a callee identifier resolves to, if it is a local one. */
