@@ -15,8 +15,8 @@
  * benchmarks/suites/ilb-competitor-parity/import-drop-in.mts). A config that
  * names one of them is read eslint-plugin-import's way: arrays, literals,
  * objects and `new` expressions are reported unless allowed, calls are
- * allowed unless forbidden. Without one, this rule's own reading (functions
- * and classes only) is unchanged.
+ * allowed unless forbidden. Since the spec change that followed mulmoclaude,
+ * that is also the reading with no options at all.
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
@@ -37,14 +37,6 @@ const error = [{ messageId: 'anonymousDefaultExport' as const }];
 describe('no-anonymous-default-export — eslint-plugin-import options', () => {
   ruleTester.run('no-anonymous-default-export', noAnonymousDefaultExport, {
     valid: [
-      {
-        name: 'own reading: values that are not functions or classes',
-        code: 'export default [];',
-      },
-      {
-        name: 'own reading: a new expression',
-        code: 'export default new Foo();',
-      },
       {
         name: 'allowArray',
         code: 'export default [];',
@@ -102,6 +94,16 @@ describe('no-anonymous-default-export — eslint-plugin-import options', () => {
       },
     ],
     invalid: [
+      {
+        name: 'defaults: an array (import-js tests line 48)',
+        code: 'export default [];',
+        errors: error,
+      },
+      {
+        name: 'defaults: a new expression (import-js tests line 57)',
+        code: 'export default new Foo();',
+        errors: error,
+      },
       {
         name: 'upstream reading: a literal when only objects are allowed',
         code: 'export default 123;',
