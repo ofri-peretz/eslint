@@ -27,7 +27,7 @@ name: Oxlint Parity Gate
 on:
   pull_request:
     branches: [main]
-    types: [ready_for_review, labeled, synchronize]
+    types: [opened, reopened, ready_for_review, labeled, synchronize]
     paths:
       - 'packages/eslint-plugin-*/**'
       - 'packages/eslint-devkit/**'

@@ -44,7 +44,37 @@ function loadRegistry(): PluginEntry[] {
   return entries;
 }
 
+/** Any emoji: pictographs, flag pairs (regional indicators) and keycaps (U+20E3). */
+const EMOJI = /\p{Extended_Pictographic}|\p{Regional_Indicator}|\u20E3/u;
+
 describe('rule MDX format lock', () => {
+  it('the emoji check also catches flags and keycaps, and passes plain digits', () => {
+    expect(EMOJI.test('description: "🇺🇸 only"')).toBe(true);
+    expect(EMOJI.test('description: "step 1️⃣"')).toBe(true);
+    expect(EMOJI.test('description: "❌ deprecated"')).toBe(true);
+    expect(EMOJI.test('description: "Allow 1 to 10 imports (CWE-1047)"')).toBe(false);
+  });
+
+  it('no long rule description is cut mid-sentence by the 160-character cap', () => {
+    const cut: string[] = [];
+    for (const p of loadRegistry()) {
+      const dir = join(MONOREPO_ROOT, 'apps', 'docs', 'content', 'docs', p.pillar, `plugin-${p.slug}`, 'rules');
+      let files: string[] = [];
+      try {
+        files = readdirSync(dir).filter((f) => f.endsWith('.mdx'));
+      } catch {
+        continue;
+      }
+      for (const f of files) {
+        const m = /^description: "(.*)"$/m.exec(readFileSync(join(dir, f), 'utf-8'));
+        const d = m?.[1] ?? '';
+        // The old fallback sliced at exactly 160 characters, mid-word.
+        if (d.length === 160 && !/[.!?…)`]$/.test(d)) cut.push(`${p.slug}/${f}: ${d.slice(-40)}`);
+      }
+    }
+    expect(cut).toEqual([]);
+  });
+
   it('no rule MDX title or description carries an emoji (the OG image would fetch it)', () => {
     const offenders: string[] = [];
     for (const p of loadRegistry()) {
@@ -58,7 +88,7 @@ describe('rule MDX format lock', () => {
       for (const f of files) {
         const head = readFileSync(join(dir, f), 'utf-8').split('\n').slice(0, 10);
         for (const line of head) {
-          if (/^(title|description):/.test(line) && /\p{Extended_Pictographic}/u.test(line)) {
+          if (/^(title|description):/.test(line) && EMOJI.test(line)) {
             offenders.push(`${p.slug}/${f}: ${line}`);
           }
         }

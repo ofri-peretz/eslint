@@ -138,15 +138,18 @@ const renderTypes = (plugin: string) =>
  */
 const REGISTRY = loadPluginRegistry();
 
-/** The oxlint the READMEs say they were verified on — the one CI installs. */
+/**
+ * The oxlint the READMEs say they were verified on — the one CI installs, read
+ * from the lockfile so a staged bump is checked even before `npm ci` runs.
+ */
 const OXLINT_VERSION = (
-  JSON.parse(
-    fs.readFileSync(
-      path.join(ROOT, 'node_modules', 'oxlint', 'package.json'),
-      'utf8',
-    ),
-  ) as { version: string }
-).version;
+  JSON.parse(fs.readFileSync(path.join(ROOT, 'package-lock.json'), 'utf8')) as {
+    packages: Record<string, { version?: string }>;
+  }
+).packages['node_modules/oxlint']?.version;
+if (!OXLINT_VERSION) {
+  throw new Error('package-lock.json has no node_modules/oxlint entry');
+}
 
 const FENCE = '```';
 

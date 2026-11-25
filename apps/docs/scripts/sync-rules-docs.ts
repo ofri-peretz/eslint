@@ -159,6 +159,19 @@ function cleanDescription(raw: string): string {
     .trim();
 }
 
+/**
+ * Cut a description to `max` characters at a sentence end, else at a word end
+ * with an ellipsis, so a page never ends mid-word ("this plugin does the ").
+ */
+export function clip(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const head = text.slice(0, max);
+  const sentence = head.lastIndexOf('. ');
+  if (sentence >= 30) return head.slice(0, sentence + 1);
+  const word = head.slice(0, max - 1).lastIndexOf(' ');
+  return `${head.slice(0, word > 0 ? word : max - 1).trimEnd()}…`;
+}
+
 export function convertMdToMdx(
   mdContent: string,
   fileName: string,
@@ -195,7 +208,7 @@ export function convertMdToMdx(
       !row.startsWith('>') &&
       row.length > 20
     );
-    if (firstParagraph) description = cleanDescription(firstParagraph).slice(0, 160);
+    if (firstParagraph) description = clip(cleanDescription(firstParagraph), 160);
   }
 
   // Build ONE frontmatter: the source's own fields (minus title/description,
