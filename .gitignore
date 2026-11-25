@@ -205,3 +205,5 @@ packages/*/src/tests/__coherence-probe.test.ts
 
 # Mutation HTML/JSON reports (scripts/mutation.mts) — CI uploads them as artifacts.
 benchmark-results/mutation/
+# MCP server indexes, rebuilt per session by .claude/hooks (hookset)
+.codegraph/
