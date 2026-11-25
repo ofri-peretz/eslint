@@ -370,7 +370,15 @@ export function isNamedByLabelFor(node: TSESTree.JSXOpeningElement): boolean {
     current && !isFunctionNode(current);
     current = current.parent
   ) {
-    if (current.type === AST_NODE_TYPES.JSXElement) root = current;
+    // A fragment is a JSX tree root as much as an element is: in
+    // `<><label htmlFor="x">Name</label><input id="x" /></>` the label is a
+    // sibling under the fragment, and stopping at JSXElement left the input
+    // as its own root, so the label was never found.
+    if (
+      current.type === AST_NODE_TYPES.JSXElement ||
+      current.type === AST_NODE_TYPES.JSXFragment
+    )
+      root = current;
   }
   return containsLabelFor(root, key);
 }
