@@ -118,6 +118,21 @@ function outRel(file: string): string {
   return path.join(pkg, path.relative(distOf(pkg), file));
 }
 
+/**
+ * Private and protected members make a class NOMINAL: two declarations of `ScopeVariable`
+ * with a `#private` slot are incompatible even when every public member
+ * matches, so a typescript-eslint consumer's `RuleContext` could not be passed
+ * where ours is expected (caught by devkit-types-compat.lock.test.ts). Those
+ * members are not part of any type a rule can use, so the snapshot drops
+ * them and its classes compare structurally.
+ */
+function structural(text: string): string {
+  return text.replace(
+    /^[ \t]*(?:#private;|(?:private|protected)\b[^\n]*;)[ \t]*\n/gm,
+    '',
+  );
+}
+
 function vendor(): { files: Out[]; externals: Set<string> } {
   const queue = ENTRIES.map(([pkg, rel]) => path.join(distOf(pkg), rel));
   const seen = new Set<string>();
@@ -151,7 +166,7 @@ function vendor(): { files: Out[]; externals: Set<string> } {
         return `${lead}${quote}${relative}${quote}`;
       },
     );
-    files.push({ rel, text });
+    files.push({ rel, text: structural(text) });
   }
   return { files, externals };
 }

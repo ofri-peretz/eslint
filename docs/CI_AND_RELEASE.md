@@ -203,7 +203,6 @@ it. Drop the label or mark the PR ready-for-review when you're confident.
 
 | Name                   | Type   | Purpose                                                                | Required? |
 | ---------------------- | ------ | ---------------------------------------------------------------------- | --------- |
-| `NPM_TOKEN`            | secret | First-publish fallback (existing packages use OIDC Trusted Publishers) | optional  |
 | `CODECOV_TOKEN`        | secret | Coverage uploads (`codecov.yml`)                                       | optional  |
 | `NVD_API_KEY`          | secret | CWE/CVE data sync (manual via CLI)                                     | optional  |
 | `DEV_TO_API_KEY`       | secret | dev.to article sync (`docs-data.yml`)                                  | optional  |

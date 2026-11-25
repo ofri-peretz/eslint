@@ -255,11 +255,13 @@ describe('jsx-key coverage gaps', () => {
       {
         name: 'unstable index key in map',
         code: 'const a = items.map((item, i) => <div key={i} />);',
+        options: [{ warnUnstableKeys: true }],
         errors: [{ messageId: 'unstableKey' }],
       },
       {
         name: 'unstable idx key in Array.from',
         code: 'const a = Array.from(items, (item, idx) => <div key={idx} />);',
+        options: [{ warnUnstableKeys: true }],
         errors: [{ messageId: 'unstableKey' }],
       },
     ],

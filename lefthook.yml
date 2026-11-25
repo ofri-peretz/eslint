@@ -6,7 +6,7 @@
 # presets pulled below; `hookset check` in CI fails if a step here repeats one of them.
 remotes:
   - git_url: https://github.com/ofri-peretz/burgee
-    ref: hookset@0.3.0
+    ref: hookset@1.0.1
     configs:
       - packages/hookset/presets/lefthook/commit-msg.yml
       - packages/hookset/presets/lefthook/pre-commit.yml
@@ -22,7 +22,7 @@ pre-commit:
       run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent oxlint:shims:check
     alias-drift:
       # oxlint-plugin-* aliases are generated from each plugin's manifest.
-      glob: '{packages/*/package.json,packages/*/LICENSE,packages/eslint-plugin-*/README.md,packages/oxlint-plugin-*/**,.changeset/config.json,scripts/generate-oxlint-aliases.mts}'
+      glob: '{packages/*/package.json,packages/*/LICENSE,packages/eslint-plugin-*/README.md,packages/oxlint-plugin-*/**,.changeset/config.json,scripts/generate-oxlint-aliases.mts,package-lock.json}'
       run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent oxlint:aliases:check
     runtimes-report:
       # docs/oxlint-runtimes.md is generated from the survey evidence.
@@ -278,12 +278,3 @@ pre-push:
       # Shims are generated from rule sources and the manifest.
       glob: '{packages/eslint-plugin-*/src/**,tools/oxlint-plugins/**,.agent/plugin-rule-manifest.json}'
       run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent oxlint:shims:check
-
-# provedone: a commit message must carry a `Verified-by:` receipt. Local until the hookset preset
-# takes this station over at hookset@0.4.0; delete this block then (`hookset check` flags the
-# duplicate). Merges in the remote commit-msg preset, which runs commitlint.
-commit-msg:
-  commands:
-    provedone:
-      run: npm run --silent hook:provedone -- {1}
-      fail_text: "Add a trailer: 'Verified-by: <command> -> exit 0' or 'Verified-by: none (<reason>)'"

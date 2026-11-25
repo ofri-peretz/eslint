@@ -53,6 +53,71 @@ function isExpressSpecifier(specifier: string): boolean {
 }
 
 /**
+ * Server frameworks that are not Express and register routes, middleware and
+ * handlers in the same `(req, res)` shape.
+ *
+ * The structural arms below (a `(req, res, next)` middleware, a `(req, res)`
+ * handler registered against a literal path, an exported `(req, res)` handler)
+ * were added for route modules that receive `app` from their caller and import
+ * nothing. A Fastify plugin is written exactly that way —
+ * `app.post('/', schema, async (req, res) => …)` — and so is a Koa or Hono
+ * router. A file that imports one of these and no Express is that framework's
+ * file, and its shape says nothing about Express. Measured: 25
+ * `no-missing-csrf-protection` and 1 `no-missing-security-headers` findings in
+ * activepieces' Fastify controllers (ILB-Corpus-Truth run 45474907652).
+ *
+ * Matched by package root, so a framework's whole family counts:
+ * `fastify-type-provider-zod`, `@fastify/cors`, `@koa/router`, `hono/cors`.
+ */
+const OTHER_SERVER_FRAMEWORKS: readonly RegExp[] = [
+  /^fastify$/,
+  /^fastify-/,
+  /^@fastify\//,
+  /^koa$/,
+  /^koa-/,
+  /^@koa\//,
+  /^hono$/,
+  /^hono\//,
+  /^@hono\//,
+  /^@hapi\/hapi$/,
+  /^h3$/,
+  /^elysia$/,
+];
+
+function isOtherServerFrameworkSpecifier(specifier: string): boolean {
+  specifier = normalizeSpecifier(specifier);
+  return OTHER_SERVER_FRAMEWORKS.some((re) => re.test(specifier));
+}
+
+/**
+ * Whether a top-level import or `require` loads another server framework
+ * (`import type` included: a Fastify plugin's only import of Fastify is often
+ * its type, `FastifyPluginAsyncZod`).
+ */
+function importsOtherServerFramework(ast: TSESTree.Program): boolean {
+  return ast.body.some((stmt) => {
+    if (
+      stmt.type === AST_NODE_TYPES.ImportDeclaration &&
+      typeof stmt.source.value === 'string'
+    ) {
+      return isOtherServerFrameworkSpecifier(stmt.source.value);
+    }
+    if (stmt.type !== AST_NODE_TYPES.VariableDeclaration) return false;
+    return stmt.declarations.some((d) => {
+      const init = d.init;
+      return (
+        init?.type === AST_NODE_TYPES.CallExpression &&
+        init.callee.type === AST_NODE_TYPES.Identifier &&
+        init.callee.name === 'require' &&
+        init.arguments[0]?.type === AST_NODE_TYPES.Literal &&
+        typeof init.arguments[0].value === 'string' &&
+        isOtherServerFrameworkSpecifier(init.arguments[0].value)
+      );
+    });
+  });
+}
+
+/**
  * `import express = require('express')` — TypeScript's import-equals form.
  *
  * Not a `CallExpression`: the AST is a `TSImportEqualsDeclaration` whose
@@ -70,7 +135,6 @@ function isImportEqualsLoad(node: TSESTree.Node): boolean {
     isExpressSpecifier(node.moduleReference.expression.value)
   );
 }
-
 
 /**
  * Whether a scope-introducing node binds the name `require`.
@@ -415,7 +479,9 @@ const cache = new WeakMap<TSESTree.Program, boolean>();
  * `(req, res, next)` middleware signature, a `(req, res)` handler registered
  * against a literal path (`app.get('/x', (req, res) => …)`), or an exported
  * `(req, res)` handler that calls `res.redirect` / `render` / `sendStatus` /
- * `sendFile`. Each is local to the file — nothing
+ * `sendFile`. The three structural arms do not count in a file that imports
+ * another server framework (Fastify, Koa, Hono, …) and no Express. Each is
+ * local to the file — nothing
  * is read from `package.json` and nothing is resolved across files, so there is
  * no project state to go stale and no dependency on lint order.
  */
@@ -430,6 +496,10 @@ export function fileUsesExpress(ast: TSESTree.Program): boolean {
 function computeUsesExpress(ast: TSESTree.Program): boolean {
   let found = false;
   const ancestors: TSESTree.Node[] = [];
+  // Another framework's file: only an explicit Express load counts, because
+  // the structural arms describe its routes just as well (see
+  // OTHER_SERVER_FRAMEWORKS).
+  const shapeIsEvidence = !importsOtherServerFramework(ast);
 
   const visit = (node: TSESTree.Node, requireIsShadowed: boolean): void => {
     if (
@@ -446,9 +516,10 @@ function computeUsesExpress(ast: TSESTree.Program): boolean {
     if (
       isImportEqualsLoad(node) ||
       isExpressDynamicLoad(node, requireIsShadowed) ||
-      hasMiddlewareSignature(node) ||
-      isRouteRegistration(node) ||
-      isExportedResponseHandler(node, ancestors)
+      (shapeIsEvidence &&
+        (hasMiddlewareSignature(node) ||
+          isRouteRegistration(node) ||
+          isExportedResponseHandler(node, ancestors)))
     ) {
       found = true;
       return;

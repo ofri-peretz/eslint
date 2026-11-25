@@ -7,11 +7,13 @@
 // (owned by another rule), or the name is a local helper / shadowing param.
 // inflateRawSync is a buffer-at-once decompressor like the listed ones.
 module no_unbounded_decompression {
-  // allowInTests (default false): on a test file the rule is silent only when the
-  // option is set. TestDefault = src/app.test.ts with the option at its
-  // default (reported as usual), TestFlip = the same file with allowInTests: true.
+  // allowInTests (default true): a test file is skipped unless the option is turned
+  // off. TestDefault = src/app.test.ts with the option at its default
+  // (silent), TestFlip = the same file with allowInTests: false (reported as usual).
+  // Same default as no-math-random-crypto, no-toctou-vulnerability and
+  // require-stream-error-handler.
   type TestCtx = Prod | TestDefault | TestFlip
-  pure def exempt(t: TestCtx): bool = t == TestFlip
+  pure def exempt(t: TestCtx): bool = t == TestDefault
   var testCtx: TestCtx
   type Binding = RequireMember | ImportDefault | NamedImport | RenamedImport | RequireDestructured | InlineRequire | TsImportEquals | DynamicImport | LocalHelper | ShadowParam
   type Fn = GunzipSync | BrotliDecompress | InflateRawSync | CreateGunzip

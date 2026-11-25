@@ -27,7 +27,7 @@ name: Oxlint Parity Gate
 on:
   pull_request:
     branches: [main]
-    types: [ready_for_review, labeled, synchronize]
+    types: [opened, reopened, ready_for_review, labeled, synchronize]
     paths:
       - 'packages/eslint-plugin-*/**'
       - 'packages/eslint-devkit/**'
@@ -35,6 +35,8 @@ on:
       - 'scripts/audit-rule-portability.ts'
       - 'scripts/generate-oxlint-shims.ts'
       - 'scripts/generate-oxlint-aliases.mts'
+      # The alias READMEs name the installed oxlint version.
+      - 'package-lock.json'
       - 'scripts/verify-oxlint-aliases.mts'
       - 'packages/oxlint-plugin-*/**'
       - 'benchmarks/suites/ilb-competitor-parity/**'

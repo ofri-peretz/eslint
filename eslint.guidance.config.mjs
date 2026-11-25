@@ -33,5 +33,17 @@ export default [
     ],
   },
   { plugins: { markdown } },
-  conventions.guidance,
+  {
+    ...conventions.guidance,
+    rules: {
+      ...conventions.guidance.rules,
+      // Held near this repo's sizes on 2026-11-25, under the preset's 4096
+      // bytes and 1024 description chars; larger files ratchet in
+      // .guidance-budget.json, which may only shrink.
+      'conventions/guidance-budget': [
+        'error',
+        { memoryBytes: 3100, descriptionChars: 220 },
+      ],
+    },
+  },
 ];

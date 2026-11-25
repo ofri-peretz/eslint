@@ -436,6 +436,34 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
       'ObjectExpression',
     ]);
 
+    /**
+     * Calls that hand back their argument in another type. A claim passed
+     * through one is still the claim, so it cannot borrow the exemption a
+     * per-user key lookup earns.
+     */
+    const CONVERSIONS = new Set(['String', 'Number', 'BigInt']);
+    const BUFFER_CONVERSIONS = new Set(['from', 'alloc']);
+    const isConversion = (
+      call: TSESTree.Node,
+      argument: TSESTree.Node,
+    ): boolean => {
+      if (call.type !== 'CallExpression' && call.type !== 'NewExpression') {
+        return false;
+      }
+      if (call.arguments[0] !== argument) return false;
+      const { callee } = call;
+      if (callee.type === 'Identifier') return CONVERSIONS.has(callee.name);
+      if (
+        callee.type !== 'MemberExpression' ||
+        callee.object.type !== 'Identifier' ||
+        callee.object.name !== 'Buffer'
+      ) {
+        return false;
+      }
+      const method = propertyName(callee);
+      return method !== null && BUFFER_CONVERSIONS.has(method);
+    };
+
     /** The options-object names that carry the verification key (NestJS `JwtService`). */
     const KEY_OPTIONS = ['secret', 'publicKey'];
 
@@ -552,7 +580,20 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
     ): boolean => {
       if (viaCall && insideKey(node, verify)) return true;
       const parent = node.parent!;
+      if (
+        parent.type === 'MemberExpression' &&
+        parent.computed &&
+        parent.property === node
+      ) {
+        // `keys[claims.kid]`: the claim indexes a table, a lookup like a call.
+        return reachesKey(parent, verify, after, true);
+      }
       if (TRANSPARENT.has(parent.type)) {
+        return reachesKey(parent, verify, after, viaCall);
+      }
+      if (isConversion(parent, node)) {
+        // `String(claims.secret)`, `Buffer.from(claims.secret)`: the same
+        // value in another type, not a lookup. It keeps whatever it was.
         return reachesKey(parent, verify, after, viaCall);
       }
       if (parent.type === 'CallExpression' || parent.type === 'NewExpression') {

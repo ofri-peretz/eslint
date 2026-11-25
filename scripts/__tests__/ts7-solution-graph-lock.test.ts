@@ -43,6 +43,12 @@ const referenced = (solution.references ?? []).map((r) =>
   r.path.replace(/^\.\//, ''),
 );
 
+// Non-package projects the solution also builds. Each is a deliberate check,
+// not a plugin: tools/types-compat assigns every plugin to typescript-eslint's
+// FlatConfig.Plugin against the built declarations (see its own lock,
+// types-compat-covers-every-plugin.lock.test.ts).
+const EXTRA_PROJECTS = ['tools/types-compat/tsconfig.json'];
+
 // Composite plugin-graph packages on disk: every `packages/*/tsconfig.lib.json`
 // with `composite: true`, minus the documented exclusions.
 const dirs = (await readdir(packagesDir, { withFileTypes: true }))
@@ -66,8 +72,13 @@ describe('tsconfig.solution.json is the complete whole-graph typecheck entry', (
     const expected = compositeOnDisk
       .map((d) => `packages/${d}/tsconfig.lib.json`)
       .sort();
-    const actual = [...referenced].sort();
+    const actual = referenced.filter((r) => r.startsWith('packages/')).sort();
     expect(actual).toEqual(expected);
+  });
+
+  it('references no project outside packages/ except the listed extra checks', () => {
+    const outside = referenced.filter((r) => !r.startsWith('packages/')).sort();
+    expect(outside).toEqual([...EXTRA_PROJECTS].sort());
   });
 
   it('has no dangling reference (every referenced lib config exists on disk)', async () => {

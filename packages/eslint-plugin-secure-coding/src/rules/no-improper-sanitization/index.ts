@@ -224,6 +224,77 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
     const ENTITY = /&(?:amp|lt|gt|quot|apos|#x[0-9a-f]+|#\d+);/i;
 
     /**
+     * Does this expression read a value an outside party controls?
+     *
+     * - a member chain rooted at the request object (`req`, `request`) — exact
+     *   identifier names, the Express convention, not a substring probe;
+     * - a DOM input's `.value`, read off a lookup call (`getElementById`,
+     *   `querySelector(All)`, `getElementsByName|ClassName|TagName`);
+     * - the URL parts an attacker can set: `location.hash|search|href`.
+     *
+     * Walks the AST, so text inside a string literal never counts.
+     */
+    const readsUserInput = (root: TSESTree.Node): boolean => {
+      const isUserSource = (node: TSESTree.Node): boolean => {
+        if (node.type !== AST_NODE_TYPES.MemberExpression) return false;
+        const prop = propertyName(node);
+        const object = node.object;
+        // `location.hash`, `window.location.hash`, `document.location.search`
+        if (
+          namesOneOf(prop, ['hash', 'search', 'href']) &&
+          ((object.type === AST_NODE_TYPES.Identifier &&
+            object.name === 'location') ||
+            (object.type === AST_NODE_TYPES.MemberExpression &&
+              propertyName(object) === 'location'))
+        ) {
+          return true;
+        }
+        // `document.getElementById('q').value`
+        if (
+          prop === 'value' &&
+          object.type === AST_NODE_TYPES.CallExpression &&
+          object.callee.type === AST_NODE_TYPES.MemberExpression
+        ) {
+          return namesOneOf(propertyName(object.callee), [
+            'getElementById',
+            'getElementsByName',
+            'getElementsByClassName',
+            'getElementsByTagName',
+            'querySelector',
+            'querySelectorAll',
+          ]);
+        }
+        // `req.body.x`, `request.query.q`: the chain's root is the request.
+        let base: TSESTree.Node = node;
+        while (base.type === AST_NODE_TYPES.MemberExpression) {
+          base = base.object;
+        }
+        return (
+          base.type === AST_NODE_TYPES.Identifier &&
+          (base.name === 'req' || base.name === 'request')
+        );
+      };
+      const visit = (node: TSESTree.Node): boolean => {
+        if (isUserSource(node)) return true;
+        for (const [key, child] of Object.entries(node)) {
+          if (key === 'parent') continue;
+          for (const item of Array.isArray(child) ? child : [child]) {
+            if (
+              item !== null &&
+              typeof item === 'object' &&
+              typeof (item as { type?: unknown }).type === 'string' &&
+              visit(item as TSESTree.Node)
+            ) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+      return visit(root);
+    };
+
+    /**
      * Check if sanitization is safe
      */
     const isSafeSanitizer = (callText: string): boolean => {
@@ -669,14 +740,12 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             const rightText = sourceCode.getText(right);
 
             if (!isSafeSanitizer(rightText)) {
-              // Check if right side contains user input
-              const hasUserInput =
-                rightText.includes('req.') ||
-                rightText.includes('body') ||
-                rightText.includes('query') ||
-                rightText.includes('input');
-
-              if (hasUserInput) {
+              // Provenance, not spelling. The rule used to report any text
+              // containing `body`, `query`, `input` or `req.`, so
+              // `el.innerHTML = bodyTemplate` (a constant) was reported on
+              // PrivateBin (15 of 154). Now a value must be read from a
+              // request object or a DOM input to count as user input.
+              if (readsUserInput(right)) {
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
@@ -870,6 +939,17 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
               }
               parent = current.parent as TSESTree.Node;
             }
+            // `el.innerHTML = '<a>' + '<b>'`: the same position as a call
+            // argument, one assignment up.
+            if (
+              parent.type === 'AssignmentExpression' &&
+              parent.right === current &&
+              parent.left.type === 'MemberExpression' &&
+              // @vocabulary WHATWG DOM
+              namesOneOf(propertyName(parent.left), ['innerHTML', 'outerHTML'])
+            ) {
+              return current;
+            }
             if (
               parent.type === 'CallExpression' &&
               (parent as TSESTree.CallExpression).arguments.includes(
@@ -901,6 +981,34 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             return undefined;
           };
 
+          /** Initializers being resolved; a const cycle terminates as unsafe. */
+          const resolving = new Set<TSESTree.Node>();
+          /** The initializer of the `const` `identifier` resolves to, if any. */
+          const constInitializer = (
+            identifier: TSESTree.Identifier,
+          ): TSESTree.Expression | undefined => {
+            let scope: TSESLint.Scope.Scope | null =
+              sourceCode.getScope(identifier);
+            while (scope) {
+              const variable = scope.set.get(identifier.name);
+              if (variable) {
+                const def = variable.defs[0];
+                if (
+                  variable.defs.length === 1 &&
+                  def.type === 'Variable' &&
+                  def.parent.kind === 'const' &&
+                  def.node.id.type === AST_NODE_TYPES.Identifier &&
+                  def.node.init &&
+                  !resolving.has(def.node.init)
+                ) {
+                  return def.node.init;
+                }
+                return undefined;
+              }
+              scope = scope.upper;
+            }
+            return undefined;
+          };
           /**
            * Every leaf is either text the developer typed or a value that has
            * been run through a sanitizer — nothing an attacker controls
@@ -926,8 +1034,20 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
               }
               return typeof expr.value === 'string';
             }
-            if (expr.type === 'TemplateLiteral')
-              return expr.expressions.length === 0;
+            if (expr.type === 'TemplateLiteral') {
+              return expr.expressions.every((inner) => isSafeText(inner));
+            }
+            // A `const` bound once to safe text IS that text. `let`, `var`,
+            // parameters and imports can change or come from elsewhere, so
+            // they stay unresolved.
+            if (expr.type === 'Identifier') {
+              const init = constInitializer(expr);
+              if (init === undefined) return false;
+              resolving.add(init);
+              const safe = isSafeText(init);
+              resolving.delete(init);
+              return safe;
+            }
             // Every unary operator yields a number, a boolean, a type name or
             // `undefined`, and every binary operator but `+` a number or a
             // boolean: none of them can carry markup.

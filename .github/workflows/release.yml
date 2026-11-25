@@ -35,8 +35,10 @@ run-name: >-
 # before we got here.
 #
 # Authentication:
-#   - Trusted Publishers (OIDC) for existing packages — no token needed.
-#   - NPM_TOKEN fallback for first-release packages.
+#   - Trusted Publishers (OIDC) for every package — no npm token exists.
+#     A new package name is claimed by hand first (an empty `0.0.0-stage`
+#     publish) and its Trusted Publisher configured before this workflow ever
+#     publishes it; see .github/TRUSTED_PUBLISHING_SETUP.md "New package names".
 #
 # Manual override: workflow_dispatch with dry-run=true lets you preview
 # what would publish without actually shipping anything (useful for
@@ -114,7 +116,9 @@ jobs:
             npm_ver=$(npm view "$name" version 2>/dev/null || echo "")
 
             if [ -z "$npm_ver" ]; then
-              echo "🆕 $name: first release ($local_ver)"
+              # Not on npm at all: the name was never claimed, so OIDC has no
+              # Trusted Publisher to match and the publish will be refused.
+              echo "🆕 $name: not on npm yet ($local_ver) — claim the name and configure its Trusted Publisher first (.github/TRUSTED_PUBLISHING_SETUP.md)"
               publish+=("{\"dir\":\"$pkg\",\"name\":\"$name\",\"version\":\"$local_ver\"}")
               continue
             fi
@@ -320,8 +324,9 @@ jobs:
 
       - name: Publish ${{ matrix.name }}@${{ matrix.version }}
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # No NODE_AUTH_TOKEN: npm >= 11.5 exchanges the job's OIDC token for a
+          # short-lived publish token (Trusted Publishing, `id-token: write`
+          # above). There is no long-lived npm token to fall back to.
           NPM_CONFIG_PROVENANCE: 'true'
           # On workflow_dispatch, inputs.* carry user-supplied values.
           # On push, they default to false / "latest" (real release).

@@ -93,7 +93,10 @@ describe('no-improper-sanitization', () => {
         // textContent is safe (doesn't interpret HTML)
         'element.textContent = userInput;',
         // Direct assignment without user input indicators isn't flagged
-        'element.innerHTML = userInput;',
+        {
+          name: 'a bare identifier is not evidence of input: no request, location or DOM-input read reaches innerHTML',
+          code: 'element.innerHTML = userInput;',
+        },
         // String concatenation without dangerous context
         'const html = "<div>" + req.body.content + "</div>";',
         // Safe annotation
@@ -722,7 +725,17 @@ describe('no-improper-sanitization', () => {
           property: { type: 'Identifier', name: 'innerHTML' },
           computed: false,
         },
-        right: { type: 'Identifier', name: 'data' },
+        right: {
+          type: 'MemberExpression',
+          object: {
+            type: 'MemberExpression',
+            object: { type: 'Identifier', name: 'req' },
+            property: { type: 'Identifier', name: 'body' },
+            computed: false,
+          },
+          property: { type: 'Identifier', name: 'data' },
+          computed: false,
+        },
       });
       expect(reports).toHaveLength(1);
       expect(reports[0].data?.line).toBe('0');

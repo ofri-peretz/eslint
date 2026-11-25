@@ -1,6 +1,6 @@
 ---
 title: no-unhandled-promise
-description: Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This rule detects promises that are created but never have
+description: Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling.
 tags: ['quality', 'reliability', 'async']
 category: quality
 autofix: suggestions
@@ -68,6 +68,8 @@ flowchart TD
 | 🐛 **Debugging**     | Hard to trace async failures         | Centralized error handling |
 | ⚡ **Reliability**   | Application crashes unexpectedly     | Graceful error recovery    |
 | 📊 **Monitoring**    | No visibility into promise failures  | Error tracking & alerting  |
+
+A call to an `async` function declared in the same file is not reported when that function's whole body is a single `try` with a `catch` that cannot rethrow (no `throw`, `Promise.reject`, `await` or `return <call>` in the `catch` or `finally`), because its promise cannot reject. A `try`/`finally` with no `catch`, a rethrowing `catch`, or any statement before the `try` is still reported.
 
 ## Configuration
 

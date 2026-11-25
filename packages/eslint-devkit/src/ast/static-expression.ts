@@ -23,7 +23,7 @@
  * Deliberately conservative: anything not proven static is reported as dynamic, so a
  * gap here costs a false positive, never a missed vulnerability.
  */
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '../types/estree/utils/index';
 // The shim, not the package: `@typescript-eslint/utils` is an OPTIONAL peer,
 // so a runtime import of it makes devkit unloadable wherever the consumer
 // did not install it. Only the type import above may name the package.

@@ -696,9 +696,20 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           ) {
             top = top.parent;
           }
-          // The bare binding, read as a value: it escapes.
-          if (top === ref.identifier) return true;
           const holder = top.parent;
+          // The bare binding, read as a value: it escapes. Unless the read only
+          // tests it: `if (!record) return false` (nestjs/authentication's MFA
+          // confirm) hands the object to nothing, and neither does `typeof`
+          // or a comparison. A logical operand is NOT a test: `a || record`
+          // is a value, and can become an alias.
+          if (top === ref.identifier) {
+            return !(
+              (holder.type === AST_NODE_TYPES.UnaryExpression &&
+                (holder.operator === '!' || holder.operator === 'typeof')) ||
+              (holder.type === AST_NODE_TYPES.BinaryExpression &&
+                ['===', '!==', '==', '!='].includes(holder.operator))
+            );
+          }
           return (
             (holder.type === AST_NODE_TYPES.AssignmentExpression &&
               holder.left === top) ||
@@ -977,6 +988,35 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         if (
           reEncodes(node.left, node.right) ||
           reEncodes(node.right, node.left)
+        ) {
+          return;
+        }
+
+        // SKIP: one value against a method of itself. nestjs/webhooks rejects
+        // a configured secret with stray whitespace by `secret.trim() !==
+        // secret`. Both sides are the same secret, so there is nothing for a
+        // caller to vary one character at a time. The receiver must be the
+        // other operand and hold the same value at both reads, and the call
+        // takes literals only.
+        const transformsItself = (
+          call: TSESTree.Expression,
+          other: TSESTree.Expression,
+        ): boolean => {
+          const inner = unwrapChainNode(call);
+          if (inner.type !== AST_NODE_TYPES.CallExpression) return false;
+          const callee = unwrapChainNode(inner.callee);
+          return (
+            callee.type === AST_NODE_TYPES.MemberExpression &&
+            sourceCode.getText(callee.object) === sourceCode.getText(other) &&
+            isStableValue(other) &&
+            // `.trim()`, `.normalize('NFC')`: no argument that could carry
+            // a second value into the comparison.
+            inner.arguments.every((arg) => arg.type === AST_NODE_TYPES.Literal)
+          );
+        };
+        if (
+          transformsItself(node.left, node.right) ||
+          transformsItself(node.right, node.left)
         ) {
           return;
         }

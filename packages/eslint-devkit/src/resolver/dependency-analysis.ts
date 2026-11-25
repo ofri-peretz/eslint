@@ -306,7 +306,9 @@ export function exportKindsOf(
     const kindIn = (from: string | undefined, name: string) => {
       if (from === undefined) return local.get(name);
       const file = resolve(from, target);
-      return file ? exportKindsOf(file, resolve, visiting).get(name) : undefined;
+      return file
+        ? exportKindsOf(file, resolve, visiting).get(name)
+        : undefined;
     };
     for (const m of source.matchAll(
       /export\s+(type\s+)?\{([^}]*)\}(?:\s*from\s*['"]([^'"]+)['"])?/g,
@@ -319,8 +321,7 @@ export function exportKindsOf(
           .replace(/^type\s+(?!as(?:\s|$))/, '')
           .split(/\s+as\s+/);
         const exported = (alias ?? orig).trim();
-        const kind =
-          m[1] || inlineType ? 'type' : kindIn(m[3], orig.trim());
+        const kind = m[1] || inlineType ? 'type' : kindIn(m[3], orig.trim());
         if (kind) set(exported, kind);
       }
     }
@@ -550,7 +551,23 @@ export interface FileSystemCache {
    * whose DFS discovered the cycle gets the diagnostic, and ordering
    * sometimes leaves other members silent.
    */
-  pendingCycleReports: Map<string, Array<{ minimalCycle: string[]; cycleHash: string }>>;
+  pendingCycleReports: Map<
+    string,
+    Array<{ minimalCycle: string[]; cycleHash: string }>
+  >;
+  /**
+   * Targets the graph must not contain: an import that resolves to a path for
+   * which this returns true is dropped from the file's edges, so every walker
+   * (components, shortest path, breadth-first search) agrees without being
+   * told. eslint-plugin-import's `import/extensions` and `import/ignore`
+   * settings are this: a file it does not read has no imports, and a cycle
+   * through it is invisible.
+   *
+   * The edges a cache holds depend on this function, so one cache must be used
+   * with one function. The caller keys its caches by the settings it builds
+   * the function from.
+   */
+  ignoreTarget?: (resolvedPath: string) => boolean;
 }
 
 /**
@@ -809,6 +826,141 @@ export interface GetImportsOptions {
   resolverSettings?: ResolverSetting;
 }
 
+/** Words after which a `/` starts a regular expression, not a division. */
+const REGEX_AFTER_WORD = new Set([
+  'return',
+  'typeof',
+  'case',
+  'do',
+  'else',
+  'in',
+  'of',
+  'void',
+  'delete',
+  'throw',
+  'new',
+  'yield',
+  'await',
+  'instanceof',
+]);
+
+/**
+ * Replace every comment in `source` with spaces (newlines kept, so offsets
+ * and line numbers do not move).
+ *
+ * The import regexes read text, and text has comments: a doc comment that
+ * shows `import "core/Engines/x"` made the regex find an edge that the module
+ * does not have. eslint-plugin-import parses the file and never sees one.
+ *
+ * The scan has to know where a comment can NOT start, or it blanks real
+ * imports: inside a string (`"http://x"`), a template literal (`` `a/*b` ``,
+ * including its `${ }` holes, which are code again), and a regular expression
+ * literal (`/'/`). A `/` is a regular expression when the token before it
+ * cannot end an expression. A string is closed by a newline, so an apostrophe
+ * in JSX text spoils one line, not the file.
+ */
+export function blankComments(source: string): string {
+  if (!source.includes('/*') && !source.includes('//')) return source;
+  const n = source.length;
+  const ranges: Array<[number, number]> = [];
+  let prev = ''; // last significant character
+  let word = ''; // the identifier ending at `prev`, if any
+
+  function skipQuoted(from: number): number {
+    const quote = source[from];
+    let i = from + 1;
+    while (i < n && source[i] !== quote && source[i] !== '\n') {
+      i += source[i] === '\\' ? 2 : 1;
+    }
+    return i + 1;
+  }
+
+  function skipRegex(from: number): number {
+    let i = from + 1;
+    let inClass = false;
+    while (i < n && source[i] !== '\n') {
+      const c = source[i];
+      if (c === '\\') i++;
+      else if (c === '[') inClass = true;
+      else if (c === ']') inClass = false;
+      else if (c === '/' && !inClass) return i + 1;
+      i++;
+    }
+    return i;
+  }
+
+  // Code from `from` to the end of the file, or to the `}` closing a template hole.
+  function scanCode(from: number, inHole: boolean): number {
+    let i = from;
+    let depth = 0;
+    while (i < n) {
+      const c = source[i];
+      const next = source[i + 1];
+      if (c === '/' && next === '/') {
+        const end = source.indexOf('\n', i);
+        const stop = end === -1 ? n : end;
+        ranges.push([i, stop]);
+        i = stop;
+      } else if (c === '/' && next === '*') {
+        const end = source.indexOf('*/', i + 2);
+        const stop = end === -1 ? n : end + 2;
+        ranges.push([i, stop]);
+        i = stop;
+      } else if (c === '"' || c === "'") {
+        i = skipQuoted(i);
+        prev = c;
+        word = '';
+      } else if (c === '`') {
+        i = scanTemplate(i + 1);
+        prev = c;
+        word = '';
+      } else if (
+        c === '/' &&
+        ('(,=:[!&|?{};+-*%<>~^'.includes(prev) || REGEX_AFTER_WORD.has(word))
+      ) {
+        i = skipRegex(i);
+        prev = ')';
+        word = '';
+      } else if (c === '}' && inHole && depth === 0) {
+        return i;
+      } else {
+        if (c === '{') depth++;
+        else if (c === '}') depth--;
+        // Whitespace changes nothing: `return /x/` is still after `return`.
+        if (!/\s/.test(c)) {
+          if (/[\w$]/.test(c)) word = /[\w$]/.test(prev) ? word + c : c;
+          else word = '';
+          prev = c;
+        }
+        i++;
+      }
+    }
+    return i;
+  }
+
+  // From just after an opening backtick to just after the closing one.
+  function scanTemplate(from: number): number {
+    let i = from;
+    while (i < n && source[i] !== '`') {
+      if (source[i] === '\\') i += 2;
+      else if (source[i] === '$' && source[i + 1] === '{')
+        i = scanCode(i + 2, true) + 1;
+      else i++;
+    }
+    return i + 1;
+  }
+
+  scanCode(0, false);
+  let out = '';
+  let at = 0;
+  for (const [from, to] of ranges) {
+    out +=
+      source.slice(at, from) + source.slice(from, to).replace(/[^\n]/g, ' ');
+    at = to;
+  }
+  return out + source.slice(at);
+}
+
 /**
  * Get all imports from a file
  *
@@ -845,10 +997,12 @@ export function getFileImports(
       return imports;
     }
 
-    const content = readFileSync(file, 'utf-8');
-    if (content === null) {
+    const text = readFileSync(file, 'utf-8');
+    if (text === null) {
       return imports;
     }
+    // An `import "x"` written in a comment is documentation, not an edge.
+    const content = blankComments(text);
 
     // PHASE 6 OPTIMIZATION: Pre-allocate the resolve options object ONCE per file.
     // Previously, a new options object was created for every regex match (~25K
@@ -882,6 +1036,7 @@ export function getFileImports(
     ) => {
       const resolved = resolveImportPath(importPath, resolveOpts);
       if (!resolved || !fileExists(resolved, cache)) return;
+      if (cache.ignoreTarget?.(resolved)) return;
       const existing = seen.get(resolved);
       if (existing) {
         // One edge per target, so its erasure flags must describe EVERY static
@@ -934,14 +1089,18 @@ export function getFileImports(
     // Match re-exports (`export … from '…'`). Without this, cycles routed
     // through re-export-only files (a common pattern in barrel-heavy
     // codebases) are invisible.
-    while ((match = EXPORT_FROM_REGEX.exec(content)) !== null) pushImport(match[1]);
+    while ((match = EXPORT_FROM_REGEX.exec(content)) !== null)
+      pushImport(match[1]);
     EXPORT_ALL_REGEX.lastIndex = 0;
-    while ((match = EXPORT_ALL_REGEX.exec(content)) !== null) pushImport(match[1]);
+    while ((match = EXPORT_ALL_REGEX.exec(content)) !== null)
+      pushImport(match[1]);
     TOP_LEVEL_REQUIRE_REGEX.lastIndex = 0;
-    while ((match = TOP_LEVEL_REQUIRE_REGEX.exec(content)) !== null) pushImport(match[1]);
+    while ((match = TOP_LEVEL_REQUIRE_REGEX.exec(content)) !== null)
+      pushImport(match[1]);
 
     // Match dynamic imports
-    while ((match = DYNAMIC_IMPORT_REGEX.exec(content)) !== null) pushImport(match[1], true);
+    while ((match = DYNAMIC_IMPORT_REGEX.exec(content)) !== null)
+      pushImport(match[1], true);
 
     // Store file hash for cache invalidation + invalidate SCC if graph changed
     const hash = getFileHash(file);
@@ -1029,14 +1188,22 @@ export function computeSCCsFromFile(
   // Without this, the starting file is keyed as /tmp/... while all imports
   // resolve to /private/tmp/... — Tarjan's sees them as distinct nodes and
   // misses cycles that cross the symlink boundary.
-  try { startFile = realpathSync(startFile); } catch { /* ignore broken symlinks */ }
+  try {
+    startFile = realpathSync(startFile);
+  } catch {
+    /* ignore broken symlinks */
+  }
 
   const { workspaceRoot, barrelExports, cache, resolverSettings } = options;
 
   // If SCC already computed AND covers this file, return cached result.
   // If not in the index, the file wasn't reachable from the previous root —
   // fall through to extend the SCC from this new starting file.
-  if (cache.sccComputed && cache.sccs.length > 0 && cache.sccIndex.has(startFile)) {
+  if (
+    cache.sccComputed &&
+    cache.sccs.length > 0 &&
+    cache.sccIndex.has(startFile)
+  ) {
     return cache.sccs;
   }
 
@@ -1072,7 +1239,11 @@ export function computeSCCsFromFile(
       // compile time and cannot form runtime cycles. Excluding them from the
       // SCC graph produces a smaller, more accurate graph and eliminates FPs
       // that would appear for `import type { Foo }` back-references.
-      if (!imp.dynamic && !isErasedEdge(imp, options) && !visited.has(imp.path)) {
+      if (
+        !imp.dynamic &&
+        !isErasedEdge(imp, options) &&
+        !visited.has(imp.path)
+      ) {
         filesToProcess.push(imp.path);
       }
     }
@@ -1300,7 +1471,9 @@ export function isFileInCycle(file: string, cache: FileSystemCache): boolean {
 export function findShortestCyclePath(
   sourceFile: string,
   targetFile: string,
-  options: Omit<CycleDetectionOptions, 'reportAllCycles' | 'maxDepth'> & { maxDepth?: number },
+  options: Omit<CycleDetectionOptions, 'reportAllCycles' | 'maxDepth'> & {
+    maxDepth?: number;
+  },
 ): string[] | null {
   const { workspaceRoot, barrelExports, cache, resolverSettings } = options;
   const maxDepth = options.maxDepth ?? Infinity;
@@ -1440,8 +1613,16 @@ export function detectCycleFromImport(
   // Normalize paths: on macOS /tmp is a symlink to /private/tmp.
   // ESLint provides the symlink path; resolved imports use the real path.
   // Without normalization, `file === sourceFile` never matches in the DFS.
-  try { sourceFile = realpathSync(sourceFile); } catch { /* ignore */ }
-  try { targetFile = realpathSync(targetFile); } catch { /* ignore */ }
+  try {
+    sourceFile = realpathSync(sourceFile);
+  } catch {
+    /* ignore */
+  }
+  try {
+    targetFile = realpathSync(targetFile);
+  } catch {
+    /* ignore */
+  }
 
   const {
     maxDepth,
@@ -1471,11 +1652,7 @@ export function detectCycleFromImport(
   // wide scope reported 0 cycles vs. 17 in oxlint, narrow scope reported 5+).
   let depthLimitHit = false;
 
-  function dfs(
-    file: string,
-    depth: number,
-    visited: Set<string>,
-  ): void {
+  function dfs(file: string, depth: number, visited: Set<string>): void {
     // Found the cycle — we've reached back to the source file
     if (file === sourceFile) {
       allCycles.push([...pathStack, file]);
@@ -1576,7 +1753,11 @@ export function findAllCircularDependencies(
   // Normalize to real path at the root call (depth=0 only — recursive calls
   // already receive normalised paths from the resolver's import resolution).
   if (depth === 0) {
-    try { file = realpathSync(file); } catch { /* ignore broken symlinks */ }
+    try {
+      file = realpathSync(file);
+    } catch {
+      /* ignore broken symlinks */
+    }
   }
 
   // OPTIMIZATION 1: Check if file is known to not be in any cycle

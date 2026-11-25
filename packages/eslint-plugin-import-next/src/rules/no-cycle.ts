@@ -54,27 +54,95 @@ type MessageIds =
   'moduleSplit' | 'directImport' | 'extractShared' | 'dependencyInjection';
 
 /**
- * Module-level shared cache for performance optimization
+ * One graph cache per way of reading the graph.
  *
- * These caches are shared across all files in the same lint run,
- * significantly reducing file I/O when linting multiple files.
+ * The edges a cache holds depend on two things the lint config decides: how an
+ * all-inline-type import is read (erased, or a runtime edge, under
+ * `verbatimModuleSyntax`), and which files are modules at all
+ * (`import/extensions`, `import/parsers`, `import/ignore`). The SCCs cached
+ * in a `FileSystemCache` are computed under one such reading, so a lint run
+ * that mixes them (per-directory flat-config blocks) must not share one.
+ * Sharing would let whichever file was linted first decide the cycle
+ * membership of every other.
  *
- * Within a single lint run, files don't change, so caching is safe.
- * The cache is automatically invalidated when file content changes
- * (detected via mtime + size hash).
+ * Within a single lint run files don't change, so a cache is shared across all
+ * the files linted under the same reading, which saves the file I/O. It is
+ * invalidated when a file's content changes (mtime + size hash).
  */
-const defaultGraphCache: FileSystemCache = createFileSystemCache();
+const graphCaches = new Map<string, FileSystemCache>();
 
 /**
- * A second graph for files linted with `verbatimModuleSyntax: true`.
- *
- * The SCCs cached in a `FileSystemCache` are computed under one reading of an
- * all-inline-type import — erased, or a runtime edge — so a lint run that mixes
- * both settings (per-directory flat-config blocks) must not share one. Sharing
- * would let whichever file was linted first decide the cycle membership of
- * every other.
+ * The cache for one reading of the graph. `ignoreTarget` is set once, when
+ * the cache is made: the key says which function it is.
  */
-const verbatimGraphCache: FileSystemCache = createFileSystemCache();
+function graphCacheFor(
+  verbatimModuleSyntax: boolean,
+  readable: ReadableFiles | undefined,
+): FileSystemCache {
+  const key = JSON.stringify([
+    verbatimModuleSyntax,
+    readable?.extensions ? [...readable.extensions].sort() : null,
+    readable?.ignore ?? null,
+  ]);
+  let cache = graphCaches.get(key);
+  if (!cache) {
+    cache = createFileSystemCache();
+    if (readable) cache.ignoreTarget = (file) => !isReadable(file, readable);
+    graphCaches.set(key, cache);
+  }
+  return cache;
+}
+
+/**
+ * Which files eslint-plugin-import reads at all, from its settings.
+ *
+ * Upstream's `ExportMapBuilder.get` returns null (no module, no imports) for a
+ * path whose extension is not in `import/extensions` (default `.js .mjs .cjs`)
+ * or in an `import/parsers` list, and for a path matching an `import/ignore`
+ * regular expression (src/exportMap/builder.js lines 62-72 and
+ * utils/ignore.js, v2.32.0). A cycle that runs through such a file is
+ * invisible to it.
+ *
+ * With neither `import/extensions` nor `import/parsers` set, every extension
+ * stays readable: this rule is TypeScript-first, and its model lints `.ts` files
+ * with no settings, where upstream's default reads none of them.
+ */
+interface ReadableFiles {
+  extensions?: Set<string>;
+  ignore?: string[];
+  /** `ignore`, compiled once. */
+  patterns: RegExp[];
+}
+
+function readableFiles(
+  settings: Record<string, unknown>,
+): ReadableFiles | undefined {
+  const listed = settings['import/extensions'] as string[] | undefined;
+  const parsers = settings['import/parsers'] as
+    Record<string, string[]> | undefined;
+  const ignore = settings['import/ignore'] as string[] | undefined;
+  let extensions: Set<string> | undefined;
+  if (listed || parsers) {
+    extensions = new Set(listed ?? ['.js', '.mjs', '.cjs']);
+    for (const list of Object.values(parsers ?? {})) {
+      for (const ext of list) extensions.add(ext);
+    }
+  }
+  return extensions || ignore
+    ? { extensions, ignore, patterns: (ignore ?? []).map((p) => new RegExp(p)) }
+    : undefined;
+}
+
+function isReadable(file: string, readable: ReadableFiles): boolean {
+  if (readable.extensions && !readable.extensions.has(path.extname(file))) {
+    return false;
+  }
+  return !readable.patterns.some((pattern) => pattern.test(file));
+}
+
+// The two readings that need no settings exist from the start.
+graphCacheFor(false, undefined);
+graphCacheFor(true, undefined);
 
 /**
  * Clear the circular dependency cache
@@ -87,8 +155,7 @@ const verbatimGraphCache: FileSystemCache = createFileSystemCache();
  * @public
  */
 export function clearCircularDependencyCache(): void {
-  clearCache(defaultGraphCache);
-  clearCache(verbatimGraphCache);
+  for (const cache of graphCaches.values()) clearCache(cache);
   // The devkit's export-kind cache is module-level and separate from
   // `sharedCache`, so clearing that alone leaves it stale. It caches whether each exported name
   // is a type or a value, and that is exactly what an edit changes: turn a
@@ -575,6 +642,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
     let amd: boolean;
     let esmodule: boolean;
     let ignoreSpecifiers: RegExp[];
+    let readable: ReadableFiles | undefined;
 
     /**
      * Inside an external module folder: `node_modules`, or the folders named
@@ -821,6 +889,8 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       if (!resolved) return;
       if (resolved === normalizedFilename) return; // no-self-import territory
       if (ignoreExternal && isExternalPath(resolved)) return;
+      // Not a module to eslint-plugin-import: nothing to walk.
+      if (readable && !isReadable(resolved, readable)) return;
 
       if (erased?.(resolved)) return;
 
@@ -938,9 +1008,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
           (pattern) => new RegExp(pattern),
         );
         verbatimModuleSyntax = options.verbatimModuleSyntax ?? false;
-        sharedCache = verbatimModuleSyntax
-          ? verbatimGraphCache
-          : defaultGraphCache;
+        // Settings are read below; the cache is chosen once they are known.
         const ignorePatterns = options.ignorePatterns ?? [
           '**/*.test.ts',
           '**/*.test.tsx',
@@ -985,6 +1053,8 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
           (settings?.['import-next/resolver'] as ResolverSetting);
         externalFolders = (settings['import/external-module-folders'] as
           string[] | undefined) ?? ['node_modules'];
+        readable = readableFiles(settings);
+        sharedCache = graphCacheFor(verbatimModuleSyntax, readable);
 
         // Skip ignored files early
         if (

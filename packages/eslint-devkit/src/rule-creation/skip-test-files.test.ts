@@ -60,6 +60,10 @@ describe('isTestFilePath', () => {
     // and secure-coding respectively). `\.spec\.` does not match `e2e-spec`.
     'test/app.e2e-spec.ts',
     'src/app.e2e-spec.ts',
+    // nestjs/observe's integration suite; the generalised `<kind>-spec` infix.
+    'src/agent/collector-transport.int-spec.ts',
+    'src/orders.integration-test.ts',
+    'src/orders.it_spec.js',
     'src/mocks/handlers.ts',
     // Compound directory names, which is how large repositories actually spell
     // it. sentry-javascript keeps its whole suite under these three; between
@@ -110,6 +114,10 @@ describe('isTestFilePath', () => {
     'src/test.ts',
     'src/e2e-spec.ts',
     'src/mocks.ts',
+    // The infix needs its own `.` before it: these are names, not test infixes.
+    'src/int-spec.ts',
+    'src/inspect.ts',
+    'src/respect.service.ts',
     // The suffix rule requires a hyphen, so these production directories stay
     // production: without it, `latest` and `manifest` would both read as
     // directories of tests.
