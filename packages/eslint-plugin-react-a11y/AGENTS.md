@@ -41,17 +41,17 @@ Each preset is one flat config object: put it in the array as an element, do not
 
 1 rule:
 
-- `alt-text` (error): Enforce alt text on images with accessibility impact context.
+- `alt-text` (error): Enforce alt text on images.
 
 ### `recommended`
 
 37 rules:
 
-- `alt-text` (error): Enforce alt text on images with accessibility impact context.
+- `alt-text` (error): Enforce alt text on images.
 - `anchor-has-content` (error): Enforce that anchors have content.
 - `aria-props` (error): Enforce that ARIA attributes are valid.
 - `aria-role` (error): Enforce that elements with ARIA roles have valid values.
-- `aria-unsupported-elements` (error): Enforce that elements that don't support ARIA roles, states, and properties do not contain them.
+- `aria-unsupported-elements` (error): Disallow ARIA roles, states and properties on elements that don't support them.
 - `role-has-required-aria-props` (error): Enforce that elements with ARIA roles have all required ARIA attributes.
 - `role-supports-aria-props` (error): Enforce that elements with roles contain only supported ARIA properties.
 - `html-has-lang` (error): Enforce that html element has lang attribute.
@@ -93,7 +93,7 @@ Same rules as `recommended`.
 
 16 rules:
 
-- `alt-text` (error): Enforce alt text on images with accessibility impact context.
+- `alt-text` (error): Enforce alt text on images.
 - `heading-has-content` (error): Enforce that headings have content.
 - `scope` (error): Enforce that scope prop is only used on th elements.
 - `role-has-required-aria-props` (error): Enforce that elements with ARIA roles have all required ARIA attributes.
@@ -105,7 +105,7 @@ Same rules as `recommended`.
 - `lang` (error): Enforce that lang attribute has a valid value.
 - `aria-props` (error): Enforce that ARIA attributes are valid.
 - `aria-role` (error): Enforce that elements with ARIA roles have valid values.
-- `aria-unsupported-elements` (error): Enforce that elements that don't support ARIA roles, states, and properties do not contain them.
+- `aria-unsupported-elements` (error): Disallow ARIA roles, states and properties on elements that don't support them.
 - `role-supports-aria-props` (error): Enforce that elements with roles contain only supported ARIA properties.
 - `iframe-has-title` (error): Enforce that iframes have a title attribute.
 - `no-distracting-elements` (error): Enforce that distracting elements are not used.
@@ -114,7 +114,7 @@ Same rules as `recommended`.
 
 24 rules:
 
-- `alt-text` (error): Enforce alt text on images with accessibility impact context.
+- `alt-text` (error): Enforce alt text on images.
 - `heading-has-content` (error): Enforce that headings have content.
 - `scope` (error): Enforce that scope prop is only used on th elements.
 - `role-has-required-aria-props` (error): Enforce that elements with ARIA roles have all required ARIA attributes.
@@ -126,7 +126,7 @@ Same rules as `recommended`.
 - `lang` (error): Enforce that lang attribute has a valid value.
 - `aria-props` (error): Enforce that ARIA attributes are valid.
 - `aria-role` (error): Enforce that elements with ARIA roles have valid values.
-- `aria-unsupported-elements` (error): Enforce that elements that don't support ARIA roles, states, and properties do not contain them.
+- `aria-unsupported-elements` (error): Disallow ARIA roles, states and properties on elements that don't support them.
 - `role-supports-aria-props` (error): Enforce that elements with roles contain only supported ARIA properties.
 - `iframe-has-title` (error): Enforce that iframes have a title attribute.
 - `no-distracting-elements` (error): Enforce that distracting elements are not used.
