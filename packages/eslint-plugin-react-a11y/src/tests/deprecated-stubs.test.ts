@@ -107,6 +107,6 @@ describe('deprecated jsx-a11y rules kept as no-ops', () => {
         ],
         { filename: 'a.jsx' },
       ),
-    ).toThrow();
+    ).toThrow(/Key "jsx-a11y\/label-has-for":\s+Value "sibling"/);
   });
 });

@@ -64,6 +64,21 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/codegraph.mjs\""
+          }
+        ]
+      }
     ]
+  },
+  "enabledMcpjsonServers": ["codegraph"],
+  "permissions": {
+    "allow": ["mcp__codegraph__codegraph_explore"]
   }
 }

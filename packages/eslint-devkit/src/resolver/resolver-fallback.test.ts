@@ -101,6 +101,8 @@ beforeAll(() => {
   w('node_modules/no-main/package.json', '{"main":"./gone.js"}');
   w('node_modules/no-main/index.js');
   w('node_modules/empty-dir/readme.txt');
+  w('node_modules/bad-manifest/package.json', '{"main": ');
+  w('node_modules/bad-manifest/index.d.ts');
   w(
     'node_modules/typed-exports/package.json',
     '{"exports":{".":{"types":"./t.d.ts"}}}',
@@ -226,6 +228,8 @@ describe('resolveWithoutOxc', () => {
     );
     expect(resolveWithoutOxc('missing-target', from(), null)).toBeNull();
     expect(resolveWithoutOxc('empty-dir', from(), null)).toBeNull();
+    // A package.json that does not parse resolves to null instead of throwing.
+    expect(resolveWithoutOxc('bad-manifest', from(), null)).toBeNull();
     expect(
       resolveWithoutOxc('not-installed-anywhere-xyz', from(), null),
     ).toBeNull();
