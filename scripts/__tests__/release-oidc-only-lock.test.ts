@@ -5,6 +5,8 @@
  */
 
 /**
+ * @provenBy {"file":".github/workflows/release.yml","find":"id-token: write # for npm Trusted Publishers (OIDC)","replace":"id-token: read"}
+ *
  * Lock: npm publishing is OIDC Trusted Publishing only (#1213).
  *
  * Every package publishes through Trusted Publishing. A new package name is
