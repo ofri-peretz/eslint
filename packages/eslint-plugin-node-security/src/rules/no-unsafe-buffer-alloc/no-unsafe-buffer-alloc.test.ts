@@ -38,7 +38,7 @@ describe('no-unsafe-buffer-alloc', () => {
         code: 'const buf = Buffer.allocUnsafe(64).fill(0);',
       },
       {
-        name: 'allocUnsafeSlow zero-filled at once leaves no stale bytes',
+        name: 'a same-expression fill(0) zeroes allocUnsafeSlow the same way it zeroes allocUnsafe',
         code: 'Buffer.allocUnsafeSlow(64).fill(0);',
       },
       // Not the global Buffer.

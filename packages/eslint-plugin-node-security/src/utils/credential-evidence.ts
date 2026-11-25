@@ -138,6 +138,16 @@ function segmentsOf(text: string): string[] {
 }
 
 function namesACredential(text: string): boolean {
+  // A NAME is a single token — a key, a path segment, an identifier spelled as
+  // a string. Prose, JSON and other written CONTENT routinely contain a
+  // credential word incidentally: `writeFileSync(bin, \`#!/bin/sh\nprintf
+  // '{"usage":{"input_tokens":10}}'\n\`)` stores a shell stub, not a token, but
+  // the stub's own text contains "token". Whitespace is what tells content
+  // apart from a name — no identifier, key or path segment contains it — so a
+  // multi-word or multi-line string is evidence of what is PRINTED, never of
+  // what is stored. github.com/ofri-peretz/eslint issue #1548.
+  if (/\s/.test(text)) return false;
+
   const normalized = text.toLowerCase();
   if (!CREDENTIAL_WORDS.some((word) => normalized.includes(word))) return false;
 
