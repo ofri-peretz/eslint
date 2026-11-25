@@ -3,8 +3,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-11-25",
   "totalPlugins": 32,
-  "totalRules": 518,
-  "oxlintCompatible": 518,
+  "totalRules": 519,
+  "oxlintCompatible": 519,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -2884,7 +2884,7 @@
       "short": "reliability",
       "shim": "tools/oxlint-plugins/interlace-reliability.cjs",
       "subpath": "eslint-plugin-reliability/oxlint",
-      "ruleCount": 9,
+      "ruleCount": 10,
       "rules": [
         {
           "name": "error-handling/error-message",
@@ -2927,6 +2927,12 @@
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": true
+        },
+        {
+          "name": "reliability/no-unbounded-cause-recursion",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
         },
         {
           "name": "reliability/no-unsafe-type-narrowing",

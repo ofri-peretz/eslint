@@ -12,7 +12,7 @@ cases: []
 > Stage 1 artifact. Opened from Node.js issue #67572 and a stack overflow
 > reproduced in Next.js 16.4.6 on 2026-11-25.
 
-**Status:** draft · **Opened:** 2026-11-25 · **Owner:** @ofri-peretz
+**Status:** review · **Opened:** 2026-11-25 · **Owner:** @ofri-peretz
 
 ---
 

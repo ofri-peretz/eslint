@@ -2605,32 +2605,32 @@
       "examples": []
     },
     "eslint-plugin-reliability/error-handling/error-message": {
-      "cases": 42,
+      "cases": 53,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-reliability/error-handling/no-missing-error-context": {
-      "cases": 69,
+      "cases": 91,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-reliability/error-handling/no-silent-errors": {
-      "cases": 46,
+      "cases": 65,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-reliability/error-handling/no-unhandled-promise": {
-      "cases": 135,
+      "cases": 157,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-reliability/error-message": {
-      "cases": 42,
+      "cases": 53,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-reliability/no-await-in-loop": {
-      "cases": 29,
+      "cases": 54,
       "failed": 0,
       "examples": []
     },
@@ -2640,32 +2640,37 @@
       "examples": []
     },
     "eslint-plugin-reliability/no-missing-error-context": {
-      "cases": 69,
+      "cases": 91,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-reliability/no-missing-null-checks": {
-      "cases": 197,
+      "cases": 296,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-reliability/no-silent-errors": {
-      "cases": 46,
+      "cases": 65,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-reliability/no-unbounded-cause-recursion": {
+      "cases": 23,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-reliability/no-unhandled-promise": {
-      "cases": 135,
+      "cases": 157,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-reliability/no-unsafe-type-narrowing": {
-      "cases": 41,
+      "cases": 49,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-reliability/reliability/no-await-in-loop": {
-      "cases": 29,
+      "cases": 54,
       "failed": 0,
       "examples": []
     },
@@ -2675,22 +2680,27 @@
       "examples": []
     },
     "eslint-plugin-reliability/reliability/no-missing-null-checks": {
-      "cases": 197,
+      "cases": 296,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-reliability/reliability/no-unbounded-cause-recursion": {
+      "cases": 23,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-reliability/reliability/no-unsafe-type-narrowing": {
-      "cases": 41,
+      "cases": 49,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-reliability/reliability/require-network-timeout": {
-      "cases": 11,
+      "cases": 42,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-reliability/require-network-timeout": {
-      "cases": 11,
+      "cases": 42,
       "failed": 0,
       "examples": []
     },

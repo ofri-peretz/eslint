@@ -8,9 +8,9 @@
     "react": 2
   },
   "rules": {
-    "total": 514,
+    "total": 515,
     "security": 293,
-    "quality": 116,
+    "quality": 117,
     "react": 105
   },
   "generatedAt": "2026-11-25"

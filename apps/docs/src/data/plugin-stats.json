@@ -202,7 +202,7 @@
     },
     {
       "name": "eslint-plugin-reliability",
-      "rules": 9,
+      "rules": 10,
       "description": "ESLint reliability rules for runtime safety — enforces error handling, network timeouts, null checks, and safe type narrowing",
       "category": "quality",
       "version": "5.0.8",
@@ -257,7 +257,7 @@
       "published": true
     }
   ],
-  "totalRules": 514,
+  "totalRules": 515,
   "totalPlugins": 31,
   "allPluginsCount": 32,
   "generatedAt": "2026-11-25"
