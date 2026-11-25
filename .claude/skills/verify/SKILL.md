@@ -30,14 +30,14 @@ page in a browser tool at 390px and at desktop width and reads the page text; th
 
 ## Feature map
 
-| Feature | Reach it by | Working means |
-| --- | --- | --- |
-| A security rule | `npx eslint` on a bad and a good file, as above | bad reports the rule id and line; good is clean |
-| `recommended` / `strict` | `configs.recommended`, `configs.strict` in the scratch config | loads with no config error |
-| oxlint shims | `npm run oxlint:shims:verify` | exit 0 |
-| Published install | `npm run verify:published-install` | exit 0 |
-| Docs home and rule pages | <http://localhost:3000>, `/docs/<plugin>/<rule>` | sections render, ESLint tab shown, no layout break at 390px |
-| Docs deploy smoke | `npx playwright test -c apps/docs/playwright.smoke.config.ts` | every test passes |
+| Feature                  | Reach it by                                                   | Working means                                               |
+| ------------------------ | ------------------------------------------------------------- | ----------------------------------------------------------- |
+| A security rule          | `npx eslint` on a bad and a good file, as above               | bad reports the rule id and line; good is clean             |
+| `recommended` / `strict` | `configs.recommended`, `configs.strict` in the scratch config | loads with no config error                                  |
+| oxlint shims             | `npm run oxlint:shims:verify`                                 | exit 0                                                      |
+| Published install        | `npm run verify:published-install`                            | exit 0                                                      |
+| Docs home and rule pages | <http://localhost:3000>, `/docs/<plugin>/<rule>`              | sections render, ESLint tab shown, no layout break at 390px |
+| Docs deploy smoke        | `npx playwright test -c apps/docs/playwright.smoke.config.ts` | every test passes                                           |
 
 ## When it fails
 
