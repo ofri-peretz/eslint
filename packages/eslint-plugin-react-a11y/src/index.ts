@@ -181,6 +181,18 @@ export const plugin: TSESLint.FlatConfig.Plugin = {
 } satisfies TSESLint.FlatConfig.Plugin;
 
 /**
+ * The deprecated jsx-a11y rules registered as no-ops. A static list on purpose:
+ * `configs.strict` must not read each rule's `meta`, which would load every rule
+ * module at import. `src/index.test.ts` fails if a rule with `meta.deprecated`
+ * is missing from this set, or a name in it is not registered.
+ */
+const DEPRECATED_STUBS: ReadonlySet<string> = new Set([
+  'accessible-emoji',
+  'label-has-for',
+  'no-onchange',
+]);
+
+/**
  * Same parser setting as eslint-plugin-jsx-a11y's flat presets
  * (`languageOptions.parserOptions.ecmaFeatures.jsx`), so a plain `.js` file
  * containing JSX parses under any preset.
@@ -283,11 +295,13 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
     plugins: {
       'react-a11y': plugin,
     },
-    // Deprecated no-op stubs are not switched on: they report nothing.
+    // Deprecated no-op stubs are not switched on: they report nothing. Excluded by
+    // name, not by reading `meta.deprecated`: that would invoke every lazy rule
+    // getter at import and defeat the build's deferred loading.
     rules: Object.fromEntries(
-      Object.entries(rules)
-        .filter(([, rule]) => !rule.meta?.deprecated)
-        .map(([ruleName]) => [`react-a11y/${ruleName}`, 'error'])
+      Object.keys(rules)
+        .filter((ruleName) => !DEPRECATED_STUBS.has(ruleName))
+        .map((ruleName) => [`react-a11y/${ruleName}`, 'error'])
     ),
   } satisfies TSESLint.FlatConfig.Config,
 

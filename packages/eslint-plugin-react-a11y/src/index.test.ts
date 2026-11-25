@@ -55,6 +55,24 @@ describe('eslint-plugin-react-a11y plugin interface', () => {
       );
     });
 
+    it('leaves every deprecated rule out of strict, whatever its name', () => {
+      // `strict` skips the stubs by a static name set, not by reading `meta`
+      // (which would load every rule at import). This ties the set to `meta`:
+      // a rule marked deprecated and missing from the set lands in strict here.
+      const strictRules = Object.keys(configs.strict.rules || {});
+      const deprecated = Object.entries(rules)
+        .filter(([, rule]) => rule.meta?.deprecated)
+        .map(([name]) => name);
+      expect(deprecated.sort()).toEqual([
+        'accessible-emoji',
+        'label-has-for',
+        'no-onchange',
+      ]);
+      for (const name of deprecated) {
+        expect(strictRules, name).not.toContain(`react-a11y/${name}`);
+      }
+    });
+
     it.each(['flagship', 'recommended', 'strict', 'wcag-a', 'wcag-aa'])(
       'parses JSX under the %s preset, as jsx-a11y\'s flat presets do',
       (preset) => {
