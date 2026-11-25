@@ -224,12 +224,30 @@ const DESCRIPTOR_SEGMENTS = [
  * Only for names — never for prose. A string literal's words are checked by
  * `literalCarriesSecret`, which asks a different question.
  */
+/**
+ * Compound names in which `token` is a term of art for something that is not
+ * a credential, so the word cannot speak for the value.
+ *
+ * @protocol-constant A fencing token is the monotonically increasing number a
+ * lock service hands each new holder, so stale holders can be refused
+ * (nestjs/locks logs `lock.fencingToken` when leadership changes). A
+ * cancellation token is the signal object .NET and VS Code pass to stop work.
+ * Neither can be replayed to authenticate as anyone.
+ */
+const NON_CREDENTIAL_TOKEN_KINDS = /\b(fencing|cancellation)[_ ]token\b/g;
+
 function identifierNamesSecret(
   name: string,
   patterns: string[],
   descriptors: ReadonlySet<string>,
 ): string | null {
-  const matched = containsSensitiveData(name, patterns);
+  const matched = containsSensitiveData(
+    name
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .toLowerCase()
+      .replace(NON_CREDENTIAL_TOKEN_KINDS, '$1'),
+    patterns,
+  );
   if (!matched) return null;
   const last = name
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')

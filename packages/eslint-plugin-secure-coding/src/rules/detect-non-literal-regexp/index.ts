@@ -873,6 +873,27 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
     const isNeutralised = (patternNode: TSESTree.Node): boolean => {
       if (escapesEveryMetacharacter(patternNode, context.sourceCode))
         return true;
+      // An escaped value placed inside a written pattern: nestjs/config builds
+      // `new RegExp(\`^\${name}=\`)` from a `name` escaped one line up. Each
+      // interpolated part is static or escaped, so the input can add text but
+      // no operator; the written parts are the author's own pattern, which is
+      // `no-redos-vulnerable-regex`'s remit, as for any literal.
+      const parts =
+        patternNode.type === 'TemplateLiteral'
+          ? patternNode.expressions
+          : patternNode.type === 'BinaryExpression' &&
+              patternNode.operator === '+'
+            ? [patternNode.left, patternNode.right]
+            : null;
+      if (parts !== null) {
+        return parts.every(
+          (part) =>
+            isStaticExpression({
+              node: part,
+              scope: context.sourceCode.getScope(part),
+            }) || isNeutralised(part),
+        );
+      }
       // Follow ONE binding hop: `const safe = raw.replace(...); new RegExp(safe)`.
       // Every write has to be an escape — a binding escaped where it is
       // declared and reassigned later no longer holds the escaped value, and

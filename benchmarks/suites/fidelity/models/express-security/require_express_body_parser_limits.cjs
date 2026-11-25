@@ -1,5 +1,10 @@
 const { tag, withTestFile } = require('../../lib.cjs');
 
+// The verdict depends only on whether a `limit` key is present: NoOpts and
+// NoLimitKey are reported, every other spelling (any size, string or number)
+// is an explicit choice and is not. `config` still passes `maxLimit` and
+// `excessiveLimits`, which the rule accepts and ignores, so a verdict that
+// changed with them would diverge from the model.
 const OPTS = {
   NoOpts: '',
   NoLimitKey: '{ extended: true }',

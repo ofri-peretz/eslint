@@ -96,7 +96,10 @@ describe('detect-non-literal-regexp', () => {
             code: 'const emailRegex = /^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$/;',
           },
           // Static string patterns with new RegExp are now also safe by default
-          { code: 'const pattern = new RegExp("^[a-z]+$");' },
+          {
+            name: 'a RegExp built from a string literal is not dynamic',
+            code: 'const pattern = new RegExp("^[a-z]+$");',
+          },
           { code: 'const pattern = RegExp("^test$");' },
           { code: 'const pattern = new RegExp(`^test$`);' },
           // Explicitly allowing literals also works

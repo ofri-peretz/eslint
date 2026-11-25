@@ -47,12 +47,14 @@ Apply [`ARCHITECTURE.md` § "Plugin organization"](../../ARCHITECTURE.md#plugin-
 
 ## 4. Package Naming & Publishing
 
-| Naming | Example | Auth at release time |
-| :--- | :--- | :--- |
-| **Scoped** (`@interlace/<name>`) | `@interlace/eslint-devkit`, `@interlace/eslint-formatter` | Trusted Publishing (OIDC) — no token needed |
-| **Unscoped** (`<name>`) | `eslint-plugin-postgresql-security`, `eslint-plugin-secure-coding` | `NPM_TOKEN` (Granular Access Token) |
+Every package, scoped (`@interlace/<name>`) or unscoped (`eslint-plugin-<name>`), publishes through npm Trusted Publishing (OIDC). There is no npm token.
 
-The release workflow detects which path applies based on the package name and publishes accordingly. There is no separate scoped/unscoped workflow file — `release.yml` handles both.
+Trusted Publishing can only be configured on a package that already exists, so before the first release:
+
+- [ ] Claim the name by hand with an empty `0.0.0-stage` publish
+- [ ] Configure its Trusted Publisher on npmjs.com (repo `ofri-peretz/eslint`, workflow `release.yml`)
+
+See [`.github/TRUSTED_PUBLISHING_SETUP.md`](../../.github/TRUSTED_PUBLISHING_SETUP.md) "New package names".
 
 ## 5. Build & Test Verification
 

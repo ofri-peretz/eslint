@@ -362,6 +362,12 @@ const REGISTERED: RegistryEntry[] = [
       'A lowercase first letter IS the JSX specification for an intrinsic element: `<div>` compiles to the string "div", `<Div>` to a reference to the component `Div`. The spelling decides what is rendered, so it decides whether a rule can see the DOM element; components stay silent.',
   },
   {
+    file: 'eslint-plugin-react-a11y/src/rules/scope.ts',
+    direction: 'suppress',
+    reason:
+      "Structural DOM-tag test, mirrors upstream's dom.has(tag) without a value list. A lowercase first letter is the JSX definition of an intrinsic element (`<th>` is the string \"th\", `<Th>` a component), and a hyphen, colon or dot makes the tag a custom element, a namespaced tag or a member component. The spelling decides whether the rule can see a DOM element at all; components stay silent unless settings['jsx-a11y'] maps them.",
+  },
+  {
     file: 'eslint-plugin-react-features/src/utils/function-component.ts',
     direction: 'report',
     reason:

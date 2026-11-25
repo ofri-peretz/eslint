@@ -54,7 +54,7 @@ After version bump:
 gh workflow run release.yml --ref main
 ```
 
-**Expected**: GitHub Actions runs the release; for unscoped packages the `NPM_TOKEN` secret is used, for `@interlace/*` Trusted Publishing handles auth (no token / no 2FA prompt)
+**Expected**: GitHub Actions runs the release; npm Trusted Publishing (OIDC) handles auth for every package (no token / no 2FA prompt)
 
 ### Step 5: Push to GitHub
 

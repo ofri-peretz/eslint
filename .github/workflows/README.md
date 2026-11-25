@@ -11,7 +11,7 @@ Every GitHub Actions workflow for this repo. Triggered by PRs, pushes to `main`,
 | Workflow | What it gates |
 | :--- | :--- |
 | [`quality.yml`](./quality.yml) | Test, lint, typecheck across all packages — the main PR gate |
-| [`release.yml`](./release.yml) | Per-package release pipeline (Trusted Publishing for `@interlace/*`, NPM_TOKEN for unscoped) |
+| [`release.yml`](./release.yml) | Per-package release pipeline (npm Trusted Publishing / OIDC for every package; no npm token) |
 | [`release-hygiene.yml`](./release-hygiene.yml) | Pre-release sanity (changelog completeness, version alignment) |
 | [`changesets-pr.yml`](./changesets-pr.yml) | Changesets PR creation |
 | [`docs.yml`](./docs.yml) | Docs governance (link integrity, structure validation) |
@@ -32,7 +32,6 @@ Every GitHub Actions workflow for this repo. Triggered by PRs, pushes to `main`,
 | Workflow | Cadence |
 | :--- | :--- |
 | [`docs-data.yml`](./docs-data.yml) | Refreshes derived docs data (rule tables, plugin stats) |
-| [`npm-token-health.yml`](./npm-token-health.yml) | NPM token expiry check (Granular Access Tokens cap at 90 days) |
 | [`check-links.yml`](./check-links.yml) | Markdown link integrity sweep |
 | [`eslint-version-stats.yml`](./eslint-version-stats.yml) | Manual refresh of npm download share by ESLint major (drives [`../../docs/ESLINT_VERSION_SUPPORT.md`](../../docs/ESLINT_VERSION_SUPPORT.md)). Run via `gh workflow run eslint-version-stats.yml -f open_pr=true` to auto-PR drift |
 
