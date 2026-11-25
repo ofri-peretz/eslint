@@ -90,8 +90,7 @@ export const altText = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/alt-text.md',
-      description:
-        'Enforce alt text on images with accessibility impact context',
+      description: 'Enforce alt text on images',
       wcag: 'WCAG 1.1.1',
       confidence: 'high',
     },

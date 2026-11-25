@@ -3,6 +3,9 @@
   "note": "Rules holding fewer than 3 classified cases on a side. Shrink-only.",
   "rules": [
     "import-next/no-cycle",
+    "react-a11y/accessible-emoji",
+    "react-a11y/label-has-for",
+    "react-a11y/no-onchange",
     "react-features/jsx-uses-react",
     "react-features/jsx-uses-vars",
     "reliability/no-jsdoc-terminator-in-example"

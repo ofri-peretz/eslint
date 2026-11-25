@@ -5411,6 +5411,78 @@
       "peers": []
     },
     {
+      "id": "ILB-0188",
+      "added": "2026-11-24",
+      "title": "An emoji in a span with no label",
+      "rationale": "NOT a defect: a deprecated no-op stub kept so jsx-a11y configs naming it load. Upstream's `accessible-emoji` asked for `role=\"img\"` and an `aria-label`, and is deprecated there; this rule never reports.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "export const a = <span>🐼</span>;",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "react-a11y/accessible-emoji",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-react-a11y/src/tests/deprecated-stubs.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0189",
+      "added": "2026-11-24",
+      "title": "A label with no id or nesting",
+      "rationale": "NOT a defect: a deprecated no-op stub kept so jsx-a11y configs naming it load. Upstream's `label-has-for` is replaced by `label-has-associated-control`, which does the checking; this rule never reports.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "export const a = <label>Name</label>;",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "react-a11y/label-has-for",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-react-a11y/src/tests/deprecated-stubs.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0190",
+      "added": "2026-11-24",
+      "title": "A select with an onChange handler",
+      "rationale": "NOT a defect: a deprecated no-op stub kept so jsx-a11y configs naming it load. Upstream's `no-onchange` asked for `onBlur`, and is deprecated there; this rule never reports.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "export const a = <select onChange={go}><option /></select>;",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "react-a11y/no-onchange",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-react-a11y/src/tests/deprecated-stubs.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
       "id": "ILB-0191",
       "added": "2026-11-24",
       "title": "An import after a statement, written under the deprecated name",
@@ -5435,6 +5507,98 @@
           "rule": "import-next/first",
           "expect": "report",
           "evidence": "packages/eslint-plugin-import-next/src/tests/first.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0192",
+      "added": "2026-11-25",
+      "title": "A generated secret picked with a random byte reduced by a divisor that does not divide 256",
+      "rationale": "crypto.randomBytes yields bytes uniform over 0..255. `b % allChars.length` with a 70-character alphabet maps 256 values onto 70 slots, so the first 46 characters come up 4 times in 256 and the other 24 only 3 times: part of the generated password is a third more likely than the rest. ToolJet's generateTJDBPasswordForRole built the body of a database password this way before ToolJet/ToolJet#19245 replaced it with crypto.randomInt.",
+      "cwe": "CWE-330",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "ToolJet/ToolJet#19245",
+          "url": "https://github.com/ToolJet/ToolJet/pull/19245",
+          "verified": false
+        }
+      ],
+      "occurrences": [
+        {
+          "repo": "ToolJet/ToolJet"
+        }
+      ],
+      "code": "import crypto from 'node:crypto'; const allChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'; const remaining = Array.from(crypto.randomBytes(26)).map((b) => allChars[b % allChars.length]);",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/no-modulo-biased-random",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-node-security/src/rules/no-modulo-biased-random/no-modulo-biased-random.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0193",
+      "added": "2026-11-25",
+      "title": "A function that recurses down error.cause with no visited set or depth bound",
+      "rationale": "`cause` is an ordinary property, so a cycle (`e.cause = e`, or two errors citing each other) is one assignment away, and the walk then throws RangeError from inside the code that was handling the first error. Node.js lib/internal/assert/assertion_error.js copyError recursed on source.cause with no memo (nodejs/node#67572, fixed upstream with a map of copies).",
+      "cwe": "CWE-674",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "nodejs/node#67572",
+          "url": "https://github.com/nodejs/node/issues/67572",
+          "verified": false
+        }
+      ],
+      "occurrences": [
+        {
+          "repo": "nodejs/node"
+        }
+      ],
+      "code": "function copyError(source) { const target = Object.assign({}, source); let { cause } = source; if (isError(cause)) cause = copyError(cause); target.cause = cause; return target; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "reliability/no-unbounded-cause-recursion",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-reliability/src/rules/reliability/no-unbounded-cause-recursion.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0194",
+      "added": "2026-11-25",
+      "title": "decodeURIComponent on a request parameter outside a try that catches",
+      "rationale": "decodeURIComponent and decodeURI throw URIError on a `%` that does not start a valid escape (`p%ss`, `%E0%A4%A`, a bare `%`). On a route parameter a client chooses, that is a 500 on demand, or a dead process outside a framework error boundary. Constructed from the rule's intent (docs/intents/a-uri-decode-on-request-input-is-a-crash); not observed in a third-party repository.",
+      "cwe": "CWE-248",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "app.get('/f/:name', (req, res) => res.send(decodeURIComponent(req.params.name)));",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-unguarded-uri-decode",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/no-unguarded-uri-decode/no-unguarded-uri-decode.test.ts"
         }
       ],
       "peers": []
