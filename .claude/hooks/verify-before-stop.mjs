@@ -29,12 +29,15 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { globToRegExp } from "./guard-bash.mjs";
+import { commands, globToRegExp } from "./guard-bash.mjs";
 import { isTestCommand } from "./stop-after-3.mjs";
 
 const DOCS = /\.(md|mdx|txt)$/i;
 
-/** The uncommitted paths `git status` lists, staged, unstaged and untracked, renames as their new path. */
+/**
+ * The uncommitted paths `git status` lists, staged, unstaged and untracked, relative to the repo
+ * root. A rename lists both sides, so code renamed to a doc still counts; a copy only its new path.
+ */
 export function changedPaths(dir) {
   const r = spawnSync(
     "git",
@@ -47,7 +50,8 @@ export function changedPaths(dir) {
   for (let i = 0; i < parts.length; i++) {
     const entry = parts[i];
     paths.push(entry.slice(3));
-    // A rename or copy is followed by its old path, which is not in the tree any more.
+    // A rename or copy is followed by its old path. A rename removed it; a copy left it as it was.
+    if (entry[0] === "R" && parts[i + 1]) paths.push(parts[i + 1]);
     if (entry[0] === "R" || entry[0] === "C") i++;
   }
   return paths;
@@ -59,8 +63,18 @@ export function counts(path, ignore = []) {
   return !DOCS.test(rel) && !ignore.some((g) => globToRegExp(g).test(rel));
 }
 
+/** The work tree's root, so a hook whose cwd is a package still reads root-relative paths. */
+function rootOf(dir) {
+  const r = spawnSync("git", ["rev-parse", "--show-toplevel"], {
+    cwd: dir,
+    encoding: "utf8",
+  });
+  return r.status === 0 && r.stdout.trim() ? r.stdout.trim() : dir;
+}
+
 /** One hash over every uncommitted code path and its content, or null when there is none. */
-export function fingerprint(dir, ignore = []) {
+export function fingerprint(cwd, ignore = []) {
+  const dir = rootOf(cwd);
   const paths = changedPaths(dir)
     .filter((p) => counts(p, ignore))
     .sort();
@@ -93,9 +107,33 @@ function passedHash(session) {
   }
 }
 
-/** PostToolUse: a passing test run remembers what the code looked like. Prints nothing. */
-export function recordPass(session, dir, command, failed, ignore = []) {
-  if (failed || !isTestCommand(command)) return;
+/**
+ * True when the shell's exit status is the test run's own: the test is the last command and no
+ * `|`, `||`, `;` or `&` can hide its failure or run an edit after it. `cd pkg && npx vitest run`
+ * proves a pass; `npm test || true`, `npm test | tail` and `npm test && sed -i … a.ts` do not.
+ */
+export function provesPass(command) {
+  // `2>&1` merges streams; its `&` is not a background launch.
+  const merged = String(command).replace(/\d*>&\d+/g, " ");
+  const bare = merged
+    .replace(/'[^']*'|"(?:\\.|[^"\\])*"/g, '""')
+    .replaceAll("&&", " ");
+  if (/[|;&\n]/.test(bare)) return false;
+  const last = commands(merged).at(-1);
+  return Boolean(last) && isTestCommand(last.join(" "));
+}
+
+/**
+ * PostToolUse: a passing foreground test run (`{ command, failed, background }`) remembers what
+ * the code looked like. A background launch returns before its tests finish. Prints nothing.
+ */
+export function recordPass(
+  session,
+  dir,
+  { command, failed, background = false },
+  ignore = [],
+) {
+  if (failed || background || !provesPass(command)) return;
   const fp = fingerprint(dir, ignore);
   // A pass with nothing uncommitted proves the committed tree; forget any older fingerprint.
   if (fp) writeFileSync(stateFile(session), JSON.stringify({ hash: fp.hash }));
@@ -114,7 +152,7 @@ export function decideStop(session, dir, active, ignore = []) {
     decision: "block",
     reason:
       `[verify-before-stop] Code changed since the last passing test run (${shown}). ` +
-      "Run the tests that cover it, or the repo's verify skill, and say what passed. " +
+      "Run the tests that cover it, or the repo's verify skill, in the foreground as the last command with no pipe, `||`, `;` or `&` after it, and say what passed. " +
       "If they cannot run yet (you need an answer first), say that in your reply and end the turn; this hook will not stop you twice.",
   };
 }
@@ -176,22 +214,52 @@ function selfTest() {
     bad.push("the second stop of a turn should always pass");
   if (decideStop(session, dir, false, ["*.ts"]))
     bad.push("a verifyIgnore glob should not count");
-  recordPass(session, dir, "npm run build", false);
+  recordPass(session, dir, { command: "npm run build", failed: false });
   if (!decideStop(session, dir, false)) bad.push("a build is not a test run");
-  recordPass(session, dir, "npx vitest run", true);
+  recordPass(session, dir, { command: "npx vitest run", failed: true });
   if (!decideStop(session, dir, false))
     bad.push("a failing test run is not a pass");
-  recordPass(session, dir, "npx vitest run", false);
+  recordPass(session, dir, { command: "npx vitest run", failed: false });
   if (decideStop(session, dir, false))
     bad.push("a passing run over this code should end the turn");
   writeFileSync(join(dir, "a.ts"), "export const a = 2;\n");
   if (!decideStop(session, dir, false))
     bad.push("an edit after the pass should send the turn back");
+  for (const command of [
+    "npm test || true",
+    "npx vitest run 2>&1 | tail -5",
+    "npm test; echo done",
+    "npm test && sed -i s/2/3/ a.ts",
+  ]) {
+    recordPass(session, dir, { command, failed: false });
+    if (!decideStop(session, dir, false))
+      bad.push(`"${command}" cannot prove a pass`);
+  }
+  recordPass(session, dir, { command: "npm test", failed: false, background: true });
+  if (!decideStop(session, dir, false))
+    bad.push("a background launch is not a finished run");
+  mkdirSync(join(dir, "pkg"), { recursive: true });
+  writeFileSync(join(dir, "pkg", "b.ts"), "export const b = 1;\n");
+  recordPass(session, join(dir, "pkg"), {
+    command: "npx vitest run 2>&1",
+    failed: false,
+  });
+  if (decideStop(session, join(dir, "pkg"), false))
+    bad.push("a pass from a package directory should cover the same tree");
+  writeFileSync(join(dir, "pkg", "b.ts"), "export const b = 2;\n");
+  if (!decideStop(session, join(dir, "pkg"), false))
+    bad.push("an edit seen from a package directory should send the turn back");
+  git("add", "-A");
+  git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "code");
+  git("mv", "a.ts", "a.md");
+  rmSync(stateFile(session), { force: true });
+  if (!decideStop(session, dir, false))
+    bad.push("renaming code to a doc removes code and should send the turn back");
 
   rmSync(stateFile(session), { force: true });
   rmSync(dir, { recursive: true, force: true });
   process.stdout.write(
-    bad.length ? `${bad.join("\n")}\n${bad.length} failing\n` : "ok: 9 cases\n",
+    bad.length ? `${bad.join("\n")}\n${bad.length} failing\n` : "ok: 17 cases\n",
   );
   process.exit(bad.length ? 1 : 0);
 }
@@ -227,8 +295,11 @@ else if (isMain) {
       recordPass(
         payload.session_id,
         dir,
-        command,
-        failedResponse(payload),
+        {
+          command,
+          failed: failedResponse(payload),
+          background: payload.tool_input?.run_in_background === true,
+        },
         ignore,
       );
   });
