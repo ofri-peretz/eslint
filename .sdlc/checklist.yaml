@@ -38,7 +38,7 @@ items:
         ]
     question: Does a rule fix carry a test that fails when the fix is reverted, and does the rule leave the audit ratchet no worse?
     check: npm run --silent rule-audit:gate
-    sources: [CLAUDE.md, scripts/rule-audit-gate.ts]
+    sources: [scripts/check-fix-carries-test.ts, scripts/rule-audit-gate.ts]
 
   - id: changeset-for-publishable-source
     trigger:

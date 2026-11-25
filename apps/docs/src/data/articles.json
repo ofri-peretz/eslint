@@ -1,6 +1,46 @@
 {
   "articles": [
     {
+      "id": 5080415,
+      "title": "I Let AI Agents Rebrand My Entire OSS Ecosystem in One Night. Two Pipelines Were Silently Dead.",
+      "description": "Merged is a feeling. Live is a measurement. 13 PRs across 5 repos in one night of parallel AI agents — and two delivery pipelines that had been silently dead for weeks.",
+      "url": "https://dev.to/ofri-peretz/i-let-ai-agents-rebrand-my-entire-oss-ecosystem-in-one-night-two-pipelines-were-silently-dead-49i6",
+      "canonical_url": "https://ofriperetz.dev/articles/ai-agents-rebranded-my-oss-ecosystem-two-pipelines-were-dead",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fai-agents-rebranded-my-oss-ecosystem-two-pipelines-were-dead.jpg",
+      "published_at": "2026-11-20T09:07:59Z",
+      "readable_publish_date": "Nov 20",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 0,
+      "tag_list": [
+        "ai",
+        "webdev",
+        "security"
+      ]
+    },
+    {
+      "id": 5044326,
+      "title": "Every Plugin I Shipped Installed a TypeScript Compiler",
+      "description": "A peer I forgot to mark optional put 24MB of tsc under every plugin I publish. Cutting it took ~30MB off every install tree.",
+      "url": "https://dev.to/ofri-peretz/every-plugin-i-shipped-installed-a-typescript-compiler-34h2",
+      "canonical_url": "https://ofriperetz.dev/articles/eslint-plugin-cold-start-optimization",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Feslint-plugin-cold-start-optimization.jpg",
+      "published_at": "2026-11-16T02:19:22Z",
+      "readable_publish_date": "Nov 16",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 2,
+      "positive_reactions_count": 2,
+      "comments_count": 0,
+      "tag_list": [
+        "javascript",
+        "webdev",
+        "typescript"
+      ]
+    },
+    {
       "id": 5020121,
       "title": "Three of My Planned Articles Cited Numbers That Do Not Exist",
       "description": "I audited twelve planned pieces against the benchmark JSON they cite. Two figures appear in no result file anywhere, one contradicts the source it names, and one real number is attached to the wrong set. Nothing caught it, because nothing recomputes prose.",
@@ -2044,9 +2084,30 @@
         "javascript",
         "devsecops"
       ]
+    },
+    {
+      "id": 3114770,
+      "title": "Every AI Model Ships a Vulnerability in Half the Code It Writes. Prompt Injection Has 3 Faces in Your Vercel AI SDK App — Here's the ESLint Rule for Each.",
+      "description": "Across 700 AI-generated functions from five models (measured 2026-02-09), every model shipped a vulnerability in 49–73% of them. Prompt injection has three faces in a Vercel AI SDK app: unvalidated input, a leaky system prompt, and unconfirmed tool calls. Three CWE-tagged ESLint rules catch each at write-time — plus the hardened pattern they want.",
+      "url": "https://dev.to/ofri-peretz/your-vercel-ai-sdk-app-has-a-prompt-injection-vulnerability-4g7p",
+      "canonical_url": "https://ofriperetz.dev/articles/vercel-ai-sdk-prompt-injection-vulnerability",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fvercel-ai-sdk-prompt-injection-vulnerability.jpg%3Fv%3Db2",
+      "published_at": "2025-12-19T05:49:06Z",
+      "readable_publish_date": "Dec 19 '25",
+      "reading_time_minutes": 12,
+      "page_views_count": 0,
+      "public_reactions_count": 0,
+      "positive_reactions_count": 0,
+      "comments_count": 1,
+      "tag_list": [
+        "ai",
+        "security",
+        "javascript",
+        "devsecops"
+      ]
     }
   ],
-  "total": 100,
-  "lastUpdated": "2026-11-12T08:07:14.079Z",
+  "total": 103,
+  "lastUpdated": "2026-11-25T16:12:09.945Z",
   "source": "public"
 }

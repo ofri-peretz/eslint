@@ -175,6 +175,18 @@ s.pipe(res);
 
 **Mitigation**: Prefer `pipeline()`, which needs no listener bookkeeping at all.
 
+## Listeners the rule follows
+
+`.on()` returns its emitter and `.pipe(dest)` returns `dest`, so in
+`src.pipe(dest).on('finish', f).on('error', h)` the `'error'` listener is on `dest`
+and covers it, including a destination built in place
+(`src.pipe(fs.createWriteStream(p)).on('error', h)`). A stream binding that is **returned** from the
+function that built it (`return entry`, resolved by scope, not by name) is handed to the caller, who
+owns its listeners, exactly like a stream passed to another call. The return must be in the function
+that owns the binding (a `return entry` in a nested function nobody calls hands nothing over), and the
+binding must be assigned once (a reassigned one may not be the stream that was piped into). A stream that is piped into and never returned,
+passed on or listened to still reports.
+
 ## Further Reading
 
 - **[readable.pipe()](https://nodejs.org/api/stream.html#readablepipedestination-options)** — why `pipe` does not forward errors

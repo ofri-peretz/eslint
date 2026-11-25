@@ -13,6 +13,7 @@ import { mkdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { writeJsonIfChanged } from './lib/write-json-if-changed.ts';
+import { fetchAllPages } from './lib/fetch-all-pages.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,18 +33,18 @@ async function fetchArticles() {
     headers['api-key'] = apiKey;
   }
 
-  // Authenticated endpoint returns full stats including page_views_count
-  const endpoint = apiKey
-    ? 'https://dev.to/api/articles/me/all?per_page=100'
-    : `https://dev.to/api/articles?username=${DEVTO_USERNAME}&per_page=100`;
+  // Authenticated endpoint returns full stats including page_views_count.
+  // Every page is read: one page of 100 dropped the oldest articles.
+  const publicEndpoint = `https://dev.to/api/articles?username=${DEVTO_USERNAME}`;
+  const endpoint = apiKey ? 'https://dev.to/api/articles/me/all' : publicEndpoint;
 
   console.log(`📡 Fetching articles from Dev.to (${apiKey ? 'authenticated' : 'public'} API)...`);
 
-  const response = await fetch(endpoint, { headers });
+  const result = await fetchAllPages(endpoint, { headers });
 
-  if (!response.ok) {
+  if (!result.ok) {
     // If authenticated endpoint fails, try public endpoint as fallback
-    if (apiKey && response.status === 401) {
+    if (apiKey && result.status === 401) {
       console.warn('⚠️  Authentication failed, falling back to public API');
       // Surface the failure on the run summary — this exact 401 fallback ran
       // silently inside "success" jobs for months while /stats showed REACH 0:
@@ -53,20 +54,16 @@ async function fetchArticles() {
         '::warning title=Dev.to auth failed::DEVTO_API_KEY was rejected (401). ' +
           'Article views will sync as 0 until a valid key is re-pasted into the repo secret.',
       );
-      const fallbackResponse = await fetch(
-        `https://dev.to/api/articles?username=${DEVTO_USERNAME}&per_page=100`
-      );
-      if (!fallbackResponse.ok) {
-        throw new Error(`Dev.to API error: ${fallbackResponse.status}`);
+      const fallback = await fetchAllPages(publicEndpoint);
+      if (!fallback.ok) {
+        throw new Error(`Dev.to API error: ${fallback.status}`);
       }
-      const articles = await fallbackResponse.json();
-      return { articles, source: 'public' };
+      return { articles: fallback.items, source: 'public' };
     }
-    throw new Error(`Dev.to API error: ${response.status}`);
+    throw new Error(`Dev.to API error: ${result.status}`);
   }
 
-  const articles = await response.json();
-  return { articles, source: apiKey ? 'authenticated' : 'public' };
+  return { articles: result.items, source: apiKey ? 'authenticated' : 'public' };
 }
 
 // Whitelist the article fields we actually consume on the docs site, with

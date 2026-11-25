@@ -32,7 +32,7 @@ Use it alongside `eslint-plugin-security`, not instead of it: keep that plugin i
 | Preset        | Rules | Errors | Warnings |
 | ------------- | ----- | ------ | -------- |
 | `recommended` | 31    | 25     | 6        |
-| `strict`      | 44    | 44     | 0        |
+| `strict`      | 45    | 45     | 0        |
 
 ### `recommended`
 
@@ -72,7 +72,7 @@ Use it alongside `eslint-plugin-security`, not instead of it: keep that plugin i
 
 ### `strict`
 
-Everything in `recommended` plus 13 more (some shared rules run at a different severity here):
+Everything in `recommended` plus 14 more (some shared rules run at a different severity here):
 
 - `lock-file` (error): Ensure package lock file exists for the configured package manager.
 - `no-dynamic-dependency-loading` (error): Prevent runtime dependency injection with dynamic paths.
@@ -84,6 +84,7 @@ Everything in `recommended` plus 13 more (some shared rules run at a different s
 - `no-deprecated-cipher-method` (error): Disallow deprecated crypto.createCipher/createDecipher (use createCipheriv/createDecipheriv).
 - `no-insecure-key-derivation` (error): Disallow PBKDF2 with insufficient iterations (< 100,000).
 - `no-insecure-rsa-padding` (error): Disallow RSA PKCS#1 v1.5 padding (CVE-2023-46809 Marvin Attack).
+- `no-modulo-biased-random` (error): Disallow reducing a random byte with % when the divisor does not divide its range.
 - `no-sha1-hash` (error): Disallow sha1() from crypto-hash package (use sha256 or sha512).
 - `prefer-native-crypto` (error): Prefer native crypto over third-party libraries.
 - `require-emitter-error-handler` (error): Require an 'error' listener on http(s) requests and spawned processes.

@@ -18,11 +18,14 @@ const V = {
   Placeholder: 'changeme',
   Repeated: 'xxxxxxxxxxxx',
   Charset: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+  RouteTemplate: '/access-token/{id}',
+  ErrorCode: 'infra_token/invalid_token',
+  CodeWithDigit: 'invalid_tok9n/x',
 };
 
 module.exports = {
-  domain: 56,
-  traces: 600,
+  domain: 68,
+  traces: 800,
   rule: 'no-hardcoded-credentials',
   key: (s) => `${tag(s.value)}|${tag(s.slot)}`,
   config: () => ({}),

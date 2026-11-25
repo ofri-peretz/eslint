@@ -8,19 +8,26 @@
 // placeholders and repeated characters are never reported. A charset constant is
 // excluded from Tier 1 by the ascending-run check, but it still satisfies the
 // literal Tier 2 test (>= 2 character classes, no whitespace, not natural words),
-// so it is reported in a credential-named slot.
+// so it is reported in a credential-named slot. An OpenAPI path template
+// (`/access-token/{id}`) is an address, never a secret. A slash-namespaced
+// error code (`infra_token/invalid_token`: lowercase words, no digits) is not
+// a secret either, except in a password slot, where words joined by a slash
+// may be a passphrase. The same code with a digit in it (CodeWithDigit) is a
+// multi-class value like any other.
 // (The test-file skip is not modelled: the harness lints one filename per model.)
 module no_hardcoded_credentials {
   type Value = StripeLive | GithubPat | AwsAkia | Jwt | DbUrl | Blob32
              | Blob25 | WeakPwd | MixedClass
              | I18nKey | Sentence | Placeholder | Repeated | Charset
+             | RouteTemplate | ErrorCode | CodeWithDigit
   type Slot = CredVar | NeutralVar | CredProp | WeakKeyProp
 
   pure def structural(v: Value): bool = Set(StripeLive, GithubPat, AwsAkia, Jwt, DbUrl, Blob32).contains(v)
 
   pure def reports(v: Value, s: Slot): bool =
     structural(v)
-      or (Set(CredVar, CredProp).contains(s) and Set(Blob25, WeakPwd, MixedClass, Charset).contains(v))
+      or (Set(CredVar, CredProp).contains(s) and Set(Blob25, WeakPwd, MixedClass, Charset, CodeWithDigit).contains(v))
+      or (s == CredVar and v == ErrorCode)
       or (s == WeakKeyProp and v == Blob25)
 
   var value: Value
@@ -29,7 +36,8 @@ module no_hardcoded_credentials {
 
   action step = {
     nondet v = Set(StripeLive, GithubPat, AwsAkia, Jwt, DbUrl, Blob32, Blob25, WeakPwd, MixedClass,
-                   I18nKey, Sentence, Placeholder, Repeated, Charset).oneOf()
+                   I18nKey, Sentence, Placeholder, Repeated, Charset,
+                   RouteTemplate, ErrorCode, CodeWithDigit).oneOf()
     nondet s = Set(CredVar, NeutralVar, CredProp, WeakKeyProp).oneOf()
     all { value' = v, slot' = s, verdict' = reports(v, s) }
   }

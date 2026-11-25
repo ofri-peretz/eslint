@@ -169,6 +169,7 @@ describe('no-zip-slip', () => {
         // The archive makes it zip slip. `require('adm-zip')` is the evidence
         // the two shapes above lack.
         {
+          name: 'an entry name joined onto the destination in a file that requires an archive library',
           code: `const AdmZip = require('adm-zip');
                  fs.writeFileSync(path.join(dest, entry.name), data);`,
           errors: [{ messageId: 'unvalidatedArchivePath' }],
@@ -182,6 +183,7 @@ describe('no-zip-slip', () => {
         },
         // …and so does a `new AdmZip(…)` with no import in view.
         {
+          name: 'a new AdmZip with no import in view is still archive context',
           code: `const zip = new AdmZip(file);
                  const filePath = path.resolve(destDir, entry.path);`,
           errors: [{ messageId: 'unvalidatedArchivePath' }],
@@ -243,6 +245,7 @@ describe('no-zip-slip', () => {
       valid: [],
       invalid: [
         {
+          name: 'a bare unzip into a dangerous system directory',
           code: 'unzip(zipFile, "/root/backups");',
           errors: [
             {
@@ -271,6 +274,7 @@ describe('no-zip-slip', () => {
         },
         // Validated paths
         {
+          name: 'an entry name passed through validatePath before it is joined',
           code: `
             const safeName = validatePath(entry.name);
             fs.writeFileSync(path.join(dest, safeName), data);

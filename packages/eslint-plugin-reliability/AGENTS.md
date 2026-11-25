@@ -41,7 +41,7 @@ Each preset is one flat config object: put it in the array as an element, do not
 
 ### Rules in no preset
 
-Enable these by name (`'reliability/<rule>': 'error'`); README.md describes each: `no-unhandled-promise`, `no-missing-error-context`, `error-message`, `no-unsafe-type-narrowing`, `no-await-in-loop`.
+Enable these by name (`'reliability/<rule>': 'error'`); README.md describes each: `no-unhandled-promise`, `no-missing-error-context`, `error-message`, `no-unsafe-type-narrowing`, `no-await-in-loop`, `no-unbounded-cause-recursion`.
 
 ## More
 

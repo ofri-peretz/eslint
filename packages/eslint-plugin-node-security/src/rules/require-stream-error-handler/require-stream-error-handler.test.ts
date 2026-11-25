@@ -157,6 +157,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // Here it is the DESTINATION that is constructed inline — the write stream
     // has no name either, and a disk error on it is equally fatal.
     {
+      name: 'a write stream constructed inline as the pipe destination has no listener',
       code: `
         function upload(req, res) {
           const busboy = Busboy({ headers: req.headers });
@@ -172,6 +173,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // case that makes the first `valid` fixture pass for the RIGHT reason: drop
     // the listener from it and it lands here.
     {
+      name: 'a named stream that is never handled anywhere in the file',
       code: `
         const stream = fs.createReadStream('/etc/hosts');
         stream.pipe(res);
@@ -181,6 +183,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // A listener for a DIFFERENT event is not an error handler. Registering
     // 'close' is the commonest way to look handled while still crashing.
     {
+      name: 'a listener for a different event is not an error handler',
       code: "const s = fs.createReadStream(p); s.on('close', log); s.pipe(res);",
       errors: [{ messageId: 'unhandledStreamError' }],
     },
@@ -196,6 +199,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // A test suite that pipes without an error listener really does crash the
     // runner, so this is a setting someone would reach for.
     {
+      name: 'allowInTests: false judges a test file like any other',
       code: 'fs.createReadStream(p).pipe(res);',
       filename: '/proj/stream.test.ts',
       options: [{ allowInTests: false }],

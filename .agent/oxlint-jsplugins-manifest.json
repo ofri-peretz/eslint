@@ -3,8 +3,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-11-25",
   "totalPlugins": 32,
-  "totalRules": 517,
-  "oxlintCompatible": 517,
+  "totalRules": 523,
+  "oxlintCompatible": 523,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1771,7 +1771,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 44,
+      "ruleCount": 45,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1901,6 +1901,12 @@
         },
         {
           "name": "no-math-random-crypto",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-modulo-biased-random",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2236,8 +2242,14 @@
       "short": "react-a11y",
       "shim": "tools/oxlint-plugins/interlace-react-a11y.cjs",
       "subpath": "eslint-plugin-react-a11y/oxlint",
-      "ruleCount": 37,
+      "ruleCount": 40,
       "rules": [
+        {
+          "name": "accessible-emoji",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
         {
           "name": "alt-text",
           "portability": "compatible",
@@ -2341,6 +2353,12 @@
           "isTypeAware": false
         },
         {
+          "name": "label-has-for",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "lang",
           "portability": "compatible",
           "blockers": [],
@@ -2414,6 +2432,12 @@
         },
         {
           "name": "no-noninteractive-tabindex",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-onchange",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2884,7 +2908,7 @@
       "short": "reliability",
       "shim": "tools/oxlint-plugins/interlace-reliability.cjs",
       "subpath": "eslint-plugin-reliability/oxlint",
-      "ruleCount": 9,
+      "ruleCount": 10,
       "rules": [
         {
           "name": "error-handling/error-message",
@@ -2929,6 +2953,12 @@
           "isTypeAware": true
         },
         {
+          "name": "reliability/no-unbounded-cause-recursion",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "reliability/no-unsafe-type-narrowing",
           "portability": "compatible",
           "blockers": [],
@@ -2947,7 +2977,7 @@
       "short": "secure-coding",
       "shim": "tools/oxlint-plugins/interlace-secure-coding.cjs",
       "subpath": "eslint-plugin-secure-coding/oxlint",
-      "ruleCount": 35,
+      "ruleCount": 36,
       "rules": [
         {
           "name": "detect-non-literal-regexp",
@@ -3107,6 +3137,12 @@
         },
         {
           "name": "no-unchecked-loop-condition",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unguarded-uri-decode",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3737,6 +3773,7 @@
       "no-insecure-key-derivation",
       "no-insecure-rsa-padding",
       "no-math-random-crypto",
+      "no-modulo-biased-random",
       "no-self-signed-certs",
       "no-sha1-hash",
       "no-shell-injection",
@@ -3801,6 +3838,7 @@
       "no-unscoped-mutation"
     ],
     "react-a11y": [
+      "accessible-emoji",
       "alt-text",
       "anchor-ambiguous-text",
       "anchor-has-content",
@@ -3818,6 +3856,7 @@
       "img-redundant-alt",
       "interactive-supports-focus",
       "label-has-associated-control",
+      "label-has-for",
       "lang",
       "media-has-caption",
       "mouse-events-have-key-events",
@@ -3831,6 +3870,7 @@
       "no-noninteractive-element-interactions",
       "no-noninteractive-element-to-interactive-role",
       "no-noninteractive-tabindex",
+      "no-onchange",
       "no-redundant-roles",
       "no-static-element-interactions",
       "prefer-tag-over-role",
@@ -3988,11 +4028,13 @@
       "no-missing-error-context",
       "no-missing-null-checks",
       "no-silent-errors",
+      "no-unbounded-cause-recursion",
       "no-unhandled-promise",
       "no-unsafe-type-narrowing",
       "reliability/no-await-in-loop",
       "reliability/no-jsdoc-terminator-in-example",
       "reliability/no-missing-null-checks",
+      "reliability/no-unbounded-cause-recursion",
       "reliability/no-unsafe-type-narrowing",
       "reliability/require-network-timeout",
       "require-network-timeout"
@@ -4025,6 +4067,7 @@
       "no-sql-injection",
       "no-template-injection",
       "no-unchecked-loop-condition",
+      "no-unguarded-uri-decode",
       "no-unlimited-resource-allocation",
       "no-unsafe-deserialization",
       "no-unsafe-regex-construction",

@@ -16,8 +16,17 @@
  */
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  statSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 
 const ROOT = resolve(__dirname, '..', '..');
 
@@ -34,14 +43,26 @@ function runWithoutNpx(script: string, args: string[]) {
   );
 }
 
-/** Run `body`, then put `file` back exactly as it was (or remove it). */
+/**
+ * Run `body`, then put `file` back exactly as it was (or remove it).
+ *
+ * The restore never truncates a committed file in place: other test files
+ * read `.agent/oxlint-runtime-survey.json` in parallel, and a plain
+ * `writeFileSync` left it empty for an instant, so interop-runtimes.lock
+ * failed with "Unexpected end of JSON input" on unrelated PRs. An unchanged
+ * file is left alone; a changed one is replaced by an atomic rename.
+ */
 function preserving(file: string, body: () => void) {
   const before = existsSync(file) ? readFileSync(file) : null;
   try {
     body();
   } finally {
     if (before === null) rmSync(file, { force: true });
-    else writeFileSync(file, before);
+    else if (!existsSync(file) || !readFileSync(file).equals(before)) {
+      const tmp = `${file}.${process.pid}.tmp`;
+      writeFileSync(tmp, before);
+      renameSync(tmp, file);
+    }
   }
 }
 
@@ -76,5 +97,30 @@ describe('a command that cannot start fails the script', () => {
       expect(run.stderr).toMatch(/survey incomplete/);
       expect(readFileSync(survey, 'utf8')).toBe(before);
     });
+  });
+});
+
+describe('preserving', () => {
+  // The lock reads the survey in parallel: restoring must never leave it
+  // truncated, even for an instant.
+  const file = resolve(mkdtempSync(join(tmpdir(), 'preserving-')), 'f.json');
+
+  it('leaves an unchanged file untouched', () => {
+    writeFileSync(file, '{"a":1}');
+    const before = statSync(file).mtimeMs;
+    preserving(file, () => {});
+    expect(statSync(file).mtimeMs).toBe(before);
+  });
+
+  it('puts a changed file back whole', () => {
+    writeFileSync(file, '{"a":1}');
+    preserving(file, () => writeFileSync(file, ''));
+    expect(readFileSync(file, 'utf8')).toBe('{"a":1}');
+  });
+
+  it('puts a deleted file back', () => {
+    writeFileSync(file, '{"a":1}');
+    preserving(file, () => rmSync(file));
+    expect(readFileSync(file, 'utf8')).toBe('{"a":1}');
   });
 });

@@ -65,6 +65,26 @@ If the app binding leaves the file — `module.exports = app`,
 middleware stack is assembled somewhere this rule cannot see, and it abstains.
 Absence of evidence is not evidence of absence.
 
+### An app received as a parameter
+
+A call that takes the app is read, not assumed, when its callee is a function
+**this file defines** and every use of the receiving parameter is as a receiver
+(`target.use(...)`, `target.set(...)`). That function's body is right here, so
+`const app = express(); configure(app)` with a `configure` that never mounts
+helmet is reported at `express()`, and `target.use(helmet())` inside it counts
+as helmet. Anything this file cannot read is still an escape: an imported
+function, a method call, a parameter that is passed on, returned, stored,
+rewritten or destructured, an app reached through `arguments`, or a spread argument, and a
+function declaration that is reassigned is not the function that was declared.
+
+**The limit, on purpose.** A module that only _receives_ the app —
+`export default ({ app }) => { app.use(...) }`, the loader shape — is never
+reported. Whether helmet is applied by whoever calls it is not provable from this
+file, and reporting there would flag every loader whose caller already applies
+helmet. The same loader also never reaches the rule's document precondition when
+it serves only JSON. To cover such a project, apply the rule to the file that
+calls `express()`, or declare the headers' source with `assumeHelmetMiddleware`.
+
 ### Partition with `require-rate-limiting`
 
 Both rules used to report the identical `express()` node. `require-rate-limiting`
@@ -116,11 +136,11 @@ module.exports = app2;
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `false` | Allow missing helmet in test files |
-| `alternativeMiddleware` | `string[]` | `[]` | Alternative security headers middleware names to accept |
-| `assumeHelmetMiddleware` | `boolean` | `false` | Skip rule if security headers are provided elsewhere (e.g., reverse proxy) |
+| Option                   | Type       | Default | Description                                                                |
+| ------------------------ | ---------- | ------- | -------------------------------------------------------------------------- |
+| `allowInTests`           | `boolean`  | `false` | Allow missing helmet in test files                                         |
+| `alternativeMiddleware`  | `string[]` | `[]`    | Alternative security headers middleware names to accept                    |
+| `assumeHelmetMiddleware` | `boolean`  | `false` | Skip rule if security headers are provided elsewhere (e.g., reverse proxy) |
 
 ```json
 {

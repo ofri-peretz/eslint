@@ -30,6 +30,7 @@
     "no-sql-injection",
     "no-template-injection",
     "no-unchecked-loop-condition",
+    "no-unguarded-uri-decode",
     "no-unlimited-resource-allocation",
     "no-unsafe-deserialization",
     "no-unsafe-regex-construction",

@@ -51,6 +51,10 @@ const UPDATE = process.argv.includes('--update');
 const IMPORT_GRAPH =
   'Reads an import graph. A corpus fixture is one flattened file, so its imports resolve to nothing: the rule stays silent and import-next/no-unresolved fires instead. Measured on real code by the real-source scan and the weekly corpus budget.';
 
+/** eslint-plugin-jsx-a11y 6.10.2 deprecates these; they exist so configs naming them load. */
+const DEPRECATED_NO_OP =
+  'deprecated jsx-a11y no-op stub: reports nothing by design, so no corpus fixture can fire it';
+
 /**
  * Rules a per-file code corpus cannot express, and never will.
  *
@@ -77,6 +81,9 @@ const NOT_FIXTURABLE: ReadonlyMap<string, string> = new Map([
   ['import-next/no-self-import', IMPORT_GRAPH],
   ['import-next/no-cross-domain-imports', IMPORT_GRAPH],
   ['import-next/no-named-as-default', IMPORT_GRAPH],
+  ['react-a11y/accessible-emoji', DEPRECATED_NO_OP],
+  ['react-a11y/label-has-for', DEPRECATED_NO_OP],
+  ['react-a11y/no-onchange', DEPRECATED_NO_OP],
 ]);
 
 /** Every rule the suite ships, as `<plugin-short>/<rule>`. */

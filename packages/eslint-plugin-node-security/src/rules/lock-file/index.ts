@@ -74,7 +74,7 @@ function isPublishedLibrary(manifestPath: string): boolean {
 export const lockFile = createRule<RuleOptions, MessageIds>({
   name: 'lock-file',
   meta: {
-    interop: { runtimes: ['eslint'] },
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/lock-file.md',

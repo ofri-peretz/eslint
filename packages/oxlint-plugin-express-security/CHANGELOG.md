@@ -5,6 +5,13 @@ All notable changes to `oxlint-plugin-express-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.4.1
+
+### Patch Changes
+
+- **🐛 Fix** — require-csrf-protection sees lusca's CSRF middleware built inside a wrapper (`lusca.csrf()(req, res, next)`) and `lusca({ csrf: true })` in a route chain
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-express-security@4.4.1`
+
 ## 4.4.0
 
 ### Patch Changes

@@ -24,6 +24,7 @@
     "no-insecure-key-derivation",
     "no-insecure-rsa-padding",
     "no-math-random-crypto",
+    "no-modulo-biased-random",
     "no-self-signed-certs",
     "no-sha1-hash",
     "no-shell-injection",

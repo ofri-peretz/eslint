@@ -113,7 +113,7 @@ withCanonicalDocsUrls('plugin-mcp-sdk-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-mcp-sdk-security',
-    version: '2.1.3',
+    version: '2.1.4',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
