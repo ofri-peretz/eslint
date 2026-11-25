@@ -1,9 +1,309 @@
 {
-  "releaseCount": 1533,
+  "releaseCount": 1549,
   "packageCount": 66,
-  "entryCount": 3382,
+  "entryCount": 3410,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "oxlint-plugin-browser-security",
+      "short": "oxlint-plugin-browser-security",
+      "version": "3.1.7",
+      "date": "2026-11-25T17:23:42Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-browser-security@3.1.7`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "6.5.0",
+      "date": "2026-11-25T17:23:28Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "new rule no-unguarded-uri-decode (CWE-248). Reports `decodeURIComponent`/`decodeURI` on request or page-location input outside a `try`/`catch`, where a malformed escape such as `p%ss` throws URIError, and a literal that cannot decode. In `strict`, not in `recommended`.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "stop reporting four keys it can prove safe",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "no-hardcoded-credentials no longer reports an OpenAPI path template (`'/access-token/{id}'`) or a slash-namespaced error code (`'infra_token/invalid_token'`) as a credential",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-reliability",
+      "short": "oxlint-plugin-reliability",
+      "version": "5.1.0",
+      "date": "2026-11-25T17:22:58Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "new rule no-unbounded-cause-recursion (CWE-674). Reports a function that calls itself on `error.cause`, or maps itself over `error.errors`, with no visited set and no depth bound, so a cyclic cause throws RangeError. Not in `recommended`.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-reliability@5.1.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "6.3.0",
+      "date": "2026-11-25T17:21:27Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.3.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-nestjs-security",
+      "short": "oxlint-plugin-nestjs-security",
+      "version": "4.3.0",
+      "date": "2026-11-25T17:19:45Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@4.3.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-mcp-sdk-security",
+      "short": "oxlint-plugin-mcp-sdk-security",
+      "version": "2.1.4",
+      "date": "2026-11-25T17:19:40Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-path-traversal-in-tool` no longer accepts `target.startsWith(root)` as a containment check unless the prefix ends at a path separator (`root + path.sep`, `` `${root}/` ``, a literal ending in `/`). A bare root lets every sibling directory that shares its name through: an allowed `/srv/data` also admitted `/srv/data-secrets`. This is the bug behind GHSA-hc55-p739-j48w in `@modelcontextprotocol/server-filesystem` <= 0.6.2, which the rule missed before. An escape test on a `path.relative` result (`rel.startsWith('..')`) still counts as a check.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-mcp-sdk-security@2.1.4`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-jwt-security",
+      "short": "oxlint-plugin-jwt-security",
+      "version": "4.0.7",
+      "date": "2026-11-25T17:18:47Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-jwt-security@4.0.7`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-express-security",
+      "short": "oxlint-plugin-express-security",
+      "version": "4.4.1",
+      "date": "2026-11-25T17:17:27Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "require-csrf-protection sees lusca's CSRF middleware built inside a wrapper (`lusca.csrf()(req, res, next)`) and `lusca({ csrf: true })` in a route chain",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-express-security@4.4.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "6.5.0",
+      "date": "2026-11-25T17:16:39Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "new rule no-unguarded-uri-decode (CWE-248). Reports `decodeURIComponent`/`decodeURI` on request or page-location input outside a `try`/`catch`, where a malformed escape such as `p%ss` throws URIError, and a literal that cannot decode. In `strict`, not in `recommended`.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "stop reporting four keys it can prove safe",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "no-hardcoded-credentials no longer reports an OpenAPI path template (`'/access-token/{id}'`) or a slash-namespaced error code (`'infra_token/invalid_token'`) as a credential",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "6.3.0",
+      "date": "2026-11-25T17:16:33Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "Add `no-modulo-biased-random` (strict): reports a byte from `crypto.randomBytes` or `getRandomValues` reduced with `%` to pick a character when the divisor does not divide the byte's range, which makes some characters of a generated secret more likely than others.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "Fix false positives found linting popular Node.js packages and Express/NestJS starters.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-toctou-vulnerability`: `if (existsSync(p)) rmSync(p, { force: true })` is no longer reported. With a static `force: true` option, `rm`/`rmSync` (including `fs.promises.rm`) swallows ENOENT, so the check is redundant rather than racy. `rm` with `force: false`, without `force`, with spread options, and every other mutation (`unlinkSync`, `writeFileSync`, ...) still report.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "3.1.7",
+      "date": "2026-11-25T17:16:11Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-http-urls` and `no-unencrypted-transmission`: the entries of a URI-scheme prefix table are not reported. An array literal of at least two string elements, every one of which names no host (empty, `tel:`, `https://`, `http://www.`, `ftp://ftp.`, `ftp://anonymous:anonymous@`), is an encoding dictionary such as the NFC URI-record prefix table, never a destination. One element with a host, a non-literal element, a single-element array, and URLs outside an array still report.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "4.0.7",
+      "date": "2026-11-25T17:15:46Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`require-expiration` reads a `JwtModule` registered in `main.ts` / `bootstrap.ts`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-nestjs-security",
+      "short": "eslint-plugin-nestjs-security",
+      "version": "4.3.0",
+      "date": "2026-11-25T17:13:30Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`require-upload-size-limit` reads `Infinity`, `undefined` and `null` as no limit",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`require-throttler` reports at the route decorator (`@Post`, `@Get`, ...) instead of at the handler's first decorator, so the line points at the route and not at `@ApiOkResponse`, `@SerializeOptions` or `@Public`. Found linting popular NestJS starters.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-express-security",
+      "short": "eslint-plugin-express-security",
+      "version": "4.4.1",
+      "date": "2026-11-25T17:13:09Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "require-csrf-protection sees lusca's CSRF middleware built inside a wrapper (`lusca.csrf()(req, res, next)`) and `lusca({ csrf: true })` in a route chain",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "False positives and coverage gaps found linting popular Node.js packages and Express/NestJS starters.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mcp-sdk-security",
+      "short": "eslint-plugin-mcp-sdk-security",
+      "version": "2.1.4",
+      "date": "2026-11-25T17:12:41Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-path-traversal-in-tool` no longer accepts `target.startsWith(root)` as a containment check unless the prefix ends at a path separator (`root + path.sep`, `` `${root}/` ``, a literal ending in `/`). A bare root lets every sibling directory that shares its name through: an allowed `/srv/data` also admitted `/srv/data-secrets`. This is the bug behind GHSA-hc55-p739-j48w in `@modelcontextprotocol/server-filesystem` <= 0.6.2, which the rule missed before. An escape test on a `path.relative` result (`rel.startsWith('..')`) still counts as a check.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "5.1.0",
+      "date": "2026-11-25T17:12:08Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "new rule no-unbounded-cause-recursion (CWE-674). Reports a function that calls itself on `error.cause`, or maps itself over `error.errors`, with no visited set and no depth bound, so a cyclic cause throws RangeError. Not in `recommended`.",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "oxlint-plugin-vercel-ai-security",
       "short": "oxlint-plugin-vercel-ai-security",
