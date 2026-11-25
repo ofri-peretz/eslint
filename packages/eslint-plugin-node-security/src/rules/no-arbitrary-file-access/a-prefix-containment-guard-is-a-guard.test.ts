@@ -68,6 +68,19 @@ ruleTester.run('a prefix containment guard is a guard', noArbitraryFileAccess, {
   ],
   invalid: [
     {
+      name: 'a normalize read off another module is not the path module normalize',
+      code: serve(
+        `if ((path + sep).slice(0, rootPath.length) !== rootPath) return next(createError(403));`,
+      ).replace(
+        "var normalize = require('path').normalize;",
+        'var normalize = lib.normalize;',
+      ),
+      errors: [
+        { messageId: 'violationDetected' },
+        { messageId: 'violationDetected' },
+      ],
+    },
+    {
       name: 'no guard at all',
       code: serve(''),
       errors: [

@@ -129,7 +129,7 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
           // This rule's message names user input as the cause. Without
           // evidence of a request it is both wrong and a duplicate of
           // detect-non-literal-fs-filename, which owns unattributable paths.
-          if (!variableTracesToUserInput(pathArg, node)) {
+          if (!variableTracesToUserInput(pathArg)) {
             return;
           }
 
@@ -415,10 +415,7 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
      * another module is a caller-side fact this rule cannot see and no longer
      * asserts.
      */
-    function variableTracesToUserInput(
-      id: TSESTree.Identifier,
-      from: TSESTree.Node,
-    ): boolean {
+    function variableTracesToUserInput(id: TSESTree.Identifier): boolean {
       const varName = id.name;
       const variable = resolve(id);
       const written = variable === null ? [] : writtenValues(variable);
@@ -431,52 +428,24 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         return true;
       if (written.some((value) => readsUserInput(value))) return true;
 
-      // `Program.parent` is null, not undefined — `!= null` catches both, and
-      // an `!== undefined` loop walked straight off the top of the tree.
-      let scope: TSESTree.Node | undefined | null = from;
-      while (scope != null) {
-        if (
-          scope.type === 'FunctionDeclaration' ||
-          scope.type === 'FunctionExpression' ||
-          scope.type === 'ArrowFunctionExpression'
-        ) {
-          const index = scope.params.findIndex(
-            (param) => param.type === 'Identifier' && param.name === varName,
-          );
-          if (index !== -1) {
-            const name = functionName(scope);
-            return name !== undefined && callerPassesUserInput(name, index);
-          }
-        }
-        const body =
-          scope.type === 'Program' || scope.type === 'BlockStatement'
-            ? scope.body
-            : undefined;
-        if (body !== undefined) {
-          for (const stmt of body) {
-            if (stmt.type !== 'VariableDeclaration') continue;
-            for (const decl of stmt.declarations) {
-              // Every name the declarator binds, so the destructured
-              // `const { file } = req.query` is followed like
-              // `const file = req.query.file` — the same value, and the
-              // common Express spelling of this rule's own example.
-              if (
-                !sourceCode
-                  .getDeclaredVariables(decl)
-                  .some((v) => v.name === varName)
-              )
-                continue;
-              // A local bound to something we CAN see, and it is not a
-              // request: that is the generic rule's territory, not ours.
-              return decl.init != null && readsUserInput(decl.init);
-            }
-          }
-        }
-        scope = scope.parent;
-      }
-      // Unresolvable in this file — an import, a global. Not attributable to a
-      // request, so the generic rule owns it.
-      return false;
+      // A parameter carries what a caller in this file passes into its
+      // position. Scope resolution decides that it IS a parameter, so a local
+      // or a nested function's same-named parameter shadows an outer one, as
+      // it does at runtime. Anything else (a local, an import, a global) has
+      // already been judged by its written values above.
+      const def = variable?.defs[0];
+      if (def?.type !== 'Parameter') return false;
+      const fn = def.node as
+        | TSESTree.FunctionDeclaration
+        | TSESTree.FunctionExpression
+        | TSESTree.ArrowFunctionExpression;
+      const index = fn.params.findIndex(
+        (param) => param.type === 'Identifier' && param.name === varName,
+      );
+      const name = functionName(fn);
+      return (
+        index !== -1 && name !== undefined && callerPassesUserInput(name, index)
+      );
     }
 
     /**

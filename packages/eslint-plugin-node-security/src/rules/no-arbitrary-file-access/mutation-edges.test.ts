@@ -23,6 +23,25 @@ const error = { messageId: 'violationDetected' as const };
 
 ruleTester.run('mutation-guided edges', noArbitraryFileAccess, {
   valid: [
+    {
+      name: 'a callback parameter has no name a caller could pass input to',
+      code: 'run((file) => fs.readFileSync(file));\nrun(req.query.file);',
+    },
+    {
+      name: 'a two-step fs path that is not fs.promises names no fs sink',
+      code: 'fs.other.readFile(req.query.file);',
+    },
+    {
+      name: 'a property read off an fs method is not a call to that method',
+      code: 'fs.readFile.apply(req.query.file);',
+    },
+    {
+      name: 'a catch binding shadows the outer parameter a caller fed request input',
+      code: `function load(file) {
+  try { run(); } catch (file) { fs.readFileSync(file); }
+}
+load(req.query.f);`,
+    },
     // Sanitisers
     {
       name: 'path.basename on the global path object launders a request value',
@@ -86,6 +105,24 @@ ruleTester.run('mutation-guided edges', noArbitraryFileAccess, {
     },
   ],
   invalid: [
+    {
+      name: 'request input passed to an object method parameter reaches the sink',
+      code: `const api = { load(file) { return fs.readFileSync(file); } };
+api.load(req.query.file);`,
+      errors: [error],
+    },
+    {
+      name: 'request input passed to an exports function parameter reaches the sink',
+      code: `exports.load = function (file) { return fs.readFileSync(file); };
+exports.load(req.query.file);`,
+      errors: [error],
+    },
+    {
+      name: 'request input passed into the second parameter reaches the sink',
+      code: `function load(dir, file) { return fs.readFileSync(file); }
+load('static', req.query.file);`,
+      errors: [error],
+    },
     // Rule fix (FN): `const { file } = req.query` binds req.query.file; only
     // the `const file = req.query.file` spelling was followed.
     {
