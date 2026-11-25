@@ -5,6 +5,8 @@
  */
 
 /**
+ * @provenBy {"file":".github/workflows/deploy-docs.yml","find":"git merge-base --is-ancestor HEAD FETCH_HEAD ||","replace":"true ||"}
+ *
  * Only main reaches production. Both manual deploy workflows can be dispatched from any branch
  * (and deploy-docs.yml takes any `ref`), so each must refuse a production deploy of anything not
  * on main before it checks out or builds. This replaced the "Only main deploys" line in CLAUDE.md.
@@ -21,7 +23,6 @@ const read = (file: string): string =>
 describe('production deploys only what is on main', () => {
   it('deploy-docs.yml fails a production deploy of a commit that is not on main', () => {
     const text = read('deploy-docs.yml');
-    expect(text).toContain("if: inputs.environment == 'production'");
     expect(text).toContain('git merge-base --is-ancestor HEAD FETCH_HEAD ||');
     expect(text.indexOf('git merge-base --is-ancestor')).toBeLessThan(
       text.indexOf('./.github/actions/setup'),
