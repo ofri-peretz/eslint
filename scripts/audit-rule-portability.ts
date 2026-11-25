@@ -388,7 +388,7 @@ function summarize(allPlugins) {
 // audit's blocker assumptions (sourceCode + scope + fixer + selector + comments
 // + tokens all present). Bumping oxlint past the latest entry must include a
 // re-verification of apps/oxlint/src-js/plugins/ at the new tag.
-const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.90.x' };
+const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.94.x' };
 
 // Hash-pinned bundles. These are the actual runtime files shipped with oxlint
 // — the bundled output of apps/oxlint/src-js/plugins/ that I read at 1.62.0.
@@ -400,6 +400,21 @@ const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.90.x' };
 // source_code,scope,fix,selector}.ts at the new tag, then update both
 // VERIFIED_OXLINT_RANGE and these hashes in the same commit.
 const VERIFIED_OXLINT_RUNTIME_HASHES = {
+  // Re-verified at 1.94.0 (2026-11-25) by `verify-oxlint-runtime.ts`: all 33
+  // probes pass. Same `dist/` file names as 1.90.0; `plugins.js`,
+  // `plugins-dev.js` and `rolldown-runtime.js` are BYTE-IDENTICAL to 1.90.0.
+  // `;`-split diff of 1.90.0 against 1.94.0 on the two that changed:
+  //   1. `bindings.js`: identical once the version literal is normalised.
+  //   2. `lint.js`: 173 hunks. 170 are in `src-js/generated/deserialize.js`:
+  //      each AST node is now built with `Object.create(NodeProto)` and
+  //      property assignments instead of a `{ __proto__: NodeProto, ... }`
+  //      literal. The 490 deserializers are the same set, and none drops a
+  //      key it set before. Two are a minifier rename in
+  //      `src-js/plugins/location.ts` (`ObjectDefineProperty$4` -> `$5`), and
+  //      one is the `package.json` version literal. No `context`,
+  //      `sourceCode`, scope, fixer, token or comment code changes, and no
+  //      plugin API is added, removed or renamed.
+  //
   // Re-verified at 1.90.0 (2026-10-28) by `verify-oxlint-runtime.ts`: all 33
   // probes pass. Same `dist/` file names as 1.88.0; `plugins.js`,
   // `plugins-dev.js` and `cli.js` are BYTE-IDENTICAL to 1.88.0. `;`-split diff
@@ -568,9 +583,9 @@ const VERIFIED_OXLINT_RUNTIME_HASHES = {
     '81e4c275f6200ab4b6aed66ba2836b2a8e68756a8609ced02daf91e226377e2d',
   'plugins-dev.js':
     '302c9eab05f5f7248144f34c180ada857ae04d1eff0b082c9771bad84e5cd835',
-  'lint.js': '1505125dfbff4325fd73f74096dd006daa61d93717697f1ff9ff441d3859ab6e',
+  'lint.js': '56558f5c42c38f94067dacbe4037af377cf0fe03d6f164bea37ae08012643f5b',
   'bindings.js':
-    'fcaded87ff6bf9e2ea0d6a8ad245ff363830a525fbe11331ae373a1003d840f5',
+    '54de4a39ad4f8cade857d7842b7a07cd35f2d6ffc7fe02d21ef4fd1a7fa75241',
   'rolldown-runtime.js':
     '7b9ef7786935babcbc9adc68738939f2618e889a9e1f0a34be0e1cf28016765c',
 };

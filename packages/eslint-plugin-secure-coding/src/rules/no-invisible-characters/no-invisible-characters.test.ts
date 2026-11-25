@@ -20,7 +20,10 @@ const JUNGSEONG_FILLER = '\u1160';
 const KHMER_AQ = '\u17B4';
 const KHMER_AA = '\u17B5';
 
-const INVISIBLE = /[\u115F\u1160\u17B4\u17B5\u3164\uFFA0]/g;
+// An alternation, not a character class: U+1160 and the Khmer vowels are
+// combining characters, and inside `[...]` no-misleading-character-class
+// cannot tell a deliberate list of code points from a mangled sequence.
+const INVISIBLE = /\u115F|\u1160|\u17B4|\u17B5|\u3164|\uFFA0/g;
 
 type Where = 'code' | 'comment';
 
