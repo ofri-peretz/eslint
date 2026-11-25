@@ -70,6 +70,17 @@ write(
     "export const READ_ONLY = { name: 'api' };",
     'Object.keys(READ_ONLY);',
     'console.log(READ_ONLY.name);',
+    // Reads that write nothing into READ_ONLY: an assignment from it, a sum,
+    // a typeof, a computed key, a copy source, and a local `assign`.
+    'let copy;',
+    'copy = READ_ONLY.name;',
+    "const label = READ_ONLY.name + '!';",
+    'typeof READ_ONLY.name;',
+    'const lookup = {};',
+    'lookup[READ_ONLY] = 1;',
+    'Object.assign({}, READ_ONLY);',
+    'function assign() {}',
+    'assign(READ_ONLY, {});',
   ].join('\n'),
 );
 const service = join(root, 'tokens/service.js');
@@ -153,6 +164,26 @@ ruleTester.run(
           import { READ_ONLY } from '../auth/routes.js';
           export function check(req) {
             return req.headers['x-api-token'] === READ_ONLY.name;
+          }
+        `,
+      },
+      {
+        name: "a literal joined to the body with + is still the caller's",
+        code: `
+          import { createHash } from 'node:crypto';
+          function verify(req) {
+            const v = createHash('sha256').update('v1:' + req.body).digest('hex');
+            return v === req.headers['x-hash'];
+          }
+        `,
+      },
+      {
+        name: 'an empty update after the body adds nothing',
+        code: `
+          import { createHash } from 'node:crypto';
+          function verify(req) {
+            const v = createHash('sha256').update(req.body).update().digest('hex');
+            return v === req.headers['x-hash'];
           }
         `,
       },
@@ -251,6 +282,17 @@ ruleTester.run(
           import { createHash } from 'node:crypto';
           function verify(req, pepper) {
             const v = createHash('sha256').update(req.body, 'utf8').update(pepper, 'utf8').digest('hex');
+            return v === req.headers['x-hash'];
+          }
+        `,
+        errors: unsafe,
+      },
+      {
+        name: 'a server value on either side of any operator is hidden by the digest',
+        code: `
+          import { createHash } from 'node:crypto';
+          function verify(req, pepper) {
+            const v = createHash('sha256').update(req.body ^ pepper).digest('hex');
             return v === req.headers['x-hash'];
           }
         `,

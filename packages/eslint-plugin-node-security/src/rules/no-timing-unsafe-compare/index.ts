@@ -671,12 +671,9 @@ const CRYPTO_DERIVATIONS: ReadonlySet<string> = new Set([
  * Calls a plain digest chain may carry without adding an input:
  * `createHash('sha256').update(body).digest('hex').toLowerCase()`.
  */
-const DIGEST_CHAIN_METHODS: ReadonlySet<string> = new Set([
-  'digest',
-  'toString',
-  'toLowerCase',
-  'toUpperCase',
-]);
+const DIGEST_CHAIN_METHODS: ReadonlySet<string | null> = new Set<string | null>(
+  ['digest', 'toString', 'toLowerCase', 'toUpperCase'],
+);
 
 /**
  * Comparison APIs that are memcmp wearing a method name.
@@ -1055,17 +1052,18 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       );
     }
 
-    /** The leaves of a `+` or template-literal join; the node itself otherwise. */
+    /**
+     * The leaves of a template literal or a binary expression; the node itself
+     * otherwise. `+` is the join in practice, but any operator mixes both sides
+     * into the input, so a server value on either side is hidden by the digest.
+     */
     function digestOperands(node: TSESTree.Node): TSESTree.Node[] {
       if (node.type === AST_NODE_TYPES.TemplateLiteral) {
         return node.expressions.flatMap((expression) =>
           digestOperands(expression),
         );
       }
-      if (
-        node.type === AST_NODE_TYPES.BinaryExpression &&
-        node.operator === '+'
-      ) {
+      if (node.type === AST_NODE_TYPES.BinaryExpression) {
         return [
           ...digestOperands(node.left as TSESTree.Node),
           ...digestOperands(node.right),
@@ -1116,7 +1114,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         if (name === 'update') {
           // `.update(data, 'utf8')`: the second argument is an encoding.
           if (current.arguments.length > 0) inputs.push(current.arguments[0]);
-        } else if (name === null || !DIGEST_CHAIN_METHODS.has(name)) {
+        } else if (!DIGEST_CHAIN_METHODS.has(name)) {
           // `.concat(SECRET)` and anything else this cannot read may add an
           // input the caller does not know: not a plain digest.
           return null;
@@ -1632,16 +1630,14 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
      * Any member write, delete or `Object.assign` on the object counts.
      */
     function rewrittenLater(landed: valueFollow.Value): boolean {
+      // Climb from the literal to the object that holds it. A value, unlike
+      // a pattern, sits in a Property only inside an ObjectExpression.
       let property: TSESTree.Node = landed.node;
-      while (
-        property.parent?.type === AST_NODE_TYPES.Property &&
-        property.parent.parent?.type === AST_NODE_TYPES.ObjectExpression
-      ) {
+      while (property.parent?.type === AST_NODE_TYPES.Property) {
         property = property.parent.parent;
       }
       const declarator = property.parent;
       if (
-        property === landed.node ||
         declarator?.type !== AST_NODE_TYPES.VariableDeclarator ||
         declarator.id.type !== AST_NODE_TYPES.Identifier
       ) {
