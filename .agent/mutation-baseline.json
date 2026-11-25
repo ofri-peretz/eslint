@@ -1205,11 +1205,11 @@
           "timeout": 1
         },
         "no-unguarded-uri-decode": {
-          "score": 76.7,
-          "killed": 221,
-          "survived": 61,
-          "noCoverage": 7,
-          "timeout": 4
+          "score": 93.1,
+          "killed": 251,
+          "survived": 18,
+          "noCoverage": 1,
+          "timeout": 6
         },
         "no-weak-password-recovery": {
           "score": 70.4,

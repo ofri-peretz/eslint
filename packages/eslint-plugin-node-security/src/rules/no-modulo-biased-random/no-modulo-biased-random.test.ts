@@ -71,6 +71,8 @@ ruleTester.run('no-modulo-biased-random', noModuloBiasedRandom, {
     `${CRYPTO}const v = (crypto.randomBytes(1)[0] % 10).toString;`,
     // The result is summed, not used as a position.
     `${CRYPTO}const bytes = crypto.randomBytes(4); const shard = (bytes[0] % 10) + 1;`,
+    // Cyclic bindings end the walk instead of overflowing the stack.
+    `let a = b; let b = a; const c = chars[a[0] % 10];`,
   ],
   invalid: [
     // ToolJet generateTJDBPasswordForRole before #19245.
@@ -175,6 +177,11 @@ ruleTester.run('no-modulo-biased-random', noModuloBiasedRandom, {
     },
     {
       code: `${CRYPTO}const otp = [...crypto.randomBytes(6)].map((b) => (b % 10).toString()).join('');`,
+      errors: biased,
+    },
+    // A cyclic divisor binding is unknown, so it is reported, not looped on.
+    {
+      code: `${CRYPTO}const n = m; const m = n; const c = chars[crypto.randomBytes(1)[0] % n];`,
       errors: biased,
     },
   ],

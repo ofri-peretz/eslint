@@ -54,6 +54,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -308,10 +309,7 @@ export const noUnboundedCauseRecursion = createRule<RuleOptions, MessageIds>({
             (p) =>
               p.type === AST_NODE_TYPES.Property &&
               p.value === def.name &&
-              ((p.key.type === AST_NODE_TYPES.Identifier &&
-                p.key.name === 'cause') ||
-                (p.key.type === AST_NODE_TYPES.Literal &&
-                  p.key.value === 'cause')),
+              objectKeyName(p) === 'cause',
           )
         ) {
           return true;

@@ -49,6 +49,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   propertyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unguardedDecode' | 'malformedLiteral';
@@ -139,11 +140,15 @@ const REQUEST_GETTERS: ReadonlySet<string> = new Set([
   'param',
 ]);
 
-/** Does this literal fail to decode? Decided by running the decoder itself. */
-function failsToDecode(decoder: string, text: string): boolean {
+/**
+ * Does this literal fail to decode? Decided by running the decoder itself.
+ * decodeURI and decodeURIComponent share the spec's Decode operation and throw
+ * on the same inputs (they differ only in which escapes they leave encoded),
+ * so one call answers for both.
+ */
+function failsToDecode(text: string): boolean {
   try {
-    if (decoder === 'decodeURI') decodeURI(text);
-    else decodeURIComponent(text);
+    decodeURIComponent(text);
     return false;
   } catch {
     return true;
@@ -152,16 +157,7 @@ function failsToDecode(decoder: string, text: string): boolean {
 
 /** A string literal or an expression-free template, as its text. */
 function literalText(node: TSESTree.Node): string | undefined {
-  if (node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string') {
-    return node.value;
-  }
-  if (
-    node.type === AST_NODE_TYPES.TemplateLiteral &&
-    node.expressions.length === 0
-  ) {
-    return node.quasis[0]?.value.cooked ?? undefined;
-  }
-  return undefined;
+  return staticString(node) ?? undefined;
 }
 
 /** The leftmost object of a member chain, and the property right after it. */
@@ -182,7 +178,7 @@ function chainRoot(node: TSESTree.MemberExpression): {
 export const noUnguardedUriDecode = createRule<RuleOptions, MessageIds>({
   name: 'no-unguarded-uri-decode',
   meta: {
-    interop: { runtimes: ['eslint'] },
+    interop: { runtimes: ['eslint', 'oxlint'] },
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-unguarded-uri-decode.md',
@@ -267,16 +263,11 @@ export const noUnguardedUriDecode = createRule<RuleOptions, MessageIds>({
         return first !== null && DOCUMENT_INPUTS.has(first);
       }
       if (!REQUEST_ROOTS.has(root.name) || isGlobal(root)) return false;
-      if (first === null) return false;
       // Koa: `ctx.request.url`, `ctx.req.url`
-      if (
-        root.name === 'ctx' &&
-        (first === 'request' || first === 'req') &&
-        second !== null
-      ) {
-        return REQUEST_INPUTS.has(second);
+      if (root.name === 'ctx' && (first === 'request' || first === 'req')) {
+        return REQUEST_INPUTS.has(second ?? '');
       }
-      return REQUEST_INPUTS.has(first);
+      return REQUEST_INPUTS.has(first ?? '');
     }
 
     /**
@@ -299,11 +290,10 @@ export const noUnguardedUriDecode = createRule<RuleOptions, MessageIds>({
           if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
             return false;
           }
-          const method = propertyName(node.callee);
+          const method = propertyName(node.callee) ?? '';
           const receiver = node.callee.object;
           // `req.get('x-forwarded-path')`, `ctx.get(name)`
           if (
-            method !== null &&
             REQUEST_GETTERS.has(method) &&
             receiver.type === AST_NODE_TYPES.Identifier &&
             REQUEST_ROOTS.has(receiver.name) &&
@@ -312,9 +302,7 @@ export const noUnguardedUriDecode = createRule<RuleOptions, MessageIds>({
             return true;
           }
           return (
-            method !== null &&
-            TEXT_PRESERVING_METHODS.has(method) &&
-            carriesInput(receiver, seen)
+            TEXT_PRESERVING_METHODS.has(method) && carriesInput(receiver, seen)
           );
         }
         case AST_NODE_TYPES.NewExpression:
@@ -401,7 +389,7 @@ export const noUnguardedUriDecode = createRule<RuleOptions, MessageIds>({
         const decoder = callee.name;
         const text = literalText(argument);
         if (text !== undefined) {
-          if (failsToDecode(decoder, text)) {
+          if (failsToDecode(text)) {
             context.report({
               node,
               messageId: 'malformedLiteral',

@@ -228,7 +228,8 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
     }
 
     /** The element range of a typed array built with `new Uint8Array(n)`. */
-    function typedArrayRange(node: TSESTree.Node): number | null {
+    function typedArrayRange(node: TSESTree.Node, depth = 0): number | null {
+      if (depth > 4) return null;
       if (
         node.type === AST_NODE_TYPES.NewExpression &&
         node.callee.type === AST_NODE_TYPES.Identifier
@@ -237,7 +238,7 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
       }
       if (node.type === AST_NODE_TYPES.Identifier) {
         const init = singleInit(node);
-        return init ? typedArrayRange(init) : null;
+        return init ? typedArrayRange(init, depth + 1) : null;
       }
       return null;
     }
@@ -269,10 +270,10 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
     }
 
     /** The element range of a random collection, or null if it is not one. */
-    function collectionRange(node: TSESTree.Node, hops = 0): number | null {
-      if (hops > 4) return null;
+    function collectionRange(node: TSESTree.Node, depth = 0): number | null {
+      if (depth > 4) return null;
       if (node.type === AST_NODE_TYPES.AwaitExpression) {
-        return collectionRange(node.argument, hops + 1);
+        return collectionRange(node.argument, depth + 1);
       }
       if (node.type === AST_NODE_TYPES.CallExpression) {
         if (isCryptoExport(node.callee, 'randomBytes')) return 2 ** 8;
@@ -281,13 +282,13 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
           return arg ? typedArrayRange(arg) : null;
         }
         if (isArrayFrom(node.callee) && node.arguments[0]) {
-          return collectionRange(node.arguments[0], hops + 1);
+          return collectionRange(node.arguments[0], depth + 1);
         }
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           COPYING_METHODS.has(propertyName(node.callee) ?? '')
         ) {
-          return collectionRange(node.callee.object, hops + 1);
+          return collectionRange(node.callee.object, depth + 1);
         }
         return null;
       }
@@ -296,7 +297,7 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
         node.elements.length === 1 &&
         node.elements[0]?.type === AST_NODE_TYPES.SpreadElement
       ) {
-        return collectionRange(node.elements[0].argument, hops + 1);
+        return collectionRange(node.elements[0].argument, depth + 1);
       }
       if (node.type === AST_NODE_TYPES.Identifier) {
         const init = singleInit(node);
@@ -305,14 +306,14 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
           const range = typedArrayRange(init);
           if (range !== null) return range;
         }
-        return collectionRange(init, hops + 1);
+        return collectionRange(init, depth + 1);
       }
       return null;
     }
 
     /** The range of a random element, or null if this is not one. */
-    function elementRange(node: TSESTree.Node, hops = 0): number | null {
-      if (hops > 4) return null;
+    function elementRange(node: TSESTree.Node, depth = 0): number | null {
+      if (depth > 4) return null;
       if (node.type === AST_NODE_TYPES.MemberExpression && node.computed) {
         return collectionRange(node.object);
       }
@@ -341,7 +342,9 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
         ) {
           return collectionRange(statement.parent.right);
         }
-        return declarator.init ? elementRange(declarator.init, hops + 1) : null;
+        return declarator.init
+          ? elementRange(declarator.init, depth + 1)
+          : null;
       }
       if (def.type === 'Parameter') {
         const fn = def.node as TSESTree.Node;
@@ -365,7 +368,8 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
     }
 
     /** The divisor's value when it is known at lint time. */
-    function divisorValue(node: TSESTree.Node): number | null {
+    function divisorValue(node: TSESTree.Node, depth = 0): number | null {
+      if (depth > 4) return null;
       if (
         node.type === AST_NODE_TYPES.Literal &&
         typeof node.value === 'number'
@@ -378,7 +382,7 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
         if (def?.type !== 'Variable' || def.parent?.kind !== 'const')
           return null;
         const init = (def.node as TSESTree.VariableDeclarator).init;
-        return init ? divisorValue(init) : null;
+        return init ? divisorValue(init, depth + 1) : null;
       }
       if (
         node.type === AST_NODE_TYPES.MemberExpression &&
@@ -391,8 +395,8 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
     }
 
     /** The value of a `const` string, a literal, or a concatenation of them. */
-    function constString(node: TSESTree.Node, hops = 0): string | null {
-      if (hops > 8) return null;
+    function constString(node: TSESTree.Node, depth = 0): string | null {
+      if (depth > 8) return null;
       if (
         node.type === AST_NODE_TYPES.Literal &&
         typeof node.value === 'string'
@@ -409,8 +413,8 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
         node.type === AST_NODE_TYPES.BinaryExpression &&
         node.operator === '+'
       ) {
-        const left = constString(node.left, hops + 1);
-        const right = left === null ? null : constString(node.right, hops + 1);
+        const left = constString(node.left, depth + 1);
+        const right = left === null ? null : constString(node.right, depth + 1);
         return right === null ? null : (left as string) + right;
       }
       if (node.type === AST_NODE_TYPES.Identifier) {
@@ -419,7 +423,7 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
         if (def?.type !== 'Variable' || def.parent?.kind !== 'const')
           return null;
         const init = (def.node as TSESTree.VariableDeclarator).init;
-        return init ? constString(init, hops + 1) : null;
+        return init ? constString(init, depth + 1) : null;
       }
       return null;
     }

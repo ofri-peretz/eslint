@@ -61,6 +61,7 @@ import {
   createRule,
   isTestFilePath,
   memberPropertyName,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -318,11 +319,7 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
           options.properties.some(
             (property) =>
               property.type === 'Property' &&
-              !property.computed &&
-              ((property.key.type === 'Identifier' &&
-                property.key.name === 'csrf') ||
-                (property.key.type === 'Literal' &&
-                  property.key.value === 'csrf')) &&
+              objectKeyName(property) === 'csrf' &&
               !(
                 property.value.type === 'Literal' &&
                 property.value.value === false

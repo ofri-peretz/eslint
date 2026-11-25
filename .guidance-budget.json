@@ -49,7 +49,7 @@
     "bytes": 5380
   },
   "packages/eslint-plugin-node-security/AGENTS.md": {
-    "bytes": 8149
+    "bytes": 8269
   },
   "packages/eslint-plugin-openai-security/AGENTS.md": {
     "bytes": 4174
@@ -67,7 +67,7 @@
     "bytes": 4881
   },
   "packages/eslint-plugin-secure-coding/AGENTS.md": {
-    "bytes": 9044
+    "bytes": 9157
   },
   "packages/eslint-plugin-sequelize-security/AGENTS.md": {
     "bytes": 4662
