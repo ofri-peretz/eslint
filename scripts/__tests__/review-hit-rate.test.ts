@@ -16,6 +16,7 @@ import {
   dedupe,
   findingsInSummary,
   isActedOn,
+  latestMerged,
   resolvePath,
 } from '../review-hit-rate';
 
@@ -25,6 +26,7 @@ const SUMMARY = [
   '`packages/eslint-plugin-reliability/src/rules/no-unhandled-promise.ts:745`',
   'Also see `no-unhandled-promise.ts:745`, `index.ts:12-20` and again `index.ts:12`.',
   'And `Dockerfile:3` and `.github/CODEOWNERS:8`.',
+  'Routes: `app/[slug]/page.tsx:12` and `app/(marketing)/layout.tsx:4`.',
 ].join('\n');
 
 describe('findingsInSummary', () => {
@@ -37,6 +39,8 @@ describe('findingsInSummary', () => {
       'index.ts:12',
       'Dockerfile:3',
       '.github/CODEOWNERS:8',
+      'app/[slug]/page.tsx:12',
+      'app/(marketing)/layout.tsx:4',
     ]);
   });
 
@@ -91,6 +95,56 @@ describe('resolvePath', () => {
     expect(
       resolvePath('no-unhandled-promise.ts', ['my-no-unhandled-promise.ts']),
     ).toBeNull();
+  });
+
+  it('refuses a bare name that is a root file AND the tail of another', () => {
+    expect(
+      resolvePath('index.ts', ['index.ts', 'packages/a/index.ts']),
+    ).toBeNull();
+  });
+
+  it('takes a unique root file and a qualified path as written', () => {
+    expect(resolvePath('README.md', ['README.md'])).toBe('README.md');
+    expect(
+      resolvePath('packages/a/index.ts', ['packages/a/index.ts', 'index.ts']),
+    ).toBe('packages/a/index.ts');
+  });
+});
+
+describe('latestMerged', () => {
+  const pr = (
+    number: number,
+    mergedAt: string | null,
+    updatedAt: string,
+    bot = false,
+  ) => ({ number, mergedAt, updatedAt, bot });
+
+  it('finds a PR created long ago but merged most recently', () => {
+    // Listed newest-updated first; #5 was opened before the others, merged last.
+    const list = [
+      pr(5, '2026-11-25T12:00:00Z', '2026-11-25T12:00:00Z'),
+      pr(40, '2026-11-25T11:00:00Z', '2026-11-25T11:00:00Z'),
+      pr(41, '2026-11-25T10:00:00Z', '2026-11-25T10:00:00Z'),
+    ];
+    expect(latestMerged(list, 2)).toEqual([5, 40]);
+  });
+
+  it('waits for another page while a later PR could still have merged after the cut', () => {
+    const list = [
+      pr(40, '2026-11-25T11:00:00Z', '2026-11-25T11:00:00Z'),
+      pr(41, '2026-11-25T10:00:00Z', '2026-11-25T10:30:00Z'),
+    ];
+    expect(latestMerged(list, 2)).toBeNull();
+  });
+
+  it('skips bots and unmerged PRs', () => {
+    const list = [
+      pr(1, '2026-11-25T12:00:00Z', '2026-11-25T12:00:00Z', true),
+      pr(2, null, '2026-11-25T11:30:00Z'),
+      pr(3, '2026-11-25T11:00:00Z', '2026-11-25T11:00:00Z'),
+      pr(4, '2026-11-24T00:00:00Z', '2026-11-24T00:00:00Z'),
+    ];
+    expect(latestMerged(list, 1)).toEqual([3]);
   });
 });
 

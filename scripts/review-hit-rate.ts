@@ -18,9 +18,6 @@ import { writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 const REVIEWER = 'claude[bot]';
-// `--last n` picks from this many most recently CREATED merged PRs, sorted by merge time. A PR
-// created more than this many PRs before the newest one and merged among the last n is missed.
-const CANDIDATES = 200;
 
 export interface ReviewComment {
   pr: number;
@@ -36,8 +33,8 @@ export interface PrCommit {
 
 /**
  * The reviewer posts most findings in its one summary comment, each citing `path:line` in
- * backticks. A file name without an extension (Dockerfile, CODEOWNERS) counts; a name without a
- * line (a files-read list) does not.
+ * backticks. A file name without an extension (Dockerfile, CODEOWNERS) or with route brackets
+ * (app/[slug]/page.tsx) counts; a name without a line (a files-read list) does not.
  */
 export function findingsInSummary(
   pr: number,
@@ -45,7 +42,7 @@ export function findingsInSummary(
   createdAt: string,
 ): ReviewComment[] {
   const out: ReviewComment[] = [];
-  for (const m of body.matchAll(/`([\w@./-]+):(\d+)(?:-\d+)?`/gu)) {
+  for (const m of body.matchAll(/`([\w@./()[\]+-]+):(\d+)(?:-\d+)?`/gu)) {
     // Keep the text around the citation so a reader can label the finding from the dump.
     const at = m.index ?? 0;
     out.push({
@@ -71,11 +68,38 @@ export function dedupe(list: ReviewComment[]): ReviewComment[] {
   return [...first.values()];
 }
 
-/** The PR file a citation means: itself, or the one PR file it is the tail of. Ambiguous is null. */
+/**
+ * The PR file a citation means. A qualified path is taken as written when the PR has it; a bare
+ * name, or a path the PR only has deeper down, must match exactly one PR file. Ambiguous is null.
+ */
 export function resolvePath(path: string, prFiles: string[]): string | null {
-  if (prFiles.includes(path)) return path;
-  const tails = prFiles.filter((f) => f.endsWith(`/${path}`));
-  return tails.length === 1 ? tails[0]! : null;
+  if (path.includes('/') && prFiles.includes(path)) return path;
+  const matches = [
+    ...new Set(prFiles.filter((f) => f === path || f.endsWith(`/${path}`))),
+  ];
+  return matches.length === 1 ? matches[0]! : null;
+}
+
+export interface ClosedPr {
+  number: number;
+  mergedAt: string | null;
+  updatedAt: string;
+  bot: boolean;
+}
+
+/**
+ * The n latest-merged non-bot PRs from closed PRs listed newest-UPDATED first, or null while a
+ * later page could still hold one. Merging updates a PR, so updatedAt >= mergedAt: once the list
+ * reaches PRs last updated before the n-th merge time, none further down can beat it.
+ */
+export function latestMerged(prs: ClosedPr[], n: number): number[] | null {
+  const merged = prs
+    .filter((p) => p.mergedAt !== null && !p.bot)
+    .sort((a, b) => b.mergedAt!.localeCompare(a.mergedAt!));
+  if (merged.length < n) return null;
+  const cutoff = merged[n - 1]!.mergedAt!;
+  const oldest = prs[prs.length - 1]!.updatedAt;
+  return oldest < cutoff ? merged.slice(0, n).map((p) => p.number) : null;
 }
 
 /** A finding is acted on when a commit dated after it touches the file it cites. */
@@ -105,29 +129,44 @@ function repo(): string {
   ).trim();
 }
 
-function lastMergedPrs(n: number): number[] {
+function lastMergedPrs(r: string, n: number): number[] {
   // Bot PRs (release, data sync) are never reviewed; skip them so `--last 10` means 10 reviews.
-  const list = JSON.parse(
-    execFileSync(
-      'gh',
-      [
-        'pr',
-        'list',
-        '--state',
-        'merged',
-        '-L',
-        String(CANDIDATES),
-        '--json',
-        'number,author,mergedAt',
-      ],
-      { encoding: 'utf8' },
-    ),
-  ) as { number: number; author: { is_bot: boolean }; mergedAt: string }[];
-  return list
-    .filter((p) => !p.author.is_bot)
-    .sort((a, b) => b.mergedAt.localeCompare(a.mergedAt))
-    .slice(0, n)
-    .map((p) => p.number);
+  const seen: ClosedPr[] = [];
+  for (let page = 1; ; page++) {
+    const batch = JSON.parse(
+      execFileSync(
+        'gh',
+        [
+          'api',
+          `repos/${r}/pulls?state=closed&sort=updated&direction=desc&per_page=100&page=${page}`,
+        ],
+        { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
+      ),
+    ) as {
+      number: number;
+      merged_at: string | null;
+      updated_at: string;
+      user: { type: string };
+    }[];
+    seen.push(
+      ...batch.map((p) => ({
+        number: p.number,
+        mergedAt: p.merged_at,
+        updatedAt: p.updated_at,
+        bot: p.user.type === 'Bot',
+      })),
+    );
+    const picked = latestMerged(seen, n);
+    if (picked) return picked;
+    // The last page: every closed PR is in hand, so the newest merges are certain.
+    if (batch.length < 100) {
+      return seen
+        .filter((p) => p.mergedAt !== null && !p.bot)
+        .sort((a, b) => b.mergedAt!.localeCompare(a.mergedAt!))
+        .slice(0, n)
+        .map((p) => p.number);
+    }
+  }
 }
 
 function main(): void {
@@ -136,10 +175,10 @@ function main(): void {
     const i = args.indexOf(f);
     return i < 0 ? undefined : args[i + 1];
   };
+  const r = repo();
   const prs = at('--prs')
     ? at('--prs')!.split(',').map(Number)
-    : lastMergedPrs(Number(at('--last') ?? 10));
-  const r = repo();
+    : lastMergedPrs(r, Number(at('--last') ?? 10));
   const all: (ReviewComment & { acted: boolean })[] = [];
 
   for (const pr of prs) {
@@ -173,7 +212,9 @@ function main(): void {
     }
     const comments = dedupe(found);
     if (comments.length === 0) continue;
-    const prFiles = (
+    // Every file the PR's commits ever touched, not only its final diff: a file a later commit
+    // reverted to base drops out of the diff but was still acted on.
+    const diffFiles = (
       gh(`repos/${r}/pulls/${pr}/files`) as { filename: string }[]
     ).map((f) => f.filename);
     const commits = (
@@ -181,18 +222,17 @@ function main(): void {
         sha: string;
         commit: { committer: { date: string } };
       }[]
-    )
-      .filter((k) =>
-        comments.some((c) => k.commit.committer.date > c.createdAt),
-      )
-      .map((k) => ({
-        date: k.commit.committer.date,
-        files: (
-          gh(`repos/${r}/commits/${k.sha}`) as {
-            files: { filename: string }[];
-          }[]
-        ).flatMap((x) => x.files.map((f) => f.filename)),
-      }));
+    ).map((k) => ({
+      date: k.commit.committer.date,
+      files: (
+        gh(`repos/${r}/commits/${k.sha}`) as {
+          files: { filename: string }[];
+        }[]
+      ).flatMap((x) => x.files.map((f) => f.filename)),
+    }));
+    const prFiles = [
+      ...new Set([...diffFiles, ...commits.flatMap((k) => k.files)]),
+    ];
     for (const c of comments) {
       all.push({ ...c, acted: isActedOn(c, commits, prFiles) });
     }
