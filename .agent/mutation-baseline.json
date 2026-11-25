@@ -509,6 +509,13 @@
           "noCoverage": 2,
           "timeout": 5
         },
+        "no-modulo-biased-random": {
+          "score": 65,
+          "killed": 416,
+          "survived": 198,
+          "noCoverage": 28,
+          "timeout": 5
+        },
         "no-self-signed-certs": {
           "score": 94.7,
           "killed": 91,
