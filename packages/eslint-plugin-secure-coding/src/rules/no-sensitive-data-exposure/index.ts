@@ -88,6 +88,14 @@ const INTERPOLATION = '\u0001';
  * concatenation's right-hand side — which is why that path must keep using
  * the plain word match.
  */
+/**
+ * @protocol-constant The four ECMAScript keywords a configuration value is
+ * written with when it is not data: two booleans, `null` and `undefined`. They
+ * are the language's, not a vocabulary a codebase could spell differently, and
+ * none of them can be a credential.
+ */
+const OPTION_KEYWORDS = new Set(['true', 'false', 'null', 'undefined']);
+
 function literalCarriesSecret(text: string, patterns: string[]): boolean {
   const normalized = text.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
   return patterns.some((pattern) => {
@@ -145,12 +153,31 @@ function literalCarriesSecret(text: string, patterns: string[]): boolean {
     // `resumption token: ${eventId}` an event id. Whether a runtime value is a
     // secret is the value path's question (`namedValueExposure`), answered from
     // its name; the label in front of it is prose.
+    //
+    // And the value is not a boolean or null keyword. nestjs/authentication
+    // lib/jwt/jws.util.ts:209 tells the developer how to opt in:
+    // "… set `allowShortSecret: true` next to the key". That is an option name
+    // and its setting, quoted in prose; `true` is never anyone's credential.
+    // Only when that setting is the line's one label-and-value pair: in
+    // `password: hunter2 debug: true` the keyword belongs to `debug`, and the
+    // password before it is still on the line. The keywords are lowercase in
+    // the language, so `password: NULL` is a value, not a keyword.
+    const trailingValue = new RegExp(
+      `[:=]\\s*([^\\s${INTERPOLATION}]+)\\s*$`,
+    ).exec(text);
+    const pairCount = text.match(/[:=][ \t]*[^\s:=]/g)?.length ?? 0;
     return (
       new RegExp(
         `\\b${flexPattern}\\b[ _-]{0,2}(?:[a-z0-9]{1,12}[ _-]{0,2})?[:=][ \\t]*[^\\s${INTERPOLATION}]`,
         'i',
       ).test(normalized) &&
-      new RegExp(`[:=]\\s*[^\\s${INTERPOLATION}]+\\s*$`).test(text)
+      trailingValue !== null &&
+      !(
+        pairCount === 1 &&
+        OPTION_KEYWORDS.has(
+          trailingValue[1].replace(/^[`'"]+|[`'".,;)]+$/g, ''),
+        )
+      )
     );
   });
 }
@@ -289,6 +316,24 @@ const VALUE_FREE_PROPERTIES = new Set([
   'size',
   'byteLength',
   'byteOffset',
+]);
+
+/**
+ * Operators whose result is a boolean about two operands, never one of them.
+ *
+ * @protocol-constant ECMA-262's relational and equality operators.
+ */
+const COMPARISON_OPERATORS: ReadonlySet<string> = new Set([
+  '===',
+  '!==',
+  '==',
+  '!=',
+  '<',
+  '<=',
+  '>',
+  '>=',
+  'in',
+  'instanceof',
 ]);
 
 /**
@@ -606,7 +651,8 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
             isStaticExpression({
               node: property.value,
               scope: context.sourceCode.getScope(arg),
-            })
+            }) ||
+            isNonReplayableValue(property.value)
           ) {
             continue;
           }
@@ -640,6 +686,48 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
       }
 
       return namedValueExposure(arg);
+    }
+
+    /**
+     * Is this value one that cannot be replayed as the secret its key names?
+     *
+     * A key called `hasToken` or `passwordCount` names a secret and holds a fact
+     * ABOUT it: `Boolean(dto.token)`, `!!secret`, `secrets.length`,
+     * `actor === target`. The expression's own shape decides, never the key, and
+     * an identifier is read through its single initializer (`const required =
+     * actor.id === input.userId`).
+     */
+    function isNonReplayableValue(
+      node: TSESTree.Node,
+      seen: Set<TSESTree.Node> = new Set(),
+    ): boolean {
+      const value = unwrapTypeSyntax(node) as TSESTree.Node;
+      if (seen.has(value)) return false;
+      seen.add(value);
+      switch (value.type) {
+        case AST_NODE_TYPES.ChainExpression:
+          return isNonReplayableValue(value.expression, seen);
+        case AST_NODE_TYPES.UnaryExpression:
+          return value.operator === '!';
+        case AST_NODE_TYPES.BinaryExpression:
+          return COMPARISON_OPERATORS.has(value.operator);
+        case AST_NODE_TYPES.MemberExpression: {
+          const prop = propertyName(value);
+          return prop !== null && VALUE_FREE_PROPERTIES.has(prop);
+        }
+        case AST_NODE_TYPES.CallExpression:
+          return (
+            value.callee.type === AST_NODE_TYPES.Identifier &&
+            value.callee.name === 'Boolean' &&
+            !isShadowed('Boolean', value)
+          );
+        case AST_NODE_TYPES.Identifier: {
+          const init = resolveBindingInit(value);
+          return init ? isNonReplayableValue(init, seen) : false;
+        }
+        default:
+          return false;
+      }
     }
 
     /** Does anything in scope declare this name, rather than it being the global? */

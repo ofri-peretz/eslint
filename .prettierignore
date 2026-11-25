@@ -26,3 +26,8 @@
 # long import, no trailing newline). Formatting one fails that test; leaving it
 # fails check:format-drift for any PR that edits a rule doc.
 /apps/docs/content/docs/**/rules/*.mdx
+
+# Vendored byte-for-byte from burgee packages/hookset/claude; `hookset check` fails on any
+# difference, so formatting them here would break the Shared gates check.
+/.claude/hooks/guard-bash.mjs
+/.claude/hooks/stop-after-3.mjs

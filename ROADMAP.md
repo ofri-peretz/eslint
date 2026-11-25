@@ -41,7 +41,7 @@ Last refresh: 2026-08-02.
 | ------------------------------ | --------------------------------------------------------- | --------- |
 | `eslint-plugin-import-next`    | Modern import/export analysis, cycle detection (57 rules) | ✅ Stable |
 | `eslint-plugin-react-features` | React patterns, hooks, performance, migration (53 rules)  | ✅ Stable |
-| `eslint-plugin-react-a11y`     | React accessibility (38 rules)                            | ✅ Stable |
+| `eslint-plugin-react-a11y`     | React accessibility (37 rules)                            | ✅ Stable |
 | `eslint-plugin-conventions`    | Naming / shape conventions (12 rules)                     | ✅ Stable |
 | `eslint-plugin-maintainability`| Complexity, duplication, error-handling (13 rules)        | ✅ Stable |
 | `eslint-plugin-reliability`    | Runtime reliability, error-handling (10 rules)            | ✅ Stable |

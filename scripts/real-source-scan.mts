@@ -441,6 +441,9 @@ if (SHARD === null) {
             stdio: ['ignore', 'pipe', 'inherit', 'ipc'],
           },
         );
+        // A shard that cannot start (or cannot be messaged) emits 'error'; with
+        // no listener that is an uncaught exception, not a failed shard.
+        child.on('error', reject);
         let out = '';
         child.stdout?.on('data', (chunk: Buffer) => {
           out += chunk.toString();

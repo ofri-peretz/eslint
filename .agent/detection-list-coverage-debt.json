@@ -300,14 +300,7 @@
     "row",
     "tablist",
     "toolbar",
-    "tree",
     "treegrid"
-  ],
-  "packages/eslint-plugin-react-a11y/src/rules/no-noninteractive-element-interactions.ts#INTERACTIVE_HANDLERS": [
-    "onKeyPress",
-    "onKeyUp",
-    "onMouseDown",
-    "onMouseUp"
   ],
   "packages/eslint-plugin-react-a11y/src/rules/no-static-element-interactions.ts#INTERACTIVE_HANDLERS": [
     "onKeyDown",

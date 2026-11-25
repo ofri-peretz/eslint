@@ -66,7 +66,7 @@ withCanonicalDocsUrls('plugin-conventions', rules);
 export const plugin = {
   meta: {
     name: 'eslint-plugin-conventions',
-    version: '7.2.0',
+    version: '7.3.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -79,8 +79,10 @@ export const GUIDANCE_FILES = [
   '**/GEMINI.md',
   '**/.claude/skills/**/SKILL.md',
   '**/.claude/agents/*.md',
-  // A plugin's subagents; a file here counts only beside .claude-plugin/plugin.json.
+  '**/.claude/commands/**/*.md',
+  // A plugin's subagents and commands; a file here counts only beside .claude-plugin/plugin.json.
   '**/agents/*.md',
+  '**/commands/*.md',
 ] as const;
 
 export const configs = {

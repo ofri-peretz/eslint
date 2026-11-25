@@ -95,7 +95,7 @@ export default [
   {
     files: ['**/*.{ts,tsx}'],
     rules: {
-      'react-a11y/img-requires-alt': 'error',
+      'react-a11y/alt-text': 'error',
     },
   },
 ];
@@ -125,7 +125,7 @@ export default [
       'react-a11y': reactA11y,
     },
     rules: {
-      'react-a11y/img-requires-alt': [
+      'react-a11y/alt-text': [
         'error',
         {
           allowAriaLabel: true,
@@ -142,6 +142,40 @@ export default [
   },
 ];
 ```
+
+## Migrating from eslint-plugin-jsx-a11y
+
+Facts, as measured against eslint-plugin-jsx-a11y 6.10.2.
+
+- **Keep your rule IDs and disable comments.** Register the plugin under the `jsx-a11y` key and every
+  shared rule resolves under `jsx-a11y/<rule>`. 35 rule names are the same in both plugins; none is renamed.
+
+  ```javascript
+  import reactA11y from 'eslint-plugin-react-a11y';
+
+  export default [
+    {
+      plugins: { 'jsx-a11y': reactA11y },
+      rules: { 'jsx-a11y/alt-text': 'error' },
+    },
+  ];
+  ```
+
+  `// eslint-disable-next-line jsx-a11y/alt-text` keeps working unchanged.
+- **Rules that do not exist here:** `aria-proptypes` (a live upstream rule, enabled in both upstream presets),
+  and the three rules deprecated upstream: `accessible-emoji`, `label-has-for` and `no-onchange`. A config that
+  names any of them throws `Could not find "<rule>"` on load, even as `off`.
+- **Options load.** The option objects in upstream's `recommended` and `strict` presets load without error
+  (`includeRoles`, `allowExpressionValues`, element-keyed handler lists, `elements`, `hoverInHandlers`). Which are
+  read is listed on each rule's page; `includeRoles` is accepted and read by nothing, as upstream.
+- **`settings['jsx-a11y']` is not read yet.** `components`, `polymorphicPropName`, `polymorphicAllowList` and
+  `attributes` are ignored by every rule. Use the per-rule options (`components`, `controlComponents`, ...) instead.
+- **The presets use the `react-a11y/` prefix** and are not aliased to `jsx-a11y/`. `configs.recommended` and
+  `flatConfigs.recommended` (also `strict`) are the same object, keyed `react-a11y`; spreading one next to a plugin
+  registered as `jsx-a11y` enables the rules under both prefixes. Each preset sets
+  `languageOptions.parserOptions.ecmaFeatures.jsx`.
+- **Severities differ.** `recommended` here is `error` for WCAG Level A rules and `warn` for the rest;
+  upstream's is `error` for nearly every rule, with per-rule options that these presets do not carry.
 
 ## 📦 Compatibility
 | Package | Version |
@@ -169,7 +203,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [alt-text](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/alt-text?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) | CWE-252 |  |  | Enforce alt text on images and other visual elements that carry accessibility impact. | 🟢 | 💼 |  |  | 💡 |  |
+| [alt-text](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/alt-text?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | Enforce alt text on images and other visual elements that carry accessibility impact. | 🟢 | 💼 |  |  | 💡 |  |
 | [anchor-ambiguous-text](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-ambiguous-text?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | anchor-ambiguous-text rule | 🟢 |  | ⚠️ |  | 💡 |  |
 | [anchor-has-content](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-has-content?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | anchor-has-content rule | 🟢 | 💼 |  |  | 💡 |  |
 | [anchor-is-valid](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-is-valid?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | anchor-is-valid rule | 🟢 |  | ⚠️ |  | 💡 |  |

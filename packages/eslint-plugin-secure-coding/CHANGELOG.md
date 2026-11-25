@@ -5,6 +5,72 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.4.12
+
+### Patch Changes
+
+- **🧪 Tests** — no-hardcoded-credentials locks that a migration-shaped name in a secret slot still reports
+
+  Adds a boundary case (`const secret = 'AddMfaColumnsToUsers1784073600000'` reports) and documents the leading-zero floor in `isTimestampedName`. No behaviour change.
+
+## 6.4.11
+
+### Patch Changes
+
+- **🐛 Fix** — no-hardcoded-credentials stops exempting a DI-token-shaped value held in a password slot
+
+  `isInjectionTokenName`'s `SCREAMING_SNAKE(qualifier)` shape exemption used to apply regardless of
+  the slot it was assigned to, so `const password = 'BULLMQ_CONFIG(default)';` was not reported: the
+  same call-shaped string that correctly clears a `TOKEN`-named slot also cleared a `password`-named
+  one. Nothing stores a real dependency-injection token in a slot named `password`, so the exemption
+  now checks the slot's own inferred category and no longer applies there — a DI-token-shaped value
+  in any other slot (`token`, `apikey`, `database`, `other`) keeps the exemption exactly as before
+  (#1686).
+
+- **🐛 Fix** — no-hardcoded-credentials no longer reports migration class names as secret keys
+
+  A name made of words plus an epoch timestamp, such as `AddMfaColumnsToUsers1784073600000`, passed every random-key shape test and was reported at CVSS 9.8.
+
+## 6.4.10
+
+### Patch Changes
+
+- **🐛 Fix** — no-graphql-injection accepts `gql` documents composed from other `gql` documents
+
+  `gql`query { ...Asset } ${ASSET_FRAGMENT}`` no longer reports when the interpolation is a `gql`/`graphql`
+tagged template, written in place or bound to a single-assignment `const`. That is the Apollo/graphql-tag
+composition idiom, and it was 192 of 254 findings in vendure-ecommerce/vendure. A `gql` tag now makes its
+template a document even with no static text, so `gql`${input}`` is checked. Imported fragments still report,
+  whatever they are named, because an import cannot be resolved within the file; so does any user value
+  interpolated into a query.
+
+## 6.4.9
+
+### Patch Changes
+
+- **🐛 Fix** — no-insecure-comparison checks value provenance before exempting a re-encoding or store re-read
+
+  An original written through an alias, a buffer changed later in a loop body, a store swapped through a
+  property between two reads, and a guard whose condition is reassigned after the choice no longer earn
+  the exemption.
+
+- **🐛 Fix** — stop flagging safe comparisons and messages found in nestjs/authentication
+
+  Each exemption is narrow, and a lookalike that is a real bug still reports.
+
+  - `no-insecure-comparison`: record identifiers such as `token.userId` are judged by the field name
+    (new `recordMetadataTails` option), a `Buffer.from(x, enc).toString(enc)` round trip over an
+    unchanged `x` is a canonical-form check, and the same field from two reads of one store call is a
+    concurrency check.
+  - `no-sensitive-data-exposure`: a message quoting an option with a `true`, `false`, `null` or
+    `undefined` setting, when that is the message's only label-and-value pair.
+
+## 6.4.8
+
+### Patch Changes
+
+- **🐛 Fix** — Found linting open-source Node apps: fewer false positives in `no-hardcoded-credentials` (i18n keys, single foreign words, type tags, masked values, `tests.js` modules), `no-xpath-injection` (own `evaluate` method, log prefixes, usage strings), `no-sensitive-data-exposure` (a fact about a secret), `no-weak-password-recovery` (React components, log prose) and `no-privilege-escalation` (a role comparison guarding the write).
+
 ## 6.4.7
 
 ### Patch Changes

@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-jwt-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.5
+
+### Patch Changes
+
+- **🐛 Fix** — no-decode-without-verify accepts a decode that the same function then verifies
+
+  The function must verify the same token binding unconditionally, with `algorithms` pinned to literals. A reset token signed with a per-user secret has to be decoded to find its user before it can be verified (brocoders/nestjs-boilerplate).
+
 ## 4.0.4
 
 ### Patch Changes

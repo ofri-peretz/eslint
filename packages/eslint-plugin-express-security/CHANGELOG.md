@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-express-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.3.3
+
+### Patch Changes
+
+- **🐛 Fix** — `require-csrf-protection` recognises an app-wide wrapper that hands the request to an imported csrf module. Found linting open-source Node apps.
+
 ## 4.3.2
 
 ### Patch Changes

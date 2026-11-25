@@ -26,7 +26,7 @@
 
 ## Covered natively by oxlint
 
-None of these 43 rules has an oxlint built-in equivalent. Every rule here is new to oxlint.
+None of these 44 rules has an oxlint built-in equivalent. Every rule here is new to oxlint.
 
 - **Why** — a linter nobody reads protects nothing. We would rather miss a finding
   than spend your attention on one that was never real.
@@ -191,6 +191,7 @@ Install [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plu
 | [prefer-native-crypto](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/prefer-native-crypto?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                           | CWE-1104 | A06:2021 |      | Prefer native crypto over third-party libraries                                                              | 🟢  |     |     |     |     |     |
 | [require-aead-tag-verification](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-aead-tag-verification?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)         | CWE-327  | A02:2021 |      | Require AEAD decryption to verify the authentication tag (setAuthTag + final)                                | 🟢  | 💼  |     |     |     |     |
 | [require-dependency-integrity](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-dependency-integrity?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)           | CWE-494  |          |      | CWE: [CWE-494](https://cwe.mitre.org/data/definitions/494.html)                                              | 🟢  | 💼  |     |     |     |     |
+| [require-emitter-error-handler](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-emitter-error-handler?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)         | CWE-248  | A04:2021 |      | Require an error listener on http(s) requests and spawned processes                                          | 🟢  |     |     |     |     |     |
 | [require-secure-credential-storage](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-secure-credential-storage?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security) | CWE-312  |          |      | This rule detects a credential written to localStorage, sessionStorage, AsyncStorage or process.env without… | 🟢  |     |     |     |     |     |
 | [require-secure-deletion](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-secure-deletion?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                     | CWE-459  |          |      | CWE: [CWE-459](https://cwe.mitre.org/data/definitions/459.html)                                              | 🟢  |     |     |     |     |     |
 | [require-storage-encryption](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-storage-encryption?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)               | CWE-312  |          |      | CWE: [CWE-312](https://cwe.mitre.org/data/definitions/312.html)                                              | 🟢  |     |     |     |     |     |

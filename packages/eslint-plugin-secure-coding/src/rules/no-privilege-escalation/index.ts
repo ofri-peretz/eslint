@@ -601,6 +601,68 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
     }
 
     /**
+     * Is the value being written put through a role comparison first?
+     *
+     * Not a name list: a preceding early-exit guard whose condition calls
+     * something with BOTH the very binding being written and a role read of
+     * the requester that is not itself request input —
+     *
+     *   if (role && !canInteract(req.user.role, role)) throw new ApiError(3008);
+     *   db.insert(users).values({ role: role });
+     *
+     * The condition is what compares the requested role with the requester's,
+     * whatever the helper is called. The write is dominated by it.
+     */
+    function isGuardedByRoleComparison(
+      node: TSESTree.Node,
+      value: TSESTree.Identifier,
+    ): boolean {
+      let current: TSESTree.Node = node;
+      while (current.parent) {
+        const parent: TSESTree.Node = current.parent;
+        if (
+          parent.type === AST_NODE_TYPES.BlockStatement ||
+          parent.type === AST_NODE_TYPES.Program
+        ) {
+          const body = parent.body as TSESTree.Statement[];
+          const index = body.indexOf(current as TSESTree.Statement);
+          for (let i = 0; i < index; i++) {
+            const statement = body[i];
+            if (
+              statement.type === AST_NODE_TYPES.IfStatement &&
+              exitsUnconditionally(statement.consequent) &&
+              comparesRoles(statement.test, value.name)
+            ) {
+              return true;
+            }
+          }
+        }
+        current = parent;
+      }
+      return false;
+    }
+
+    /** Does this condition call something with the binding and the requester's role? */
+    function comparesRoles(test: TSESTree.Node, valueName: string): boolean {
+      let found = false;
+      forEachNode(test, (inner) => {
+        if (inner.type !== AST_NODE_TYPES.CallExpression) return;
+        const passesValue = inner.arguments.some(
+          (arg) =>
+            arg.type === AST_NODE_TYPES.Identifier && arg.name === valueName,
+        );
+        const passesRequesterRole = inner.arguments.some(
+          (arg) =>
+            arg.type === AST_NODE_TYPES.MemberExpression &&
+            nameHasAnyWord(memberPropertyName(arg) ?? '', ['role']) &&
+            !isUserControlled(arg),
+        );
+        if (passesValue && passesRequesterRole) found = true;
+      });
+      return found;
+    }
+
+    /**
      * One binding hop: `const requestedRole = req.body.role; member.role = requestedRole;`
      *
      * Nothing validates the value between the two lines, so the escalation is
@@ -759,6 +821,12 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
           if (matchesIgnorePattern(text, ignorePatterns)) continue;
 
           if (isUserControlled(prop.value)) {
+            if (
+              prop.value.type === AST_NODE_TYPES.Identifier &&
+              isGuardedByRoleComparison(node, prop.value)
+            ) {
+              continue;
+            }
             if (!isRoleChecked(node)) {
               context.report({
                 node: prop,

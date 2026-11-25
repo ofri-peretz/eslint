@@ -26,6 +26,10 @@
     "preinstall": "node --experimental-strip-types scripts/guard-borrowed-node-modules.mts",
     "prepare": "[ -d .git ] && lefthook install || true",
     "ci:local": "lefthook run pre-push --all-files --force",
+    "hook:staged": "sh -c \"npm run --silent oxlint\" hook-staged",
+    "hook:verify": "perl -e \"alarm 300; exec @ARGV\" -- npm run --silent typecheck",
+    "hook:provedone": "provedone gate --mode enforce",
+    "hook:triggerlist": "git cat-file -e origin/main:.sdlc/checklist.yaml 2>/dev/null || { echo 'triggerlist: no checklist on origin/main yet, protect skipped'; exit 0; }; triggerlist protect origin/main",
     "lint:triage-sampling": "tsx scripts/lint-triage-sampling.ts",
     "lint:taxonomy": "tsx scripts/lint-plugin-taxonomy.ts",
     "rule-ledger": "tsx scripts/build-rule-ledger.ts",
@@ -290,7 +294,8 @@
     "nestjs:releases": "tsx scripts/nestjs-release-watch.mts",
     "fidelity": "node benchmarks/suites/fidelity/run.cjs",
     "lint:dogfood": "eslint --config eslint.dogfood.config.mjs \"packages/*/src/**/*.ts\"",
-    "lint:guidance": "eslint --config eslint.guidance.config.mjs --no-warn-ignored --max-warnings 10 ."
+    "lint:guidance": "eslint --config eslint.guidance.config.mjs --no-warn-ignored --max-warnings 0 .",
+    "lint:truepass": "eslint --config eslint.config.mjs --no-warn-ignored --max-warnings 0 --report-unused-disable-directives-severity off --rule 'local/require-vitest-watch-false: off' '**/*.{test,spec}.{ts,tsx,mts,cts,js,jsx,mjs,cjs}' '**/vitest.config.{ts,mts,js}' '**/vitest.*.config.{ts,mts}' '**/playwright.config.ts'"
   },
   "keywords": [
     "eslint",
@@ -394,6 +399,7 @@
     "oxmutate": "1.5.0",
     "pg": "^8.23.1",
     "prettier": "^3.9.10",
+    "provedone": "^0.3.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "remark-parse": "^11.0.0",
@@ -403,6 +409,8 @@
     "shiki": "^4.6.0",
     "sqlite3": "^6.0.1",
     "storybook": "^10.6.3",
+    "triggerlist": "^0.3.0",
+    "truepass": "^1.0.0",
     "turbo": "^2.9.8",
     "typeorm": "^1.1.2",
     "typescript": "^6.0.3",

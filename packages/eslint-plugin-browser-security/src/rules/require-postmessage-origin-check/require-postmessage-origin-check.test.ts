@@ -109,6 +109,7 @@ ruleTester.run(
       },
       // Function reference (can't analyze, so we allow)
       {
+        name: 'a handler passed by reference cannot be analysed, so it is allowed',
         code: `
         window.addEventListener('message', messageHandler);
       `,

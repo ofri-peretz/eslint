@@ -97,7 +97,8 @@ describe('no-hardcoded-credentials', () => {
           code: 'const key = "short";',
         },
         {
-          code: 'const pass = "1234567";', // 7 chars, below default minLength of 8
+          name: 'a 7-character value is below the default minLength of 8',
+          code: 'const pass = "1234567";',
         },
         // Non-credential strings
         {
@@ -105,6 +106,7 @@ describe('no-hardcoded-credentials', () => {
           code: 'const message = "Hello, world!";',
         },
         {
+          name: 'a URL is not a secret',
           code: 'const url = "https://example.com/api";',
         },
         // Ignored patterns
@@ -1180,7 +1182,10 @@ describe('no-hardcoded-credentials', () => {
       noHardcodedCredentials,
       {
         valid: [
-          { code: 'let secretValue; secretValue = "SuperSecretPhrase!!";' },
+          {
+            name: 'a name that does not end in a credential word is not a credential slot',
+            code: 'let secretValue; secretValue = "SuperSecretPhrase!!";',
+          },
         ],
         invalid: [],
       },
@@ -1261,7 +1266,10 @@ describe('no-hardcoded-credentials', () => {
           },
           // isCredentialContext: AssignmentExpression to a MemberExpression
           // property whose name doesn't match any credential suffix.
-          { code: 'this.randomThing = "just a plain long value";' },
+          {
+            name: 'a member named without a credential word is not a credential slot',
+            code: 'this.randomThing = "just a plain long value";',
+          },
           // isCredentialContext: AssignmentExpression to a bare Identifier
           // whose name doesn't match any credential suffix.
           { code: 'let randomVar; randomVar = "just a plain long value";' },

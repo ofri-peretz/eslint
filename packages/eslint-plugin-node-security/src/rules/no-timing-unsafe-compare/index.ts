@@ -627,6 +627,47 @@ const SERVER_STATE_REQUEST_PROPERTIES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Module specifiers that export the `process` object, so
+ * `import process from 'node:process'` reads the same `env` the global does.
+ * Exact names, deliberately not configurable.
+ */
+const PROCESS_MODULES: ReadonlySet<string> = new Set([
+  'process',
+  'node:process',
+]);
+
+/**
+ * Roots a configuration object is conventionally imported as. A read off one of
+ * these is a configured value only when the root is an import or a `require`
+ * (see `isImportedBinding`), so a local variable that happens to be called
+ * `config` proves nothing. Exact names, deliberately not configurable.
+ */
+const CONFIG_ROOTS: ReadonlySet<string> = new Set([
+  'config',
+  'conf',
+  'settings',
+  'secrets',
+]);
+
+/**
+ * Array methods whose callback receives an ELEMENT of the receiver as its first
+ * parameter, so the parameter holds whatever the receiver's elements hold.
+ *
+ * `req.user.sessions.find((session) => session.id === current.sessionId)`:
+ * `session` is one of the rows passport attached to `req.user`, which is server
+ * state exactly as `req.user.sessions` is. Closed API surface of
+ * `Array.prototype`, exact names, deliberately not configurable (see
+ * `CRYPTO_DERIVATIONS` for why vocabulary that names an API is not an option).
+ */
+const ELEMENT_CALLBACK_METHODS: ReadonlySet<string> = new Set([
+  'find',
+  'filter',
+  'some',
+  'every',
+  'findIndex',
+]);
+
+/**
  * `a?.b` parses to a MemberExpression wrapped in a ChainExpression. Without
  * this unwrap every operand written with optional chaining — ordinary modern
  * Node — was neither a secret nor a constant nor a self-comparison, and the
@@ -672,6 +713,26 @@ function isNonSecretMember(node: TSESTree.MemberExpression): boolean {
         ? (propertyName(owner) ?? '')
         : '';
   return receivers.has(ownerName.toLowerCase());
+}
+
+/**
+ * Is this member read one of the request's SERVER-state slots, taken directly
+ * off the request root: `req.session`, `req.user`, `ctx.state`, `res.locals`,
+ * `req.app.locals`? Only the slot itself — what hangs below it is judged by the
+ * caller, and a same-named field deeper in the chain (`req.query.state`,
+ * `req.body.user`) is not the slot.
+ */
+function isRequestStateRead(node: TSESTree.MemberExpression): boolean {
+  const slot = memberPropertyName(node);
+  if (slot === null || !SERVER_STATE_REQUEST_PROPERTIES.has(slot)) return false;
+  const owner = unwrapChain(node.object);
+  if (owner.type === AST_NODE_TYPES.Identifier) return true;
+  // `req.app.locals`: the slot below another slot.
+  return (
+    owner.type === AST_NODE_TYPES.MemberExpression &&
+    owner.object.type === AST_NODE_TYPES.Identifier &&
+    SERVER_STATE_REQUEST_PROPERTIES.has(memberPropertyName(owner) ?? '')
+  );
 }
 
 export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
@@ -776,17 +837,36 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     function nameLooksSecret(name: string): boolean {
       if (BOOLEAN_PREDICATE_NAME.test(name)) return false;
       const words = identifierWords(name);
-      if (words.some((word) => nonSecretWordSet.has(word))) return false;
       if (
         words.length > 0 &&
         nonSecretTailSet.has(words[words.length - 1] as string)
       ) {
         return false;
       }
-      return (
-        wordPatterns.some((word) => containsWord(name, word)) ||
-        patterns.some((p) => p.test(name))
+      const matchesPattern = (haystack: string) =>
+        wordPatterns.some((word) => containsWord(haystack, word)) ||
+        patterns.some((p) => p.test(haystack));
+
+      const nonSecretWordsPresent = words.filter((word) =>
+        nonSecretWordSet.has(word),
       );
+      if (nonSecretWordsPresent.length === 0) return matchesPattern(name);
+
+      // `scheme`/`schemes` names the public word before the credential in an
+      // `Authorization` header (`auth_scheme_lower === auth_params.scheme`,
+      // #1685's own fix) and masks only the `auth` pattern it pairs with —
+      // every other DEFAULT_NON_SECRET_WORDS entry is a pure substring
+      // collision (`author` swallowing `auth`, `hashtag` swallowing `hash`)
+      // and safely masks the whole name. Without this split, `scheme`
+      // blanket-masked an UNRELATED secret word elsewhere in the same
+      // identifier too: `schemeToken === req.headers.x` went unreported
+      // because `scheme` was present, even though `token` names a real
+      // credential (#1685).
+      const onlySchemeWords = nonSecretWordsPresent.every(
+        (word) => word === 'scheme' || word === 'schemes',
+      );
+      if (!onlySchemeWords) return false;
+      return matchesPattern(words.filter((word) => word !== 'auth').join(' '));
     }
 
     /**
@@ -848,6 +928,349 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         );
       }
       return false;
+    }
+
+    /** Is this identifier bound by an `import` or a `require(...)` call? */
+    function isImportedBinding(node: TSESTree.Identifier): boolean {
+      const variable = findVariable(sourceCode, node);
+      if (!variable || variable.defs.length !== 1) return false;
+      const def = variable.defs[0];
+      if (def.type === 'ImportBinding') return true;
+      if (def.type !== 'Variable' || !def.node.init) return false;
+      const init = unwrapChain(unwrapTypeSyntax(def.node.init));
+      const call =
+        init.type === AST_NODE_TYPES.MemberExpression
+          ? unwrapChain(init.object)
+          : init;
+      return (
+        call.type === AST_NODE_TYPES.CallExpression &&
+        call.callee.type === AST_NODE_TYPES.Identifier &&
+        call.callee.name === 'require'
+      );
+    }
+
+    /**
+     * Is this `process` the Node global (or `import process from 'node:process'`,
+     * which is the same object), not a local that shadows it?
+     */
+    function isGlobalName(node: TSESTree.Identifier): boolean {
+      const variable = findVariable(sourceCode, node);
+      if (variable === null || variable.defs.length === 0) return true;
+      const def = variable.defs[0];
+      return (
+        variable.defs.length === 1 &&
+        def.type === 'ImportBinding' &&
+        def.parent.type === AST_NODE_TYPES.ImportDeclaration &&
+        PROCESS_MODULES.has(String(def.parent.source.value))
+      );
+    }
+
+    /** `process.env`, with `process` the global. */
+    function isProcessEnv(node: TSESTree.Node): boolean {
+      const bare = unwrapChain(node);
+      return (
+        bare.type === AST_NODE_TYPES.MemberExpression &&
+        memberPropertyName(bare) === 'env' &&
+        bare.object.type === AST_NODE_TYPES.Identifier &&
+        bare.object.name === 'process' &&
+        isGlobalName(bare.object)
+      );
+    }
+
+    /**
+     * Does an environment variable's NAME say it holds a credential?
+     *
+     * The rule's vocabulary, plus `KEY`: a bare `key` is not a default secret
+     * pattern (every AST walker has a `key`), but an environment variable named
+     * `SERVICE_KEY` is a credential by convention. `PUBLIC` excludes the
+     * variables a framework ships to the browser on purpose.
+     */
+    function envNameIsSecret(name: string): boolean {
+      const words = identifierWords(name);
+      if (words.includes('public')) return false;
+      if (nameLooksSecret(name)) return true;
+      if (!words.includes('key')) return false;
+      return !(
+        nonSecretTailSet.has(words[words.length - 1] as string) ||
+        words.some((word) => nonSecretWordSet.has(word))
+      );
+    }
+
+    /**
+     * Is this operand PROVABLY a configured secret: a credential the process
+     * was started with, not a value some caller handed it?
+     *
+     * - `process.env.API_SECRET`, `process['env'].SERVICE_KEY`, a variable that
+     *   aliases one, or a name destructured from `process.env`, with `process`
+     *   the global;
+     * - `config.api.keySecret`, where `config` is an import or a `require`
+     *   binding and the property is a secret name.
+     *
+     * `x || 'dev-default'` and `x ?? ''` are the same configured value.
+     */
+    function isConfiguredSecret(
+      node: TSESTree.Node,
+      // Aliases can loop (`let a = b; let b = a;`); the set only stops a cycle.
+      visited: Set<TSESTree.Node> = new Set(),
+    ): boolean {
+      if (visited.has(node)) return false;
+      visited.add(node);
+      const bare = unwrapChain(unwrapTypeSyntax(node));
+      if (bare.type === AST_NODE_TYPES.LogicalExpression) {
+        return (
+          bare.operator !== '&&' &&
+          isConfiguredSecret(bare.left, visited) &&
+          (isConfiguredSecret(bare.right, visited) ||
+            isSourceConstant(bare.right))
+        );
+      }
+      if (bare.type === AST_NODE_TYPES.Identifier) {
+        const init = bindingInit(sourceCode, bare);
+        if (init === undefined) return false;
+        // `const { API_SECRET } = process.env`: the binding is the variable.
+        if (isProcessEnv(init)) return envNameIsSecret(bare.name);
+        return isConfiguredSecret(init, visited);
+      }
+      if (bare.type !== AST_NODE_TYPES.MemberExpression) return false;
+      const name = memberPropertyName(bare);
+      if (name === null) return false;
+      if (isProcessEnv(bare.object)) return envNameIsSecret(name);
+      let root: TSESTree.Node = bare;
+      while (root.type === AST_NODE_TYPES.MemberExpression) {
+        root = unwrapChain(root.object);
+      }
+      return (
+        root.type === AST_NODE_TYPES.Identifier &&
+        CONFIG_ROOTS.has(root.name) &&
+        isImportedBinding(root) &&
+        nameLooksSecret(name)
+      );
+    }
+
+    /** Is this identifier a parameter of the function it is written in? */
+    function isParameter(node: TSESTree.Identifier): boolean {
+      const variable = findVariable(sourceCode, node);
+      return (
+        variable?.defs.length === 1 && variable.defs[0].type === 'Parameter'
+      );
+    }
+
+    /**
+     * Is this `this.field` assigned, somewhere in its class, from a parameter?
+     * `this._authorization = authorization` in a constructor is how a value
+     * handed in by a caller becomes state, and the comparison that reads the
+     * field later has lost every trace of where it came from.
+     */
+    function isFieldFromParameter(node: TSESTree.MemberExpression): boolean {
+      const field = memberPropertyName(node);
+      if (field === null || node.object.type !== AST_NODE_TYPES.ThisExpression)
+        return false;
+      let owner: TSESTree.Node | undefined = node.parent;
+      while (owner && owner.type !== AST_NODE_TYPES.ClassBody)
+        owner = owner.parent;
+      if (!owner) return false;
+      let found = false;
+      const visit = (current: TSESTree.Node | null | undefined): void => {
+        if (found || !current || typeof current.type !== 'string') return;
+        if (
+          current.type === AST_NODE_TYPES.AssignmentExpression &&
+          current.left.type === AST_NODE_TYPES.MemberExpression &&
+          current.left.object.type === AST_NODE_TYPES.ThisExpression &&
+          memberPropertyName(current.left) === field
+        ) {
+          const value = unwrapTypeSyntax(current.right);
+          if (value.type === AST_NODE_TYPES.Identifier && isParameter(value)) {
+            found = true;
+            return;
+          }
+        }
+        for (const [key, value] of Object.entries(
+          current as unknown as Record<string, unknown>,
+        )) {
+          if (key === 'parent') continue;
+          if (Array.isArray(value)) {
+            for (const entry of value) visit(entry as TSESTree.Node);
+          } else if (value && typeof value === 'object' && 'type' in value) {
+            visit(value as TSESTree.Node);
+          }
+        }
+      };
+      visit(owner);
+      return found;
+    }
+
+    /**
+     * Could this operand be what a caller supplied — the candidate being checked
+     * against a stored secret?
+     *
+     * A name from the secret vocabulary (`token`, `authorization`), a parameter,
+     * or a field a constructor filled from a parameter. A second configured value
+     * is not: two configuration values compared on the operator's own machine are
+     * nobody's timing oracle (`remoteApp.apiKey === localApp.client_id`).
+     */
+    function isSuppliedCandidate(node: TSESTree.Node): boolean {
+      const bare = unwrapChain(unwrapTypeSyntax(node));
+      if (isConfiguredSecret(bare)) return false;
+      if (isSecretIdentifier(bare)) return true;
+      if (bare.type === AST_NODE_TYPES.Identifier) return isParameter(bare);
+      return (
+        bare.type === AST_NODE_TYPES.MemberExpression &&
+        isFieldFromParameter(bare)
+      );
+    }
+
+    /**
+     * A configured secret against a caller-supplied candidate, neither read off
+     * a request.
+     *
+     * The rule needs an attacker on one side, and a request read is how it sees
+     * one. A guard class gets its candidate through a constructor and the
+     * request is two files away, so the candidate carries no trace of it. What
+     * IS provable is the other side: a value read from the environment or from
+     * an imported config object is the process's own secret, and comparing it
+     * with anything a caller supplied is the oracle.
+     *
+     * Names alone are deliberately not enough. Two secret-named values
+     * (`bearerToken === sessionSecret`) are pinned as silent by default in
+     * `found-in-the-wild.test.ts`: nothing there says which one is stored.
+     */
+    function comparesStoredSecret(
+      left: TSESTree.Node,
+      right: TSESTree.Node,
+    ): boolean {
+      return (
+        (isConfiguredSecret(left) && isSuppliedCandidate(right)) ||
+        (isConfiguredSecret(right) && isSuppliedCandidate(left))
+      );
+    }
+
+    /**
+     * Is this value held by the server, with no attacker-steered byte in it?
+     *
+     * The strict sibling of {@link isServerDerived}, used for one purpose:
+     * proving that NEITHER side of a comparison is the attacker's. Looser
+     * evidence is fine for "one side is the server's" and wrong for "both are",
+     * because a false answer here silences a finding. So it is narrower on
+     * purpose:
+     *
+     * - `session`, `user`, `locals`, `app` and `state` count only as the member
+     *   read DIRECTLY off the request root (`req.session`, `ctx.state`,
+     *   `req.app.locals`). `req.query.state` and `req.body.user` are the
+     *   caller's fields that happen to share a name.
+     * - an `await` counts only when the awaited call is not a method of the
+     *   request itself: `await getSession(req, res)` is a store read the
+     *   request chose the row of, `await req.json()` is the attacker's body.
+     * - a `&&`, `||`, `??` or `?:` is server-held only when every branch is.
+     * - the first parameter of `find`/`filter`/`some`/`every`/`findIndex` is an
+     *   element of the receiver, so it is server-held when the receiver is.
+     *
+     * Everything else, including a bare parameter, is unresolved, not safe.
+     */
+    function isServerHeld(
+      node: TSESTree.Node,
+      visited: Set<TSESTree.Node> = new Set(),
+    ): boolean {
+      if (visited.has(node)) return false;
+      visited.add(node);
+      const bare = unwrapChain(unwrapTypeSyntax(node));
+      if (bare !== node) return isServerHeld(bare, visited);
+
+      switch (node.type) {
+        case AST_NODE_TYPES.AssignmentExpression:
+          return isServerHeld(assignedValue(node), visited);
+        case AST_NODE_TYPES.AwaitExpression: {
+          const call = unwrapChain(unwrapTypeSyntax(node.argument));
+          return (
+            call.type === AST_NODE_TYPES.CallExpression &&
+            !readsUntrusted(call.callee)
+          );
+        }
+        case AST_NODE_TYPES.LogicalExpression:
+          return (
+            isServerHeld(node.left, visited) &&
+            isServerHeld(node.right, visited)
+          );
+        case AST_NODE_TYPES.ConditionalExpression:
+          return (
+            isServerHeld(node.consequent, visited) &&
+            isServerHeld(node.alternate, visited)
+          );
+        case AST_NODE_TYPES.MemberExpression: {
+          if (isRequestStateRead(node)) return true;
+          return isServerHeld(node.object, visited);
+        }
+        case AST_NODE_TYPES.Identifier: {
+          const init = bindingInit(sourceCode, node);
+          if (init !== undefined) return isServerHeld(init, visited);
+          return isServerElement(node, visited);
+        }
+        default:
+          return false;
+      }
+    }
+
+    /**
+     * Is this value an import itself: a bound name, or a chain of property
+     * reads from one? A call is not, because its arguments can carry the
+     * request (`Buffer.from(req.headers.token)` is rooted at `Buffer`).
+     */
+    function isImportedRoot(node: TSESTree.Node): boolean {
+      let root: TSESTree.Node = unwrapChain(unwrapTypeSyntax(node));
+      while (root.type === AST_NODE_TYPES.MemberExpression) {
+        if (root.computed && root.property.type !== AST_NODE_TYPES.Literal) {
+          return false;
+        }
+        root = unwrapChain(unwrapTypeSyntax(root.object));
+      }
+      if (root.type !== AST_NODE_TYPES.Identifier) return false;
+      const variable = findVariable(sourceCode, root);
+      return (
+        variable !== null &&
+        variable.defs.length > 0 &&
+        variable.defs.every((def) => def.type === 'ImportBinding')
+      );
+    }
+
+    /**
+     * Is this identifier the element parameter of `receiver.find(cb)` (or
+     * `filter`, `some`, `every`, `findIndex`) over a server-held receiver?
+     *
+     * Resolved through the scope manager, not the spelling: the identifier must
+     * be the first, plain parameter of the function literal that is the first
+     * argument of the call, so a second parameter (the index), a destructured
+     * one and a function passed by name all stay unresolved.
+     */
+    function isServerElement(
+      node: TSESTree.Identifier,
+      visited: Set<TSESTree.Node>,
+    ): boolean {
+      const variable = findVariable(sourceCode, node);
+      if (!variable || variable.defs.length !== 1) return false;
+      const def = variable.defs[0];
+      if (def.type !== 'Parameter') return false;
+      const fn = def.node;
+      if (
+        fn.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+        fn.type !== AST_NODE_TYPES.FunctionExpression
+      ) {
+        return false;
+      }
+      if (fn.params[0] !== def.name) return false;
+      const call = fn.parent;
+      if (
+        call.type !== AST_NODE_TYPES.CallExpression ||
+        call.arguments[0] !== fn
+      ) {
+        return false;
+      }
+      const callee = unwrapChain(call.callee);
+      if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+      const method = propertyName(callee);
+      return (
+        method !== null &&
+        ELEMENT_CALLBACK_METHODS.has(method) &&
+        isServerHeld(callee.object, visited)
+      );
     }
 
     /**
@@ -1181,6 +1604,13 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // A configured secret against a caller-supplied candidate needs no
+      // request in sight (see `comparesStoredSecret`).
+      if (comparesStoredSecret(left, right)) {
+        context.report({ node, messageId: 'timingUnsafeCompare' });
+        return;
+      }
+
       // Check if either side looks like a secret. A crypto derivation counts
       // as a secret on evidence rather than on spelling, which is the only
       // thing available when both operands are named `v` and `expected`.
@@ -1201,6 +1631,12 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         // the user is comparing their own input to their own input, and there
         // is no secret in the process for the timing to reveal.
         if (!reportUnverifiedComparisons) {
+          // A value the server holds against another value the server holds
+          // has no attacker on either side, however much of the request each
+          // was looked up with: `req.session.csrfSecret` against the memo of
+          // itself, an element of `req.user.sessions` against the current
+          // session's id.
+          if (isServerHeld(left) && isServerHeld(right)) return;
           const leftUntrusted = readsUntrusted(left);
           const rightUntrusted = readsUntrusted(right);
           if (leftUntrusted === rightUntrusted) {
@@ -1282,6 +1718,12 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         // Only a binding written once counts, so a later write cannot make
         // the initializer a stale answer.
         readsUntrusted = (node) => {
+          // An imported binding is a module's export, never the request this
+          // handler is serving, whatever it is called. NestJS's injector
+          // compares a provider's DI token with the imported `REQUEST` token
+          // (`packages/core/injector/injector.ts:2044`), and the name alone
+          // made `REQUEST` read as the request object.
+          if (isImportedRoot(node)) return false;
           if (readsRequest(node)) return true;
           const bare = unwrapTypeSyntax(node);
           if (bare.type !== AST_NODE_TYPES.Identifier) return false;

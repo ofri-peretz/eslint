@@ -5,6 +5,65 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.2.0
+
+### Minor Changes
+
+- **✨ Feature** — `require-emitter-error-handler`, and `require-stream-error-handler` reads `Readable.fromWeb`
+
+  New rule `require-emitter-error-handler` (CWE-248). A `ClientRequest` or `ChildProcess` that emits `'error'` with no listener throws from the event loop, and a `try/catch` around the call or the `await` cannot catch it. The rule reports the value returned by `http.request`, `http.get`, `https.request`, `https.get`, `child_process.spawn` and `child_process.fork`, resolved by import provenance (default, namespace and named imports, aliases, `node:` specifiers, `require`), when no `.on('error')`, `.once('error')` or `.addListener('error')` is registered on it. Being the destination of `.pipe()` is not a listener. Two production crashes found on 2026-11-24 have this shape: parse-server's GraphQL file upload and Eleventy's `spawn('git', ...)` helper.
+
+  It stays silent when the emitter escapes (returned, stored, or passed to any function other than as a pipe destination, which includes `events.once`, `stream.pipeline` and `finished`; that is the rule's ceiling). `exec` and `execFile` are not in the table: Node attaches its own `'error'` listener inside both, so they cannot crash this way, with or without a callback. Promisified forms resolve to no module.
+
+  It is a separate rule, not an extension of `require-stream-error-handler`: that rule is triggered by a `.pipe()` and reads stream constructors by name, this one by the creation of an emitter resolved to its module, with or without a pipe. It is in `strict` and not in `recommended`; the corpus measurement a promotion needs has not been made.
+
+  `require-stream-error-handler`: `Readable.fromWeb(body).pipe(dest)` reported the destination and never the source, because `fromWeb` was not a stream constructor. `Readable.fromWeb`, `Writable.fromWeb` and `Duplex.fromWeb`, resolved to `node:stream`, now count, and the report lands on the stream that emits.
+
+## 6.1.5
+
+### Patch Changes
+
+- **🐛 Fix** — no-dynamic-algorithm-selection no longer trusts a cast hidden under `satisfies` or inside a helper
+
+  `(req.query.alg as 'sha256') satisfies 'sha256'` and a helper declared `: 'sha256' | 'sha512'` whose
+  body returns `value as 'sha256'` both still report: the cast is erased at runtime. `as const` and a
+  cast of a literal keep the exemption.
+
+- **🐛 Fix** — `lock-file`: no longer reports a package published as a library (a `package.json` that is not `"private": true` and declares `main`, `exports` or `files`). npm never installs from a dependency's lock file, so libraries such as `express`, `body-parser` and `cors` ship without one on purpose. Apps, private packages and unparseable manifests still report.
+
+  `require-secure-deletion`: no longer reports a `delete` (or `Reflect.deleteProperty`) on a local binding that holds a fresh shallow copy made with `{ ...source }` or `Object.assign({}, source)` and is never reassigned, the way code strips keys before passing options on. Deletes on the original object, a parameter, an alias or a reassigned binding still report.
+
+- **🐛 Fix** — stop flagging three safe shapes found in NestJS's own code
+
+  Each exemption is narrow, and a lookalike that is a real bug still reports.
+
+  - `no-dynamic-algorithm-selection`: a value the compiler holds to a union of string literals
+    (`satisfies`, a declared return type, or a same-file helper whose cast body is built only from
+    literals and closed-typed parameters). A bare `req.query.algorithm as 'sha256'` still reports.
+  - `no-timing-unsafe-compare`: an imported binding such as Nest's `REQUEST` DI token is not the
+    request object. An imported function called with request data still reports.
+  - `require-stream-error-handler`: `return src.pipe(dest)` hands `dest` to the caller, which attaches
+    the error handler. A pipe returned from a callback still reports.
+
+- **🐛 Fix** — `no-timing-unsafe-compare` no longer lets a `scheme` word mask an unrelated secret in the same identifier
+
+  A `scheme`/`schemes` word in `nonSecretWords` used to exempt the WHOLE identifier from `secretPatterns` matching, so `schemeToken === req.body.value` was not reported even though `token` independently names a credential. The exemption now cancels only the `auth` pattern it pairs with (`auth_scheme_lower === auth_params.scheme`, the public prefix of an `Authorization` header), so a real secret compared next to a scheme word still reports (#1685).
+
+## 6.1.4
+
+### Patch Changes
+
+- **🐛 Fix** — Found linting open-source Node apps.
+
+  - `no-timing-unsafe-compare`: a value the server holds compared with another
+    value the server holds (`req.session.csrfSecret` against its own memo, a row
+    of `req.user.sessions` against the current session id) is no longer reported.
+    New detection: a configured secret (`process.env.*SECRET*`/`*KEY*`/`*TOKEN*`,
+    or a secret property of an imported `config`) compared with a parameter or a
+    constructor-supplied field is reported without a request in sight. Two secret
+    names alone stay silent, as before.
+  - `detect-eval-with-expression`: `new Function('s', 'return import(s)')` is skipped.
+
 ## 6.1.3
 
 ### Patch Changes

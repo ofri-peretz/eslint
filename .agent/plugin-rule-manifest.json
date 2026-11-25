@@ -1507,6 +1507,11 @@
       "environment": "node",
       "detection": "structural-pattern",
       "confidence": "enforcement"
+    },
+    "require-emitter-error-handler": {
+      "environment": "node",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
     }
   },
   "eslint-plugin-openai-security": {
@@ -2148,6 +2153,21 @@
       "confidence": "opt-in"
     },
     "jsx-uses-vars": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "style-prop-object": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "jsx-pascal-case": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "forbid-foreign-prop-types": {
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in"

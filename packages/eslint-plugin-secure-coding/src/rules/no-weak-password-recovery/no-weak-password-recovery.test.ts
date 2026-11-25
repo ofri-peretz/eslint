@@ -31,7 +31,10 @@ describe('no-weak-password-recovery', () => {
           name: 'a reset token from crypto.randomBytes is strong',
           code: 'const resetToken = crypto.randomBytes(32).toString("hex");',
         },
-        'const recoveryToken = crypto.randomUUID();',
+        {
+          name: 'a recovery token from crypto.randomUUID is strong',
+          code: 'const recoveryToken = crypto.randomUUID();',
+        },
         // Regular code without password/reset keywords in sensitive contexts
         'function processData(data) { return data; }',
         'console.log("Application started");',

@@ -8,7 +8,14 @@
 //
 // A value import of a `@types/*` package is reported too: it holds
 // declarations only, which Node cannot load and TypeScript refuses to import
-// by that name (TS6137). `import type` from it is erased, and allowed.
+// by that name (TS6137). That applies to value forms only.
+//
+// A type-only declaration (`import type`, `export type ... from`) is never
+// reported, whatever the specifier: it is erased, so a module that exists only
+// at type-check time is not a runtime resolution failure. eslint-plugin-import
+// v2.32.0 returns before resolving (`src/rules/no-unresolved.js:33`); its tests
+// (`tests/src/rules/no-unresolved.js:519-534`) pin it. `import { type X }` is a
+// value declaration and is still checked.
 //
 // Not reported:
 //   - Node builtins, bare or `node:`;
@@ -18,7 +25,7 @@
 //   - a specifier `ignore` names (exact, or as a path prefix);
 //   - anything when `allowUnresolved` is true.
 //
-// Every spelling: import, import type, side-effect, export-from, export *,
+// Every runtime spelling: import, side-effect, export-from, export *,
 // import(), require(), import = require().
 module no_unresolved {
   type Form = Import | TypeOnly | SideEffect | ExportNamed | ExportAll | Dynamic | Require | ImportEquals
@@ -29,8 +36,10 @@ module no_unresolved {
   type Opts = Default | IgnoreSome | AllowAll
 
   pure def unresolved(f: Form, p: Spec): bool =
-    Set(RelMissing, RelMissingJs, PkgMissing, PkgNotExported, AliasMissing).contains(p)
-      or (p == TypesPkg and f != TypeOnly)
+    f != TypeOnly and (
+      Set(RelMissing, RelMissingJs, PkgMissing, PkgNotExported, AliasMissing).contains(p)
+        or p == TypesPkg
+    )
 
   pure def ignored(p: Spec, o: Opts): bool =
     o == IgnoreSome and Set(PkgMissing, RelMissing).contains(p)

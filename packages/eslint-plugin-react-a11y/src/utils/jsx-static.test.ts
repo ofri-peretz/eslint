@@ -77,6 +77,26 @@ describe('hasAccessibleChild', () => {
   it('a fragment with text is content', () => {
     expect(hasAccessibleChild(element('<a><>Docs</></a>').children)).toBe(true);
   });
+
+  it('an empty intrinsic descendant is not content (#1687)', () => {
+    expect(hasAccessibleChild(element('<a><span /></a>').children)).toBe(false);
+  });
+
+  it('an intrinsic descendant with its own text is content', () => {
+    expect(
+      hasAccessibleChild(element('<a><span>Docs</span></a>').children),
+    ).toBe(true);
+  });
+
+  it('a component descendant is content the file cannot see', () => {
+    expect(hasAccessibleChild(element('<a><Icon /></a>').children)).toBe(true);
+  });
+
+  it('an empty intrinsic descendant with its own accessible-name attribute is content', () => {
+    expect(
+      hasAccessibleChild(element('<a><img alt="photo" /></a>').children),
+    ).toBe(true);
+  });
 });
 
 describe('judgedValue', () => {

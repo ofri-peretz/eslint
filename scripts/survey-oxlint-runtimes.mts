@@ -35,7 +35,8 @@ const log = path.join(
 );
 fs.writeFileSync(log, '');
 
-function runSuite(pkg: string): Promise<void> {
+/** Resolves true when the suite ran, false when `npx` could not start. */
+function runSuite(pkg: string): Promise<boolean> {
   return new Promise((resolve) => {
     const child = spawn(
       'npx',
@@ -46,20 +47,39 @@ function runSuite(pkg: string): Promise<void> {
         stdio: 'ignore',
       },
     );
+    // npx failing to start is an unhandled 'error' event without this.
+    child.on('error', () => {
+      console.log(`  could not start ${pkg}`);
+      resolve(false);
+    });
     child.on('close', () => {
       console.log(`  surveyed ${pkg}`);
-      resolve();
+      resolve(true);
     });
   });
 }
 
 // ponytail: fixed pool of 3 — the machine's endpoint scanner saturates beyond that.
 const queue = [...packages];
+const unstarted: string[] = [];
 await Promise.all(
   Array.from({ length: 3 }, async () => {
-    for (let pkg = queue.shift(); pkg; pkg = queue.shift()) await runSuite(pkg);
+    for (let pkg = queue.shift(); pkg; pkg = queue.shift()) {
+      if (!(await runSuite(pkg))) unstarted.push(pkg);
+    }
   }),
 );
+
+// A package that never ran has no entries in the log. Writing the survey now
+// would drop its previous evidence (a targeted survey filters it out, a full one
+// replaces everything), and the rules it holds would silently lose their oxlint
+// claim. Leave the committed survey as it was.
+if (unstarted.length > 0) {
+  console.error(
+    `\nsurvey incomplete: could not start ${unstarted.sort().join(', ')}; ${path.relative(ROOT, OUT)} left unchanged.`,
+  );
+  process.exit(1);
+}
 
 interface Entry {
   package: string;

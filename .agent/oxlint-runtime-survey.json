@@ -1567,6 +1567,11 @@
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-node-security/require-emitter-error-handler": {
+      "cases": 45,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-node-security/require-secure-credential-storage": {
       "cases": 107,
       "failed": 0,
@@ -1989,6 +1994,11 @@
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-react-features/forbid-foreign-prop-types": {
+      "cases": 27,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-react-features/hooks-exhaustive-deps": {
       "cases": 58,
       "failed": 0,
@@ -2041,6 +2051,11 @@
     },
     "eslint-plugin-react-features/jsx-no-undef": {
       "cases": 14,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-react-features/jsx-pascal-case": {
+      "cases": 51,
       "failed": 0,
       "examples": []
     },
@@ -2279,6 +2294,11 @@
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-react-features/react/forbid-foreign-prop-types": {
+      "cases": 27,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-react-features/react/hooks-exhaustive-deps": {
       "cases": 58,
       "failed": 0,
@@ -2331,6 +2351,11 @@
     },
     "eslint-plugin-react-features/react/jsx-no-undef": {
       "cases": 14,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-react-features/react/jsx-pascal-case": {
+      "cases": 51,
       "failed": 0,
       "examples": []
     },
@@ -2514,6 +2539,11 @@
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-react-features/react/style-prop-object": {
+      "cases": 44,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-react-features/react/void-dom-elements-no-children": {
       "cases": 29,
       "failed": 0,
@@ -2556,6 +2586,11 @@
     },
     "eslint-plugin-react-features/static-property-placement": {
       "cases": 30,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-react-features/style-prop-object": {
+      "cases": 44,
       "failed": 0,
       "examples": []
     },

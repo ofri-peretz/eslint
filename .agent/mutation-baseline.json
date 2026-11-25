@@ -628,6 +628,13 @@
           "noCoverage": 0,
           "timeout": 0
         },
+        "require-emitter-error-handler": {
+          "score": 100,
+          "killed": 134,
+          "survived": 0,
+          "noCoverage": 0,
+          "timeout": 1
+        },
         "require-secure-credential-storage": {
           "score": 96.1,
           "killed": 100,
@@ -650,11 +657,11 @@
           "timeout": 0
         },
         "require-stream-error-handler": {
-          "score": 92.8,
-          "killed": 129,
-          "survived": 9,
+          "score": 96,
+          "killed": 196,
+          "survived": 7,
           "noCoverage": 1,
-          "timeout": 0
+          "timeout": 1
         },
         "utils/const-value": {
           "score": 91.5,

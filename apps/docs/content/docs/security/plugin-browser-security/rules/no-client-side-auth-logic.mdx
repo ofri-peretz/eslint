@@ -28,6 +28,8 @@ Prevent client-side authentication logic that can be bypassed. This rule is part
 
 Client-side authentication checks can be easily bypassed. Always validate authentication on the server.
 
+Two different properties read off the same plain identifier (`form.password !== form.repeat`) are a confirm-password check and are not reported; a credential compared with a value from another object still is.
+
 ## Examples
 
 ### ❌ Incorrect

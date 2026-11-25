@@ -36,9 +36,11 @@ describe('no-sensitive-data-exposure', () => {
         },
         // Logger methods without sensitive data
         {
+          name: 'a logger call with a fixed message and no secret',
           code: `logger.info('Request received');`,
         },
         {
+          name: 'an error log with only static prose names no secret',
           code: `logger.error('Operation failed');`,
         },
         {

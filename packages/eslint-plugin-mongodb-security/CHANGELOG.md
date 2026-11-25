@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-mongodb-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 10.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — `no-bypass-middleware` now reports only where Mongoose is in play: a Mongoose package or plugin import, a `mongoose` binding, `new Schema(...)`, `Types.ObjectId` or `.lean()`. Found linting open-source Node apps: code that drives the native `mongodb` driver (`db.collection('x').updateOne(...)`) has no `pre('updateOne')` hook to bypass, and one app produced 301 reports. A native `.collection('x')` handle is also skipped in a file that uses both.
+
 ## 10.1.1
 
 ### Patch Changes
