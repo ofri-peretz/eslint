@@ -19,7 +19,11 @@ describe('eslint-plugin-react-a11y plugin interface', () => {
     expect(ruleKeys).toContain('anchor-has-content');
     expect(ruleKeys).toContain('aria-props');
     
-    expect(ruleKeys.length).toBe(37);
+    // 37 rules of ours, plus the three deprecated jsx-a11y no-ops.
+    expect(ruleKeys.length).toBe(40);
+    expect(ruleKeys).toContain('accessible-emoji');
+    expect(ruleKeys).toContain('label-has-for');
+    expect(ruleKeys).toContain('no-onchange');
   });
 
   describe('configurations', () => {
@@ -45,7 +49,28 @@ describe('eslint-plugin-react-a11y plugin interface', () => {
       });
       
       expect(strictRules['react-a11y/alt-text']).toBe('error');
-      expect(Object.keys(strictRules).length).toBe(Object.keys(rules).length);
+      // Every rule but the three deprecated no-ops (see deprecated-stubs.test.ts).
+      expect(Object.keys(strictRules).length).toBe(
+        Object.keys(rules).length - 3,
+      );
+    });
+
+    it('leaves every deprecated rule out of strict, whatever its name', () => {
+      // `strict` skips the stubs by a static name set, not by reading `meta`
+      // (which would load every rule at import). This ties the set to `meta`:
+      // a rule marked deprecated and missing from the set lands in strict here.
+      const strictRules = Object.keys(configs.strict.rules || {});
+      const deprecated = Object.entries(rules)
+        .filter(([, rule]) => rule.meta?.deprecated)
+        .map(([name]) => name);
+      expect(deprecated.sort()).toEqual([
+        'accessible-emoji',
+        'label-has-for',
+        'no-onchange',
+      ]);
+      for (const name of deprecated) {
+        expect(strictRules, name).not.toContain(`react-a11y/${name}`);
+      }
     });
 
     it.each(['flagship', 'recommended', 'strict', 'wcag-a', 'wcag-aa'])(

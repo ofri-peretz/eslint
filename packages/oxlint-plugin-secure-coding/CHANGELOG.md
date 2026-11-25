@@ -5,6 +5,21 @@ All notable changes to `oxlint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.5.0
+
+### Minor Changes
+
+- **✨ Feature** — new rule no-unguarded-uri-decode (CWE-248). Reports `decodeURIComponent`/`decodeURI` on request or page-location input outside a `try`/`catch`, where a malformed escape such as `p%ss` throws URIError, and a literal that cannot decode. In `strict`, not in `recommended`.
+
+### Patch Changes
+
+- **🐛 Fix** — stop reporting four keys it can prove safe
+
+  The index of `Object.values(x).forEach((v, i) => …)`, and of the other Object listing statics, is an Array index. A binding destructured from a const list of string tuples (`for (const [a, b] of PAIRS)`) takes only values the file spells out. `delete o[k]` and `o[k]()` over a literal list now take the proof `o[k] = v` already took, and `delete o[k]` on an `Object.create(null)` object is no longer reported. A list that spells `__proto__` or `constructor` still reports.
+
+- **🐛 Fix** — no-hardcoded-credentials no longer reports an OpenAPI path template (`'/access-token/{id}'`) or a slash-namespaced error code (`'infra_token/invalid_token'`) as a credential
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.5.0`
+
 ## 6.4.13
 
 ### Patch Changes

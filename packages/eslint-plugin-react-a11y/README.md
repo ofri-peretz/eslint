@@ -162,9 +162,10 @@ Facts, as measured against eslint-plugin-jsx-a11y 6.10.2.
   ```
 
   `// eslint-disable-next-line jsx-a11y/alt-text` keeps working unchanged.
-- **Rules that do not exist here:** `aria-proptypes` (a live upstream rule, enabled in both upstream presets),
-  and the three rules deprecated upstream: `accessible-emoji`, `label-has-for` and `no-onchange`. A config that
-  names any of them throws `Could not find "<rule>"` on load, even as `off`.
+- **Rules that do not exist here:** `aria-proptypes` (a live upstream rule, enabled in both upstream presets).
+  A config that enables it throws on load. The deprecated upstream rules `accessible-emoji`, `label-has-for` and
+  `no-onchange` are registered as no-ops (`meta.deprecated: true`), so a config that names them loads; they report
+  nothing and no preset enables them. `label-has-for` is `replacedBy` `label-has-associated-control`.
 - **Options load.** The option objects in upstream's `recommended` and `strict` presets load without error
   (`includeRoles`, `allowExpressionValues`, element-keyed handler lists, `elements`, `hoverInHandlers`). Which are
   read is listed on each rule's page; `includeRoles` is accepted and read by nothing, as upstream.
@@ -203,6 +204,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [accessible-emoji](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/accessible-emoji?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | Deprecated no-op kept so eslint-plugin-jsx-a11y configs naming it load; it reports nothing. | 🟢 |  |  |  |  | 🚫 |
 | [alt-text](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/alt-text?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | Enforce alt text on images and other visual elements that carry accessibility impact. | 🟢 | 💼 |  |  | 💡 |  |
 | [anchor-ambiguous-text](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-ambiguous-text?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | anchor-ambiguous-text rule | 🟢 |  | ⚠️ |  | 💡 |  |
 | [anchor-has-content](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-has-content?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | anchor-has-content rule | 🟢 | 💼 |  |  | 💡 |  |
@@ -220,6 +222,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [img-redundant-alt](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/img-redundant-alt?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | img-redundant-alt rule | 🟢 |  | ⚠️ |  | 💡 |  |
 | [interactive-supports-focus](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/interactive-supports-focus?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | interactive-supports-focus rule | 🟢 | 💼 |  |  | 💡 |  |
 | [label-has-associated-control](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/label-has-associated-control?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | label-has-associated-control rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [label-has-for](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/label-has-for?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | Deprecated no-op kept so eslint-plugin-jsx-a11y configs naming it load; it reports nothing. | 🟢 |  |  |  |  | 🚫 |
 | [lang](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/lang?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | lang rule | 🟢 | 💼 |  |  | 💡 |  |
 | [media-has-caption](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/media-has-caption?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | media-has-caption rule | 🟢 |  | ⚠️ |  | 💡 |  |
 | [mouse-events-have-key-events](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/mouse-events-have-key-events?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | mouse-events-have-key-events rule | 🟢 |  | ⚠️ |  | 💡 |  |
@@ -233,6 +236,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [no-noninteractive-element-interactions](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-noninteractive-element-interactions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | no-noninteractive-element-interactions rule | 🟢 |  | ⚠️ |  | 💡 |  |
 | [no-noninteractive-element-to-interactive-role](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-noninteractive-element-to-interactive-role?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | no-noninteractive-element-to-interactive-role rule | 🟢 |  | ⚠️ |  | 💡 |  |
 | [no-noninteractive-tabindex](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-noninteractive-tabindex?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | no-noninteractive-tabindex rule | 🟢 |  | ⚠️ |  | 💡 |  |
+| [no-onchange](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-onchange?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | Deprecated no-op kept so eslint-plugin-jsx-a11y configs naming it load; it reports nothing. | 🟢 |  |  |  |  | 🚫 |
 | [no-redundant-roles](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-redundant-roles?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | no-redundant-roles rule | 🟢 |  | ⚠️ |  | 💡 |  |
 | [no-static-element-interactions](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-static-element-interactions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | no-static-element-interactions rule | 🟢 |  | ⚠️ |  | 💡 |  |
 | [prefer-tag-over-role](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/prefer-tag-over-role?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | prefer-tag-over-role rule | 🟢 |  | ⚠️ |  | 💡 |  |

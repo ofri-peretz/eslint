@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-browser-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.7
+
+### Patch Changes
+
+- **🐛 Fix** — `no-http-urls` and `no-unencrypted-transmission`: the entries of a URI-scheme prefix table are not reported. An array literal of at least two string elements, every one of which names no host (empty, `tel:`, `https://`, `http://www.`, `ftp://ftp.`, `ftp://anonymous:anonymous@`), is an encoding dictionary such as the NFC URI-record prefix table, never a destination. One element with a host, a non-literal element, a single-element array, and URLs outside an array still report.
+
 ## 3.1.6
 
 ### Patch Changes

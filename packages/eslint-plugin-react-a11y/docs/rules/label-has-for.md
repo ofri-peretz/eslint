@@ -1,0 +1,49 @@
+---
+title: label-has-for
+description: Deprecated no-op kept so eslint-plugin-jsx-a11y configs naming it load; it reports nothing.
+tags: ['accessibility', 'a11y', 'react', 'deprecated']
+category: quality
+deprecated: true
+---
+
+<!-- @rule-summary -->
+
+Deprecated no-op kept so eslint-plugin-jsx-a11y configs naming it load; it reports nothing.
+<!-- @/rule-summary -->
+
+# label-has-for
+
+> **Keywords:** label-has-for, deprecated, eslint-plugin-jsx-a11y, migration, ESLint rule
+
+Upstream's rule asked for a `label` to have `htmlFor` or a nested control. jsx-a11y 6.10.2 deprecates it in favour of [`label-has-associated-control`](./label-has-associated-control.md). This rule is a no-op: enable `label-has-associated-control` instead.
+
+## Quick Summary
+
+| Aspect         | Details                                                                                                               |
+| :------------- | :-------------------------------------------------------------------------------------------------------------------- |
+| **Status**     | Deprecated (`meta.deprecated: true`), replaced by [`label-has-associated-control`](./label-has-associated-control.md) |
+| **Reports**    | Nothing                                                                                                               |
+| **In presets** | No preset enables it                                                                                                  |
+| **Options**    | `components`, `required` and `allowChildren` are accepted, as in upstream's schema, and not read                      |
+
+## Why it exists
+
+eslint-plugin-jsx-a11y 6.10.2 still exports this rule, deprecated, and sets it to `off` in both of its presets. A config that registers this plugin under the `jsx-a11y` key and names `label-has-for`, or a `// eslint-disable-next-line jsx-a11y/label-has-for` comment, would otherwise stop ESLint with "Could not find rule". With this entry it loads and does nothing.
+
+## Configuration
+
+```javascript
+// eslint.config.js
+import reactA11y from 'eslint-plugin-react-a11y';
+
+export default [
+  {
+    plugins: { 'jsx-a11y': reactA11y },
+    rules: { 'jsx-a11y/label-has-for': 'off' },
+  },
+];
+```
+
+## Further Reading
+
+- [eslint-plugin-jsx-a11y label-has-for](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/v6.10.2/docs/rules/label-has-for.md)
