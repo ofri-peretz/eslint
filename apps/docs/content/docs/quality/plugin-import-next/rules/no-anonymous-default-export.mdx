@@ -13,13 +13,17 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## Rule Details
 
-A default-exported function or class without a name shows up as `default` (or nothing) in stack traces, profilers and React DevTools, and editors cannot auto-import it under a stable name. This rule reports a default export that is an anonymous function or class:
+A default-exported function or class without a name shows up as `default` (or nothing) in stack traces, profilers and React DevTools, and editors cannot auto-import it under a stable name. This rule reports a default export that is an anonymous value, read as `eslint-plugin-import` 2.32.0 reads it:
 
 - an arrow function, also behind a TS wrapper (`(() => {}) as Handler`);
 - an anonymous function expression or declaration (`export default function () {}`);
 - an anonymous class expression or declaration (`export default class {}`).
 
-A named function or class (also a named expression, `export default (function load() {})`) is fine. Values that are not functions or classes (identifiers, member references, calls, `new`, literals, templates, objects, arrays, interfaces) are not this rule's concern.
+- an array, a literal or template literal, an object, and a `new` expression, unless the matching option allows it (`allowArray`, `allowLiteral`, `allowObject`, `allowNew`).
+
+A named function or class (also a named expression, `export default (function load() {})`) is fine, and so are identifiers, member references, interfaces and calls (`allowCallExpression` defaults to `true`).
+
+**Default change (minor).** Before this release, with no options the rule reported only functions and classes, and `export default {}`, `[]`, a literal or `new Foo()` passed. They are now reported, as `import/no-anonymous-default-export` reports them. On receptron/mulmoclaude this moves 0 reports to 9, upstream's count. To keep the old behavior set `allowArray`, `allowLiteral`, `allowObject` and `allowNew` to `true`.
 
 ### ❌ Incorrect
 
@@ -36,23 +40,16 @@ export default function load() {}
 export default class Store {}
 const handler = () => {};
 export default handler;
-export default { retries: 3 };
+const config = { retries: 3 };
+export default config;
 ```
 
 ### eslint-plugin-import options
 
-A config carried over from `import/no-anonymous-default-export` loads, and is
-read the way that plugin reads it. Naming any of `allowArray`,
-`allowAnonymousClass`, `allowAnonymousFunction`, `allowCallExpression`,
-`allowNew`, `allowLiteral` or `allowObject` switches to its defaults: an
-array, a literal or template literal, an object and a `new` expression are
-reported unless allowed, and a call is allowed unless `allowCallExpression`
-is `false`. `allowAnonymousClass` and `allowAnonymousFunction` are its names
-for `allowClassExpression` and `allowFunctionExpression`.
-
-Without one of those options this rule reports only anonymous functions and
-classes; eslint-plugin-import with no options also reports arrays, literals,
-objects and `new` expressions.
+A config carried over from `import/no-anonymous-default-export` loads and means
+the same. `allowAnonymousClass` and `allowAnonymousFunction` are its names for
+`allowClassExpression` and `allowFunctionExpression`; a call is allowed unless
+`allowCallExpression` is `false`.
 
 ## Options
 

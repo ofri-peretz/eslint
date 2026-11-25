@@ -120,6 +120,14 @@ The analysis follows the claims inside one function, through member reads,
 bindings. It cannot see a lookup's side effects, so a `findById(claims.sub)`
 that also writes is a lookup to it. A flow it cannot place is reported.
 
+A **conversion** is not a lookup. `String(claims.secret)`, `Number(...)`,
+`BigInt(...)`, `new String(...)`, `Buffer.from(...)`, `Buffer.alloc(...)` and a
+template literal keep the claim's value, so a claim converted this way is as
+attacker-chosen as the claim itself and is reported. A method called on a claim
+(`claims.secret.trim()`) is a use and is reported too. A call that takes the
+claim as an argument (`getKey(claims.kid)`, `await fetchKey(claims.iss)`) and a
+table indexed by it (`keys[claims.kid]`) are lookups and stay exempt.
+
 A token is exempt as a **back-channel** value only when it structurally
 comes from an HTTP response this code requested: the body of a `fetch()`
 response, an axios / got / ky / undici response, or an openid-client grant

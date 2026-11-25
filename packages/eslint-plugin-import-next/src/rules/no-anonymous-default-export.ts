@@ -60,33 +60,19 @@ const VALUE_KIND_OPTION: Record<string, ValueKindOption> = {
 };
 
 /**
- * Options only eslint-plugin-import has. One of them means the config is
- * written its way, and is read its way: every value kind it reports by
- * default (arrays, literals, objects, `new`) is reported unless allowed.
- * Without one, this rule's own reading: only functions and classes.
+ * Value kinds, read as eslint-plugin-import 2.32.0 reads them
+ * (src/rules/no-anonymous-default-export.js, `defs` lines 12-61 and the
+ * defaults at line 68): reported unless the option allows them. Calls are
+ * the one kind allowed by default (line 27). The earlier "own reading" that
+ * left these unreported at default options (#1574) is gone: the incumbent's
+ * defaults are what a drop-in is graded by.
  */
-const UPSTREAM_ONLY = new Set([
-  'allowArray',
-  'allowAnonymousClass',
-  'allowAnonymousFunction',
-  'allowCallExpression',
-  'allowNew',
-  'allowLiteral',
-  'allowObject',
-]);
-const VALUE_KINDS_UPSTREAM: Record<ValueKindOption, boolean> = {
+const VALUE_KIND_DEFAULTS: Record<ValueKindOption, boolean> = {
   allowArray: false,
   allowCallExpression: true,
   allowNew: false,
   allowLiteral: false,
   allowObject: false,
-};
-const VALUE_KINDS_OWN: Record<ValueKindOption, boolean> = {
-  allowArray: true,
-  allowCallExpression: true,
-  allowNew: true,
-  allowLiteral: true,
-  allowObject: true,
 };
 
 const UPSTREAM_SWITCH = (description: string) => ({
@@ -231,10 +217,13 @@ export const noAnonymousDefaultExport = createRule<RuleOptions, MessageIds>({
         case 'ClassExpression':
         case 'ClassDeclaration':
           return !value.id && !allowClassExpression;
-        default:
-          // Arrays, literals, objects, `new` and calls: reported only under
-          // eslint-plugin-import's reading, and only when not allowed.
-          return valueKinds[VALUE_KIND_OPTION[value.type]] === false;
+        default: {
+          // Arrays, literals, objects, `new` and calls, by the declaration's
+          // own node type as upstream does: `{} satisfies T` is a
+          // TSSatisfiesExpression, which upstream's `defs` has no entry for.
+          const option = VALUE_KIND_OPTION[node.declaration.type];
+          return option !== undefined && valueKinds[option] === false;
+        }
       }
     }
 
@@ -263,9 +252,8 @@ export const noAnonymousDefaultExport = createRule<RuleOptions, MessageIds>({
       before() {
         const [options] = context.options;
         const o = options || {};
-        const upstream = Object.keys(o).some((key) => UPSTREAM_ONLY.has(key));
         const merged = {
-          ...(upstream ? VALUE_KINDS_UPSTREAM : VALUE_KINDS_OWN),
+          ...VALUE_KIND_DEFAULTS,
           allowArrowFunction: false,
           allowClassExpression: false,
           allowFunctionExpression: false,

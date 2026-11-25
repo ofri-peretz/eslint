@@ -341,7 +341,9 @@ describe('jsx-key (layer 2, synthetic parent chains)', () => {
     for (const wrapperType of ['ConditionalExpression', 'LogicalExpression']) {
       const { listeners, reports } = createWithMockContext(jsxKey);
       const node = jsxEl();
-      const wrapper = { type: wrapperType };
+      // A real `&&` / `||` carries the element as its right operand; a real `?:`
+      // as a branch. The mock names the field so the rule's own check can see it.
+      const wrapper: AnyNode = { type: wrapperType, right: node, consequent: node };
       const arrow: AnyNode = { type: 'ArrowFunctionExpression', params: [], body: wrapper };
       const arrayFrom = {
         type: 'CallExpression',
@@ -391,8 +393,11 @@ describe('jsx-key (layer 2, synthetic parent chains)', () => {
 
   // Array.from, not Children.map: React's Children.map keys what its callback
   // returns, so the rule no longer judges it (CORRECTED with the fidelity model).
-  it('Array.from: return statement with a different argument keeps walking', () => {
-    // L376 false arm; the arrow-body check above it later returns true.
+  it('Array.from: a return statement whose argument is another node is not a list item', () => {
+    // CORRECTED: the walk used to continue past this `return` up to the arrow
+    // and report; eslint-plugin-react's jsx-key judges `return` arguments only
+    // (lib/rules/jsx-key.js:112-136), so an element that is not the argument
+    // is not the list item.
     const { listeners, reports } = createWithMockContext(jsxKey);
     const node = jsxEl();
     const ret: AnyNode = { type: 'ReturnStatement', argument: { type: 'Identifier', name: 'z' } };
@@ -411,8 +416,7 @@ describe('jsx-key (layer 2, synthetic parent chains)', () => {
     link(arrow, childrenMap);
     link(childrenMap, null);
     listener(listeners, 'JSXElement')(node);
-    expect(reports).toHaveLength(1);
-    expect(reports[0]).toMatchObject({ messageId: 'missingKey' });
+    expect(reports).toHaveLength(0);
   });
 
   it('callback param name found on a function expression parent during the walk', () => {
@@ -450,9 +454,11 @@ describe('jsx-key (layer 2, synthetic parent chains)', () => {
     expect(calls[0].args[1]).toBe(' key={kid.id}');
   });
 
-  it('callback param name walk breaks on a non-iterator function and derives no key', () => {
-    // RS-branch break at L449 (owner exists but is not an iterator callback),
-    // FunctionExpression-branch operand walk, and the `'item'` fallback.
+  it('a return owned by a non-iterator function is not a list item, whatever wraps that function', () => {
+    // CORRECTED: the walk used to skip the non-iterator owner and carry on to an
+    // outer iterator callback, reporting (and then withholding the suggestion).
+    // The nearest function owns the `return`; upstream judges nothing else
+    // (lib/rules/jsx-key.js:112-153).
     const { listeners, reports } = createWithMockContext(jsxKey);
     const node = jsxEl();
     const ret: AnyNode = { type: 'ReturnStatement', argument: node };
@@ -481,15 +487,7 @@ describe('jsx-key (layer 2, synthetic parent chains)', () => {
     link(fnY, childrenMap);
     link(childrenMap, null);
     listener(listeners, 'JSXElement')(node);
-    expect(reports).toHaveLength(1);
-    /*
-     * CORRECTED 2026-09-20: previously asserted the walk fell back to
-     * ` key={item.id}`. The innermost iterator callback here takes no
-     * parameter, so nothing binds `item` and the suggestion is withheld
-     * rather than naming it.
-     */
-    const report: AnyNode = reports[0];
-    expect(report.suggest).toBeUndefined();
+    expect(reports).toHaveLength(0);
   });
 
   it('iterator context resets the key tracker without reporting', () => {
