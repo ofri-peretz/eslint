@@ -24,7 +24,10 @@ describe('no-deprecated-buffer coverage gaps', () => {
   ruleTester.run('no-deprecated-buffer', noDeprecatedBuffer, {
     valid: [
       // new expression on a non-Buffer identifier → guard returns
-      { code: 'const view = new DataStore(8);' },
+      {
+        name: 'new DataStore(8) is a new expression on a non-Buffer identifier, so the guard returns without reporting',
+        code: 'const view = new DataStore(8);',
+      },
       // A `Buffer` binding declared without an initializer proves nothing.
       { code: 'let Buffer;\nBuffer = loadCtor();\nconst x = new Buffer(4);' },
       // Bound to something that is not the buffer module.

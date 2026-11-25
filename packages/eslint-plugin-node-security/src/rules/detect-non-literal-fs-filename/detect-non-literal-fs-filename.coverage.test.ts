@@ -32,6 +32,7 @@ describe('detect-non-literal-fs-filename coverage gaps', () => {
     valid: [
       // includes() validation on the variable itself → pattern-1 second operand
       {
+        name: 'userPath.includes(base) — a validation call on the tainted value itself, not an allowlist.includes(userPath) check — still guards the read',
         code: [
           'function read(userPath, base) {',
           '  if (userPath.includes(base)) { fs.readFile(userPath); }',

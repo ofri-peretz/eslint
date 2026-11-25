@@ -47,6 +47,7 @@ describe('require-aead-tag-verification', () => {
       // benchmarks/corpus/CWE-327/safe/gcm-encrypt-authtag.js — the ENCRYPT
       // side has no tag to verify; getAuthTag() produces one.
       {
+        name: 'the ENCRYPT side (createCipheriv) has no tag to verify — getAuthTag() produces one, it does not consume one (CWE-327/gcm-encrypt-authtag)',
         code: `
           const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
           let ct = cipher.update(plaintext, 'utf8', 'hex');

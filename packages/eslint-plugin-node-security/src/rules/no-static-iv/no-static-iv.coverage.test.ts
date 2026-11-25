@@ -25,7 +25,10 @@ describe('no-static-iv coverage gaps', () => {
   ruleTester.run('no-static-iv', noStaticIv, {
     valid: [
       // Declarator without call initializer → tracking guard false
-      { code: 'let pendingIv;' },
+      {
+        name: 'a declarator with no call initializer (let pendingIv;) makes the IV-tracking guard false',
+        code: 'let pendingIv;',
+      },
       // (`createCipheriv("aes-256-gcm", key, "@#!")` used to be asserted VALID
       //  here: a short non-hex, non-base64 string slipped the old pattern
       //  filter. It is a fixed three-byte GCM nonce — now INVALID, see

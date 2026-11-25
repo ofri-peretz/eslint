@@ -37,7 +37,10 @@ describe('no-dynamic-command-string', () => {
         code: `spawn('bash', ['-c', 'ls -la']);`,
         name: 'a shell given a fully static command line is not reported',
       },
-      { code: `spawn('bash', ['-lc']);` },
+      {
+        name: "a combined login+command flag ('-lc') with no following command argument has nothing dynamic to check",
+        code: `spawn('bash', ['-lc']);`,
+      },
       { code: `spawn('bash', ['--login']);` },
       // -e is errexit to a POSIX shell, not a command flag
       { code: `spawn('bash', ['-e', deployScript]);` },
