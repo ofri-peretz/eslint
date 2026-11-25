@@ -107,7 +107,7 @@ Install [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-
 
 | Package | Version                                                          |
 | :------ | :--------------------------------------------------------------- |
-| oxlint  | verified on `1.90.0`: CI loads every rule ID through `jsPlugins` |
+| oxlint  | verified on `1.94.0`: CI loads every rule ID through `jsPlugins` |
 | Vite+   | `lint.jsPlugins` in `vite.config.ts`                             |
 | Node.js | `>=22.13.0`                                                      |
 
