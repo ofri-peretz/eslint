@@ -32,9 +32,10 @@ export function resolveElementType(
 
   const { polymorphicPropName, polymorphicAllowList } = a11y;
   if (typeof polymorphicPropName === 'string') {
-    const value = staticAttributeValue(
-      findAttribute(node, polymorphicPropName),
-    );
+    const attr = findAttribute(node, polymorphicPropName);
+    // A bare attribute (`<Box as />`) is boolean `true` to jsx-ast-utils, which
+    // never names an element; `staticAttributeValue` renders it as "true".
+    const value = attr?.value === null ? null : staticAttributeValue(attr);
     const allowed =
       !Array.isArray(polymorphicAllowList) ||
       polymorphicAllowList.includes(type);

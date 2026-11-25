@@ -94,6 +94,12 @@ describe('scope', () => {
           settings: polymorphic({ polymorphicAllowList: ['Text'] }),
         },
         {
+          // @found ofri-peretz/eslint PR #1739 review thread PRRT_kwDOQJxXsc67tyLs
+          name: 'a bare polymorphic attribute is boolean true, not a tag name, so the component stays',
+          code: '<Box as scope="row" />',
+          settings: polymorphic(),
+        },
+        {
           name: 'a dynamic polymorphic value cannot be resolved, so the component stays',
           code: '<Box as={tag} scope="row" />',
           settings: polymorphic(),
