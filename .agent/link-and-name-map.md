@@ -33,7 +33,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-drizzle-security` | 2.0.4 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
 | `eslint-plugin-express-security` | 4.3.3 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
 | `eslint-plugin-gemini-security` | 2.0.4 | `gemini-security/` | — | `plugin-gemini-security` | security | `gemini` | ✅ | ✅ | ✅ |
-| `eslint-plugin-import-next` | 4.1.10 | `import-next/` | — | `plugin-import-next` | quality | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-import-next` | 4.1.11 | `import-next/` | — | `plugin-import-next` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-jwt-security` | 4.0.5 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
 | `eslint-plugin-knex-security` | 2.0.4 | `knex-security/` | — | `plugin-knex-security` | security | `knex` | ✅ | ✅ | ✅ |
 | `eslint-plugin-lambda-security` | 3.0.5 | `lambda-security/` | — | `plugin-lambda-security` | security | `lambda` | ✅ | ✅ | ✅ |
@@ -44,12 +44,12 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-mongodb-security` | 10.1.2 | `mongodb-security/` | — | `plugin-mongodb-security` | security | `mongodb` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mysql-security` | 2.0.4 | `mysql-security/` | — | `plugin-mysql-security` | security | `mysql` | ✅ | ✅ | ✅ |
 | `eslint-plugin-nestjs-security` | 4.2.5 | `nestjs-security/` | — | `plugin-nestjs-security` | security | `nestjs` | ✅ | ✅ | ✅ |
-| `eslint-plugin-node-security` | 6.1.5 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
+| `eslint-plugin-node-security` | 6.2.0 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
 | `eslint-plugin-openai-security` | 2.0.4 | `openai-security/` | — | `plugin-openai-security` | security | `openai` | ✅ | ✅ | ✅ |
 | `eslint-plugin-operability` | 5.0.8 | `operability/` | — | `plugin-operability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-postgresql-security` | 3.0.6 | `postgresql-security/` | `pg/` | `plugin-postgresql-security` | security | `postgresql` | ✅ | ✅ | ✅ |
 | `eslint-plugin-prisma-security` | 2.0.4 | `prisma-security/` | — | `plugin-prisma-security` | security | `prisma` | ✅ | ✅ | ✅ |
-| `eslint-plugin-react-a11y` | 3.0.10 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
+| `eslint-plugin-react-a11y` | 3.1.0 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-features` | 2.4.2 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-reliability` | 5.0.8 | `reliability/` | — | `plugin-reliability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-secure-coding` | 6.4.12 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
