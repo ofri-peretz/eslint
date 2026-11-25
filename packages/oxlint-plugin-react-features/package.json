@@ -1,7 +1,7 @@
 {
   "name": "oxlint-plugin-react-features",
-  "version": "2.0.1",
-  "description": "The react-features rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-react-features.",
+  "version": "2.4.3",
+  "description": "Oxlint React hooks and JSX rules — prop-types, JSX correctness, render performance, and class-to-hooks migration for modern React codebases. Same rules and rule IDs as eslint-plugin-react-features, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./index.js",
@@ -62,12 +62,12 @@
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
   "engines": {
-    "node": ">=22.13.0"
+    "node": "^20.19.0 || ^22.13.0 || >=24"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-react-features": "2.0.1"
+    "eslint-plugin-react-features": "2.4.3"
   }
 }

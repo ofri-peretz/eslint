@@ -5,6 +5,55 @@ All notable changes to `oxlint-plugin-mcp-sdk-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.2
+
+### Patch Changes
+
+- **📚 Docs** — Getting Started now leads each plugin README, with the ESLint install line and a flat config that loads
+
+  The install block was below the Description and the doctrine, and on 17 of the 31 plugins there was no flat-config snippet on the page at all. `eslint-plugin-secure-coding`'s README showed `...securePlugin.configs.recommended`, which throws `TypeError: ... is not iterable` when pasted, because `configs.recommended` is one object. Every plugin README now opens with `npm install --save-dev eslint <plugin>` and `import { configs } from '<plugin>'` and `export default [configs.recommended]` in an `eslint.config.mjs`, then the Description. A test now loads that snippet in ESLint for every plugin.
+
+  The star banner above the first heading, the footer block with the star counter and the Dev.to ask are replaced by one `## Support` paragraph at the end: report a false positive, or star the repo if the plugin helped.
+
+  `eslint-plugin-import-next` opens with its drop-in grade, read from the newest `benchmarks/results/ilb-import-parity` result with its date: passes 2,035 of 2,135 (95.3%) of eslint-plugin-import 2.32.0's own test cases, measured 2026-11-19.
+
+  Eight taglines now say what the plugin flags instead of "security rules for X" (secure-coding, node-security, browser-security, nestjs-security, express-security, vercel-ai-security, react-a11y, import-next). `eslint-plugin-node-security` adds one proof line: the public repositories that list it, with the date they were checked.
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-mcp-sdk-security@2.1.2`
+
+## 2.1.1
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-mcp-sdk-security@2.1.1`
+
+## 2.1.0
+
+### Minor Changes
+
+- **✨ Feature** — @hono/node-server serve() binds are checked, and the manifest names the v2 SDK
+
+  - `require-http-transport-hardening` reports `missingAuth` for
+    `serve({ fetch, port })` from `@hono/node-server` with no `hostname` (it binds
+    every interface, like `listen(port)`) or with `hostname: '0.0.0.0'`, in a file
+    that serves MCP over HTTP with no authentication. A file that calls
+    `createMcpHandler` now counts as serving MCP over HTTP. The MCP TypeScript
+    SDK's own Hono example is this shape.
+  - `peerDependencies` lists the SDK v2 packages the rules already cover
+    (`@modelcontextprotocol/server`, `client`, `core`, `node`, `express`, `hono`,
+    `fastify`, `server-legacy`, all `^2.0.0` and optional) next to
+    `@modelcontextprotocol/sdk`.
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-mcp-sdk-security@2.1.0`
+
+## 2.0.2
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-mcp-sdk-security@2.0.2`
+
 ## 2.0.1
 
 ### Patch Changes

@@ -462,12 +462,6 @@
     "corpus": "nest-corpus4"
   },
   {
-    "name": "reactpress",
-    "repo": "https://github.com/fecommunity/reactpress.git",
-    "commit": "39ea6e0ff5cc7a570ee7673da1c79d8228fe3f2a",
-    "corpus": "nest-corpus5"
-  },
-  {
     "name": "realworld",
     "repo": "https://github.com/lujakob/nestjs-realworld-example-app.git",
     "commit": "c1c2cc4e448b279ff083272df1ac50d20c3304fa",

@@ -5,6 +5,72 @@ All notable changes to `eslint-plugin-operability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.0.8
+
+### Patch Changes
+
+- **🐛 Fix** — AGENTS.md lists the rules in no preset by name on one line (README.md describes each), so the file an agent loads stays inside its guidance budget.
+
+## 5.0.7
+
+### Patch Changes
+
+- **🐛 Fix** — treat test files as non-production for console and debug-code rules
+
+  `no-console-log` and `no-debug-code-in-production` treat `*.test.*` / `*.spec.*` files as non-production (`ignoreNonProductionPaths`), so a `console.log` in a test is no longer reported twice.
+
+## 5.0.6
+
+### Patch Changes
+
+- **🐛 Fix** — `no-console-log` and `no-debug-code-in-production` skip the module that is the logger
+
+  A logger has to call `console.log` somewhere. A module named `logger`, `logging`, `log`, `fooLogger` or `foo-logger` is now skipped by both rules, behind a new `ignoreLoggerModules` option (default `true`). `catalog.ts`, `blog.ts`, `loggerFactory.ts` and every other file still report.
+
+## 5.0.5
+
+### Patch Changes
+
+- **📚 Docs** — Getting Started now leads each plugin README, with the ESLint install line and a flat config that loads
+
+  The install block was below the Description and the doctrine, and on 17 of the 31 plugins there was no flat-config snippet on the page at all. `eslint-plugin-secure-coding`'s README showed `...securePlugin.configs.recommended`, which throws `TypeError: ... is not iterable` when pasted, because `configs.recommended` is one object. Every plugin README now opens with `npm install --save-dev eslint <plugin>` and `import { configs } from '<plugin>'` and `export default [configs.recommended]` in an `eslint.config.mjs`, then the Description. A test now loads that snippet in ESLint for every plugin.
+
+  The star banner above the first heading, the footer block with the star counter and the Dev.to ask are replaced by one `## Support` paragraph at the end: report a false positive, or star the repo if the plugin helped.
+
+  `eslint-plugin-import-next` opens with its drop-in grade, read from the newest `benchmarks/results/ilb-import-parity` result with its date: passes 2,035 of 2,135 (95.3%) of eslint-plugin-import 2.32.0's own test cases, measured 2026-11-19.
+
+  Eight taglines now say what the plugin flags instead of "security rules for X" (secure-coding, node-security, browser-security, nestjs-security, express-security, vercel-ai-security, react-a11y, import-next). `eslint-plugin-node-security` adds one proof line: the public repositories that list it, with the date they were checked.
+
+## 5.0.4
+
+### Patch Changes
+
+- **🐛 Fix** — Three autofixes no longer write broken code into a file.
+
+  `import-next/no-default-export` stripped `export default` from every declaration it did not otherwise handle, so `export default function () {}`, `export default class {}`, ``export default `x` `` and `export default { a: 1 } satisfies T` became unparseable `export ...` forms. An anonymous function or class is now given a name where it stands, every expression is bound to a name and exported by it, and a declaration with no safe rewrite (an overload signature, a decorated anonymous class) is reported without a fix. The generated name (`defaultExport`, `defaultFunction`, `DefaultClass`) is checked against the module's bindings, the globals it reads and the names it already exports, and gets a numeric suffix on a clash instead of a second declaration.
+
+  `modernization/prefer-at` rewrote `xs[xs.length - 1]` to `xs.at(-1)` on any receiver, including `NodeList` and `HTMLCollection`, which have no `.at()`. It now fixes only a receiver known to support it: with type information, one whose type declares `at` on every union member; without it, a binding the source shows to be an array or a string (a literal, `Array.from`, a `T[]`, `readonly T[]`, `Array<T>` or `string` annotation). Everything else is still reported, without a fix.
+
+  `operability/no-console-log` with the `remove` (and `comment`) strategy deleted side effects in the arguments (`console.log(i++)` lost the `i++`) and, in semicolon-free code, removed the `;` guarding the next line, joining `console.info(0)` to `[1].forEach(...)`. The fix is now withheld when an argument may have side effects (`remove` offers the deletion as a suggestion), and a `;` on a later line than the call is kept.
+
+## 5.0.3
+
+### Patch Changes
+
+- **📚 Docs** — ship an AGENTS.md that tells AI assistants how to enable the plugin and what each preset catches
+
+  Generated from the package's own presets and rules, so it cannot drift. `eslint-plugin-secure-coding`: the README no longer shows `...configs.recommended` spread into an array, which threw "not iterable".
+
+## 5.0.2
+
+### Patch Changes
+
+- **📚 Docs** — npm descriptions lead with what people search for
+
+  Each description now opens with the search phrase, such as "ESLint NestJS security rules — …" instead of "ESLint plugin for NestJS security — …". npm search ranks that opening phrase above download counts, so the old wording kept these packages out of the results for searches like "eslint security". The oxlint-plugin-* aliases open the same way, with "Oxlint". No rule or code changes.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.0.4`
+
 ## 5.0.1
 
 ### Patch Changes

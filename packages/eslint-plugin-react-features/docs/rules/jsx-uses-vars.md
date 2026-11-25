@@ -1,0 +1,30 @@
+---
+title: jsx-uses-vars
+description: 'Disallow variables used in JSX to be incorrectly marked as unused'
+tags: ['quality', 'react']
+category: quality
+autofix: none
+---
+
+> **Keywords:** React, JSX, jsx-uses-vars, eslint-plugin-react, ESLint rule, LLM-optimized
+
+<!-- @rule-summary -->
+
+Disallow variables used in JSX to be incorrectly marked as unused
+<!-- @/rule-summary -->
+
+A component used only as a JSX tag is used, though no identifier expression names it. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and follows [`eslint-plugin-react/jsx-uses-vars`](https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/jsx-uses-vars.md) in behaviour and options.
+
+## Quick Summary
+
+| Aspect         | Details                                 |
+| -------------- | --------------------------------------- |
+| **Severity**   | Error (correctness)                     |
+| **Auto-Fix**   | ❌ No auto-fix                          |
+| **Category**   | React                                   |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For**   | Projects with `no-unused-vars` on       |
+
+## Rule Details
+
+The rule never reports. It marks every variable used as a JSX tag name as used, so the core `no-unused-vars` rule leaves `import App from './App'` alone when the file only has `<App />`. A member tag marks its leftmost name (`<Foo.Bar />` uses `Foo`). Lowercase tags (`<div />`) are intrinsic elements and namespaced tags (`<svg:circle />`) name no binding: neither counts as a use.

@@ -1,7 +1,7 @@
 {
   "name": "oxlint-plugin-openai-security",
-  "version": "2.0.1",
-  "description": "The openai-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-openai-security.",
+  "version": "2.0.4",
+  "description": "Oxlint OpenAI SDK security rules — catches dangerouslyAllowBrowser, hardcoded API keys, and system prompts assembled from untrusted input. Same rules and rule IDs as eslint-plugin-openai-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./index.js",
@@ -69,6 +69,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-openai-security": "2.0.1"
+    "eslint-plugin-openai-security": "2.0.4"
   }
 }

@@ -30,6 +30,10 @@ describe('click-events-have-key-events', () => {
           name: 'a component with an interactive role keeps its exemption (it may render a native control)',
           code: '<MuiLink component="button" role="link" onClick={handleClick}>Back</MuiLink>',
         },
+        // #1561: a custom component is not a DOM element; upstream jsx-a11y only
+        // checks intrinsic (lower-case) elements, since a component wrapping
+        // <button> is already keyboard-operable and this rule cannot see that.
+        { name: 'onClick on a custom component with no role at all', code: '<Button type="button" onClick={go}>Save</Button>' },
         { name: 'both handlers present', code: '<div onClick={handler} onKeyDown={handler}></div>' },
         { code: '<div onClick={handler} onKeyUp={handler}></div>' },
         { code: '<div onClick={handler} onKeyPress={handler}></div>' },

@@ -3,7 +3,7 @@ title: no-weak-cipher-algorithm
 description: Disallow weak cipher algorithms (DES, 3DES, RC4, Blowfish, RC2, IDEA)
 tags: ['security', 'cryptography', 'cwe-327', 'nodejs']
 category: security
-severity: critical
+severity: high
 cwe: CWE-327
 owasp: "A02:2021"
 autofix: false

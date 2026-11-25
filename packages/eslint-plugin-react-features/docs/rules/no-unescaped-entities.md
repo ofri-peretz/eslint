@@ -29,10 +29,10 @@ Detect unescaped HTML entities in JSX. This rule is part of [`eslint-plugin-reac
 
 ## Rule Details
 
-A raw `"` in JSX text reads like an attribute delimiter that was never closed.
-The rule reads the source as written, so the escaped spellings (`&quot;`,
-`&#34;`, `{'"'}`) and quotes inside attribute values or string expressions
-are not reported.
+A raw `>`, `"`, `'` or `}` in JSX text is reported, once per occurrence, with each
+escape as a suggestion. The rule reads the source as written, so the escaped
+spellings (`&quot;`, `&#34;`, `&apos;`, `{'"'}`) and characters inside attribute
+values or string expressions are not reported.
 
 ### Why This Matters
 
@@ -48,6 +48,7 @@ are not reported.
 
 ```tsx
 <div>Use "quotes"</div>
+<div>It's working</div>
 ```
 
 `>` and `}` in JSX text do not parse in TypeScript, and the parser reports
@@ -59,7 +60,7 @@ them before this rule runs.
 <div>Hello World</div>
 <div>Use &quot;quotes&quot;</div>
 <div>Use {'"'}quotes{'"'}</div>
-<div>It's working</div>
+<div>It&apos;s working</div>
 ```
 
 ### Entity Reference
@@ -85,6 +86,13 @@ them before this rule runs.
 }
 ```
 
+## Options
+
+| Option   | Type                                                                | Default                 | Description |
+| -------- | ------------------------------------------------------------------- | ----------------------- | ----------- |
+| `forbid` | `(string \| { char: string, alternatives: string[] })[]` | `['>', '"', "'", '}']` | The characters to report. It replaces the default set. Each occurrence is reported where it stands, and an entry with `alternatives` suggests each one as a replacement |
+
+
 ## Related Rules
 
 - [`no-danger`](./no-danger.md) - HTML injection safety
@@ -95,6 +103,5 @@ them before this rule runs.
 - **[HTML Entities](https://www.w3schools.com/html/html_entities.asp)** - Reference
 ## Known False Negatives
 
-- `'` is not reported: an apostrophe renders as written and is ordinary prose.
-- `>` and `}` in JSX text are a TypeScript parse error, so the rule never sees
-  them in a `.tsx` file.
+- `>` and `}` in JSX text are a parse error in espree and in the TypeScript
+  parser, so the rule only sees them under a parser that accepts them (babel).

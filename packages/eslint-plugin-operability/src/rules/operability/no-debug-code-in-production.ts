@@ -18,7 +18,10 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { isNonProductionPath } from '../../lib/non-production-paths';
+import {
+  isLoggerModule,
+  isNonProductionPath,
+} from '../../lib/non-production-paths';
 import { isGlobalObject } from '../../lib/global-binding';
 
 type MessageIds = 'violationDetected';
@@ -36,6 +39,13 @@ export interface Options {
    * `env/index.js:22` and `scripts/verify-package.js` were counted by both.
    */
   ignoreNonProductionPaths?: boolean;
+
+  /**
+   * Skip the module that IS the logger (`logger.ts`, `hmrLogger.ts`, `log.ts`).
+   * Its `console.log` is the sink the rest of the code routes through, and a
+   * `DEBUG` read there is the logger consulting its own switch. Default: true.
+   */
+  ignoreLoggerModules?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -68,20 +78,29 @@ export const noDebugCodeInProduction = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           ignoreNonProductionPaths: { type: 'boolean', default: true },
+          ignoreLoggerModules: { type: 'boolean', default: true },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{ ignoreNonProductionPaths: true }],
+  defaultOptions: [
+    { ignoreNonProductionPaths: true, ignoreLoggerModules: true },
+  ],
   createOnce(context, currentOptions) {
     return {
       before() {
         const [options = {}] = currentOptions();
         // No `?? {}` here: the parameter default already covers undefined, and the
         // fallback would be a branch no input can take.
-        const { ignoreNonProductionPaths = true }: Options = options;
+        const {
+          ignoreNonProductionPaths = true,
+          ignoreLoggerModules = true,
+        }: Options = options;
         if (ignoreNonProductionPaths && isNonProductionPath(context.filename)) {
+          return false;
+        }
+        if (ignoreLoggerModules && isLoggerModule(context.filename)) {
           return false;
         }
         return true;

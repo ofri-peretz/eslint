@@ -44,18 +44,29 @@ code, so no review of an individual template ever sees it.
 
 ## Rule Details
 
-Reports an assignment of the literal `false` to a property named `escapeMarkup`, in any
-spelling of the property:
+Reports the JavaScript-side switches that turn a template engine's HTML escaping off:
 
-- `view.escapeMarkup = false`
-- `view['escapeMarkup'] = false`
-- ``view[`escapeMarkup`] = false``
+| Engine     | Reported                                                                                                     |
+| ---------- | ------------------------------------------------------------------------------------------------------------ |
+| mustache   | `view.escapeMarkup = false` (also `view['escapeMarkup']`, ``view[`escapeMarkup`]``, `&&=`, `??=`)            |
+| swig       | `swig.setDefaults({ autoescape: false })`, `new swig.Swig({ autoescape: false })`                            |
+| nunjucks   | `nunjucks.configure(path, { autoescape: false })`, `new nunjucks.Environment(loader, { autoescape: false })` |
+| Handlebars | `Handlebars.compile(src, { noEscape: true })`, `precompile(src, { noEscape: true })`                         |
+
+An options object declared once (`const opts = { autoescape: false }`) and then passed to
+one of those calls is reported at the property. `env.opts.autoescape = false` is reported
+as an assignment.
+
+EJS (`<%-`) and Pug (`!=`) switch escaping off inside the template file, in syntax ESLint
+never parses, so no JavaScript rule can see them.
 
 It does not report:
 
 - a bare variable named `escapeMarkup` — it is not an option on anything;
-- `escapeMarkup = true`, or any value other than the literal `false` (the string
-  `'false'` is truthy);
+- `escapeMarkup = true`, `autoescape: true`, `noEscape: false`, or any value other than
+  the literal that disables escaping (the string `'false'` is truthy);
+- `autoescape: false` or `noEscape: true` in an object that is not passed to one of the
+  engine calls above (`render(page, { autoescape: false })`);
 - `view[escapeMarkup] = false` where `escapeMarkup` is a variable — which property that
   writes is decided at runtime;
 - a comparison such as `view.escapeMarkup === false`.
@@ -68,6 +79,9 @@ It does not report:
 a.escapeMarkup = false;
 view['escapeMarkup'] = false;
 this.options.escapeMarkup = false;
+swig.setDefaults({ autoescape: false });
+nunjucks.configure('views', { autoescape: false });
+Handlebars.compile(source, { noEscape: true });
 ```
 
 ### ✅ Correct
@@ -87,16 +101,17 @@ This rule has no options.
 ## Error Message Format
 
 ```
-🔒 CWE-79 OWASP:A05-Injection CVSS:6.1 | escapeMarkup is set to false, so the template engine renders every interpolated value as raw HTML. One user-controlled value in any template is then a cross-site scripting vulnerability. | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
-   Fix: Remove the assignment and keep auto-escaping on. Render trusted HTML through the template engine's explicit raw-output syntax at the one site that needs it, after sanitizing it. | https://cwe.mitre.org/data/definitions/79.html
+🔒 CWE-79 OWASP:A05-Injection CVSS:6.1 | escapeMarkup turns off the template engine's HTML escaping, so it renders every interpolated value as raw HTML. One user-controlled value in any template is then a cross-site scripting vulnerability. | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
+   Fix: Remove the option and keep auto-escaping on. Render trusted HTML through the template engine's explicit raw-output syntax at the one site that needs it, after sanitizing it. | https://cwe.mitre.org/data/definitions/79.html
 ```
 
 ## Known False Negatives
 
-### The option set in an object literal
+### An options object that reaches the engine another way
 
-**Why**: The rule reports the assignment form `x.escapeMarkup = false`, as
-`eslint-plugin-security` does. `new Engine({ escapeMarkup: false })` is not an assignment.
+**Why**: The object is matched when it is passed to the engine call or declared once as a
+`const` that is. A spread (`{ ...base }`), a function returning the options, or an object
+built across several statements is not followed.
 
 **Mitigation**: Keep engine configuration in one reviewed module.
 

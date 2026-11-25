@@ -192,20 +192,6 @@
       "band": "MEDIUM"
     },
     {
-      "rule": "import-next/dynamic-import-chunkname",
-      "messageId": "invalidChunkName",
-      "cvss": 5.3,
-      "label": "LOW",
-      "band": "MEDIUM"
-    },
-    {
-      "rule": "import-next/dynamic-import-chunkname",
-      "messageId": "missingChunkName",
-      "cvss": 5.3,
-      "label": "LOW",
-      "band": "MEDIUM"
-    },
-    {
       "rule": "import-next/exports-last",
       "messageId": "exportNotLast",
       "cvss": 5.3,

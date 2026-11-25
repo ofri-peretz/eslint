@@ -34,6 +34,10 @@ function specOf(shape, listing) {
       return './local';
     case 'Hash':
       return '#internal';
+    case 'Alias':
+      return '@/local';
+    case 'AliasMissing':
+      return '@/nope';
     default:
       return 'virtual:routes';
   }
@@ -77,18 +81,38 @@ const MANIFEST = pkg({
   bundleDependencies: ['bunalt-a'],
 });
 
+/**
+ * Every package name the specifiers use, installed, listed or not: the rule
+ * checks a specifier only once it resolves, as eslint-plugin-import does, so
+ * an undeclared package must exist to be reported. `@/nope` stays unresolved.
+ */
+const INSTALLED = Object.fromEntries(
+  [
+    ...Object.values(NAME).filter((n) => n !== 'app'),
+    '@sc/dep-b',
+    '@sc/nope-b',
+  ].flatMap((n) => [
+    [`node_modules/${n}/index.js`, 'module.exports = {};\n'],
+    [`node_modules/${n}/sub.js`, 'module.exports = {};\n'],
+  ]),
+);
+
 module.exports = {
   rule: 'no-extraneous-dependencies',
-  domain: 13 * 8 * 7 + 9 * 2,
+  domain: 13 * 8 * 7 + 11 * 2,
   traces: 14000,
   key: keyOf('form', 'listing', 'opts', 'shape'),
   config: (s) => OPTS[tag(s.opts)],
   filename: (s) =>
     tag(s.shape) === 'Marker' ? 'src/esm/app.ts' : 'src/app.ts',
   files: () => ({
+    ...INSTALLED,
     'package.json': MANIFEST,
     'src/esm/package.json': '{ "type": "module" }\n',
     'src/local.ts': 'export const a = 1;\n',
+    'tsconfig.json': JSON.stringify({
+      compilerOptions: { baseUrl: '.', paths: { '@/*': ['./src/*'] } },
+    }),
   }),
   code: (s) => src(FORM[tag(s.form)](specOf(tag(s.shape), tag(s.listing)))),
 };

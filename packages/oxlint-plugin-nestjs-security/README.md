@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Security rules tailored for NestJS applications (Controllers, Providers, Decorators).
+  ESLint rules that flag missing auth guards, missing validation pipes, unthrottled routes and exposed private fields in NestJS.
 </p>
 
 <p align="center">
@@ -19,8 +19,6 @@
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
-
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
 
 ## Description
 
@@ -124,7 +122,7 @@ Install [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-p
 | [require-guards](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-guards?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-nestjs-security)                                       | CWE-306 | A01:2021 |      | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:    | 🟢  | 💼  |     |     |     |     |
 | [require-throttler](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-throttler?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-nestjs-security)                                 | CWE-770 | A05:2021 |      | This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the applica… | 🟢  |     | ⚠️  |     |     |     |
 | [require-upload-size-limit](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-upload-size-limit?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-nestjs-security)                 | CWE-770 | A04:2021 |      | Flags a multer upload interceptor that sets no limits.fileSize, so the route accepts a file of any size.     | 🟢  |     | ⚠️  |     |     |     |
-| [require-validation-pipe-whitelist](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-validation-pipe-whitelist?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-nestjs-security) | CWE-915 | A03:2021 |      | Requires whitelist true on ValidationPipe, so properties the DTO never declared are stripped instead of rea… | 🟢  | 💼  |     |     |     |     |
+| [require-validation-pipe-whitelist](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-validation-pipe-whitelist?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-nestjs-security) | CWE-915 | A03:2021 |      | Requires whitelist true on ValidationPipe, so undeclared and undecorated properties are stripped instead of… | 🟢  | 💼  |     |     |     |     |
 
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:START - Do not edit manually -->
 
@@ -175,11 +173,9 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->
 
-## ⭐ Support & follow
+## Support
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
-
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 ## 📄 License
 

@@ -3,7 +3,11 @@ const { tag, withTestFile } = require('../../lib.cjs');
 // Uri -> [preamble, expression]
 const URIS = {
   WithCreds: ['', "'mongodb://admin:secret123@localhost:27017/mydb'"],
-  NoCreds: ['', "'mongodb://localhost:27017/mydb'"],
+  LoopbackNoCreds: ['', "'mongodb://localhost:27017/mydb'"],
+  Loopback127: ['', "'mongodb://127.0.0.1:27017/mydb'"],
+  LoopbackV6: ['', "'mongodb://[::1]:27017/mydb'"],
+  RemoteNoCreds: ['', "'mongodb://db.internal:27017/mydb'"],
+  LoopbackWithCreds: ['', "'mongodb://admin:secret123@localhost:27017/mydb'"],
   SrvWithCreds: [
     '',
     "'mongodb+srv://admin:s3cret@cluster0.example.mongodb.net/db'",
@@ -36,8 +40,8 @@ const SITES = {
 
 const base = {
   rule: 'no-hardcoded-connection-string',
-  domain: 54, // 6 sites x 9 URIs
-  traces: 380,
+  domain: 78, // 6 sites x 13 URIs
+  traces: 550,
   key: (s) => `${tag(s.site)}|${tag(s.uri)}`,
   code: (s) => {
     const [p, u] = URIS[tag(s.uri)];

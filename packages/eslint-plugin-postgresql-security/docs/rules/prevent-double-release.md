@@ -14,7 +14,7 @@ autofix: false
 Prevents calling client.release() multiple times on the same client.
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
+**CWE:** [CWE-415](https://cwe.mitre.org/data/definitions/415.html)
 
 Prevents calling `client.release()` multiple times on the same client.
 

@@ -40,10 +40,22 @@ const ready = true;
 ## Options
 
 ```json
-[]
+[
+  {
+    "type": "string",
+    "enum": ["absolute-first", "disable-absolute-first"],
+    "description": "eslint-plugin-import: 'absolute-first' also reports a package import after a relative one."
+  }
+]
 ```
 
-No options.
+### eslint-plugin-import options
+
+A config carried over from `import/first` loads, and its option means what it
+meant there: `'absolute-first'` also reports a package (absolute) import that
+follows a relative one (`import './a'; import 'b';`), including a TS
+`import x = require('b')`. `'disable-absolute-first'` is the default and adds
+nothing. eslint-plugin-import also fixes the order; this rule does not.
 
 ## When Not To Use It
 

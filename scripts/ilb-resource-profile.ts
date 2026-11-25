@@ -143,11 +143,21 @@ async function profileRun(
     if (firstByteAt === null) firstByteAt = performance.now();
   });
 
-  const exitCode: number = await new Promise((resolve) => {
-    child.on('close', (code) => resolve(code ?? -1));
-  });
-
-  rss.stop();
+  let exitCode: number;
+  try {
+    exitCode = await new Promise<number>((resolve, reject) => {
+      // A command that cannot start emits 'error'. Without a listener that is an
+      // uncaught exception; resolving it as a row would read as a measurement (0
+      // MB peak, "fits the CI budget"). Fail the profile instead, before any
+      // result is written.
+      child.on('error', (err) =>
+        reject(new Error(`could not start \`${command.join(' ')}\`: ${err.message}`)),
+      );
+      child.on('close', (code) => resolve(code ?? -1));
+    });
+  } finally {
+    rss.stop();
+  }
   const totalWallMs = Math.round(performance.now() - start);
   const coldStartMs = firstByteAt !== null ? Math.round(firstByteAt - start) : totalWallMs;
   const peakRssMb = rss.samples.length > 0 ? Math.max(...rss.samples) : 0;

@@ -29,7 +29,17 @@
 import { describe, it, expect } from 'vitest';
 import { configs, rules as allRules } from './index';
 
-const FORMATTING_ONLY = ['order', 'first', 'newline-after-import'] as const;
+const FORMATTING_ONLY = [
+  'order',
+  'enforce-import-order',
+  'first',
+  'newline-after-import',
+] as const;
+/**
+ * The presets carry import-next's opinionated ordering, `enforce-import-order`;
+ * `order` is eslint-plugin-import's, for configs carried over from it.
+ */
+const IN_PRESETS = ['enforce-import-order', 'first', 'newline-after-import'] as const;
 
 function rulesOf(name: string): Record<string, unknown> {
   const config = (configs as Record<string, unknown>)[name];
@@ -56,7 +66,7 @@ describe('recommended scope', () => {
     // on a plugin that deleted the rules outright.
     for (const config of ['import-style', 'strict']) {
       const rules = rulesOf(config);
-      for (const rule of FORMATTING_ONLY) {
+      for (const rule of IN_PRESETS) {
         expect(rules[`import-next/${rule}`]).toBeDefined();
       }
     }

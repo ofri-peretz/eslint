@@ -3,7 +3,7 @@
  *
  * Compiles remote Markdown/MDX content using @fumadocs/mdx-remote.
  * Uses the createCompiler() API for efficient compilation.
- * 
+ *
  * Features:
  * - Relative link resolution for inter-document linking
  * - Full MDX component support
@@ -11,11 +11,15 @@
  */
 
 import { createCompiler } from '@fumadocs/mdx-remote';
+import { CODE_HIGHLIGHT_OPTIONS } from '@/lib/code-highlight';
 import { getMDXComponents } from '@/mdx-components';
 import type { TableOfContents } from 'fumadocs-core/toc';
 import { visit } from 'unist-util-visit';
 import type { Root, Link } from 'mdast';
 import type { PluggableList } from 'unified';
+import { posix } from 'node:path';
+
+const REPO_BLOB_BASE = 'https://github.com/ofri-peretz/eslint/blob/main';
 
 // The compiler is instantiated per-request so remarkPlugins can be provided in mdxOptions
 
@@ -67,16 +71,16 @@ export interface CompileOptions {
 /**
  * Creates a remark plugin to transform relative markdown links
  * to app routes, and rewrite external links to point to our repository.
- * 
+ *
  * Examples:
  * - `./no-eval.md` → `/docs/security/browser-security/no-eval`
  * - `../jwt/no-none-algorithm.md` → `/docs/security/jwt/no-none-algorithm`
  * - `#section` → preserved as-is (anchor links)
  * - `https://github.com/import-js/eslint-plugin-import/...` → rewritten to our repo
  */
-function remarkRelativeLinks(options: CompileOptions) {
+export function remarkRelativeLinks(options: CompileOptions) {
   const { baseUrl, pluginName } = options;
-  
+
   // Map of external repos to rewrite to our monorepo. Anchored with `^` so a
   // crafted URL like `https://evil.com/?next=https://github.com/import-js/...`
   // can never match — CodeQL flagged the unanchored form as
@@ -85,18 +89,18 @@ function remarkRelativeLinks(options: CompileOptions) {
     // eslint-plugin-import → our import-next package
     [
       /^https?:\/\/github\.com\/import-js\/eslint-plugin-import\/(blob|tree)\/main\/(.+)$/,
-      'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/$2'
+      'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/$2',
     ],
     [
       /^https?:\/\/github\.com\/import-js\/eslint-plugin-import\/?$/,
-      'https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-import-next'
+      'https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-import-next',
     ],
   ];
-  
+
   return () => (tree: Root) => {
     visit(tree, 'link', (node: Link) => {
       const url = node.url;
-      
+
       // Rewrite external links to our repository
       for (const [pattern, replacement] of rewritePatterns) {
         if (pattern.test(url)) {
@@ -104,7 +108,7 @@ function remarkRelativeLinks(options: CompileOptions) {
           return; // Don't process further
         }
       }
-      
+
       // Skip external links, anchors, and absolute paths
       if (
         url.startsWith('http://') ||
@@ -114,12 +118,27 @@ function remarkRelativeLinks(options: CompileOptions) {
       ) {
         return;
       }
-      
+
+      // A link that climbs out of the package (`../../docs/X.md` from
+      // `packages/eslint-plugin-<name>/README.md`) names a repo file, not a
+      // docs page. Resolving it as `../[plugin]/[rule]` produced
+      // `/docs/security/docs/ESLINT_VERSION_SUPPORT`, a 404 linked from every
+      // plugin page (audit 2026-11-19). Point it at the file on GitHub.
+      if (pluginName && url.startsWith('../../')) {
+        const repoPath = posix.normalize(
+          `packages/eslint-plugin-${pluginName}/${url}`,
+        );
+        if (!repoPath.startsWith('..')) {
+          node.url = `${REPO_BLOB_BASE}/${repoPath}`;
+          return;
+        }
+      }
+
       // Handle relative markdown links
       if (url.endsWith('.md') || url.endsWith('.mdx')) {
         // Remove the extension
         let resolvedUrl = url.replace(/\.mdx?$/, '');
-        
+
         // Handle same-directory links: ./no-eval.md
         if (resolvedUrl.startsWith('./')) {
           resolvedUrl = resolvedUrl.slice(2);
@@ -133,7 +152,7 @@ function remarkRelativeLinks(options: CompileOptions) {
         // Handle parent-directory links: ../jwt/rule.md
         else if (resolvedUrl.startsWith('../')) {
           // Navigate up and resolve
-          const parts = resolvedUrl.split('/').filter(p => p && p !== '..');
+          const parts = resolvedUrl.split('/').filter((p) => p && p !== '..');
           if (parts.length >= 2) {
             // Assume format: ../[plugin]/[rule]
             const [targetPlugin, ...rest] = parts;
@@ -163,7 +182,7 @@ function remarkRelativeLinks(options: CompileOptions) {
  */
 export async function compileRemoteMDX(
   source: string,
-  options: CompileOptions = {}
+  options: CompileOptions = {},
 ): Promise<CompiledContent> {
   // Strip HTML comments BEFORE MDX parsing. The plugin READMEs use
   // `<!-- AUTO-GENERATED:RULES_TABLE:START -->` etc. as splice markers for
@@ -188,12 +207,12 @@ export async function compileRemoteMDX(
   const processedSource = stripped;
 
   const remarkPlugins: PluggableList = [];
-  
+
   // Add relative link transformer if we have context
   if (options.baseUrl || options.pluginName) {
     remarkPlugins.push(remarkRelativeLinks(options));
   }
-  
+
   // Create compiler instance with our dynamic remark plugins
   // `format: 'md'` — see the note on compileRemoteMarkdown below. This path
   // renders CHANGELOG.md fetched from GitHub at build time, and a CHANGELOG is
@@ -203,6 +222,7 @@ export async function compileRemoteMDX(
     format: 'md',
     remarkPlugins,
     remarkImageOptions: REMARK_IMAGE_OPTIONS,
+    rehypeCodeOptions: CODE_HIGHLIGHT_OPTIONS,
   });
 
   const result = await localCompiler.compile({
@@ -222,19 +242,19 @@ export async function compileRemoteMDX(
  */
 export async function compileRemoteMarkdown(
   source: string,
-  options: CompileOptions = {}
+  options: CompileOptions = {},
 ): Promise<CompiledContent> {
   // ```mermaid blocks are dispatched on the React side by the `pre`
   // override in `src/mdx-components.tsx` — no remark transform needed.
   const processedSource = source;
 
   const remarkPlugins: PluggableList = [];
-  
+
   // Add relative link transformer if we have context
   if (options.baseUrl || options.pluginName) {
     remarkPlugins.push(remarkRelativeLinks(options));
   }
-  
+
   // Create compiler instance with our dynamic remark plugins.
   //
   // `format: 'md'` — this path renders CHANGELOG.md and README.md fetched from
@@ -257,6 +277,7 @@ export async function compileRemoteMarkdown(
     format: 'md',
     remarkPlugins,
     remarkImageOptions: REMARK_IMAGE_OPTIONS,
+    rehypeCodeOptions: CODE_HIGHLIGHT_OPTIONS,
   });
 
   const result = await localCompiler.compile({
@@ -276,14 +297,13 @@ export async function compileRemoteMarkdown(
  */
 export function getFallbackContent(
   title: string,
-  description: string
+  description: string,
 ): CompiledContent {
   const FallbackBody = () => (
     <div className="prose dark:prose-invert">
       <p className="text-fd-muted-foreground">
-        This content is currently being fetched from GitHub. If it
-        doesn&apos;t load, please check back later or view the source
-        repository directly.
+        This content is currently being fetched from GitHub. If it doesn&apos;t
+        load, please check back later or view the source repository directly.
       </p>
     </div>
   );

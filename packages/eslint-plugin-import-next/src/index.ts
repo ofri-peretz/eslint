@@ -7,7 +7,9 @@
 /**
  * eslint-plugin-import-next
  *
- * Drop-in replacement for eslint-plugin-import with 46 LLM-optimized rules.
+ * A drop-in replacement for eslint-plugin-import: graded by that plugin's own
+ * test suite it passes 2,035 of 2,135 cases (95.3%, eslint-plugin-import@2.32.0,
+ * benchmarks/results/ilb-import-parity/2026-11-19.json).
  * Covers import validation, module resolution, circular dependencies,
  * and export style enforcement.
  *
@@ -18,6 +20,12 @@
 
 import type { TSESLint } from '@interlace/eslint-devkit';
 import { withCanonicalDocsUrls } from '@interlace/eslint-devkit';
+// This module, as its importers see it: `module.exports` once compiled to
+// CommonJS, the module namespace under vitest. `flatConfigs` and the default
+// export use it so that every way of loading the package yields one plugin
+// object. See `flatConfigs` below.
+// eslint-disable-next-line import-next/no-self-import -- deliberate: the plugin is this module
+import * as self from './index';
 
 // Module Resolution Rules
 import { noDuplicates } from './rules/no-duplicates';
@@ -60,6 +68,7 @@ import { groupExports } from './rules/group-exports';
 
 // Import Style Rules
 import { enforceImportOrder } from './rules/enforce-import-order';
+import { order } from './rules/order';
 import { noUnassignedImport } from './rules/no-unassigned-import';
 import { first } from './rules/first';
 import { newlineAfterImport } from './rules/newline-after-import';
@@ -76,6 +85,8 @@ import { noExtraneousDependencies } from './rules/no-extraneous-dependencies';
 import { noUnusedModules } from './rules/no-unused-modules';
 import { maxDependencies } from './rules/max-dependencies';
 import { preferNodeProtocol } from './rules/prefer-node-protocol';
+import { enforceNodeProtocolUsage } from './rules/enforce-node-protocol-usage';
+import { noWebpackLoaderSyntax } from './rules/no-webpack-loader-syntax';
 
 // Bundle Optimization Rules (Phase 2)
 import { noBarrelFile } from './rules/no-barrel-file';
@@ -107,6 +118,7 @@ export const rules = {
   'no-dynamic-require': noDynamicRequire,
   'no-relative-packages': noRelativePackages,
   'no-useless-path-segments': noUselessPathSegments,
+  'no-webpack-loader-syntax': noWebpackLoaderSyntax,
 
   // Module System Rules
   'no-amd': noAmd,
@@ -136,7 +148,9 @@ export const rules = {
 
   // Import Style Rules
   'enforce-import-order': enforceImportOrder,
-  order: enforceImportOrder, // Alias for backwards compat with eslint-plugin-import
+  // eslint-plugin-import's `import/order`, its options and its defaults.
+  // import-next's opinionated ordering is `enforce-import-order`.
+  order: order,
   'no-unassigned-import': noUnassignedImport,
   first: first,
   'newline-after-import': newlineAfterImport,
@@ -153,6 +167,7 @@ export const rules = {
   'no-unused-modules': noUnusedModules,
   'max-dependencies': maxDependencies,
   'prefer-node-protocol': preferNodeProtocol,
+  'enforce-node-protocol-usage': enforceNodeProtocolUsage,
 
   // Bundle Optimization Rules (Phase 2)
   'no-barrel-file': noBarrelFile,
@@ -178,17 +193,31 @@ export const rules = {
  */
 withCanonicalDocsUrls('plugin-import-next', rules);
 
-
-/**
- * ESLint Plugin object following the official plugin structure
- */
-export const plugin = {
+const base = {
   meta: {
     name: 'eslint-plugin-import-next',
-    version: '3.0.1',
+    version: '4.1.11',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
+
+/**
+ * `meta` at the top level of the module, as eslint-plugin-import has it, so the
+ * module object itself is a complete plugin: `{ meta, rules }`.
+ */
+export const meta = base.meta;
+
+/**
+ * The ESLint plugin object: this module itself (`self`), not a separate inner
+ * object. Node hands an `eslint.config.mjs` default import the whole
+ * `module.exports`, while TypeScript/jiti/bundler interop read
+ * `exports.default`; making `plugin`, the default export, and every preset's
+ * `plugins` entry the SAME object means a consumer can register the plugin
+ * themselves next to any preset (`configs.*` under `import-next`,
+ * `flatConfigs.*` under `import`) without ESLint's "Cannot redefine plugin"
+ * error, whichever loader read the package.
+ */
+export const plugin = self as unknown as typeof base;
 
 /**
  * Preset configurations for common use cases
@@ -314,7 +343,7 @@ export const configs = {
       'import-next/group-exports': 'error',
 
       // Import Style
-      'import-next/order': 'error',
+      'import-next/enforce-import-order': 'error',
       'import-next/no-unassigned-import': 'error',
       'import-next/first': 'error',
       'import-next/newline-after-import': 'error',
@@ -330,7 +359,10 @@ export const configs = {
       // as erased. Pairing them meant `--fix` could rewrite a detected runtime
       // cycle into one the cycle gate no longer sees. Locked by
       // `no-cycle-config-pairing.test.ts`.
-      'import-next/consistent-type-specifier-style': ['error', 'prefer-top-level'],
+      'import-next/consistent-type-specifier-style': [
+        'error',
+        'prefer-top-level',
+      ],
 
       // Dependency Management
       'import-next/no-extraneous-dependencies': 'error',
@@ -357,13 +389,16 @@ export const configs = {
       'import-next/export': 'error',
       'import-next/no-cycle': 'error',
       'import-next/no-duplicates': 'error',
-      'import-next/order': 'warn',
+      'import-next/enforce-import-order': 'warn',
       'import-next/first': 'warn',
       'import-next/newline-after-import': 'warn',
       // `prefer-top-level` for the same reason as in `strict` above: this
       // config runs `no-cycle` at `error`, and `prefer-inline`'s autofix turns
       // the spelling `no-cycle` catches into the one it silences.
-      'import-next/consistent-type-specifier-style': ['warn', 'prefer-top-level'],
+      'import-next/consistent-type-specifier-style': [
+        'warn',
+        'prefer-top-level',
+      ],
     },
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -399,7 +434,7 @@ export const configs = {
       'import-next': plugin,
     },
     rules: {
-      'import-next/order': 'error',
+      'import-next/enforce-import-order': 'error',
       'import-next/first': 'error',
       'import-next/newline-after-import': 'error',
       'import-next/no-duplicates': 'error',
@@ -555,8 +590,153 @@ export const configs = {
   } satisfies TSESLint.FlatConfig.Config,
 };
 
+/** The keys eslint-plugin-import@2.32.0 exposes on its `flatConfigs`. */
+export type FlatConfigName =
+  | 'recommended'
+  | 'errors'
+  | 'warnings'
+  | 'react'
+  | 'react-native'
+  | 'electron'
+  | 'typescript';
+
+/*
+ * eslint-plugin-import 2.32.0's `config/typescript.js`. `.d.ts` is left out on
+ * purpose upstream: TypeScript already checks types resolve, and it would mask
+ * an unresolved implementation file.
+ */
+const typeScriptExtensions = ['.ts', '.cts', '.mts', '.tsx'];
+const allExtensions = [...typeScriptExtensions, '.js', '.jsx', '.mjs', '.cjs'];
+
+/**
+ * eslint-plugin-import's flat configs, key for key: the same rule IDs under
+ * the `import/` namespace, the same severities (numeric where upstream writes
+ * numbers), the same `settings` and `languageOptions`, and the same
+ * `name: 'import/<key>'`, read from eslint-plugin-import@2.32.0's
+ * `config/flat/*.js` and `lib/index.js`. A config written against
+ * eslint-plugin-import keeps working when only its import line changes:
+ *
+ *   import importPlugin from 'eslint-plugin-import-next';
+ *   export default [importPlugin.flatConfigs.recommended, importPlugin.flatConfigs.typescript];
+ *
+ * `plugins.import` is `plugin`, i.e. this module itself, the same object a
+ * consumer's default import or `require()` returns, so registering it again,
+ * `{ plugins: { import: importPlugin } }`, next to a flat config does not trip
+ * ESLint's "Cannot redefine plugin" check. (eslint-plugin-import registers a
+ * separate inner object, so that combination throws there.)
+ *
+ * Locked against upstream by `flat-configs.test.ts`.
+ */
+export const flatConfigs: Record<FlatConfigName, TSESLint.FlatConfig.Config> = {
+  recommended: {
+    name: 'import/recommended',
+    plugins: { import: plugin },
+    rules: {
+      // analysis/correctness
+      'import/no-unresolved': 'error',
+      'import/named': 'error',
+      'import/namespace': 'error',
+      'import/default': 'error',
+      'import/export': 'error',
+      // red flags (thus, warnings)
+      'import/no-named-as-default': 'warn',
+      'import/no-named-as-default-member': 'warn',
+      'import/no-duplicates': 'warn',
+    },
+    languageOptions: {
+      ecmaVersion: 2018,
+      sourceType: 'module',
+    },
+  },
+  errors: {
+    name: 'import/errors',
+    plugins: { import: plugin },
+    rules: {
+      'import/no-unresolved': 2,
+      'import/named': 2,
+      'import/namespace': 2,
+      'import/default': 2,
+      'import/export': 2,
+    },
+  },
+  warnings: {
+    name: 'import/warnings',
+    plugins: { import: plugin },
+    rules: {
+      'import/no-named-as-default': 1,
+      'import/no-named-as-default-member': 1,
+      'import/no-duplicates': 1,
+    },
+  },
+  react: {
+    name: 'import/react',
+    plugins: { import: plugin },
+    settings: {
+      'import/extensions': ['.js', '.jsx', '.mjs', '.cjs'],
+    },
+    languageOptions: {
+      parserOptions: {
+        ecmaFeatures: { jsx: true },
+      },
+    },
+  },
+  'react-native': {
+    name: 'import/react-native',
+    plugins: { import: plugin },
+    settings: {
+      'import/resolver': {
+        node: {
+          extensions: ['.js', '.web.js', '.ios.js', '.android.js'],
+        },
+      },
+    },
+  },
+  electron: {
+    name: 'import/electron',
+    plugins: { import: plugin },
+    settings: {
+      'import/core-modules': ['electron'],
+    },
+  },
+  typescript: {
+    name: 'import/typescript',
+    plugins: { import: plugin },
+    settings: {
+      'import/extensions': allExtensions,
+      'import/external-module-folders': ['node_modules', 'node_modules/@types'],
+      'import/parsers': {
+        '@typescript-eslint/parser': typeScriptExtensions,
+      },
+      'import/resolver': {
+        node: {
+          extensions: allExtensions,
+        },
+      },
+    },
+    rules: {
+      // TypeScript compilation already ensures that named imports exist in the referenced module
+      'import/named': 'off',
+    },
+  },
+};
+
 // Re-export utility for clearing circular dependency cache
 export { clearCircularDependencyCache };
 
-// Default export for ESLint flat config
-export default plugin;
+/*
+ * The default export is the module object itself, the same object as `plugin`
+ * and as every preset's `plugins` entry (see `plugin` above). It carries
+ * `meta` and `rules` as before, so anything that worked with the old default
+ * still does.
+ */
+export interface ImportNextPlugin {
+  meta: typeof meta;
+  rules: typeof rules;
+  plugin: typeof plugin;
+  configs: typeof configs;
+  flatConfigs: typeof flatConfigs;
+  clearCircularDependencyCache: typeof clearCircularDependencyCache;
+  default: ImportNextPlugin;
+}
+const importNext = self as unknown as ImportNextPlugin;
+export default importNext;

@@ -153,6 +153,24 @@ reach. Assuming "authenticated unless `@Public()`" was tried and rejected: over
 `login`, `register` and `forgot-password` routes. List the signed-in routes in
 `skipRoutes`, or bind the guard.
 
+### Why a guarded `verifyEmail` is not reported
+
+This rule does not report a sensitive-looking route, such as `verifyEmail`,
+`resetPassword` or `refresh`, when the class or the handler carries
+`@UseGuards(...)` (or an access-control decorator such as `@Roles()` or
+`@Authenticated()`), because the caller must already be authenticated to reach
+it. Rate limiting there is a capacity decision, not the credential brute force
+this rule targets, and it is the exact complement of
+`require-guards`, which leaves the public entry points
+to this rule.
+
+The same route with **no** guard is reported. Any `@UseGuards(X)` counts, as
+the rule cannot tell whether `X` authenticates; a one-time-token verify link
+that is genuinely public should therefore not sit under a class-level guard.
+
+`app.useGlobalGuards(new ThrottlerGuard())` counts as a global throttler, the
+same as `{ provide: APP_GUARD, useClass: ThrottlerGuard }`.
+
 <WhenNotToUse />
 
 <FalseNegativeCTA />

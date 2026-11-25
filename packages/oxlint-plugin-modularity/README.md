@@ -18,8 +18,6 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
 
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
-
 ## Description
 
 `oxlint-plugin-modularity` is the [oxlint](https://oxc.rs/docs/guide/usage/linter/js-plugins) and [Vite+](https://viteplus.dev/guide/lint) name for [`eslint-plugin-modularity`](https://www.npmjs.com/package/eslint-plugin-modularity). It carries the same rules under the same IDs (`modularity/<rule>`), always at the same version, because it re-exports that package rather than copying it. Installing it does not install ESLint.
@@ -187,14 +185,14 @@ Install [`eslint-plugin-modularity`](https://www.npmjs.com/package/eslint-plugin
 |  🟡  | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
 |  🟠  | **Type-aware (graceful)**: requires TS program; silent without it.        |
 
-| Rule                                                                                                                                                                                                             | CWE | OWASP | CVSS | Description                                                                                                 | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-: | :---: | :--: | :---------------------------------------------------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
-| [ddd-anemic-domain-model](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-anemic-domain-model?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modularity)               |     |       |      | Detects entities with only getters/setters and no business logic, enforcing the Rich Domain Model over the… | 🟢  |     | ⚠️  |     | 💡  |     |
-| [ddd-value-object-immutability](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-value-object-immutability?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modularity)   |     |       |      | ESLint Rule: ddd-value-object-immutability with LLM-optimized suggestions and auto-fix capabilities.        | 🟢  | 💼  |     |     | 💡  |     |
-| [enforce-naming](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-naming?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modularity)                                 |     |       |      | Enforce domain-specific naming conventions with business context                                            | 🟢  |     | ⚠️  |     | 💡  |     |
-| [enforce-rest-conventions](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-rest-conventions?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modularity)             |     |       |      | ESLint Rule: enforce-rest-conventions with LLM-optimized suggestions and auto-fix capabilities.             | 🟢  | 💼  |     |     | 💡  |     |
-| [no-external-api-calls-in-utils](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-external-api-calls-in-utils?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modularity) |     |       |      | ESLint Rule: no-external-api-calls-in-utils with LLM-optimized suggestions and auto-fix capabilities.       | 🟢  | 💼  |     |     | 💡  |     |
-| [no-mutable-exports](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-mutable-exports?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modularity)                         |     |       |      | Disallow mutable let/var declarations on exported bindings                                                  | 🟢  |     | ⚠️  |     |     |     |
+| Rule                                                                                                                                                                                                             | CWE | OWASP | CVSS | Description                                                                                                  | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-: | :---: | :--: | :----------------------------------------------------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
+| [ddd-anemic-domain-model](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-anemic-domain-model?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modularity)               |     |       |      | Detects entities with only getters/setters and no business logic, enforcing the Rich Domain Model over the…  | 🟢  |     | ⚠️  |     | 💡  |     |
+| [ddd-value-object-immutability](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-value-object-immutability?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modularity)   |     |       |      | Report value-object classes whose instance fields can be reassigned after construction.                      | 🟢  | 💼  |     |     | 💡  |     |
+| [enforce-naming](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-naming?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modularity)                                 |     |       |      | Enforce domain-specific naming conventions with business context                                             | 🟢  |     | ⚠️  |     | 💡  |     |
+| [enforce-rest-conventions](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-rest-conventions?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modularity)             |     |       |      | Report route paths whose first segment is not a plural resource name.                                        | 🟢  | 💼  |     |     | 💡  |     |
+| [no-external-api-calls-in-utils](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-external-api-calls-in-utils?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modularity) |     |       |      | Report network calls inside utility modules, where an HTTP client makes the helper untestable without the n… | 🟢  | 💼  |     |     | 💡  |     |
+| [no-mutable-exports](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-mutable-exports?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-modularity)                         |     |       |      | Disallow mutable let/var declarations on exported bindings                                                   | 🟢  |     | ⚠️  |     |     |     |
 
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:START - Do not edit manually -->
 
@@ -245,11 +243,9 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->
 
-## ⭐ Support & follow
+## Support
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
-
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 ## 📄 License
 

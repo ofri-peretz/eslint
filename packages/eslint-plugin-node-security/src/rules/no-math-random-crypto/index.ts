@@ -25,7 +25,9 @@ import {
   isTestFilePath,
   memberPropertyName,
   propertyName,
+  resolveModuleBinding,
   objectKeyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'mathRandomCrypto' | 'pseudoRandomBytes';
@@ -279,6 +281,20 @@ const NON_SECURITY_QUALIFIERS: ReadonlyMap<
       'keyboard',
       'press',
       'modifier',
+      // The identity a UI framework wants on a repeated element. A random one
+      // is the idiomatic (if poor) way to get it, and nothing authenticates
+      // against it.
+      'dom',
+      'element',
+      'node',
+      'item',
+      'list',
+      'child',
+      'component',
+      'render',
+      'data',
+      'color',
+      'colour',
     ]),
   ],
 ]);
@@ -423,6 +439,50 @@ function isCorrelationIdFactory(name: string, vocab: Vocabulary): boolean {
   if (words.some((word) => vocab.words.has(word))) return false;
   return words.some((word) => vocab.correlationWords.has(word));
 }
+
+/**
+ * Calls that take `(name, value)` and store the value under the name.
+ *
+ * The NAME is a string literal in the call, so the security meaning lives
+ * there rather than in any identifier: `headers.set('X-SRF-TOKEN', draw)`.
+ * `cookie`/`setCookie` and `setItem` are the same slot for a cookie jar and a
+ * storage area.
+ */
+const NAME_VALUE_SETTERS: ReadonlySet<string> = new Set([
+  'set',
+  'append',
+  'setHeader',
+  'header',
+  'cookie',
+  'setCookie',
+  'setItem',
+]);
+
+/** Receiver names that make a literal `'state'` an OAuth query parameter. */
+const QUERY_RECEIVER = /param|query|search/i;
+
+/**
+ * Keys that, together with `state`, make an object literal an OAuth/OIDC
+ * authorization request. Compared lower-cased with `_` and `-` removed, so
+ * `redirect_uri` and `redirectUri` are one entry.
+ */
+const OAUTH_REQUEST_KEYS: ReadonlySet<string> = new Set([
+  'clientid',
+  'redirecturi',
+  'responsetype',
+  'codechallenge',
+  'scope',
+]);
+
+const normalizeKey = (key: string): string =>
+  key.toLowerCase().replaceAll(/[_-]/g, '');
+
+/** Calls a value passes through unchanged for the purpose of where it ends up. */
+const TRANSPARENT_WRAPPERS: ReadonlySet<string> = new Set([
+  'encodeURIComponent',
+  'encodeURI',
+  'String',
+]);
 
 /** The name says this function builds a security value. */
 function functionNameSuggestsCrypto(name: string, vocab: Vocabulary): boolean {
@@ -790,6 +850,311 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       return passedReturn;
     }
 
+    /** The text a node ends with, when that text is static: `'&state='`, `` `…state=` ``. */
+    function trailingText(start: TSESTree.Node): string {
+      // Follow the right operand of `a + b + c` down; no recursion to bound.
+      let node = start;
+      while (
+        node.type === AST_NODE_TYPES.BinaryExpression &&
+        node.operator === '+'
+      ) {
+        node = node.right;
+      }
+      if (node.type === AST_NODE_TYPES.Literal) {
+        return String(node.value);
+      }
+      if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+        // A template always has at least one quasi.
+        return (node.quasis.at(-1) as TSESTree.TemplateElement).value.raw;
+      }
+      return '';
+    }
+
+    /** Does this object literal read as an OAuth/OIDC authorization request? */
+    function looksLikeAuthorizeRequest(
+      object: TSESTree.ObjectExpression,
+    ): boolean {
+      return object.properties.some((property) => {
+        if (property.type !== AST_NODE_TYPES.Property) return false;
+        const key = objectKeyName(property);
+        return key !== null && OAUTH_REQUEST_KEYS.has(normalizeKey(key));
+      });
+    }
+
+    /**
+     * Is this use of a value the `state` of an OAuth request?
+     *
+     * `state` alone is the commonest name in a UI codebase, so the name never
+     * decides. Where the value GOES does: after `state=` in a URL, as the value
+     * of a `state` query parameter, or in an object that carries the other
+     * members of an authorization request.
+     */
+    function isOAuthStateUse(reference: TSESTree.Identifier): boolean {
+      let node: TSESTree.Node = reference;
+      // `encodeURIComponent(state)` puts the same value in the same place.
+      while (
+        node.parent?.type === AST_NODE_TYPES.CallExpression &&
+        node.parent.callee.type === AST_NODE_TYPES.Identifier &&
+        TRANSPARENT_WRAPPERS.has(node.parent.callee.name) &&
+        node.parent.arguments[0] === node
+      ) {
+        node = node.parent;
+      }
+      const parent = node.parent as TSESTree.Node;
+
+      if (parent.type === AST_NODE_TYPES.TemplateLiteral) {
+        const at = parent.expressions.indexOf(node as TSESTree.Expression);
+        return /state=$/i.test(
+          (parent.quasis[at] as TSESTree.TemplateElement).value.raw,
+        );
+      }
+      if (
+        parent.type === AST_NODE_TYPES.BinaryExpression &&
+        parent.operator === '+' &&
+        parent.right === node
+      ) {
+        return /state=$/i.test(trailingText(parent.left));
+      }
+      if (
+        parent.type === AST_NODE_TYPES.Property &&
+        parent.value === node &&
+        objectKeyName(parent) === 'state' &&
+        parent.parent.type === AST_NODE_TYPES.ObjectExpression
+      ) {
+        return looksLikeAuthorizeRequest(parent.parent);
+      }
+      if (
+        parent.type === AST_NODE_TYPES.CallExpression &&
+        parent.callee.type === AST_NODE_TYPES.MemberExpression &&
+        // @vocabulary WHATWG URLSearchParams API
+        ['set', 'append'].includes(propertyName(parent.callee) ?? '') &&
+        parent.arguments[1] === node
+      ) {
+        return staticString(parent.arguments[0])?.toLowerCase() === 'state';
+      }
+      return false;
+    }
+
+    /** `const state = Math.random()…` whose value goes into an OAuth request. */
+    function isOAuthStateBinding(id: TSESTree.Identifier): boolean {
+      const words = identifierWords(id.name);
+      if (words[words.length - 1] !== 'state') return false;
+      const variable = findVariable(sourceCode, id) as TSESLint.Scope.Variable;
+      return variable.references.some(
+        (reference) =>
+          !reference.init &&
+          isOAuthStateUse(reference.identifier as TSESTree.Identifier),
+      );
+    }
+
+    /**
+     * `(name, value)` setter whose literal NAME says the value is a credential,
+     * and `child` is one of the value arguments.
+     */
+    function isSecuritySlot(
+      call: TSESTree.CallExpression,
+      child: TSESTree.Node,
+    ): boolean {
+      const callee = call.callee;
+      if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+      const method = propertyName(callee);
+      if (method === null || !NAME_VALUE_SETTERS.has(method)) return false;
+      const at = call.arguments.indexOf(
+        child as TSESTree.CallExpressionArgument,
+      );
+      if (at < 1) return false;
+      const slot = staticString(call.arguments[0]);
+      if (slot === null) return false;
+      if (nameSuggestsCrypto(slot, vocab)) return true;
+      // `params.set('state', draw)`: a query parameter called state.
+      const receiver = callee.object;
+      const receiverName =
+        receiver.type === AST_NODE_TYPES.Identifier
+          ? receiver.name
+          : (memberPropertyName(receiver) ?? '');
+      return (
+        slot.toLowerCase() === 'state' &&
+        ['set', 'append'].includes(method) &&
+        QUERY_RECEIVER.test(receiverName)
+      );
+    }
+
+    /**
+     * The draw sits in a `.sort()` comparator: `list.sort(() => Math.random() - 0.5)`
+     * is the one-line shuffle, and a shuffle's output is an order, not a secret.
+     */
+    function isShuffleComparator(node: TSESTree.Node): boolean {
+      let current: TSESTree.Node | undefined = node.parent;
+      while (current) {
+        if (
+          current.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+          current.type === AST_NODE_TYPES.FunctionExpression
+        ) {
+          const call = current.parent as TSESTree.Node;
+          return (
+            call.type === AST_NODE_TYPES.CallExpression &&
+            call.arguments[0] === current &&
+            call.callee.type === AST_NODE_TYPES.MemberExpression &&
+            (propertyName(call.callee) === 'sort' ||
+              propertyName(call.callee) === 'toSorted')
+          );
+        }
+        current = current.parent;
+      }
+      return false;
+    }
+
+    /**
+     * A name that IS a secret, as opposed to an everyday word for an identifier.
+     * `hash`, `key`, `code`, `pin` and `auth` are on the vocabulary because they
+     * sometimes hold one; `token` and `salt` essentially always do.
+     */
+    const STRONG_SECRET_NAME =
+      /token|secret|passw|salt|nonce|^iv$|otp|csrf|session|credential|jwt|apikey|cipher|encrypt|signature|seed|mnemonic/i;
+    const FILE_EXTENSION_AFTER = /^\.[A-Za-z0-9]{1,8}(?![A-Za-z0-9_])/;
+    /**
+     * Node's path-only modules and its file-system modules.
+     *
+     * @vocabulary Node.js API (path, path.posix, path.win32, fs, fs/promises) —
+     * defined by the runtime.
+     */
+    const PATH_MODULES = new Set(['path', 'posix', 'win32']);
+    const FS_MODULES = new Set(['fs', 'fsp']);
+    /**
+     * `fs` methods whose SECOND argument is also a path (the first is always one).
+     *
+     * @vocabulary Node.js fs API (rename, copyFile, cp, link, symlink and their
+     * Sync variants) — defined by the runtime.
+     */
+    const TWO_PATH_METHODS = /^(rename|copyFile|cp|link|symlink)(Sync)?$/;
+    /** A binding that holds a file name or path, by what it is called. */
+    const FILE_BINDING_NAME = /(file|path|dir|name)$/i;
+
+    /**
+     * What kind of file API is this `path` / `fs` receiver? Decided by the
+     * module it RESOLVES to when the file declares it (so `import path from
+     * 'node:fs'` is `fs`, whatever it is called, and a local object is neither),
+     * and by its spelling only when the name is undeclared (a snippet, a global).
+     */
+    function fileApiKind(
+      identifier: TSESTree.Identifier,
+    ): 'path' | 'fs' | null {
+      if (findVariable(context.sourceCode, identifier)) {
+        const bound = resolveModuleBinding(
+          identifier,
+          context.sourceCode.getScope(identifier),
+        );
+        if (bound === undefined) return null;
+        if (bound.module === 'path') return 'path';
+        return bound.module === 'fs' || bound.module === 'fs/promises'
+          ? 'fs'
+          : null;
+      }
+      if (PATH_MODULES.has(identifier.name)) return 'path';
+      return FS_MODULES.has(identifier.name) ? 'fs' : null;
+    }
+
+    /**
+     * Is `argument` a PATH argument of this `path.*` / `fs.*` call? Every `path`
+     * argument is a segment. For `fs`, only the first argument is a path
+     * (`writeFileSync(file, data)` takes the data second), plus the second of
+     * the few two-path methods.
+     */
+    function isPathArgument(
+      call: TSESTree.CallExpression,
+      argument: TSESTree.Node,
+    ): boolean {
+      if (call.callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+      // `path.posix.join(...)` / `path.win32.join(...)` are `path` too.
+      let receiver = call.callee.object;
+      if (
+        receiver.type === AST_NODE_TYPES.MemberExpression &&
+        (propertyName(receiver) === 'posix' ||
+          propertyName(receiver) === 'win32')
+      ) {
+        receiver = receiver.object;
+      }
+      if (receiver.type !== AST_NODE_TYPES.Identifier) return false;
+      const kind = fileApiKind(receiver);
+      if (kind === null) return false;
+      if (kind === 'path') return true;
+      const index = call.arguments.indexOf(
+        argument as TSESTree.CallExpressionArgument,
+      );
+      return (
+        index === 0 ||
+        (index === 1 && TWO_PATH_METHODS.test(propertyName(call.callee) ?? ''))
+      );
+    }
+
+    /**
+     * Does this expression end up as a file name or path: an argument in a path
+     * position of a `path.*` / `fs.*` call, or the value of a binding named for a
+     * file? Looks through the arms of a conditional.
+     */
+    function isFilePosition(expression: TSESTree.Node): boolean {
+      let current = expression;
+      let parent = current.parent as TSESTree.Node;
+      while (
+        parent.type === AST_NODE_TYPES.ConditionalExpression &&
+        parent.test !== current
+      ) {
+        current = parent;
+        parent = current.parent as TSESTree.Node;
+      }
+      if (parent.type === AST_NODE_TYPES.CallExpression) {
+        return isPathArgument(parent, current);
+      }
+      return (
+        parent.type === AST_NODE_TYPES.VariableDeclarator &&
+        parent.id.type === AST_NODE_TYPES.Identifier &&
+        FILE_BINDING_NAME.test(parent.id.name)
+      );
+    }
+
+    /** Is this read of the binding part of a file name? */
+    function isFileNameUse(id: TSESTree.Node): boolean {
+      // Every read of a declared binding sits under a parent.
+      const parent = id.parent as TSESTree.Node;
+      if (parent.type === AST_NODE_TYPES.TemplateLiteral) {
+        const index = parent.expressions.indexOf(id as TSESTree.Expression);
+        // `quasis` is one longer than `expressions`: the next one always exists.
+        // A `.ext` suffix alone is not enough (`${key}.v1` can be an HMAC key):
+        // the template must also END UP as a file name.
+        return (
+          FILE_EXTENSION_AFTER.test(parent.quasis[index + 1].value.raw) &&
+          isFilePosition(parent)
+        );
+      }
+      return (
+        parent.type === AST_NODE_TYPES.CallExpression &&
+        isPathArgument(parent, id)
+      );
+    }
+
+    /**
+     * Does this binding exist only to name a file?
+     *
+     * Vite writes a temp config file named `${base}.${hash}.mjs`, where `hash` is
+     * a timestamp and `Math.random()`. The name is on the vocabulary, but the
+     * value is a uniquifier: every read of it lands in a file name, so nothing
+     * about it has to be unguessable. Needs at least one read, only file-name
+     * reads, and a name that is not itself a strong secret word.
+     */
+    function namesOnlyAFile(declarator: TSESTree.VariableDeclarator): boolean {
+      // The only caller has already matched an Identifier id, which always
+      // declares exactly one variable.
+      const { name } = declarator.id as TSESTree.Identifier;
+      if (STRONG_SECRET_NAME.test(name)) return false;
+      const [variable] = context.sourceCode.getDeclaredVariables(
+        declarator,
+      ) as [TSESLint.Scope.Variable];
+      const reads = variable.references.filter((ref) => ref.isRead());
+      return (
+        reads.length > 0 && reads.every((ref) => isFileNameUse(ref.identifier))
+      );
+    }
+
     function isCryptoContext(
       node: TSESTree.Node,
       followed: Set<TSESLint.Scope.Variable> = new Set(),
@@ -839,7 +1204,13 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         ) {
           if (current.id.type === AST_NODE_TYPES.Identifier) {
             const varName = current.id.name;
-            if (nameSuggestsCrypto(varName, vocab)) {
+            if (
+              nameSuggestsCrypto(varName, vocab) &&
+              !namesOnlyAFile(current)
+            ) {
+              return true;
+            }
+            if (isOAuthStateBinding(current.id)) {
               return true;
             }
             if (usedInCryptoContext(current.id, followed)) {
@@ -894,12 +1265,30 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
 
         // Check object property
         if (namesThisValue && current.type === AST_NODE_TYPES.Property) {
-          if (current.key.type === AST_NODE_TYPES.Identifier) {
-            const propName = current.key.name;
+          // `{ 'X-CSRF-Token': draw }` names its slot as a string.
+          const propName = objectKeyName(current);
+          if (propName !== null) {
             if (nameSuggestsCrypto(propName, vocab)) {
               return true;
             }
+            // `{ client_id, redirect_uri, state: draw }`.
+            if (
+              propName === 'state' &&
+              current.parent.type === AST_NODE_TYPES.ObjectExpression &&
+              looksLikeAuthorizeRequest(current.parent)
+            ) {
+              return true;
+            }
           }
+        }
+
+        // `headers.set('X-SRF-TOKEN', draw)`: the slot is named by a literal.
+        if (
+          namesThisValue &&
+          current.type === AST_NODE_TYPES.CallExpression &&
+          isSecuritySlot(current, child)
+        ) {
+          return true;
         }
 
         // Check return in crypto-named function
@@ -991,7 +1380,11 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         // Check for Math.random(), in any of its bindings
         if (isMathRandomCallee(node.callee)) {
           // Check if used in cryptographic context
-          if (isCryptoContext(node) && !isCsprngFallback(node)) {
+          if (
+            !isShuffleComparator(node) &&
+            isCryptoContext(node) &&
+            !isCsprngFallback(node)
+          ) {
             context.report({
               node,
               messageId: 'mathRandomCrypto',

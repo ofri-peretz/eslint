@@ -439,9 +439,7 @@ ruleTester.run('no-useless-path-segments (coverage)', noUselessPathSegments, {
 
 describe('no-useless-path-segments — Layer 2', () => {
   it('ignores synthetic imports with non-string sources', () => {
-    const { listeners, reports } = createWithMockContext(
-      noUselessPathSegments,
-    );
+    const { listeners, reports } = createWithMockContext(noUselessPathSegments);
     (listeners.ImportDeclaration as (n: unknown) => void)({
       type: 'ImportDeclaration',
       source: { type: 'Literal', value: 42 },
@@ -455,6 +453,12 @@ describe('no-useless-path-segments — Layer 2', () => {
 // ---------------------------------------------------------------------------
 ruleTester.run('prefer-default-export (coverage)', preferDefaultExport, {
   valid: [
+    {
+      // eslint-plugin-import counts both specifiers; a module that exports a
+      // type is left alone either way.
+      name: 'an inline type specifier beside one value specifier',
+      code: `const a = 1; type T = number; export { type T, a };`,
+    },
     {
       name: 'ignoreFiles suppresses the rule entirely',
       code: `export const one = 1;`,
@@ -476,7 +480,7 @@ ruleTester.run('prefer-default-export (coverage)', preferDefaultExport, {
   ],
   invalid: [
     {
-      name: 'a single re-exported name is the module\'s one export',
+      name: "a single re-exported name is the module's one export",
       code: `export { a } from './other';`,
       errors: [
         {
@@ -536,15 +540,30 @@ ruleTester.run('prefer-default-export (coverage)', preferDefaultExport, {
       ],
     },
     {
-      name: 'type specifiers are skipped but value specifiers count',
-      code: `const a = 1; type T = number; export { type T, a };`,
+      name: 'a declared export is not counted; the value beside it is',
+      code: `export declare const d: number;\nexport const a = 1;`,
       errors: [
         {
           messageId: 'preferDefaultExport',
           suggestions: [
             {
               messageId: 'preferDefaultExport',
-              output: `const a = 1; type T = number; // TODO: Convert named export to default export\nexport { type T, a };`,
+              output: `export declare const d: number;\n// TODO: Convert named export to default export\nexport const a = 1;`,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'a namespace is not counted; the value beside it is',
+      code: `export namespace N {}\nexport const a = 1;`,
+      errors: [
+        {
+          messageId: 'preferDefaultExport',
+          suggestions: [
+            {
+              messageId: 'preferDefaultExport',
+              output: `export namespace N {}\n// TODO: Convert named export to default export\nexport const a = 1;`,
             },
           ],
         },
@@ -583,9 +602,7 @@ describe('prefer-default-export — Layer 2', () => {
 // ---------------------------------------------------------------------------
 // prefer-direct-import
 // ---------------------------------------------------------------------------
-const directMappings = [
-  { barrel: '(', directPath: 'my-barrel/lib/{name}' },
-];
+const directMappings = [{ barrel: '(', directPath: 'my-barrel/lib/{name}' }];
 
 ruleTester.run('prefer-direct-import (coverage)', preferDirectImport, {
   valid: [

@@ -5,6 +5,142 @@ All notable changes to `oxlint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.4.12
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.12`
+
+## 6.4.11
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.11`
+
+## 6.4.10
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.10`
+
+## 6.4.9
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.9`
+
+## 6.4.8
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.8`
+
+## 6.4.7
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.7`
+
+## 6.4.6
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.6`
+
+## 6.4.5
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.5`
+
+## 6.4.4
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.4`
+
+## 6.4.3
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.3`
+
+## 6.4.2
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.2`
+
+## 6.4.1
+
+### Patch Changes
+
+- **📚 Docs** — Getting Started now leads each plugin README, with the ESLint install line and a flat config that loads
+
+  The install block was below the Description and the doctrine, and on 17 of the 31 plugins there was no flat-config snippet on the page at all. `eslint-plugin-secure-coding`'s README showed `...securePlugin.configs.recommended`, which throws `TypeError: ... is not iterable` when pasted, because `configs.recommended` is one object. Every plugin README now opens with `npm install --save-dev eslint <plugin>` and `import { configs } from '<plugin>'` and `export default [configs.recommended]` in an `eslint.config.mjs`, then the Description. A test now loads that snippet in ESLint for every plugin.
+
+  The star banner above the first heading, the footer block with the star counter and the Dev.to ask are replaced by one `## Support` paragraph at the end: report a false positive, or star the repo if the plugin helped.
+
+  `eslint-plugin-import-next` opens with its drop-in grade, read from the newest `benchmarks/results/ilb-import-parity` result with its date: passes 2,035 of 2,135 (95.3%) of eslint-plugin-import 2.32.0's own test cases, measured 2026-11-19.
+
+  Eight taglines now say what the plugin flags instead of "security rules for X" (secure-coding, node-security, browser-security, nestjs-security, express-security, vercel-ai-security, react-a11y, import-next). `eslint-plugin-node-security` adds one proof line: the public repositories that list it, with the date they were checked.
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.1`
+
+## 6.4.0
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.0`
+
+## 6.3.0
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.3.0`
+
+## 6.2.0
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.2.0`
+
+## 6.1.3
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.1.3`
+
+## 6.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — no-sensitive-data-exposure reports a secret VALUE, not a credential word in the prose
+
+  A label in front of a value the rule cannot name — `token: ${t}`,
+  `'password: ' + value`, `Using resumption token: ${eventId}`,
+  `Token: ${url}api/auth/mcp/token` — is no longer reported on the label alone.
+  The value must name the secret itself (an identifier, property or object key,
+  one binding hop or a local object literal away), or a string literal must write
+  one out (`'password: hunter2'`). A label and its value must also sit on one line,
+  so help text naming an environment variable is not a credential.
+
+  On the MCP TypeScript SDK's examples this removes four false positives. Logging
+  `accessToken`, `user.password` or `{ apiKey }` still reports, and a secret
+  aliased into `.message` through a local object literal is now caught with no
+  label at all.
+
+  Docs: nine rule docs named a template CWE-693 in their header or front matter;
+  they now name the rule's own CWE.
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.1.2`
+
+## 6.1.1
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.1.1`
+
 ## 6.1.0
 
 ### Patch Changes

@@ -169,6 +169,17 @@ const DEFAULT_ALL_INTERFACES: Readonly<Record<string, string>> = {
   https: 'createServer',
 };
 
+/**
+ * Server starters that take one options object and bind `hostname` from it:
+ * module → export. `@hono/node-server`'s `serve({ fetch, port, hostname })`
+ * calls Node's `listen(port, hostname)`, so an absent `hostname` binds every
+ * interface exactly as a host-less `listen(port)` does.
+ */
+// @vocabulary @hono/node-server
+const OPTIONS_SERVERS: Readonly<Record<string, string>> = {
+  '@hono/node-server': 'serve',
+};
+
 /** What Node binds when `listen()` is given no host. */
 const DEFAULT_LISTEN_HOST = '::';
 
@@ -314,6 +325,22 @@ export const requireHttpTransportHardening = createRule<[], MessageIds>({
       )
         add(bind.callee.object);
       else if (bind.parent?.type === 'VariableDeclarator') add(bind.parent.id);
+      // `serve({ fetch: app.fetch, port })` serves `app`. Checked on its own,
+      // not as an `else`: a factory call bound to a variable
+      // (`const app = createMcpExpressApp({ host })`) also takes an object.
+      if (
+        bind.type === 'CallExpression' &&
+        bind.arguments[0]?.type === 'ObjectExpression'
+      ) {
+        for (const property of bind.arguments[0].properties) {
+          if (
+            property.type === 'Property' &&
+            propertyKey(property) === 'fetch' &&
+            property.value.type === 'MemberExpression'
+          )
+            add(property.value.object);
+        }
+      }
       return found;
     }
 
@@ -690,12 +717,30 @@ export const requireHttpTransportHardening = createRule<[], MessageIds>({
           )
             serveCalls.push(node);
         }
+        // `handler.fetch(c.req.raw)` where `handler = createMcpHandler(…)` —
+        // the call that serves the transport, so an inline credential check in
+        // front of it counts like one in front of `handleRequest`.
+        if (
+          node.callee.type === 'MemberExpression' &&
+          propertyName(node.callee) === 'fetch' &&
+          node.callee.object.type === 'Identifier'
+        ) {
+          const init = constInitializer(node.callee.object, scope);
+          if (
+            init?.type === 'CallExpression' &&
+            mcpExport(init.callee, scope) === 'createMcpHandler'
+          )
+            serveCalls.push(node);
+        }
         const name = mcpExport(node.callee, scope);
         if (name !== undefined) {
           if (HOST_VALIDATORS.has(name)) validatesHost = true;
           else if (AUTH_EXPORTS.has(name)) authenticates = true;
-          else if (name === 'createMcpHandler') servesV2 = true;
-          else if (MCP_APP_FACTORIES.has(name)) {
+          else if (name === 'createMcpHandler') {
+            // It builds and serves a transport: the file is an MCP HTTP server.
+            servesV2 = true;
+            constructsTransport = true;
+          } else if (MCP_APP_FACTORIES.has(name)) {
             const state = expressAppState(node);
             if (state.kind === 'guarded') validatesHost = true;
             else if (state.kind === 'allInterfaces') {
@@ -703,6 +748,23 @@ export const requireHttpTransportHardening = createRule<[], MessageIds>({
               binds.push({ node, host: state.host });
             }
           }
+          return;
+        }
+        // `serve({ fetch: app.fetch, port })` — `hostname` is the bind.
+        const server = resolveModuleBinding(node.callee, scope);
+        const [first] = node.arguments;
+        if (
+          server !== undefined &&
+          OPTIONS_SERVERS[server.module] === server.path.join('.') &&
+          first?.type === 'ObjectExpression'
+        ) {
+          const options = readOptions(first);
+          if (options === null) return;
+          const hostNode = options.get('hostname');
+          const host =
+            hostNode === undefined ? DEFAULT_LISTEN_HOST : hostOf(hostNode);
+          if (host !== null && ALL_INTERFACE_HOSTS.has(host))
+            binds.push({ node, host });
           return;
         }
         if (node.callee.type !== 'MemberExpression') return;

@@ -14,17 +14,41 @@ import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 'importOrder' | 'alphabeticalOrder' | 'importsNotContiguous';
+import {
+  createUpstreamOrder,
+  isUpstreamOrderForm,
+  UPSTREAM_TYPES,
+  upstreamOrderMessages,
+} from '../utils/order-upstream';
+import type {
+  UpstreamMessageIds,
+  UpstreamOrderOptions,
+} from '../utils/order-upstream';
 
-export interface Options {
+type MessageIds =
+  | 'importOrder'
+  | 'alphabeticalOrder'
+  | 'importsNotContiguous'
+  | UpstreamMessageIds;
+
+/**
+ * import-next's own options. eslint-plugin-import's are accepted too
+ * (`UpstreamOrderOptions`); written that way, the rule runs eslint-plugin-
+ * import's engine instead — see `isUpstreamOrderForm` in ./order-upstream.
+ */
+export interface Options extends Omit<
+  UpstreamOrderOptions,
+  'groups' | 'alphabetize'
+> {
   /** Groups order */
-  groups?: string[];
+  groups?: (string | string[])[];
   /** Internal alias patterns (regex strings) */
   internalPatterns?: string[];
   /** Alphabetical sorting */
   alphabetize?: {
-    order: 'asc' | 'desc' | 'ignore';
+    order?: 'asc' | 'desc' | 'ignore';
     caseInsensitive?: boolean;
+    orderImportKind?: 'asc' | 'desc' | 'ignore';
   };
   /** Newline between groups */
   newlinesBetween?: 'always' | 'never' | 'ignore';
@@ -32,7 +56,24 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-const defaultOptions: Required<Options> = {
+type OwnOptions = Required<
+  Pick<Options, 'internalPatterns' | 'newlinesBetween'>
+> & {
+  groups: string[];
+  alphabetize: { order: 'asc' | 'desc' | 'ignore'; caseInsensitive: boolean };
+};
+
+const NEWLINES_MODES = [
+  'ignore',
+  'always',
+  'always-and-inside-groups',
+  'never',
+];
+const ALPHABETIZE_ORDERS = ['asc', 'desc', 'ignore'];
+const GROUP_NAMES = [...UPSTREAM_TYPES, 'side-effect'];
+const UNTYPED_GROUPS = GROUP_NAMES.filter((group) => group !== 'type');
+
+const defaultOptions: OwnOptions = {
   groups: [
     'builtin',
     'external',
@@ -88,7 +129,9 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/first.md',
       }),
+      ...upstreamOrderMessages,
     },
+    // import-next's own keys, and eslint-plugin-import's (v2.32.0 `order`).
     schema: [
       {
         type: 'object',
@@ -96,17 +139,12 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
           groups: {
             type: 'array',
             items: {
-              type: 'string',
-              enum: [
-                'builtin',
-                'external',
-                'internal',
-                'parent',
-                'sibling',
-                'index',
-                'object',
-                'type',
-                'side-effect',
+              oneOf: [
+                { type: 'string', enum: GROUP_NAMES },
+                {
+                  type: 'array',
+                  items: { type: 'string', enum: GROUP_NAMES },
+                },
               ],
             },
           },
@@ -119,10 +157,8 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
           alphabetize: {
             type: 'object',
             properties: {
-              order: {
-                type: 'string',
-                enum: ['asc', 'desc', 'ignore'],
-              },
+              order: { type: 'string', enum: ALPHABETIZE_ORDERS },
+              orderImportKind: { type: 'string', enum: ALPHABETIZE_ORDERS },
               caseInsensitive: {
                 type: 'boolean',
               },
@@ -133,15 +169,158 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
             type: 'string',
             enum: ['always', 'never', 'ignore'],
           },
+          pathGroupsExcludedImportTypes: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+          distinctGroup: { type: 'boolean' },
+          pathGroups: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                pattern: { type: 'string' },
+                // Only the minimatch switches Node's glob can honour; any
+                // other is refused rather than silently ignored.
+                patternOptions: {
+                  type: 'object',
+                  properties: {
+                    matchBase: { type: 'boolean' },
+                    nocase: { type: 'boolean' },
+                    nonegate: { type: 'boolean' },
+                    nocomment: { type: 'boolean' },
+                  },
+                  additionalProperties: false,
+                },
+                group: { type: 'string', enum: [...UPSTREAM_TYPES] },
+                position: { type: 'string', enum: ['after', 'before'] },
+              },
+              additionalProperties: false,
+              required: ['pattern', 'group'],
+            },
+          },
+          'newlines-between': { type: 'string', enum: NEWLINES_MODES },
+          'newlines-between-types': { type: 'string', enum: NEWLINES_MODES },
+          consolidateIslands: {
+            type: 'string',
+            enum: ['inside-groups', 'never'],
+          },
+          sortTypesGroup: { type: 'boolean' },
+          named: {
+            oneOf: [
+              { type: 'boolean' },
+              {
+                type: 'object',
+                properties: {
+                  enabled: { type: 'boolean' },
+                  import: { type: 'boolean' },
+                  export: { type: 'boolean' },
+                  require: { type: 'boolean' },
+                  cjsExports: { type: 'boolean' },
+                  types: {
+                    type: 'string',
+                    enum: ['mixed', 'types-first', 'types-last'],
+                  },
+                },
+                additionalProperties: false,
+              },
+            ],
+          },
+          warnOnUnassignedImports: { type: 'boolean' },
         },
         additionalProperties: false,
+        // eslint-plugin-import's cross-option constraints, verbatim in effect.
+        dependencies: {
+          sortTypesGroup: {
+            oneOf: [
+              {
+                type: 'object',
+                properties: {
+                  sortTypesGroup: { type: 'boolean', enum: [true] },
+                  // `groups` must name 'type'.
+                  groups: {
+                    type: 'array',
+                    not: {
+                      type: 'array',
+                      items: {
+                        oneOf: [
+                          { type: 'string', enum: UNTYPED_GROUPS },
+                          {
+                            type: 'array',
+                            items: { type: 'string', enum: UNTYPED_GROUPS },
+                          },
+                        ],
+                      },
+                    },
+                  },
+                },
+                required: ['groups'],
+              },
+              {
+                type: 'object',
+                properties: {
+                  sortTypesGroup: { type: 'boolean', enum: [false] },
+                },
+              },
+            ],
+          },
+          'newlines-between-types': {
+            type: 'object',
+            properties: { sortTypesGroup: { type: 'boolean', enum: [true] } },
+            required: ['sortTypesGroup'],
+          },
+          consolidateIslands: {
+            oneOf: [
+              {
+                type: 'object',
+                properties: {
+                  consolidateIslands: {
+                    type: 'string',
+                    enum: ['inside-groups'],
+                  },
+                },
+                anyOf: [
+                  {
+                    type: 'object',
+                    properties: {
+                      'newlines-between': {
+                        type: 'string',
+                        enum: ['always-and-inside-groups'],
+                      },
+                    },
+                    required: ['newlines-between'],
+                  },
+                  {
+                    type: 'object',
+                    properties: {
+                      'newlines-between-types': {
+                        type: 'string',
+                        enum: ['always-and-inside-groups'],
+                      },
+                    },
+                    required: ['newlines-between-types'],
+                  },
+                ],
+              },
+              {
+                type: 'object',
+                properties: {
+                  consolidateIslands: { type: 'string', enum: ['never'] },
+                },
+              },
+            ],
+          },
+        },
       },
     ],
   },
   defaultOptions: [defaultOptions],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    let options: Required<Options>;
+    let options: OwnOptions;
+    // Options written eslint-plugin-import's way run its engine instead.
+    const upstream = createUpstreamOrder(context as never);
+    let isUpstream = false;
     let sourceCode: Readonly<TSESLint.SourceCode>;
     let imports: TSESTree.ImportDeclaration[];
 
@@ -305,9 +484,15 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
 
     return {
       before() {
+        isUpstream = isUpstreamOrderForm(context.options);
+        if (isUpstream) {
+          upstream.before();
+          return;
+        }
         const userOptions = context.options[0] || {};
         options = {
-          groups: userOptions.groups ?? defaultOptions.groups,
+          // Not upstream form, so every group is a plain string.
+          groups: (userOptions.groups as string[]) ?? defaultOptions.groups,
           internalPatterns:
             userOptions.internalPatterns ?? defaultOptions.internalPatterns,
           newlinesBetween:
@@ -326,10 +511,30 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
         imports = [];
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        imports.push(node);
+        if (isUpstream) upstream.ImportDeclaration(node);
+        else imports.push(node);
+      },
+      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (isUpstream) upstream.TSImportEqualsDeclaration(node);
+      },
+      CallExpression(node: TSESTree.CallExpression) {
+        if (isUpstream) upstream.CallExpression(node);
+      },
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (isUpstream) upstream.VariableDeclarator(node);
+      },
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (isUpstream) upstream.ExportNamedDeclaration(node);
+      },
+      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        if (isUpstream) upstream.AssignmentExpression(node);
       },
 
       'Program:exit'() {
+        if (isUpstream) {
+          upstream.exit();
+          return;
+        }
         if (imports.length === 0) {
           return;
         }

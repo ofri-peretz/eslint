@@ -20,6 +20,30 @@
  */
 import { posthog } from './posthog-init';
 
+/** Shared by every conversion event: a pathname (never a query or hash), the page's role. */
+interface ConversionContext {
+  source_page: string;
+  page_kind: 'rule' | 'plugin' | 'guide' | 'other';
+  plugin?: string;
+  rule?: string;
+}
+export interface ConversionClickPayload extends ConversionContext {
+  /** `github-card`, `next-step`, `header`, `sidebar`, `content`, ... */
+  placement: string;
+  /** Public path of the destination, no host, query or hash. */
+  destination: string;
+}
+export interface CodeCopyPayload extends ConversionContext {
+  placement: string;
+  /** `code-<ordinal on the page>`, or an explicit `data-block-id`. */
+  block_id: string;
+  /** The block's title (`eslint.config.js`), when it has one. */
+  block_title: string;
+}
+export interface ScrollDepthPayload extends ConversionContext {
+  depth: 50 | 90;
+}
+
 export interface TrackedEventMap {
   'articles:search_submit': { q: string; resultCount: number };
   'articles:filter_add': {
@@ -95,6 +119,15 @@ export interface TrackedEventMap {
     plugin?: string;
     rule?: string;
   };
+  // Conversion measurement (lib/conversion.ts). The names are the ones the
+  // 2026-11-20 growth plan asked for, flat rather than `category:object_action`,
+  // because they are read together as one funnel (card or Next step block to
+  // GitHub / npm, copy, scroll).
+  github_click: ConversionClickPayload;
+  npm_click: ConversionClickPayload;
+  config_copy: CodeCopyPayload;
+  install_copy: CodeCopyPayload;
+  scroll_depth: ScrollDepthPayload;
 }
 
 export type TrackedEventName = keyof TrackedEventMap;

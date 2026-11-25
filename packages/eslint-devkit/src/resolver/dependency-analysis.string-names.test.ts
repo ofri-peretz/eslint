@@ -102,4 +102,35 @@ describe('getFileImports and ES2022 arbitrary module names', () => {
       ]);
     });
   });
+
+  // lynx-stack writes no semicolons. The quoted-segment alternative let the clause
+  // take the first statement's `from './a'` as a string and run on into the next
+  // statement, so one match began with the VALUE import and covered the
+  // `import type`, which then read as a runtime edge.
+  describe('statements without semicolons stay separate', () => {
+    const edgesIn = (source: string) => {
+      seq += 1;
+      const file = path.join(dir, `subject-${seq}.ts`);
+      fs.writeFileSync(file, source);
+      return getFileImports(file, {
+        workspaceRoot: dir,
+        barrelExports: ['index.ts'],
+        cache: createFileSystemCache(),
+      });
+    };
+
+    it('a type import after a value import keeps its own type-only flag', () => {
+      const edges = edgesIn(
+        "import fs from './a'\n\nimport type { T } from './b'\nexport const t = fs\n",
+      );
+      expect(edges.map((e) => [path.basename(e.path), !!e.typeOnly])).toEqual([
+        ['a.ts', false],
+        ['b.ts', true],
+      ]);
+    });
+
+    it('both edges survive when both are values', () => {
+      expect(importsIn("import a from './a'\nimport b from './b'\n")).toEqual(['a.ts', 'b.ts']);
+    });
+  });
 });

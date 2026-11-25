@@ -28,7 +28,10 @@ describe('no-dynamic-command-string', () => {
         name: 'execFile with a fixed binary and an argv array is not reported',
         code: `execFile('git', ['clone', repoUrl]);`,
       },
-      { code: `cp.spawnSync('ls', ['-la', dir]);` },
+      {
+        name: 'spawnSync through a namespace with a fixed binary and an argv array is not reported',
+        code: `cp.spawnSync('ls', ['-la', dir]);`,
+      },
       // A shell with a fully static command line
       {
         code: `spawn('bash', ['-c', 'ls -la']);`,
@@ -78,9 +81,11 @@ describe('no-dynamic-command-string', () => {
       // every bare identifier in command position made `const BUILD = '…'` a
       // false positive — the shape a repo reaches for to keep scripts in one place.
       {
+        name: 'a command line hoisted to a const is written out, not assembled',
         code: `const BUILD = 'npm ci && npm run build'; spawn('bash', ['-c', BUILD]);`,
       },
       {
+        name: 'a script looked up in a constant object is a fixed command',
         code: `const SCRIPTS = { build: 'npm run build' }; spawn('sh', ['-c', SCRIPTS.build]);`,
       },
       {

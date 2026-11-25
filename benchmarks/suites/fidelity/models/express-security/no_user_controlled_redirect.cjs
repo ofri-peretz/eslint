@@ -56,11 +56,15 @@ module.exports = {
         'app',
       ],
     }[tag(s.mount)];
+    // A `(req, res)` handler on a literal path is Express evidence by itself
+    // (#1616), so the no-Express mount registers on an imported constant.
+    const noExpress = tag(s.mount) === 'NoExpress';
     return [
       head,
+      noExpress ? "import { GO_PATH } from './paths';" : '',
       decl,
       "const ALLOWED = new Map([['docs', '/docs'], ['home', '/']]);",
-      `${recv}.get('/go', (${q}: any, ${r}: any) => {`,
+      `${recv}.get(${noExpress ? 'GO_PATH' : "'/go'"}, (${q}: any, ${r}: any) => {`,
       ...BODY[tag(s.target)](q, r).map((l) => `  ${l}`),
       '});',
       '',

@@ -19,7 +19,7 @@ import {
   AST_NODE_TYPES,
   unwrapTypeSyntax,
   isStaticExpression,
-  namesOneOf,
+  objectKeyName,
   propertyName,
   staticString,
 } from '@interlace/eslint-devkit';
@@ -61,9 +61,12 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Check if string contains sensitive data patterns.
- * Handles camelCase (secretKey), snake_case (secret_key), and plain text.
+ * Stands in for each `${…}` when a template's text is read: it cannot occur
+ * in source text, and it is never part of a value `literalCarriesSecret`
+ * accepts.
  */
+const INTERPOLATION = '\u0001';
+
 /**
  * Does a *standalone string literal* carry a credential?
  *
@@ -85,6 +88,14 @@ type RuleOptions = [Options?];
  * concatenation's right-hand side — which is why that path must keep using
  * the plain word match.
  */
+/**
+ * @protocol-constant The four ECMAScript keywords a configuration value is
+ * written with when it is not data: two booleans, `null` and `undefined`. They
+ * are the language's, not a vocabulary a codebase could spell differently, and
+ * none of them can be a credential.
+ */
+const OPTION_KEYWORDS = new Set(['true', 'false', 'null', 'undefined']);
+
 function literalCarriesSecret(text: string, patterns: string[]): boolean {
   const normalized = text.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
   return patterns.some((pattern) => {
@@ -129,42 +140,46 @@ function literalCarriesSecret(text: string, patterns: string[]): boolean {
     // The cost is a multi-pair line (`password=x user=y`), where the value is
     // no longer last. That shape has not appeared in any corpus fixture; the
     // sentences have appeared in three.
+    //
+    // The value sits on the label's LINE (`[ \t]*`, not `\s*`). The MCP
+    // TypeScript SDK's quickstart prints "set your API key:" and, on the next
+    // line, `export ANTHROPIC_API_KEY=your-api-key-here` — a label at the end
+    // of one sentence and a placeholder at the end of the next, which the old
+    // `\s*` joined into "label, separator, value".
+    //
+    // And the value is TEXT. In a template the holes are joined in as
+    // INTERPOLATION, and a value that is or contains one is a runtime value
+    // this test cannot read — `Token: ${url}api/auth/mcp/token` is an endpoint,
+    // `resumption token: ${eventId}` an event id. Whether a runtime value is a
+    // secret is the value path's question (`namedValueExposure`), answered from
+    // its name; the label in front of it is prose.
+    //
+    // And the value is not a boolean or null keyword. nestjs/authentication
+    // lib/jwt/jws.util.ts:209 tells the developer how to opt in:
+    // "… set `allowShortSecret: true` next to the key". That is an option name
+    // and its setting, quoted in prose; `true` is never anyone's credential.
+    // Only when that setting is the line's one label-and-value pair: in
+    // `password: hunter2 debug: true` the keyword belongs to `debug`, and the
+    // password before it is still on the line. The keywords are lowercase in
+    // the language, so `password: NULL` is a value, not a keyword.
+    const trailingValue = new RegExp(
+      `[:=]\\s*([^\\s${INTERPOLATION}]+)\\s*$`,
+    ).exec(text);
+    const pairCount = text.match(/[:=][ \t]*[^\s:=]/g)?.length ?? 0;
     return (
       new RegExp(
-        `\\b${flexPattern}\\b[ _-]{0,2}(?:[a-z0-9]{1,12}[ _-]{0,2})?[:=]\\s*\\S`,
+        `\\b${flexPattern}\\b[ _-]{0,2}(?:[a-z0-9]{1,12}[ _-]{0,2})?[:=][ \\t]*[^\\s${INTERPOLATION}]`,
         'i',
-      ).test(normalized) && /[:=]\s*\S+\s*$/.test(text)
+      ).test(normalized) &&
+      trailingValue !== null &&
+      !(
+        pairCount === 1 &&
+        OPTION_KEYWORDS.has(
+          trailingValue[1].replace(/^[`'"]+|[`'".,;)]+$/g, ''),
+        )
+      )
     );
   });
-}
-
-/**
- * Does a literal on the LEFT of a `+` label the value on its right?
- *
- * `'password: ' + password` and `'token=' + refreshToken` do: the literal ends
- * at the separator and the value follows. Prose that merely ends with the word
- * does not:
- *
- *   throw new Error('Error generating JWT token ' + err)
- *       twilio-node src/jwt/validation/ValidationToken.ts:145
- *
- * `err` is an exception, not a token; the sentence names the operation that
- * failed. The left-literal paths used the bare word match, which cannot tell
- * "here comes the secret" from "the word appeared in a sentence", so requiring
- * the separator is the whole distinction.
- */
-function literalLabelsValue(text: string, patterns: string[]): string | null {
-  const normalized = text.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
-  for (const pattern of patterns) {
-    const escaped = pattern
-      .toLowerCase()
-      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const flexPattern = escaped.replace(/[_ ]/g, '[_ ]');
-    if (new RegExp(`\\b${flexPattern}\\b\\s*[:=]\\s*$`, 'i').test(normalized)) {
-      return pattern;
-    }
-  }
-  return null;
 }
 
 /**
@@ -238,6 +253,7 @@ function memberCarriesSecret(
   node: TSESTree.MemberExpression,
   patterns: string[],
   descriptors: ReadonlySet<string>,
+  skipReceiverName = false,
 ): string | null {
   const prop = node.property;
   // `node.computed` is the whole distinction. In `user.password` the property
@@ -271,6 +287,10 @@ function memberCarriesSecret(
     (VALUE_FREE_PROPERTIES.has(propName) || DIAGNOSTIC_ACCESSORS.has(propName))
   )
     return null;
+  // The receiver's name is the fallback for a key nobody can see. When the
+  // file's own object literal DECLARES the key, the author named the field and
+  // the receiver's name no longer speaks for it.
+  if (skipReceiverName) return null;
   return node.object.type === AST_NODE_TYPES.Identifier
     ? identifierNamesSecret(node.object.name, patterns, descriptors)
     : null;
@@ -299,12 +319,31 @@ const VALUE_FREE_PROPERTIES = new Set([
 ]);
 
 /**
+ * Operators whose result is a boolean about two operands, never one of them.
+ *
+ * @protocol-constant ECMA-262's relational and equality operators.
+ */
+const COMPARISON_OPERATORS: ReadonlySet<string> = new Set([
+  '===',
+  '!==',
+  '==',
+  '!=',
+  '<',
+  '<=',
+  '>',
+  '>=',
+  'in',
+  'instanceof',
+]);
+
+/**
  * Properties that describe how an operation ENDED rather than what it carried.
  *
  * @protocol-constant Every entry is defined by a platform, not by a codebase:
- * `message`, `stack` and `name` are `Error.prototype`'s own (ECMAScript), and
+ * `message`, `stack` and `name` are `Error.prototype`'s own (ECMAScript),
  * `status` / `statusText` are the HTTP response code and reason phrase
- * (WHATWG Fetch, and `XMLHttpRequest` before it). What they have in common is
+ * (WHATWG Fetch, and `XMLHttpRequest` before it), and `type`, `algorithm`,
+ * `extractable` and `usages` are `CryptoKey`'s attributes (Web Crypto). What they have in common is
  * that the platform decides their contents, so none of them can be the
  * credential the surrounding prose is talking about.
  *
@@ -318,30 +357,15 @@ const DIAGNOSTIC_ACCESSORS = new Set([
   'name',
   'status',
   'statusText',
+  // `CryptoKey`'s own public attributes (W3C Web Crypto, section 13): the kind
+  // of key (`'public' | 'private' | 'secret'`), its algorithm, whether it can
+  // be exported and what it may be used for. `${privateKey.type}` prints the
+  // word `private`, never the key (honojs/hono src/utils/jws.ts:110).
+  'type',
+  'algorithm',
+  'extractable',
+  'usages',
 ]);
-
-/**
- * `error.message`, `tokenResponse.status` — a value that names ITSELF as an
- * outcome, whatever the prose around it says.
- *
- * Only non-computed property reads qualify. `error[k]` names nothing statically
- * and must not be assumed diagnostic.
- */
-function isDiagnosticAccessor(node: TSESTree.Node): boolean {
-  // `unwrapTypeSyntax` first: `${error.message as string}` and
-  // `${error.message!}` read exactly what `${error.message}` reads, and a bare
-  // `type ===` test matches neither. Without this the gate misses the dialect
-  // TypeScript users actually write, and the finding comes back.
-  const unwrapped = unwrapTypeSyntax(node) as TSESTree.Node;
-  const value =
-    unwrapped.type === AST_NODE_TYPES.ChainExpression
-      ? unwrapped.expression
-      : unwrapped;
-  return (
-    value.type === AST_NODE_TYPES.MemberExpression &&
-    namesOneOf(propertyName(value), DIAGNOSTIC_ACCESSORS)
-  );
-}
 
 /**
  * @vocabulary ECMAScript built-in Error constructors.
@@ -555,31 +579,26 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
         arg.type === AST_NODE_TYPES.BinaryExpression &&
         arg.operator === '+'
       ) {
-        // `'password: ' + password` - the classic credential leak. The left
-        // literal must END at the separator (see literalLabelsValue), and the
-        // value on the right is read whether it is a bare identifier or a
-        // property access: `'record ' + customer.ssn` was silent because the
-        // right arm only ever looked at Identifier.
+        // Either side can carry the exposure: `'Error: ' + userPassword` by
+        // the value's name, `'password: hunter2 ' + suffix` by a literal that
+        // writes the credential out. A literal that only LABELS the other side
+        // — `'password: ' + value` — is prose: the label says what the author
+        // thinks follows, and the value is judged by its own name.
         //
         // Recursion handles `'a: ' + b + '/' + c.d`, which parses as a
         // left-leaning tree of BinaryExpressions rather than one flat argument.
-        const staticText2 = staticString(arg.left);
-        if (staticText2 !== null) {
-          const labelled = literalLabelsValue(staticText2, sensitivePatterns);
-          if (labelled) return { node: arg.left, pattern: labelled };
-        } else {
-          const fromLeft = describeExposure(arg.left);
-          if (fromLeft) return fromLeft;
-        }
-        return namedValueExposure(arg.right);
+        return describeExposure(arg.left) ?? describeExposure(arg.right);
       }
 
       if (arg.type === AST_NODE_TYPES.TemplateLiteral) {
         // ``logger.debug(`token=${t}`)`` - an interpolation is exactly the
         // evidence the static-string guard looks for: unlike a constant, a
         // template splices a runtime value into the record.
+        // Each hole goes through the same analysis as an argument, so
+        // `${String(password)}` and `${isProd ? '***' : password}` read what
+        // `String(password)` and the conditional read on their own.
         const fromExpression = arg.expressions
-          .map((e) => namedValueExposure(e))
+          .map((e) => describeExposure(e))
           .find((m): m is { node: TSESTree.Node; pattern: string } =>
             Boolean(m),
           );
@@ -587,41 +606,18 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
           return { node: arg, pattern: fromExpression.pattern };
 
         // The quasis are joined with a placeholder standing in for each
-        // interpolation, rather than tested one by one. ``  `token=${t}` ``
-        // splits into `token=` and ``, and neither half satisfies "label,
-        // separator, then a value" - the value is the hole between them.
-        const INTERPOLATION = '\u0001'; // cannot occur in source text
+        // interpolation, rather than tested one by one, so a value written out
+        // after the label (`${user} logged in with password: hunter2`) is read
+        // in the text it sits in. A label whose value IS a hole —
+        // `token: ${t}`, `Token: ${url}/token` — is not evidence here: the
+        // hole was already judged by its name above, and `literalCarriesSecret`
+        // never accepts an INTERPOLATION as a value.
         const joined = arg.quasis
           .map((q) => q.value.cooked)
           .join(INTERPOLATION);
-        // The prose names a credential; the interpolations name themselves an
-        // outcome. When EVERY hole is a diagnostic accessor the label is
-        // describing the operation that failed, not the value being printed —
-        //
-        //   `Failed to fetch access token: ${error.message}`
-        //   `Token request failed with status ${tokenResponse.status}`
-        //
-        // — and the property is structure while the label is prose, so the
-        // property wins. Four of the six findings this rule reported on the
-        // pinned corpus were this exact shape, and none of them leaked
-        // anything. The other two, `Using token from ${source}: ${tokenFromEnv}`
-        // and `Using password from dev: ${password}`, are real and are caught
-        // above by the VALUE path, which runs first and is untouched by this.
-        //
-        // Subtracts from the text heuristic ONLY. A template with one opaque
-        // hole — `token: ${t}` — still reports, so the recall this fallback
-        // exists for is intact.
-        const allHolesAreDiagnostic = arg.expressions.every(isNonSecretHole);
-        // Only when something is actually interpolated: a template with no
-        // expressions is a constant string, and reporting it would be the prose
-        // false positive this guard exists to prevent.
-        // (`every` over no holes is true, so a template with nothing
-        // interpolated is already excluded by `!allHolesAreDiagnostic`.)
-        const fromText =
-          !allHolesAreDiagnostic &&
-          literalCarriesSecret(joined, sensitivePatterns)
-            ? containsSensitiveData(joined, sensitivePatterns)
-            : null;
+        const fromText = literalCarriesSecret(joined, sensitivePatterns)
+          ? containsSensitiveData(joined, sensitivePatterns)
+          : null;
         return fromText ? { node: arg, pattern: fromText } : null;
       }
 
@@ -655,7 +651,8 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
             isStaticExpression({
               node: property.value,
               scope: context.sourceCode.getScope(arg),
-            })
+            }) ||
+            isNonReplayableValue(property.value)
           ) {
             continue;
           }
@@ -689,6 +686,48 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
       }
 
       return namedValueExposure(arg);
+    }
+
+    /**
+     * Is this value one that cannot be replayed as the secret its key names?
+     *
+     * A key called `hasToken` or `passwordCount` names a secret and holds a fact
+     * ABOUT it: `Boolean(dto.token)`, `!!secret`, `secrets.length`,
+     * `actor === target`. The expression's own shape decides, never the key, and
+     * an identifier is read through its single initializer (`const required =
+     * actor.id === input.userId`).
+     */
+    function isNonReplayableValue(
+      node: TSESTree.Node,
+      seen: Set<TSESTree.Node> = new Set(),
+    ): boolean {
+      const value = unwrapTypeSyntax(node) as TSESTree.Node;
+      if (seen.has(value)) return false;
+      seen.add(value);
+      switch (value.type) {
+        case AST_NODE_TYPES.ChainExpression:
+          return isNonReplayableValue(value.expression, seen);
+        case AST_NODE_TYPES.UnaryExpression:
+          return value.operator === '!';
+        case AST_NODE_TYPES.BinaryExpression:
+          return COMPARISON_OPERATORS.has(value.operator);
+        case AST_NODE_TYPES.MemberExpression: {
+          const prop = propertyName(value);
+          return prop !== null && VALUE_FREE_PROPERTIES.has(prop);
+        }
+        case AST_NODE_TYPES.CallExpression:
+          return (
+            value.callee.type === AST_NODE_TYPES.Identifier &&
+            value.callee.name === 'Boolean' &&
+            !isShadowed('Boolean', value)
+          );
+        case AST_NODE_TYPES.Identifier: {
+          const init = resolveBindingInit(value);
+          return init ? isNonReplayableValue(init, seen) : false;
+        }
+        default:
+          return false;
+      }
     }
 
     /** Does anything in scope declare this name, rather than it being the global? */
@@ -735,7 +774,13 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
           sensitivePatterns,
           descriptors,
         );
-        if (pattern) return { node: value, pattern };
+        if (pattern) {
+          // `token` in a DI container is a reference to a class: its name, a
+          // `Symbol`, an `InjectionToken`. The binding's initializer says so.
+          const held = resolveBindingInit(value);
+          if (held && holdsAReference(held)) return null;
+          return { node: value, pattern };
+        }
         const init = resolveBindingInit(value);
         const viaBinding = init ? namedValueExposure(init, seen) : null;
         // Report at the identifier the author wrote, with the pattern the
@@ -743,12 +788,266 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
         return viaBinding ? { node: value, pattern: viaBinding.pattern } : null;
       }
       if (value.type === AST_NODE_TYPES.MemberExpression) {
+        const declared = receiverDeclaresKey(value);
         const pattern = memberCarriesSecret(
           value,
           sensitivePatterns,
           descriptors,
+          declared,
         );
-        return pattern ? { node: value, pattern } : null;
+        if (pattern) return { node: value, pattern };
+        // `const error = { message: accessToken }; log(`${error.message}`)` —
+        // when the receiver is an object literal in this file, the property's
+        // VALUE is visible, so it is read rather than judged by the key.
+        const assigned = localPropertyValue(value);
+        const viaLiteral = assigned ? namedValueExposure(assigned, seen) : null;
+        return viaLiteral ? { node: value, pattern: viaLiteral.pattern } : null;
+      }
+      return null;
+    }
+
+    /**
+     * Is this initializer a REFERENCE (a class's name, a `Symbol`, a DI
+     * `InjectionToken`) rather than a string somebody could replay?
+     *
+     * `Function.prototype.name` is platform-defined text, `Symbol()` has no
+     * string form to leak, and a `typeof x === 'function' ? x.name : x` ternary
+     * is the idiom that turns "a class or its name" into the name (nest
+     * `debug-repl-fn.ts`). Anything else keeps judging the binding by its name.
+     */
+    function holdsAReference(init: TSESTree.Node): boolean {
+      const node = unwrapTypeSyntax(init) as TSESTree.Node;
+      if (node.type === AST_NODE_TYPES.MemberExpression) {
+        // `credential.name` where `credential` is an object literal written in
+        // this file is whatever the literal says it is, not a class name.
+        if (
+          node.object.type === AST_NODE_TYPES.Identifier &&
+          resolveBindingInit(node.object)?.type ===
+            AST_NODE_TYPES.ObjectExpression
+        ) {
+          return false;
+        }
+        return propertyName(node) === 'name';
+      }
+      if (node.type === AST_NODE_TYPES.NewExpression) {
+        // A constructor this file defines itself is not the DI API, whatever it
+        // is called: it can keep and print what it is given.
+        const local =
+          node.callee.type === AST_NODE_TYPES.Identifier
+            ? findBinding(node.callee)
+            : null;
+        return (
+          node.callee.type === AST_NODE_TYPES.Identifier &&
+          node.callee.name === 'InjectionToken' &&
+          !local?.defs.some((def) => def.type !== 'ImportBinding')
+        );
+      }
+      if (node.type === AST_NODE_TYPES.CallExpression) {
+        const callee = node.callee;
+        // `String(Symbol(secret))` prints the description, so only a fixed label
+        // keeps the symbol an identity rather than a carrier.
+        const fixedLabel = node.arguments.every(
+          (argument) => staticString(argument) !== null,
+        );
+        return (
+          fixedLabel &&
+          ((callee.type === AST_NODE_TYPES.Identifier &&
+            callee.name === 'Symbol' &&
+            !isShadowed('Symbol', node)) ||
+            (callee.type === AST_NODE_TYPES.MemberExpression &&
+              callee.object.type === AST_NODE_TYPES.Identifier &&
+              callee.object.name === 'Symbol' &&
+              propertyName(callee) === 'for' &&
+              !isShadowed('Symbol', node)))
+        );
+      }
+      if (node.type === AST_NODE_TYPES.ConditionalExpression) {
+        // `typeof v === 'function' ? v.name : v`: one arm reads the name of the
+        // very value the test says is a function, the other passes it through.
+        const test = node.test;
+        if (
+          test.type !== AST_NODE_TYPES.BinaryExpression ||
+          (test.operator !== '===' && test.operator !== '==') ||
+          test.left.type !== AST_NODE_TYPES.UnaryExpression ||
+          test.left.operator !== 'typeof' ||
+          test.left.argument.type !== AST_NODE_TYPES.Identifier ||
+          staticString(test.right) !== 'function'
+        ) {
+          return false;
+        }
+        const subject = test.left.argument.name;
+        // The other arm hands the value through unchanged, so a subject that is
+        // itself named like a credential may be one.
+        if (identifierNamesSecret(subject, sensitivePatterns, descriptors)) {
+          return false;
+        }
+        const named = node.consequent;
+        const passed = node.alternate;
+        return (
+          named.type === AST_NODE_TYPES.MemberExpression &&
+          propertyName(named) === 'name' &&
+          named.object.type === AST_NODE_TYPES.Identifier &&
+          named.object.name === subject &&
+          passed.type === AST_NODE_TYPES.Identifier &&
+          passed.name === subject
+        );
+      }
+      return false;
+    }
+
+    /**
+     * Does a once-written object literal in this file declare the key this
+     * member reads, with nothing writing through the binding afterwards? Then
+     * the field's own name is the evidence, not the receiver's.
+     */
+    const declaringKeys = new Set<TSESTree.Node>();
+
+    /** A function this file defines: it can change an object it is handed. */
+    function isLocalFunction(callee: TSESTree.Node): boolean {
+      const definition =
+        callee.type === AST_NODE_TYPES.Identifier
+          ? findBinding(callee)?.defs[0]
+          : undefined;
+      if (definition?.type === 'FunctionName') return true;
+      const init =
+        definition?.type === 'Variable'
+          ? (definition.node as TSESTree.VariableDeclarator).init
+          : null;
+      return (
+        init?.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+        init?.type === AST_NODE_TYPES.FunctionExpression
+      );
+    }
+
+    function receiverDeclaresKey(member: TSESTree.MemberExpression): boolean {
+      if (member.object.type !== AST_NODE_TYPES.Identifier) return false;
+      const key = propertyName(member);
+      if (key === null) return false;
+      const init = resolveBindingInit(member.object);
+      if (init?.type !== AST_NODE_TYPES.ObjectExpression) return false;
+      // A spread may have overwritten the key; a computed key is unreadable.
+      if (
+        init.properties.some(
+          (property) =>
+            property.type !== AST_NODE_TYPES.Property || property.computed,
+        )
+      ) {
+        return false;
+      }
+      // The LAST definition of a key is the one the object holds.
+      const declared = [...init.properties]
+        .reverse()
+        .find(
+          (property) => objectKeyName(property as TSESTree.Property) === key,
+        ) as TSESTree.Property | undefined;
+      if (!declared) return false;
+      // The receiver's name is set aside only when what the key holds is not
+      // itself named like a secret: `{ value: accessToken }` read through
+      // `tokenBag.value` is still a token, whether or not the object is aliased
+      // or handed to other code.
+      // `var record = { value: record?.value }` reads itself: a value whose
+      // provenance is cyclic is not known to be safe, so decline the exemption
+      // instead of recursing.
+      if (declaringKeys.has(declared)) return false;
+      declaringKeys.add(declared);
+      try {
+        if (namedValueExposure(declared.value)) return false;
+      } finally {
+        declaringKeys.delete(declared);
+      }
+      const variable = findBinding(member.object) as TSESLint.Scope.Variable;
+      // Handing the object to other code is allowed (it is how it gets hashed
+      // or serialized); writing a property through the binding is not.
+      return variable.references.every((reference) => {
+        const parent = reference.identifier.parent as TSESTree.Node;
+        if (
+          parent.type !== AST_NODE_TYPES.MemberExpression ||
+          parent.object !== reference.identifier
+        ) {
+          // Handed to a function this file defines, whose body can write to it.
+          return !(
+            parent.type === AST_NODE_TYPES.CallExpression &&
+            isLocalFunction(parent.callee)
+          );
+        }
+        const use = parent.parent as TSESTree.Node;
+        return !(
+          (use.type === AST_NODE_TYPES.AssignmentExpression &&
+            use.left === parent) ||
+          use.type === AST_NODE_TYPES.UpdateExpression ||
+          (use.type === AST_NODE_TYPES.UnaryExpression &&
+            use.operator === 'delete')
+        );
+      });
+    }
+
+    /**
+     * The value a local object literal assigns to this property, when the
+     * receiver is a once-written binding to one and the key is spelled out.
+     */
+    function localPropertyValue(
+      member: TSESTree.MemberExpression,
+    ): TSESTree.Node | null {
+      if (member.object.type !== AST_NODE_TYPES.Identifier) return null;
+      const key = propertyName(member);
+      if (key === null) return null;
+      const init = resolveBindingInit(member.object);
+      if (init?.type !== AST_NODE_TYPES.ObjectExpression) return null;
+      // The object must still hold what the literal put there: every other
+      // reference is a plain property read. A property write
+      // (`entry.message = '[redacted]'`), a delete, or the object handed to
+      // other code may have replaced the value, and the initializer then
+      // proves nothing.
+      // `resolveBindingInit` found an initializer, so the binding exists.
+      if (
+        !onlyReadsProperties(
+          findBinding(member.object) as TSESLint.Scope.Variable,
+        )
+      )
+        return null;
+      // The LAST definition of the key is the one the object holds. A spread
+      // or a computed key met first, reading from the end, may overwrite it.
+      for (const property of [...init.properties].reverse()) {
+        if (property.type !== AST_NODE_TYPES.Property || property.computed)
+          return null;
+        if (objectKeyName(property) === key) return property.value;
+      }
+      return null;
+    }
+
+    /** Is every use of this binding, besides its declaration, `obj.key` read? */
+    function onlyReadsProperties(variable: TSESLint.Scope.Variable): boolean {
+      return variable.references.every((reference) => {
+        if (reference.init) return true;
+        const parent = reference.identifier.parent as TSESTree.Node;
+        if (
+          parent.type !== AST_NODE_TYPES.MemberExpression ||
+          parent.object !== reference.identifier
+        )
+          return false;
+        const use = parent.parent as TSESTree.Node;
+        const written =
+          (use.type === AST_NODE_TYPES.AssignmentExpression &&
+            use.left === parent) ||
+          use.type === AST_NODE_TYPES.UpdateExpression ||
+          (use.type === AST_NODE_TYPES.UnaryExpression &&
+            use.operator === 'delete');
+        return !written;
+      });
+    }
+
+    /** The variable this identifier resolves to, walking up the scopes. */
+    function findBinding(
+      node: TSESTree.Identifier,
+    ): TSESLint.Scope.Variable | null {
+      const scope = context.sourceCode.getScope(node);
+      for (
+        let current: typeof scope | null = scope;
+        current;
+        current = current.upper
+      ) {
+        const variable = current.variables.find((v) => v.name === node.name);
+        if (variable) return variable;
       }
       return null;
     }
@@ -762,68 +1061,13 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
     function resolveBindingInit(
       node: TSESTree.Identifier,
     ): TSESTree.Expression | null {
-      const scope = context.sourceCode.getScope(node);
-      for (
-        let current: typeof scope | null = scope;
-        current;
-        current = current.upper
-      ) {
-        const variable = current.variables.find((v) => v.name === node.name);
-        if (!variable) continue;
-        if (variable.defs.length !== 1) return null;
-        const [def] = variable.defs;
-        if (def.type !== 'Variable' || !def.node.init) return null;
-        return variable.references.filter((r) => r.isWrite()).length === 1
-          ? def.node.init
-          : null;
-      }
-      return null;
-    }
-
-    /**
-     * Is this hole one the label CANNOT be describing?
-     *
-     * `isDiagnosticAccessor` answers it by name — `.message` is a message — but
-     * a name is only the default answer, and a local object literal is stronger
-     * evidence than a name:
-     *
-     * ```js
-     * const error = { message: accessToken };
-     * logger.error(`access token: ${error.message}`);   // still reported
-     * ```
-     *
-     * When the receiver resolves to an object literal in this file, the
-     * property's VALUE is visible, so it is read instead of trusted. Anything
-     * unresolvable keeps the name-based answer: a `.message` off a real Error
-     * is a message, and demanding proof of origin there would put all four
-     * corpus false positives back.
-     */
-    function isNonSecretHole(expression: TSESTree.Node): boolean {
-      if (!isDiagnosticAccessor(expression)) return false;
-      const unwrapped = unwrapTypeSyntax(expression) as TSESTree.Node;
-      const member = (
-        unwrapped.type === AST_NODE_TYPES.ChainExpression
-          ? unwrapped.expression
-          : unwrapped
-      ) as TSESTree.MemberExpression;
-      if (member.object.type !== AST_NODE_TYPES.Identifier) return true;
-      const init = resolveBindingInit(member.object);
-      if (init === null || init.type !== AST_NODE_TYPES.ObjectExpression)
-        return true;
-      const key = (member.property as TSESTree.Identifier).name;
-      const assigned = init.properties.find(
-        (property): property is TSESTree.Property =>
-          property.type === AST_NODE_TYPES.Property &&
-          !property.computed &&
-          ((property.key.type === AST_NODE_TYPES.Identifier &&
-            property.key.name === key) ||
-            (property.key.type === AST_NODE_TYPES.Literal &&
-              property.key.value === key)),
-      );
-      // The literal exists and does not set this key — nothing was aliased into
-      // it, so the accessor is diagnostic after all.
-      if (!assigned) return true;
-      return namedValueExposure(assigned.value) === null;
+      const variable = findBinding(node);
+      if (!variable || variable.defs.length !== 1) return null;
+      const [def] = variable.defs;
+      if (def.type !== 'Variable' || !def.node.init) return null;
+      return variable.references.filter((r) => r.isWrite()).length === 1
+        ? def.node.init
+        : null;
     }
 
     /** Report the first argument that carries a secret; at most one per call. */

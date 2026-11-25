@@ -5,6 +5,57 @@ All notable changes to `@interlace/eslint-devkit` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — `no-missing-aria-labels` accepts a button or link whose text is a JSX expression
+
+  `<button>{_('Open')}</button>`, `<button>{t('save')}</button>`, `<a>{label ?? 'Back'}</a>` and a template literal with
+  an expression are named by their children at runtime. Any expression child now counts as text, as in
+  eslint-plugin-jsx-a11y, except one proven to render nothing: `undefined`, `null`, `void 0`, a boolean, a blank string,
+  an element, or a conditional or logical expression of those. That was most of the 485 hits on readest/readest.
+  `role-supports-aria-props` accepts `aria-posinset`, `aria-setsize` and `aria-expanded` on role `tab` (aria-query).
+
+## 2.1.1
+
+### Patch Changes
+
+- **🐛 Fix** — match eslint-plugin-import where five rules were louder on real repos (apollo-server, lynx-stack)
+
+  - `extensions`: `./x.js` that resolves to `x.ts` (and `.jsx`/`.tsx`, `.d.ts`) is judged by the extension as written, as upstream does. Was 95 false "Missing file extension" findings on apollo-server.
+  - `consistent-type-specifier-style`: with no options the rule is `prefer-top-level`, upstream's behaviour (its schema says `prefer-inline`, its code does not). Was 1,619 findings on lynx-stack from a bare `'warn'`. Pass `'prefer-inline'` to keep the old default.
+  - `no-unresolved`: `./App.jsx` to `App.tsx`, `./x.js` to `x.d.ts`, and `@/x.js` through tsconfig `paths` now resolve.
+  - `no-commonjs`: no longer reports `__dirname` and `__filename`, which upstream does not.
+  - `no-cycle` (via `@interlace/eslint-devkit`): the import scanner no longer merges two statements in a file written without semicolons, which made an `import type` look like a runtime edge and could drop an edge.
+
+## 2.1.0
+
+### Minor Changes
+
+- **✨ Feature** — `flatConfigs`, key for key with eslint-plugin-import, and Node 20.19 support
+
+  A config written for eslint-plugin-import now works when only its import line changes:
+
+  ```diff
+  - import importPlugin from 'eslint-plugin-import';
+  + import importPlugin from 'eslint-plugin-import-next';
+
+    export default [importPlugin.flatConfigs.recommended, importPlugin.flatConfigs.typescript];
+  ```
+
+  - `flatConfigs` has eslint-plugin-import 2.32.0's seven keys (`recommended`, `errors`, `warnings`, `react`, `react-native`, `electron`, `typescript`), with the same `import/…` rule IDs, severities, `settings`, `languageOptions` and `name`, and registers the plugin as `import`. Before this, `importPlugin.flatConfigs.errors` was `undefined` and such a config failed to load. A test compares every key with the installed eslint-plugin-import and lints a fixture with both through ESLint, expecting the same findings (rule, line, severity).
+  - The default export and the named `plugin` export are now both the module itself, the object `require()` and an `eslint.config.mjs` default import already returned, with a top-level `meta`. Every preset (`configs.*`, `flatConfigs.*`) registers that same object. Every loader (Node ESM, CommonJS, TypeScript/jiti) gets one plugin object, so registering it yourself next to a preset loads, for example `{ plugins: { import: importPlugin } }` next to `importPlugin.flatConfigs.errors`. Before, that threw `Cannot redefine plugin`. It still carries `meta` and `rules` as before.
+  - `engines.node` is now `^20.19.0 || ^22.13.0 || >=24`, ESLint 10's range, for eslint-plugin-import-next, oxlint-plugin-import-next and `@interlace/eslint-devkit`. Both packages' unit suites pass on Node 20.19.0 on the ESLint side; oxlint's own `RuleTester` does not start below Node 22, so the oxlint-engine cases are not run there. A Node 20.19.0 cell is added to the nightly node-version matrix (ADR 0013).
+
+## 2.0.4
+
+### Patch Changes
+
+- **📚 Docs** — npm descriptions lead with what people search for
+
+  Each description now opens with the search phrase, such as "ESLint NestJS security rules — …" instead of "ESLint plugin for NestJS security — …". npm search ranks that opening phrase above download counts, so the old wording kept these packages out of the results for searches like "eslint security". The oxlint-plugin-* aliases open the same way, with "Oxlint". No rule or code changes.
+
 ## 2.0.3
 
 ### Patch Changes

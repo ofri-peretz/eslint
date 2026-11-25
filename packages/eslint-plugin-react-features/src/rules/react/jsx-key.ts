@@ -36,14 +36,33 @@ import { isReactApi, reactExport } from '../../utils/react-api';
  * @see https://react.dev/reference/react/Children
  */
 type MessageIds =
-  'missingKey' | 'invalidKey' | 'duplicateKey' | 'unstableKey' | 'suggestKey';
+  | 'missingKey'
+  | 'missingArrayKey'
+  | 'invalidKey'
+  | 'duplicateKey'
+  | 'unstableKey'
+  | 'suggestKey'
+  | 'keyBeforeSpread'
+  | 'nonUniqueKeys';
 
 export interface Options {
   /** Warn about potentially unstable keys */
   warnUnstableKeys?: boolean;
+  /** Also require a key on a shorthand fragment (`<>`) in an array literal */
+  checkFragmentShorthand?: boolean;
+  /** Report a `key` written after a `{...spread}`: the new JSX transform lets the spread win */
+  checkKeyMustBeforeSpread?: boolean;
+  /** Report two sibling elements that carry the same key */
+  warnOnDuplicates?: boolean;
 }
 
 type RuleOptions = [Options?];
+
+/** The name of a JSX attribute, or `null` for a namespaced one (`xlink:href`). */
+const jsxAttributeName = (attribute: TSESTree.JSXAttribute): string | null =>
+  attribute.name.type === AST_NODE_TYPES.JSXIdentifier
+    ? attribute.name.name
+    : null;
 
 /**
  * The key expression to suggest for a callback parameter, or `null` when the
@@ -116,6 +135,34 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://react.dev/learn/render-and-commit#lists-and-keys',
       }),
+      missingArrayKey: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Missing React Key',
+        description: 'Missing key prop for element in array',
+        severity: 'HIGH',
+        fix: 'Add a unique key prop; a shorthand fragment cannot take one, use <React.Fragment key={...}>',
+        documentationLink:
+          'https://react.dev/learn/rendering-lists#keeping-list-items-in-order-with-key',
+      }),
+      keyBeforeSpread: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Key After Spread',
+        description:
+          'key prop must be placed before any {...spread}, to avoid conflicting with the new JSX transform',
+        severity: 'MEDIUM',
+        fix: 'Move the key prop before the spread attribute',
+        documentationLink:
+          'https://legacy.reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html',
+      }),
+      nonUniqueKeys: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Non-unique React Key',
+        description: 'key prop must be unique among siblings',
+        severity: 'HIGH',
+        fix: 'Give every sibling its own key',
+        documentationLink:
+          'https://react.dev/learn/rendering-lists#keeping-list-items-in-order-with-key',
+      }),
       invalidKey: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Invalid React Key',
@@ -161,6 +208,9 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
             type: 'boolean',
             default: true,
           },
+          checkFragmentShorthand: { type: 'boolean', default: false },
+          checkKeyMustBeforeSpread: { type: 'boolean', default: false },
+          warnOnDuplicates: { type: 'boolean', default: false },
         },
         additionalProperties: false,
       },
@@ -170,11 +220,28 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let warnUnstableKeys: boolean;
+    let checkFragmentShorthand: boolean;
+    let checkKeyMustBeforeSpread: boolean;
+    let warnOnDuplicates: boolean;
+    /** Depth of `Children.toArray(...)` calls around the node: React keys what they return. */
+    let withinChildrenToArray = 0;
+    let reportedDuplicates: WeakSet<TSESTree.Node>;
     let keyTracker: Map<string, TSESTree.JSXElement[]>;
     let ITERATOR_METHODS: Set<string>;
 
     function resetKeyTracker() {
       keyTracker.clear();
+    }
+
+    /** `Children.toArray(...)`: React assigns keys to what it returns. */
+    function isChildrenToArray(node: TSESTree.CallExpression): boolean {
+      const { callee } = node;
+      return (
+        callee.type === 'MemberExpression' &&
+        propertyName(callee) === 'toArray' &&
+        reactExport(callee.object, context.sourceCode.getScope(node))?.name ===
+          'Children'
+      );
     }
 
     /**
@@ -453,7 +520,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
      * carry a key, so the list item always lacks one.
      */
     function checkFragmentInIteration(node: TSESTree.JSXFragment) {
-      if (isDirectIteratorReturn(node)) {
+      if (withinChildrenToArray === 0 && isDirectIteratorReturn(node)) {
         context.report({ node: node.openingFragment, messageId: 'missingKey' });
       }
     }
@@ -475,6 +542,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       ) {
         return;
       }
+      if (withinChildrenToArray > 0) return;
       const props = node.arguments[1];
       const missing =
         props === undefined ||
@@ -489,8 +557,76 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    /** Does a `key` follow a `{...spread}` among these attributes? */
+    function isKeyAfterSpread(
+      attributes: readonly (
+        TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute
+      )[],
+    ): boolean {
+      let spreadSeen = false;
+      return attributes.some((attribute) => {
+        if (attribute.type === 'JSXSpreadAttribute') {
+          spreadSeen = true;
+          return false;
+        }
+        return spreadSeen && jsxAttributeName(attribute) === 'key';
+      });
+    }
+
+    /**
+     * The elements of an array literal, or the element children of a JSX
+     * element, are a list React keys: each needs a `key` (arrays only: JSX
+     * children are written out, not iterated), the keys must not repeat, and
+     * with `checkKeyMustBeforeSpread` a key may not follow a spread.
+     */
+    function checkSiblings(
+      container: TSESTree.ArrayExpression | TSESTree.JSXElement,
+      siblings: readonly (TSESTree.Node | null)[],
+    ): void {
+      const elements = siblings.filter(
+        (n): n is TSESTree.JSXElement => n?.type === 'JSXElement',
+      );
+      const byKeyText = new Map<string, TSESTree.JSXAttribute[]>();
+      for (const element of elements) {
+        const attributes = element.openingElement.attributes;
+        const keys = attributes.filter(
+          (a): a is TSESTree.JSXAttribute =>
+            a.type === 'JSXAttribute' && jsxAttributeName(a) === 'key',
+        );
+        if (keys.length === 0) {
+          if (container.type === 'ArrayExpression') {
+            context.report({ node: element, messageId: 'missingArrayKey' });
+          }
+          continue;
+        }
+        for (const key of keys) {
+          const text = key.value ? context.sourceCode.getText(key.value) : '';
+          byKeyText.set(text, [...(byKeyText.get(text) ?? []), key]);
+          if (checkKeyMustBeforeSpread && isKeyAfterSpread(attributes)) {
+            context.report({
+              node:
+                container.type === 'ArrayExpression'
+                  ? container
+                  : (container.parent as TSESTree.Node),
+              messageId: 'keyBeforeSpread',
+            });
+          }
+        }
+      }
+      if (!warnOnDuplicates) return;
+      for (const sameKey of byKeyText.values()) {
+        if (sameKey.length < 2) continue;
+        for (const key of sameKey) {
+          if (reportedDuplicates.has(key)) continue;
+          reportedDuplicates.add(key);
+          context.report({ node: key, messageId: 'nonUniqueKeys' });
+        }
+      }
+    }
+
     function checkJSXElementInIteration(node: TSESTree.JSXElement) {
-      const isDirectReturn = isDirectIteratorReturn(node);
+      const isDirectReturn =
+        withinChildrenToArray === 0 && isDirectIteratorReturn(node);
 
       // Only check elements that are direct returns from iterators
       if (!isDirectReturn) {
@@ -541,6 +677,13 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      if (
+        checkKeyMustBeforeSpread &&
+        isKeyAfterSpread(node.openingElement.attributes)
+      ) {
+        context.report({ node, messageId: 'keyBeforeSpread' });
+      }
+
       // Key exists, now analyze its quality
       if (keyProp.type === 'JSXAttribute' && keyProp.value) {
         const keyValue = keyProp.value;
@@ -565,7 +708,14 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options] = context.options;
-        ({ warnUnstableKeys = true } = options || {});
+        ({
+          warnUnstableKeys = true,
+          checkFragmentShorthand = false,
+          checkKeyMustBeforeSpread = false,
+          warnOnDuplicates = false,
+        } = options || {});
+        withinChildrenToArray = 0;
+        reportedDuplicates = new WeakSet();
 
         // Track keys in current iteration context
         keyTracker = new Map<string, TSESTree.JSXElement[]>();
@@ -577,19 +727,41 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       },
       JSXElement(node: TSESTree.JSXElement) {
         checkJSXElementInIteration(node);
+        // Upstream runs the sibling check once per element child, so a parent
+        // with several keyed children is checked several times; match it.
+        if (withinChildrenToArray === 0 && node.parent.type === 'JSXElement') {
+          checkSiblings(node.parent, node.parent.children);
+        }
       },
       JSXFragment(node: TSESTree.JSXFragment) {
         checkFragmentInIteration(node);
+        if (
+          checkFragmentShorthand &&
+          withinChildrenToArray === 0 &&
+          node.parent.type === 'ArrayExpression'
+        ) {
+          context.report({
+            node: node.openingFragment,
+            messageId: 'missingArrayKey',
+          });
+        }
+      },
+      ArrayExpression(node: TSESTree.ArrayExpression) {
+        if (withinChildrenToArray === 0) checkSiblings(node, node.elements);
       },
 
       // Reset key tracker for each new array/map context
       CallExpression(node: TSESTree.CallExpression) {
+        if (isChildrenToArray(node)) withinChildrenToArray++;
         checkCreateElementInIteration(node);
         // Check if this is any iterator pattern that produces lists
         if (isIteratorCall(node)) {
           // Entering a new iteration context
           resetKeyTracker();
         }
+      },
+      'CallExpression:exit'(node: TSESTree.CallExpression) {
+        if (isChildrenToArray(node)) withinChildrenToArray--;
       },
     };
   },

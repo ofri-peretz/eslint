@@ -1,0 +1,23 @@
+{
+  "_comment": "Juice Shop verdicts beyond the mechanical labeller. Single labeller (the fixer agent), not blind, not double-labelled. Only 37 of 118 challenges carry a vuln-line marker, so many real, maintainer-documented vulnerabilities are NOT on a truth line: strict precision (the headline) counts them as FP, lenient counts the ones below as TP. PARTIAL REVIEW: reviewed here are every non-CSRF, non-object-injection finding of ours (all of B/C except 64 require-csrf-protection hits) and the equivalent rule groups of the incumbent. NOT reviewed per finding: 64 express-security/require-csrf-protection hits on route registrations (csrfChallenge exists in challenges.yml, so some are probably real) and 120 security/detect-object-injection hits (generic obj[key] sinks). They stay FP, so lenient precision here is a lower bound.",
+  "routes/userProfile.ts:65:node-security/detect-eval-with-expression": {
+    "verdict": "unlisted-real",
+    "reason": "eval(code) where code is the user's own username when it matches #{...}: authenticated server-side code execution. The maintainers document it (sstiChallenge, usernameXssChallenge in data/static/challenges.yml) but did not put a vuln-line marker on it."
+  },
+  "routes/userProfile.ts:65:security/detect-eval-with-expression": {
+    "verdict": "unlisted-real",
+    "reason": "Same line as above (sstiChallenge, usernameXssChallenge)."
+  },
+  "routes/profileImageUrlUpload.ts:24:node-security/no-ssrf": {
+    "verdict": "unlisted-real",
+    "reason": "fetch(url) where url is req.body.imageUrl, any authenticated user; the response is written into a public image path. The maintainers document it (ssrfChallenge) without a vuln-line marker."
+  },
+  "server.ts:302:express-security/no-static-root-exposure": {
+    "verdict": "unlisted-real",
+    "reason": "serveIndex('encryptionkeys') lists, unauthenticated, the directory holding the JWT public key and premium key; the key files are then served by serveKeyFiles. Maintainer-documented abuse path (jwt and premium challenges), no vuln-line marker."
+  },
+  "server.ts:273:express-security/no-static-root-exposure": {
+    "verdict": "unlisted-real",
+    "reason": "serveIndex('infrastructure') exposes the Terraform files, which contain the leaked key of iacLeakedKeyChallenge (that challenge's marker is on the .tf line; this is the route that serves it)."
+  }
+}

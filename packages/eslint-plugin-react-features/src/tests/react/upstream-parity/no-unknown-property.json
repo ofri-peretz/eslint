@@ -1,0 +1,1358 @@
+{
+  "rule": "no-unknown-property",
+  "source": "eslint-plugin-react@7.37.5 tests/lib/rules/no-unknown-property.js (MIT)",
+  "cases": [
+    {
+      "kind": "valid",
+      "n": 22,
+      "code": "<App dataNotAnDataAttribute=\"yes\" />;\n// features: [], parser: default, options: [{\"requireDataLowercase\":true}]",
+      "options": [
+        {
+          "requireDataLowercase": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 24,
+      "code": "<App dataNotAnDataAttribute=\"yes\" />;\n// features: [], parser: @typescript-eslint/parser, options: [{\"requireDataLowercase\":true}]",
+      "options": [
+        {
+          "requireDataLowercase": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 175,
+      "code": "<div data-testID=\"bar\" data-under_sCoRe=\"bar\" />;\n// features: [], parser: default, options: [{\"requireDataLowercase\":false}]",
+      "options": [
+        {
+          "requireDataLowercase": false
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 177,
+      "code": "<div data-testID=\"bar\" data-under_sCoRe=\"bar\" />;\n// features: [], parser: @typescript-eslint/parser, options: [{\"requireDataLowercase\":false}]",
+      "options": [
+        {
+          "requireDataLowercase": false
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 178,
+      "code": "<div class=\"bar\"></div>;\n// features: [], parser: default, options: [{\"ignore\":[\"class\"]}]",
+      "options": [
+        {
+          "ignore": ["class"]
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 180,
+      "code": "<div class=\"bar\"></div>;\n// features: [], parser: @typescript-eslint/parser, options: [{\"ignore\":[\"class\"]}]",
+      "options": [
+        {
+          "ignore": ["class"]
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 181,
+      "code": "<div someProp=\"bar\"></div>;\n// features: [], parser: default, options: [{\"ignore\":[\"someProp\"]}]",
+      "options": [
+        {
+          "ignore": ["someProp"]
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 183,
+      "code": "<div someProp=\"bar\"></div>;\n// features: [], parser: @typescript-eslint/parser, options: [{\"ignore\":[\"someProp\"]}]",
+      "options": [
+        {
+          "ignore": ["someProp"]
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 184,
+      "code": "<div css={{flex: 1}}></div>;\n// features: [], parser: default, options: [{\"ignore\":[\"css\"]}]",
+      "options": [
+        {
+          "ignore": ["css"]
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 186,
+      "code": "<div css={{flex: 1}}></div>;\n// features: [], parser: @typescript-eslint/parser, options: [{\"ignore\":[\"css\"]}]",
+      "options": [
+        {
+          "ignore": ["css"]
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 79,
+      "code": "<div data-testID=\"bar\" data-under_sCoRe=\"bar\" dataNotAnDataAttribute=\"yes\" />;\n// features: [], parser: default, options: [{\"requireDataLowercase\":true}]",
+      "errors": 3,
+      "options": [
+        {
+          "requireDataLowercase": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 81,
+      "code": "<div data-testID=\"bar\" data-under_sCoRe=\"bar\" dataNotAnDataAttribute=\"yes\" />;\n// features: [], parser: @typescript-eslint/parser, options: [{\"requireDataLowercase\":true}]",
+      "errors": 3,
+      "options": [
+        {
+          "requireDataLowercase": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 82,
+      "code": "<App data-testID=\"bar\" data-under_sCoRe=\"bar\" dataNotAnDataAttribute=\"yes\" />;\n// features: [], parser: default, options: [{\"requireDataLowercase\":true}]",
+      "errors": 2,
+      "options": [
+        {
+          "requireDataLowercase": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 84,
+      "code": "<App data-testID=\"bar\" data-under_sCoRe=\"bar\" dataNotAnDataAttribute=\"yes\" />;\n// features: [], parser: @typescript-eslint/parser, options: [{\"requireDataLowercase\":true}]",
+      "errors": 2,
+      "options": [
+        {
+          "requireDataLowercase": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 37,
+      "code": "<img src=\"cat_keyboard.jpeg\" alt=\"A cat sleeping on a keyboard\" align=\"top\" fetchPriority=\"high\" />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 39,
+      "code": "<img src=\"cat_keyboard.jpeg\" alt=\"A cat sleeping on a keyboard\" align=\"top\" fetchPriority=\"high\" />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 46,
+      "code": "<input type=\"file\" webkitdirectory=\"\" />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 48,
+      "code": "<input type=\"file\" webkitdirectory=\"\" />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 49,
+      "code": "<input type=\"file\" webkitDirectory=\"\" />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 51,
+      "code": "<input type=\"file\" webkitDirectory=\"\" />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 52,
+      "code": "<div inert children=\"anything\" />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 54,
+      "code": "<div inert children=\"anything\" />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 55,
+      "code": "<iframe scrolling=\"?\" onLoad={a} onError={b} align=\"top\" />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 57,
+      "code": "<iframe scrolling=\"?\" onLoad={a} onError={b} align=\"top\" />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 76,
+      "code": "<meta property=\"og:type\" content=\"website\" />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 78,
+      "code": "<meta property=\"og:type\" content=\"website\" />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 82,
+      "code": "<video playsInline />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 84,
+      "code": "<video playsInline />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 88,
+      "code": "<picture inert={false} onError={foo} onLoad={bar} />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 90,
+      "code": "<picture inert={false} onError={foo} onLoad={bar} />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 103,
+      "code": "<link rel=\"preload\" as=\"image\" href=\"someHref\" imageSrcSet=\"someImageSrcSet\" imageSizes=\"someImageSizes\" />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 105,
+      "code": "<link rel=\"preload\" as=\"image\" href=\"someHref\" imageSrcSet=\"someImageSrcSet\" imageSizes=\"someImageSizes\" />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 109,
+      "code": "<video allowFullScreen webkitAllowFullScreen mozAllowFullScreen />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 111,
+      "code": "<video allowFullScreen webkitAllowFullScreen mozAllowFullScreen />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 112,
+      "code": "<iframe allowFullScreen webkitAllowFullScreen mozAllowFullScreen />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 114,
+      "code": "<iframe allowFullScreen webkitAllowFullScreen mozAllowFullScreen />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 115,
+      "code": "<table border=\"1\" />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 117,
+      "code": "<table border=\"1\" />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 118,
+      "code": "<th abbr=\"abbr\" />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 120,
+      "code": "<th abbr=\"abbr\" />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 121,
+      "code": "<td abbr=\"abbr\" />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 123,
+      "code": "<td abbr=\"abbr\" />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 124,
+      "code": "<template shadowrootmode=\"open\" shadowrootclonable shadowrootdelegatesfocus shadowrootserializable />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 126,
+      "code": "<template shadowrootmode=\"open\" shadowrootclonable shadowrootdelegatesfocus shadowrootserializable />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 139,
+      "code": "<link precedence=\"medium\" href=\"https://foo.bar\" rel=\"canonical\" />\n// features: [], parser: default, settings: {\"react\":{\"version\":\"19.0.0\"}}",
+      "settings": {
+        "react": {
+          "version": "19.0.0"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 141,
+      "code": "<link precedence=\"medium\" href=\"https://foo.bar\" rel=\"canonical\" />\n// features: [], parser: @typescript-eslint/parser, settings: {\"react\":{\"version\":\"19.0.0\"}}",
+      "settings": {
+        "react": {
+          "version": "19.0.0"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 142,
+      "code": "<meta charset=\"utf-8\" />;\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 144,
+      "code": "<meta charset=\"utf-8\" />;\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 148,
+      "code": "<div class=\"foo\" is=\"my-elem\"></div>;\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 150,
+      "code": "<div class=\"foo\" is=\"my-elem\"></div>;\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 151,
+      "code": "<div {...this.props} class=\"foo\" is=\"my-elem\"></div>;\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 153,
+      "code": "<div {...this.props} class=\"foo\" is=\"my-elem\"></div>;\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 193,
+      "code": "<script crossOrigin noModule />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 195,
+      "code": "<script crossOrigin noModule />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 211,
+      "code": "<link as=\"audio\">Audio content</link>\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 213,
+      "code": "<link as=\"audio\">Audio content</link>\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 214,
+      "code": "<video controlsList=\"nodownload\" controls={this.controls} loop={true} muted={false} src={this.videoSrc} playsInline={true} onResize={this.onResize}></video>\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 216,
+      "code": "<video controlsList=\"nodownload\" controls={this.controls} loop={true} muted={false} src={this.videoSrc} playsInline={true} onResize={this.onResize}></video>\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 217,
+      "code": "<audio controlsList=\"nodownload\" controls={this.controls} crossOrigin=\"anonymous\" disableRemotePlayback loop muted preload=\"none\" src=\"something\" onAbort={this.abort} onDurationChange={this.durationChange} onEmptied={this.emptied} onEnded={this.end} onError={this.error} onResize={this.onResize}></audio>\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 219,
+      "code": "<audio controlsList=\"nodownload\" controls={this.controls} crossOrigin=\"anonymous\" disableRemotePlayback loop muted preload=\"none\" src=\"something\" onAbort={this.abort} onDurationChange={this.durationChange} onEmptied={this.emptied} onEnded={this.end} onError={this.error} onResize={this.onResize}></audio>\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 232,
+      "code": "<hr align=\"top\" />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 234,
+      "code": "<hr align=\"top\" />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 235,
+      "code": "<applet align=\"top\" />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 237,
+      "code": "<applet align=\"top\" />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 241,
+      "code": "<dialog onClose={handler} open id=\"dialog\" returnValue=\"something\" onCancel={handler2} />\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 243,
+      "code": "<dialog onClose={handler} open id=\"dialog\" returnValue=\"something\" onCancel={handler2} />\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 244,
+      "code": "\n        <table align=\"top\">\n          <caption align=\"top\">Table Caption</caption>\n          <colgroup valign=\"top\" align=\"top\">\n            <col valign=\"top\" align=\"top\"/>\n          </colgroup>\n          <thead valign=\"top\" align=\"top\">\n            <tr valign=\"top\" align=\"top\">\n              <th valign=\"top\" align=\"top\">Header</th>\n              <td valign=\"top\" align=\"top\">Cell</td>\n            </tr>\n          </thead>\n          <tbody valign=\"top\" align=\"top\" />\n          <tfoot valign=\"top\" align=\"top\" />\n        </table>\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 246,
+      "code": "\n        <table align=\"top\">\n          <caption align=\"top\">Table Caption</caption>\n          <colgroup valign=\"top\" align=\"top\">\n            <col valign=\"top\" align=\"top\"/>\n          </colgroup>\n          <thead valign=\"top\" align=\"top\">\n            <tr valign=\"top\" align=\"top\">\n              <th valign=\"top\" align=\"top\">Header</th>\n              <td valign=\"top\" align=\"top\">Cell</td>\n            </tr>\n          </thead>\n          <tbody valign=\"top\" align=\"top\" />\n          <tfoot valign=\"top\" align=\"top\" />\n        </table>\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 247,
+      "code": "<fbt desc=\"foo\" doNotExtract />;\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 249,
+      "code": "<fbt desc=\"foo\" doNotExtract />;\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 250,
+      "code": "<fbs desc=\"foo\" doNotExtract />;\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 252,
+      "code": "<fbs desc=\"foo\" doNotExtract />;\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 253,
+      "code": "<math displaystyle=\"true\" />;\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 255,
+      "code": "<math displaystyle=\"true\" />;\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 259,
+      "code": "\n        <div>\n          <button popovertarget=\"my-popover\" popovertargetaction=\"toggle\">Open Popover</button>\n\n          <div popover id=\"my-popover\">Greetings, one and all!</div>\n        </div>\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 261,
+      "code": "\n        <div>\n          <button popovertarget=\"my-popover\" popovertargetaction=\"toggle\">Open Popover</button>\n\n          <div popover id=\"my-popover\">Greetings, one and all!</div>\n        </div>\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 262,
+      "code": "\n        <div>\n          <button popoverTarget=\"my-popover\" popoverTargetAction=\"toggle\">Open Popover</button>\n\n          <div id=\"my-popover\" onBeforeToggle={this.onBeforeToggle} popover>Greetings, one and all!</div>\n        </div>\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 264,
+      "code": "\n        <div>\n          <button popoverTarget=\"my-popover\" popoverTargetAction=\"toggle\">Open Popover</button>\n\n          <div id=\"my-popover\" onBeforeToggle={this.onBeforeToggle} popover>Greetings, one and all!</div>\n        </div>\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 0,
+      "code": "<div allowTransparency=\"true\" />\n// features: [], parser: default, settings: {\"react\":{\"version\":\"16.1.0\"}}",
+      "errors": 1,
+      "settings": {
+        "react": {
+          "version": "16.1.0"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 2,
+      "code": "<div allowTransparency=\"true\" />\n// features: [], parser: @typescript-eslint/parser, settings: {\"react\":{\"version\":\"16.1.0\"}}",
+      "errors": 1,
+      "settings": {
+        "react": {
+          "version": "16.1.0"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 9,
+      "code": "<div aria-fake=\"should not be allowed property\"></div>;\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 11,
+      "code": "<div aria-fake=\"should not be allowed property\"></div>;\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 40,
+      "code": "<rect clip-path=\"bar\" transform-origin=\"center\" />;\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 42,
+      "code": "<rect clip-path=\"bar\" transform-origin=\"center\" />;\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 49,
+      "code": "<div crossOrigin />\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 51,
+      "code": "<div crossOrigin />\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 55,
+      "code": "<div onAbort={this.abort} onDurationChange={this.durationChange} onEmptied={this.emptied} onEnded={this.end} onResize={this.resize} onError={this.error} />\n// features: [], parser: default",
+      "errors": 6,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 57,
+      "code": "<div onAbort={this.abort} onDurationChange={this.durationChange} onEmptied={this.emptied} onEnded={this.end} onResize={this.resize} onError={this.error} />\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 6,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 58,
+      "code": "<div onLoad={this.load} />\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 60,
+      "code": "<div onLoad={this.load} />\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 61,
+      "code": "<div fill=\"pink\" />\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 63,
+      "code": "<div fill=\"pink\" />\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 64,
+      "code": "<div controls={this.controls} loop={true} muted={false} src={this.videoSrc} playsInline={true} allowFullScreen></div>\n// features: [], parser: default",
+      "errors": 5,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 66,
+      "code": "<div controls={this.controls} loop={true} muted={false} src={this.videoSrc} playsInline={true} allowFullScreen></div>\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 5,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 67,
+      "code": "<div download=\"foo\" />\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 69,
+      "code": "<div download=\"foo\" />\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 76,
+      "code": "<div data-xml-anything=\"invalid\" />\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 78,
+      "code": "<div data-xml-anything=\"invalid\" />\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 94,
+      "code": "\n        <div className=\"App\" data-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash-crash:c=\"customValue\">\n          Hello, world!\n        </div>\n      \n// features: [no-ts], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    }
+  ]
+}

@@ -14,8 +14,7 @@ import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { isLocallyBound } from '../utils/bindings';
 import { matchesAnyFilePattern } from '../utils/file-patterns';
 
-type MessageIds =
-  'commonjsRequire' | 'commonjsExport' | 'commonjsModule' | 'preferES6';
+type MessageIds = 'commonjsRequire' | 'commonjsExport' | 'commonjsModule';
 
 export interface Options {
   /** Allow CommonJS in certain contexts */
@@ -28,9 +27,86 @@ export interface Options {
   allowInFiles?: string[];
   /** Suggest ES6 alternatives */
   suggestES6?: boolean;
+  /**
+   * eslint-plugin-import: allow `module.exports = <value>` when the value is
+   * not an object literal (a function, a class, a primitive).
+   */
+  allowPrimitiveModules?: boolean;
+  /**
+   * eslint-plugin-import: allow a `require()` inside an `if`, a `try`, a
+   * `&&`/`||`/`??` or a `?:`. Its default there is `true`, and so here for a
+   * config written its way; otherwise this rule's own default, `false`.
+   */
+  allowConditionalRequire?: boolean;
 }
 
-type RuleOptions = [Options?];
+/** eslint-plugin-import's older form: `['allow-primitive-modules']`. */
+type RuleOptions = [(Options | 'allow-primitive-modules')?];
+
+/** One JSON schema node, as ESLint's rule metadata types it. */
+type JSONSchema4 = Exclude<
+  NonNullable<TSESLint.RuleMetaData<string, unknown[]>['schema']>,
+  readonly unknown[]
+>;
+
+const OBJECT_OPTION: JSONSchema4 = {
+  type: 'object',
+  properties: {
+    allowRequire: {
+      type: 'boolean',
+      description: 'Allow require() calls (default false).',
+    },
+    allowModuleExports: {
+      type: 'boolean',
+      description: 'Allow module.exports (default false).',
+    },
+    allowExports: {
+      type: 'boolean',
+      description: 'Allow exports.* patterns (default false).',
+    },
+    allowInFiles: {
+      type: 'array',
+      items: {
+        type: 'string',
+      },
+      description: 'Allow CommonJS in specific files.',
+    },
+    suggestES6: {
+      type: 'boolean',
+      description: 'Suggest ES6 alternatives (default true).',
+    },
+    allowPrimitiveModules: {
+      type: 'boolean',
+      description:
+        'eslint-plugin-import: allow `module.exports = value` when the value is not an object literal.',
+    },
+    allowConditionalRequire: {
+      type: 'boolean',
+      description:
+        'eslint-plugin-import: allow require() inside an if, try, logical or conditional expression.',
+    },
+  },
+  additionalProperties: false,
+};
+
+/** A `require()` under an `if`, `try`, logical or conditional expression. */
+function isConditional(node: TSESTree.Node): boolean {
+  for (
+    let current: TSESTree.Node | undefined = node.parent;
+    current;
+    current = current.parent
+  ) {
+    if (
+      current.type === 'IfStatement' ||
+      current.type === 'TryStatement' ||
+      current.type === 'LogicalExpression' ||
+      current.type === 'ConditionalExpression'
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export const noCommonjs = createRule<RuleOptions, MessageIds>({
   name: 'no-commonjs',
@@ -73,51 +149,22 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-commonjs.md',
       }),
-      preferES6: formatLLMMessage({
-        icon: MessageIcons.DEVELOPMENT,
-        issueName: 'Prefer ES6 Modules',
-        description: 'Legacy CommonJS module system detected',
-        severity: 'LOW',
-        fix: 'Migrate to ES6 import/export for better static analysis and tree-shaking',
-        documentationLink:
-          'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-commonjs.md',
-      }),
     },
-    schema: [
-      {
-        type: 'object',
-        properties: {
-          allowRequire: {
-            type: 'boolean',
-            default: false,
-            description: 'Allow require() calls.',
-          },
-          allowModuleExports: {
-            type: 'boolean',
-            default: false,
-            description: 'Allow module.exports.',
-          },
-          allowExports: {
-            type: 'boolean',
-            default: false,
-            description: 'Allow exports.* patterns.',
-          },
-          allowInFiles: {
-            type: 'array',
-            items: {
-              type: 'string',
-            },
-            description: 'Allow CommonJS in specific files.',
-          },
-          suggestES6: {
-            type: 'boolean',
-            default: true,
-            description: 'Suggest ES6 alternatives.',
-          },
+    /*
+     * This rule's object, and eslint-plugin-import's older string form,
+     * `['allow-primitive-modules']`, which means `{ allowPrimitiveModules:
+     * true }` there and here.
+     */
+    schema: {
+      anyOf: [
+        {
+          type: 'array',
+          items: [{ type: 'string', enum: ['allow-primitive-modules'] }],
+          additionalItems: false,
         },
-        additionalProperties: false,
-      },
-    ],
+        { type: 'array', items: [OBJECT_OPTION], additionalItems: false },
+      ],
+    },
   },
   defaultOptions: [
     {
@@ -135,6 +182,8 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
     let allowExports: boolean;
     let allowInFiles: string[];
     let suggestES6: boolean;
+    let allowPrimitiveModules: boolean;
+    let allowConditionalRequire: boolean;
     let filename: string;
 
     function shouldAllow(): boolean {
@@ -210,19 +259,35 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
 
     return {
       before() {
-        const [options] = context.options;
+        const [first] = context.options;
+        const options: Options =
+          typeof first === 'string'
+            ? { allowPrimitiveModules: true }
+            : first || {};
+        // Written eslint-plugin-import's way: its string form, or a key only
+        // it has. Then its default for conditional requires applies.
+        const upstream =
+          typeof first === 'string' ||
+          'allowPrimitiveModules' in options ||
+          'allowConditionalRequire' in options;
         ({
           allowRequire = false,
           allowModuleExports = false,
           allowExports = false,
           allowInFiles = [],
           suggestES6 = true,
-        } = options || {});
+          allowPrimitiveModules = false,
+          allowConditionalRequire = upstream,
+        } = options);
 
         filename = context.filename;
       },
       CallExpression(node: TSESTree.CallExpression) {
-        if (shouldAllow() || allowRequire) {
+        if (
+          shouldAllow() ||
+          allowRequire ||
+          (allowConditionalRequire && isConditional(node))
+        ) {
           return;
         }
 
@@ -269,6 +334,7 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
           left.object.name === 'module' &&
           propertyName(left) === 'exports' &&
           !allowModuleExports &&
+          !(allowPrimitiveModules && node.right.type !== 'ObjectExpression') &&
           isGlobal(left, 'module')
         ) {
           context.report({
@@ -420,39 +486,13 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      // Also check for __dirname, __filename which are CommonJS-specific.
-      // Only reads of the GLOBAL count: the scope manager resolves every
-      // reference, so a property (`config.__dirname`), a type member and the
-      // ESM shim the file declares itself (`const __dirname = ...`) are not.
-      'Program:exit'(program: TSESTree.Program) {
-        if (shouldAllow()) {
-          return;
-        }
-        const globalScope = context.sourceCode.getScope(program);
-        const references = [
-          ...globalScope.through,
-          // A configured global (`globals.node`) is a variable with no
-          // definition: its references resolve to it instead of passing through.
-          ...['__dirname', '__filename'].flatMap((name) => {
-            const variable = globalScope.set.get(name);
-            return variable && variable.defs.length === 0
-              ? variable.references
-              : [];
-          }),
-        ];
-        for (const { identifier: node } of references) {
-          if (node.name !== '__dirname' && node.name !== '__filename') continue;
-          context.report({
-            node,
-            messageId: 'preferES6',
-            data: {
-              pattern: node.name,
-              currentFile: filename,
-              suggestion: 'Use import.meta.url or path resolution functions',
-            },
-          });
-        }
-      },
+      // `__dirname` and `__filename` are deliberately NOT reported. This rule
+      // detects the CommonJS module SYSTEM (`require`, `module.exports`,
+      // `exports.x`), and eslint-plugin-import's does exactly that: it never looks
+      // at the two path globals. Reporting them was 102 false positives on
+      // lynx-stack against that plugin, and a drop-in that is louder than the
+      // incumbent fails the adoption it exists for (PRINCIPLES.md). Whether a file
+      // may use them is `no-restricted-globals`'s question, not this rule's.
     };
   },
 });

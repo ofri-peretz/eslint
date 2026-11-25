@@ -44,6 +44,11 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
    Fix: Do not pass sensitive data in URL; use POST request body or headers | https://cwe.mitre.org/data/definitions/598.html
 ```
 
+The description names the parameter that matched — ``Credentials detected in
+URL query parameter `client_secret` `` — so a finding on a long literal (a
+generated HTML bundle, a minified script inlined as a string) can be found
+without searching the whole string.
+
 ### Message Components
 
 | Component                 | Purpose                | Example                                                                                                             |
@@ -184,6 +189,20 @@ const url = '/api?' + params.toString();
 ```
 
 **Mitigation**: Standardize on a secure API caller that automatically handles sensitive data.
+
+## Known False Positives
+
+### Code Inside a String
+
+**Why**: The rule reads strings, and JavaScript embedded in one can contain the
+`&name=` shape. A generated HTML bundle with a framework inlined reported
+`t.password` from minified router code (`&&t.password===e.password`). A query
+key may contain a dot (`?user.password=`), so the shape alone cannot rule it
+out, and generated files are not skipped: a generated API client is exactly
+where a credential parameter is a real finding.
+
+**Mitigation**: The message names the matched parameter; scope a generated
+bundle out with `ignores` in your config when it is not a URL.
 
 ## Options
 

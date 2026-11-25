@@ -12,7 +12,7 @@ describe('eslint-plugin-conventions plugin interface', () => {
   it('should export all conventions rules', () => {
     expect(plugin.rules).toBeDefined();
     const ruleKeys = Object.keys(plugin.rules || {});
-    
+
     expect(ruleKeys).toContain('no-commented-code');
     expect(ruleKeys).toContain('expiring-todo-comments');
     expect(ruleKeys).toContain('prefer-code-point');
@@ -28,7 +28,7 @@ describe('eslint-plugin-conventions plugin interface', () => {
     expect(ruleKeys).toContain('no-raw-cross-property-href');
     expect(ruleKeys).toContain('analytics-event-naming');
 
-    expect(ruleKeys.length).toBe(15);
+    expect(ruleKeys.length).toBe(20);
   });
 
   it('should export rules matching plugin.rules', () => {
@@ -42,12 +42,12 @@ describe('eslint-plugin-conventions plugin interface', () => {
     it('should provide recommended configuration', () => {
       expect(configs['recommended']).toBeDefined();
       expect(configs['recommended'].plugins?.['conventions']).toBeDefined();
-      
+
       const recommendedRules = configs['recommended'].rules || {};
-      Object.keys(recommendedRules).forEach(ruleName => {
+      Object.keys(recommendedRules).forEach((ruleName) => {
         expect(ruleName).toMatch(/^conventions\//);
       });
-      
+
       // Verify at least one rule is configured
       expect(Object.keys(recommendedRules).length).toBeGreaterThan(0);
     });
@@ -70,11 +70,47 @@ describe('eslint-plugin-conventions plugin interface', () => {
     it('should have all recommended rules reference existing rules', () => {
       const recommendedRules = Object.keys(configs['recommended'].rules || {});
       const pluginRules = Object.keys(plugin.rules || {});
-      
-      recommendedRules.forEach(ruleName => {
+
+      recommendedRules.forEach((ruleName) => {
         const shortName = ruleName.replace('conventions/', '');
         expect(pluginRules).toContain(shortName);
       });
     });
+  });
+});
+
+describe('guidance preset', () => {
+  const GUIDANCE_RULES = [
+    'enforced-rule-in-prose',
+    'guidance-budget',
+    'no-duplicated-guidance',
+    'procedure-in-memory',
+    'subagent-declares-model',
+  ];
+
+  it('turns on exactly the five guidance rules, at warn, on the markdown language', () => {
+    const guidance = configs['guidance'] as {
+      files: string[];
+      language: string;
+      rules: Record<string, string>;
+    };
+    expect(guidance.language).toBe('markdown/gfm');
+    expect(guidance.files).toContain('**/CLAUDE.md');
+    expect(guidance.files).toContain('**/.claude/skills/**/SKILL.md');
+    expect(Object.keys(guidance.rules).sort()).toEqual(
+      GUIDANCE_RULES.map((r) => `conventions/${r}`),
+    );
+    expect(new Set(Object.values(guidance.rules))).toEqual(new Set(['warn']));
+  });
+
+  it('keeps the Markdown rules out of the JS recommended preset and off oxlint', () => {
+    const recommended = Object.keys(configs['recommended'].rules ?? {});
+    for (const name of GUIDANCE_RULES) {
+      expect(recommended).not.toContain(`conventions/${name}`);
+      const rule = (
+        rules as Record<string, { meta: { interop?: { runtimes: string[] } } }>
+      )[name];
+      expect(rule.meta.interop?.runtimes).toEqual(['eslint']);
+    }
   });
 });

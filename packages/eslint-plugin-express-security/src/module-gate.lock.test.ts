@@ -65,6 +65,52 @@ const NON_EXPRESS_SOURCES: ReadonlyArray<readonly [string, string]> = [
      };`,
   ],
   [
+    'a Next.js API route that redirects (it exports default, and so cannot open the exported-handler arm)',
+    `export default function handler(req, res) {
+       res.setHeader('Access-Control-Allow-Origin', '*');
+       res.redirect(req.query.url);
+     }`,
+  ],
+  [
+    'an exported node:http listener (res.end and writeHead are not Express evidence)',
+    `exports.handle = function (req, res) {
+       res.writeHead(302, { Location: req.query.url, 'Access-Control-Allow-Origin': '*' });
+       res.end();
+     };`,
+  ],
+  [
+    'an exported Fastify handler (request, reply)',
+    `exports.go = function (request, reply) {
+       return reply.redirect(request.query.url);
+     };`,
+  ],
+  [
+    'an exported Koa handler (ctx)',
+    `exports.go = async function (ctx) {
+       ctx.redirect(ctx.query.url);
+     };`,
+  ],
+  [
+    'an exported (req, res) handler whose only response call is shared with Next.js',
+    `exports.go = function (req, res) {
+       res.setHeader('Access-Control-Allow-Origin', '*');
+       res.status(200).json({ path: req.query.path });
+     };`,
+  ],
+  [
+    'a (req, res) function that is not exported',
+    `function go(req, res) {
+       res.redirect(req.query.url);
+     }
+     go(a, b);`,
+  ],
+  [
+    'an exported function whose parameters are not named like a request and a response',
+    `exports.go = function (a, b) {
+       b.redirect(a.query.url);
+     };`,
+  ],
+  [
     'a local module merely named express',
     `import express from './express';
      const app = express();

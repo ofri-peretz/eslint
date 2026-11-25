@@ -5,6 +5,126 @@ All notable changes to `oxlint-plugin-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.32
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-node-security@6.2.0`
+
+## 0.2.31
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.12`
+
+## 0.2.30
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.11`
+
+## 0.2.29
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.10`
+
+## 0.2.28
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-node-security@6.1.5`, `eslint-plugin-secure-coding@6.4.9`
+
+## 0.2.27
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-node-security@6.1.4`, `eslint-plugin-secure-coding@6.4.8`
+
+## 0.2.26
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-node-security@6.1.3`, `eslint-plugin-secure-coding@6.4.7`
+
+## 0.2.25
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.6`
+
+## 0.2.24
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.5`
+
+## 0.2.23
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.4`
+
+## 0.2.22
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.3`
+
+## 0.2.21
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-node-security@6.1.2`, `eslint-plugin-secure-coding@6.4.2`
+
+## 0.2.20
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-node-security@6.1.1`, `eslint-plugin-secure-coding@6.4.1`
+
+## 0.2.19
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.0`, `eslint-plugin-node-security@6.1.0`
+
+## 0.2.18
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.3.0`
+
+## 0.2.17
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.2.0`
+
+## 0.2.16
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-node-security@6.0.7`, `eslint-plugin-secure-coding@6.1.3`
+
+## 0.2.15
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-node-security@6.0.6`
+
+## 0.2.14
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-node-security@6.0.5`, `eslint-plugin-secure-coding@6.1.2`
+
+## 0.2.13
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-node-security@6.0.4`, `eslint-plugin-secure-coding@6.1.1`
+
 ## 0.2.12
 
 ### Patch Changes

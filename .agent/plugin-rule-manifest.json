@@ -329,6 +329,36 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "review-prompt"
+    },
+    "guidance-budget": {
+      "environment": "universal",
+      "detection": "source-text",
+      "confidence": "opt-in",
+      "notes": "Markdown (@eslint/markdown), guidance preset. Bytes and lines of CLAUDE.md/AGENTS.md/GEMINI.md, body lines of SKILL.md and subagents, skill description length, against defaults or a per-repo ratchet file that may only go down."
+    },
+    "enforced-rule-in-prose": {
+      "environment": "universal",
+      "detection": "source-text",
+      "confidence": "opt-in",
+      "notes": "Markdown, guidance preset. An imperative in command position (clause-initial never/always/do not/IMPORTANT, or an actor with must) that names a code span, flag or file path, with no link to a lint rule, hook, lock test or gate (unenforced) or with one (removable). Generated files are skipped."
+    },
+    "procedure-in-memory": {
+      "environment": "universal",
+      "detection": "source-text",
+      "confidence": "opt-in",
+      "notes": "Markdown, guidance preset. A run of more than maxSteps numbered items in an always-loaded file, outside code fences."
+    },
+    "subagent-declares-model": {
+      "environment": "universal",
+      "detection": "source-text",
+      "confidence": "opt-in",
+      "notes": "Markdown, guidance preset. `.claude/agents/*.md` frontmatter without a non-empty `model:` or `tools:`."
+    },
+    "no-duplicated-guidance": {
+      "environment": "universal",
+      "detection": "source-text",
+      "confidence": "opt-in",
+      "notes": "Markdown, guidance preset. A normalised prose line of at least minLength characters that also appears in an always-loaded file in the same directory or an ancestor up to the working directory; reported in the file whose path sorts later."
     }
   },
   "eslint-plugin-express-security": {
@@ -702,6 +732,16 @@
       "confidence": "review-prompt"
     },
     "prefer-node-protocol": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "enforce-node-protocol-usage": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "no-webpack-loader-syntax": {
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "enforcement"
@@ -1467,6 +1507,11 @@
       "environment": "node",
       "detection": "structural-pattern",
       "confidence": "enforcement"
+    },
+    "require-emitter-error-handler": {
+      "environment": "node",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
     }
   },
   "eslint-plugin-openai-security": {
@@ -2088,6 +2133,41 @@
       "confidence": "opt-in"
     },
     "no-wrapper-sub-component": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "jsx-no-comment-textnodes": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "jsx-no-undef": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "jsx-uses-react": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "jsx-uses-vars": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "style-prop-object": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "jsx-pascal-case": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "forbid-foreign-prop-types": {
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in"

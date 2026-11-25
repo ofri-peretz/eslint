@@ -18,14 +18,16 @@ type MongoCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
 };
-const xmo = <T,>(cases: T[]): T[] =>
+const xmo = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asMongo(c) as T;
     const test = c as MongoCase;
     return {
       ...c,
       code: asMongo(test.code),
-      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asMongo(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -45,7 +47,6 @@ const xmo = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 const ruleTester = new RuleTester();
 
 ruleTester.run('no-hardcoded-connection-string', noHardcodedConnectionString, {
@@ -58,6 +59,27 @@ ruleTester.run('no-hardcoded-connection-string', noHardcodedConnectionString, {
     `const url = 'https://example.com';`,
     // postgres://
     `const pg = 'postgresql://localhost:5432/db';`,
+    // Credential-free loopback: the dev default, nothing to leak
+    {
+      name: 'a loopback default behind an environment variable',
+      code: `const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/app';`,
+    },
+    {
+      name: 'an IPv4 loopback URI without credentials',
+      code: `const uri = 'mongodb://127.0.0.1:27017/app';`,
+    },
+    {
+      name: 'an IPv6 loopback URI without credentials',
+      code: `const uri = 'mongodb://[::1]:27017/app';`,
+    },
+    {
+      name: 'a seed list of loopback members only',
+      code: `const uri = 'mongodb://localhost:27017,127.0.0.1:27018/app?replicaSet=rs0';`,
+    },
+    {
+      name: 'a loopback template with an interpolated database name',
+      code: 'const uri = `mongodb://localhost:27017/${dbName}`;',
+    },
     // Test file (allowed by default)
     {
       code: `const uri = 'mongodb://localhost:27017/test';`,
@@ -66,9 +88,27 @@ ruleTester.run('no-hardcoded-connection-string', noHardcodedConnectionString, {
   ]),
 
   invalid: xmo([
-    // Basic mongodb:// URI
+    // Credentials on a loopback host are still a committed secret
     {
-      code: `const uri = 'mongodb://localhost:27017/mydb';`,
+      name: 'credentials on a loopback host are still a committed secret',
+      code: `const uri = 'mongodb://admin:secret@localhost:27017/app';`,
+      errors: [{ messageId: 'hardcodedConnectionString' }],
+    },
+    // A host that merely starts with "localhost" is not loopback
+    {
+      name: 'a host that only starts with localhost is not loopback',
+      code: `const uri = 'mongodb://localhost.evil.example:27017/app';`,
+      errors: [{ messageId: 'hardcodedConnectionString' }],
+    },
+    // One remote member in a seed list
+    {
+      name: 'one remote member in a seed list is reported',
+      code: `const uri = 'mongodb://localhost:27017,db.example.com:27017/app';`,
+      errors: [{ messageId: 'hardcodedConnectionString' }],
+    },
+    // Basic mongodb:// URI naming a remote host
+    {
+      code: `const uri = 'mongodb://db.example.com:27017/mydb';`,
       errors: [{ messageId: 'hardcodedConnectionString' }],
     },
     // mongodb+srv:// URI
@@ -83,12 +123,12 @@ ruleTester.run('no-hardcoded-connection-string', noHardcodedConnectionString, {
     },
     // Template literal
     {
-      code: 'const uri = `mongodb://localhost:27017/${dbName}`;',
+      code: 'const uri = `mongodb://db.example.com:27017/${dbName}`;',
       errors: [{ messageId: 'hardcodedConnectionString' }],
     },
     // allowInTests: false in test file
     {
-      code: `const uri = 'mongodb://localhost:27017/test';`,
+      code: `const uri = 'mongodb://db.example.com:27017/test';`,
       filename: 'db.test.ts',
       options: [{ allowInTests: false }],
       errors: [{ messageId: 'hardcodedConnectionString' }],

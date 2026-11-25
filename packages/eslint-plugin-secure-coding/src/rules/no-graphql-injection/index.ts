@@ -453,6 +453,24 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       return ends;
     };
 
+    /**
+     * `gql\`…\`` or `graphql\`…\``: a template the tag itself declares a
+     * document, whatever its text. Tag spelling goes through `propertyName`, so
+     * `apollo['gql']` is the same tag as `apollo.gql`.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    const isGraphqlTag = (node: TSESTree.Node): boolean => {
+      if (node.type !== AST_NODE_TYPES.TaggedTemplateExpression) return false;
+      const tag = node.tag;
+      const tagName =
+        tag.type === AST_NODE_TYPES.Identifier
+          ? tag.name
+          : tag.type === AST_NODE_TYPES.MemberExpression
+            ? (propertyName(tag) ?? '')
+            : '';
+      return GRAPHQL_TAG_NAMES.has(tagName.toLowerCase());
+    };
+
     const hasGraphqlAttribution = (node: TSESTree.Node): boolean => {
       // `'type User {' + fields + '}'` — climb to the whole concatenation
       // before asking what consumes it.
@@ -462,15 +480,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       }
       const parent = current.parent;
       if (parent?.type === AST_NODE_TYPES.TaggedTemplateExpression) {
-        const tag = parent.tag;
-        // `apollo['gql']` tags the same template `apollo.gql` tags.
-        const tagName =
-          tag.type === AST_NODE_TYPES.Identifier
-            ? tag.name
-            : tag.type === AST_NODE_TYPES.MemberExpression
-              ? (propertyName(tag) ?? '')
-              : '';
-        return GRAPHQL_TAG_NAMES.has(tagName.toLowerCase());
+        return isGraphqlTag(parent);
       }
       if (
         parent?.type === AST_NODE_TYPES.VariableDeclarator &&
@@ -496,6 +506,11 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       node.quasis.map((q) => q.value.cooked ?? q.value.raw).join('');
 
     const isGraphqlTemplate = (node: TSESTree.TemplateLiteral): boolean =>
+      // The tag declares a document whatever its static text: `gql\`${x}\``
+      // has no text at all and is still GraphQL, so its interpolations count.
+      (node.parent?.type === AST_NODE_TYPES.TaggedTemplateExpression &&
+        node.parent.quasi === node &&
+        isGraphqlTag(node.parent)) ||
       containsGraphqlText(templateText(node), hasGraphqlAttribution(node));
 
     /**
@@ -514,12 +529,16 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
      * reporting — `cartFragment: string` is a hole a caller fills.
      */
     const isGraphqlComposition = (expr: TSESTree.Expression): boolean => {
+      // `${gql`fragment …`}` — the document is written in place.
+      if (isGraphqlTag(expr)) return true;
       // Only an identifier is ever a reference, so anything else resolves to
       // null below.
       const variable = resolvedReference(sourceCode.getScope(expr), expr);
       if (variable === null || variable.defs.length !== 1) return false;
       // `defs.length === 1` above, so index 0 exists.
       const def = variable.defs[0] as TSESLint.Scope.Definition;
+      // An import is defined in another module, which this file cannot read,
+      // so it resolves to nothing knowable and keeps reporting.
       if (def.type !== 'Variable') return false;
       if (variable.references.filter((ref) => ref.isWrite()).length > 1) {
         return false;
@@ -530,6 +549,8 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       // `as const` is how a typed client pins a document literal.
       const literal =
         init.type === AST_NODE_TYPES.TSAsExpression ? init.expression : init;
+      // `const A = gql`…``: the tag is what makes it a document.
+      if (isGraphqlTag(literal)) return true;
       // A document held in a plain string constant composes exactly as one
       // held in a template does.
       const text =

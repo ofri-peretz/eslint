@@ -1,0 +1,243 @@
+{
+  "app": "nodegoat",
+  "commit": "c5cb68a7084e4ae7dcc60e6a98768720a81841e8",
+  "tutorialBase": "https://github.com/OWASP/NodeGoat/blob/c5cb68a7084e4ae7dcc60e6a98768720a81841e8/app/views/tutorial/",
+  "method": "Read each tutorial page at the pin; for each vulnerability it documents, locate the code it names. Lines are the author's judgement (the tutorial gives file and function, not lines). Built before any linter was run. Single author; the independent second table the plan asks for is NOT yet done.",
+  "lintable": "y = a pattern a syntactic rule could flag; maybe = needs data flow or absence detection; n = not visible to a linter at all (missing control, business logic, dependency version, or lives in a template/JSON file). Decided before the first run.",
+  "items": [
+    {
+      "id": "NG-01",
+      "tutorial": "a1.html",
+      "section": "A1-1 Server Side JS Injection",
+      "class": "code-injection-eval",
+      "cwe": "CWE-95",
+      "file": "app/routes/contributions.js",
+      "ranges": [[32, 34]],
+      "lintable": "y",
+      "note": "eval() on req.body.preTax/afterTax/roth; tutorial names handleContributionsUpdate()"
+    },
+    {
+      "id": "NG-02",
+      "tutorial": "a1.html",
+      "section": "A1-2 SQL and NoSQL Injection",
+      "class": "nosql-injection",
+      "cwe": "CWE-943",
+      "file": "app/data/allocations-dao.js",
+      "ranges": [[77, 79]],
+      "lintable": "y",
+      "note": "$where string built from threshold (req.query.threshold via allocations.js:19-23); tutorial names allocations-dao.js"
+    },
+    {
+      "id": "NG-03",
+      "tutorial": "a1.html",
+      "section": "A1-3 Log Injection",
+      "class": "log-injection",
+      "cwe": "CWE-117",
+      "file": "app/routes/session.js",
+      "ranges": [[64, 64]],
+      "lintable": "maybe",
+      "note": "console.log of unsanitised userName; tutorial names routes/session.js"
+    },
+    {
+      "id": "NG-04",
+      "tutorial": "a2.html",
+      "section": "A2-1 Protecting user credentials",
+      "class": "plaintext-password",
+      "cwe": "CWE-256",
+      "file": "app/data/user-dao.js",
+      "ranges": [
+        [19, 31],
+        [60, 67]
+      ],
+      "lintable": "n",
+      "note": "password stored and compared in plain text; absence of hashing"
+    },
+    {
+      "id": "NG-05",
+      "tutorial": "a2.html",
+      "section": "A2-2 Password Guessing (policy)",
+      "class": "weak-password-policy",
+      "cwe": "CWE-521",
+      "file": "app/routes/session.js",
+      "ranges": [
+        [144, 149],
+        [171, 175]
+      ],
+      "lintable": "n",
+      "note": "PASS_RE = /^.{1,20}$/; tutorial quotes the regex"
+    },
+    {
+      "id": "NG-06",
+      "tutorial": "a2.html",
+      "section": "A2-2 Password Guessing (enumeration)",
+      "class": "user-enumeration",
+      "cwe": "CWE-204",
+      "file": "app/routes/session.js",
+      "ranges": [
+        [59, 61],
+        [82, 98]
+      ],
+      "lintable": "n",
+      "note": "distinct 'Invalid username' / 'Invalid password' messages; tutorial names handleLoginRequest()"
+    },
+    {
+      "id": "NG-07",
+      "tutorial": "a2.html",
+      "section": "A2-3 Session hijacking / fixation",
+      "class": "session-fixation",
+      "cwe": "CWE-384",
+      "file": "app/routes/session.js",
+      "ranges": [[104, 117]],
+      "lintable": "n",
+      "note": "no req.session.regenerate() on login (absence)"
+    },
+    {
+      "id": "NG-08",
+      "tutorial": "a2.html + a3.html",
+      "section": "A2-1/2 session timeout and cookie flags; A3 HTTPOnly",
+      "class": "insecure-session-cookie",
+      "cwe": "CWE-1004",
+      "cweAlso": ["CWE-614", "CWE-613"],
+      "file": "server.js",
+      "ranges": [[77, 102]],
+      "lintable": "maybe",
+      "note": "session() config has no cookie.httpOnly / secure / maxAge"
+    },
+    {
+      "id": "NG-09",
+      "tutorial": "a3.html",
+      "section": "A3 XSS (template autoescape)",
+      "class": "xss",
+      "cwe": "CWE-79",
+      "file": "server.js",
+      "ranges": [[135, 142]],
+      "lintable": "y",
+      "note": "swig autoescape: false; tutorial says to enable it in server.js"
+    },
+    {
+      "id": "NG-10",
+      "tutorial": "a3.html",
+      "section": "A3 Output Encoding Context",
+      "class": "xss",
+      "cwe": "CWE-79",
+      "file": "app/routes/profile.js",
+      "ranges": [[24, 31]],
+      "lintable": "n",
+      "note": "encodeForHTML used where a URL context is needed; tutorial names profile.js"
+    },
+    {
+      "id": "NG-11",
+      "tutorial": "a4.html",
+      "section": "A4 Insecure Direct Object References",
+      "class": "idor",
+      "cwe": "CWE-639",
+      "file": "app/routes/allocations.js",
+      "ranges": [[12, 23]],
+      "lintable": "n",
+      "note": "userId taken from req.params instead of the session"
+    },
+    {
+      "id": "NG-12",
+      "tutorial": "a5.html",
+      "section": "A5 Security Misconfiguration",
+      "class": "missing-hardening-middleware",
+      "cwe": "CWE-693",
+      "cweAlso": ["CWE-200"],
+      "file": "server.js",
+      "ranges": [
+        [15, 16],
+        [38, 68]
+      ],
+      "lintable": "maybe",
+      "note": "x-powered-by not disabled, no helmet headers, default session cookie name; absence of middleware"
+    },
+    {
+      "id": "NG-13",
+      "tutorial": "a6.html",
+      "section": "A6-1 HTTP instead of HTTPS",
+      "class": "cleartext-transport",
+      "cwe": "CWE-319",
+      "file": "server.js",
+      "ranges": [[144, 147]],
+      "lintable": "y",
+      "note": "http.createServer(app); tutorial: use https module"
+    },
+    {
+      "id": "NG-14",
+      "tutorial": "a6.html",
+      "section": "A6-3 Sensitive data stored in plain text",
+      "class": "plaintext-sensitive-data",
+      "cwe": "CWE-312",
+      "file": "app/data/profile-dao.js",
+      "ranges": [[61, 66]],
+      "lintable": "n",
+      "note": "ssn and dob stored unencrypted; tutorial names profile-dao.js"
+    },
+    {
+      "id": "NG-15",
+      "tutorial": "a7.html",
+      "section": "A7 Missing Function Level Access Control",
+      "class": "missing-access-control",
+      "cwe": "CWE-862",
+      "file": "app/routes/index.js",
+      "ranges": [[54, 56]],
+      "lintable": "n",
+      "note": "benefits routes lack isAdmin middleware; tutorial quotes these lines"
+    },
+    {
+      "id": "NG-16",
+      "tutorial": "a8.html",
+      "section": "A8 CSRF",
+      "class": "csrf",
+      "cwe": "CWE-352",
+      "file": "server.js",
+      "ranges": [[70, 121]],
+      "lintable": "maybe",
+      "note": "no csrf middleware in the stack (absence); tutorial names server.js"
+    },
+    {
+      "id": "NG-17",
+      "tutorial": "a9.html",
+      "section": "A9 Insecure Dependencies (marked 0.3.5)",
+      "class": "vulnerable-dependency",
+      "cwe": "CWE-1395",
+      "file": "package.json",
+      "ranges": [[17, 17]],
+      "lintable": "n",
+      "note": "JSON dependency version; outside any JS lint scope; included for recall-over-all-items"
+    },
+    {
+      "id": "NG-18",
+      "tutorial": "a10.html",
+      "section": "A10 Unvalidated Redirects",
+      "class": "open-redirect",
+      "cwe": "CWE-601",
+      "file": "app/routes/index.js",
+      "ranges": [[70, 73]],
+      "lintable": "y",
+      "note": "res.redirect(req.query.url)"
+    },
+    {
+      "id": "NG-19",
+      "tutorial": "redos.html",
+      "section": "ReDoS",
+      "class": "redos",
+      "cwe": "CWE-1333",
+      "file": "app/routes/profile.js",
+      "ranges": [[59, 59]],
+      "lintable": "y",
+      "note": "/([0-9]+)+\\#/ catastrophic backtracking; tutorial quotes the regex"
+    },
+    {
+      "id": "NG-20",
+      "tutorial": "ssrf.html",
+      "section": "SSRF",
+      "class": "ssrf",
+      "cwe": "CWE-918",
+      "file": "app/routes/research.js",
+      "ranges": [[14, 16]],
+      "lintable": "y",
+      "note": "needle.get(req.query.url + req.query.symbol); tutorial names routes/research.js"
+    }
+  ]
+}

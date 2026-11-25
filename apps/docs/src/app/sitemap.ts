@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 
 import { source } from '@/lib/source';
 import { SITE_ORIGIN } from '@/lib/site-config';
+import { docsDateModified } from '@/lib/seo';
 
 /**
  * Sitemap, derived — never enumerated by hand.
@@ -31,6 +32,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const docsRoutes: MetadataRoute.Sitemap = source.getPages().map((page) => ({
     url: `${SITE_ORIGIN}${page.url}`,
+    lastModified: docsDateModified(page.path, page.slugs),
     // Rule pages are the search landing surface — they carry the weight.
     priority: page.url.includes('/rules/') ? 0.8 : 0.7,
     changeFrequency: 'weekly',

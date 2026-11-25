@@ -37,6 +37,7 @@ describe('control-has-associated-label', () => {
         },
         // aria-label
         {
+          name: 'a button named by aria-label',
           code: '<button type="button" aria-label="Save"></button>',
         },
         {
@@ -79,101 +80,127 @@ describe('control-has-associated-label', () => {
         {
           code: '<span>Text</span>',
         },
+        // #1563: a hidden input is never rendered, so it has no accessible
+        // name to give
+        {
+          name: 'a hidden input needs no label',
+          code: '<input type="hidden" name="r" value="1" />',
+        },
+        // #1563: the label this rule looks for may arrive through a spread
+        // the call site cannot see into
+        {
+          name: 'a spread-prop input needs no label at the call site',
+          code: 'function Field(props) { return <input {...props} />; }',
+        },
+        // #1562: a render-prop/asChild element is not rendered as written —
+        // the parent clones it with its own label/content.
+        {
+          name: 'an unlabeled anchor passed as a render prop is not rendered as written',
+          code: '<Button render={<a href="/docs" />}>Read the docs</Button>',
+        },
       ],
       invalid: [],
     });
   });
 
   describe('Invalid Code - Missing Labels', () => {
-    ruleTester.run('invalid - controls without labels', controlHasAssociatedLabel, {
-      valid: [],
-      invalid: [
-        {
-          name: 'a control with no accessible name',
-          code: '<button type="button"></button>',
-          errors: [
-            {
-              messageId: 'missingLabel',
-              data: {
-                element: 'button',
+    ruleTester.run(
+      'invalid - controls without labels',
+      controlHasAssociatedLabel,
+      {
+        valid: [],
+        invalid: [
+          {
+            name: 'a control with no accessible name',
+            code: '<button type="button"></button>',
+            errors: [
+              {
+                messageId: 'missingLabel',
+                data: {
+                  element: 'button',
+                },
               },
-            },
-          ],
-        },
-        {
-          code: '<input />',
-          errors: [
-            {
-              messageId: 'missingLabel',
-              data: {
-                element: 'input',
+            ],
+          },
+          {
+            code: '<input />',
+            errors: [
+              {
+                messageId: 'missingLabel',
+                data: {
+                  element: 'input',
+                },
               },
-            },
-          ],
-        },
-        {
-          code: '<select></select>',
-          errors: [
-            {
-              messageId: 'missingLabel',
-              data: {
-                element: 'select',
+            ],
+          },
+          {
+            code: '<select></select>',
+            errors: [
+              {
+                messageId: 'missingLabel',
+                data: {
+                  element: 'select',
+                },
               },
-            },
-          ],
-        },
-        {
-          code: '<textarea></textarea>',
-          errors: [
-            {
-              messageId: 'missingLabel',
-              data: {
-                element: 'textarea',
+            ],
+          },
+          {
+            code: '<textarea></textarea>',
+            errors: [
+              {
+                messageId: 'missingLabel',
+                data: {
+                  element: 'textarea',
+                },
               },
-            },
-          ],
-        },
-      ],
-    });
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Interactive Roles', () => {
-    ruleTester.run('interactive roles require labels', controlHasAssociatedLabel, {
-      valid: [
-        // Elements with interactive roles and labels
-        {
-          code: '<div role="button" aria-label="Save">Save</div>',
-        },
-        {
-          code: '<span role="checkbox" aria-label="Agree">Agree</span>',
-        },
-      ],
-      invalid: [
-        // Elements with interactive roles but no labels
-        {
-          code: '<div role="button"></div>',
-          errors: [
-            {
-              messageId: 'missingLabel',
-              data: {
-                element: 'div',
+    ruleTester.run(
+      'interactive roles require labels',
+      controlHasAssociatedLabel,
+      {
+        valid: [
+          // Elements with interactive roles and labels
+          {
+            code: '<div role="button" aria-label="Save">Save</div>',
+          },
+          {
+            code: '<span role="checkbox" aria-label="Agree">Agree</span>',
+          },
+        ],
+        invalid: [
+          // Elements with interactive roles but no labels
+          {
+            code: '<div role="button"></div>',
+            errors: [
+              {
+                messageId: 'missingLabel',
+                data: {
+                  element: 'div',
+                },
               },
-            },
-          ],
-        },
-        {
-          code: '<span role="checkbox"></span>',
-          errors: [
-            {
-              messageId: 'missingLabel',
-              data: {
-                element: 'span',
+            ],
+          },
+          {
+            code: '<span role="checkbox"></span>',
+            errors: [
+              {
+                messageId: 'missingLabel',
+                data: {
+                  element: 'span',
+                },
               },
-            },
-          ],
-        },
-      ],
-    });
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Options - ignoreElements', () => {
@@ -244,7 +271,9 @@ describe('control-has-associated-label', () => {
       valid: [
         {
           code: '<CustomInput label="Name" />',
-          options: [{ controlComponents: ['CustomInput'], labelAttributes: ['label'] }],
+          options: [
+            { controlComponents: ['CustomInput'], labelAttributes: ['label'] },
+          ],
         },
       ],
       invalid: [
@@ -361,5 +390,54 @@ describe('control-has-associated-label', () => {
         },
       ],
     });
+  });
+});
+
+/**
+ * Option shapes, from upstream's schema (`rules/control-has-associated-label.js`
+ * v6.10.2): `depth` is an integer from 0, with no upper bound in the schema and
+ * a clamp to 25 when read, and `includeRoles` (in both upstream presets) is
+ * accepted. Upstream 6.10.2 reads `includeRoles` nowhere, so it changes
+ * nothing here either.
+ */
+describe('control-has-associated-label options', () => {
+  ruleTester.run('depth and includeRoles', controlHasAssociatedLabel, {
+    valid: [
+      {
+        name: 'depth 0 still accepts the control\'s own aria-label',
+        code: '<button aria-label="Save"></button>',
+        options: [{ depth: 0 }],
+      },
+      {
+        name: 'depth above 25 is accepted and searches the whole subtree',
+        code: '<button><span>Save</span></button>',
+        options: [{ depth: 30 }],
+      },
+      {
+        name: 'includeRoles is accepted and ignored',
+        code: '<button>Save</button>',
+        options: [{ includeRoles: ['alert', 'dialog'] }],
+      },
+    ],
+    invalid: [
+      {
+        name: 'depth 0 does not look into children',
+        code: '<button>Save</button>',
+        options: [{ depth: 0 }],
+        errors: [{ messageId: 'missingLabel' }],
+      },
+      {
+        name: 'depth above 25 is clamped to 25, so a label 26 levels down is missed',
+        code: `<button>${'<span>'.repeat(26)}Save${'</span>'.repeat(26)}</button>`,
+        options: [{ depth: 100 }],
+        errors: [{ messageId: 'missingLabel' }],
+      },
+      {
+        name: 'includeRoles does not change the verdict on an unlabelled button role',
+        code: '<div role="button"></div>',
+        options: [{ includeRoles: ['alert', 'dialog'] }],
+        errors: [{ messageId: 'missingLabel' }],
+      },
+    ],
   });
 });

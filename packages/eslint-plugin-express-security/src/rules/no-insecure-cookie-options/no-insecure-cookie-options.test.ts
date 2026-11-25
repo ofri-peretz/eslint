@@ -22,14 +22,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -49,7 +51,6 @@ const xp = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 RuleTester.afterAll = vitest.afterAll;
 RuleTester.it = vitest.it;
 RuleTester.itOnly = vitest.it.only;
@@ -64,6 +65,20 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-insecure-cookie-options', noInsecureCookieOptions, {
   valid: xp([
+    // A getter named `cookie` is not Express's res.cookie(name, value, options),
+    // which always takes a name and a value. The rule flagged `secrets.cookie()`,
+    // then crashed building the suggestion from an argument that does not exist.
+    {
+      // @source betagouv/anssi-portail back/src/api/msc/middlewares/cookies.ts:11
+      // @found real-source scan
+      name: 'FP: a zero-argument .cookie() getter is not res.cookie — it crashed the lint run',
+      code: `app.use(cookieSession({ name: 'session', sameSite: true, secret: secrets.cookie(), secure: env !== 'dev' }));`,
+    },
+    {
+      // @found reasoned while fixing the real-source FP above, not seen in real code
+      name: 'FP: a one-argument .cookie(name) lookup is not res.cookie(name, value)',
+      code: `const name = config.cookie('session');`,
+    },
     // Fully secure cookie
     {
       name: 'all three set',
@@ -270,8 +285,6 @@ import { describe, expect, it } from 'vitest';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { parse } from '@typescript-eslint/parser';
 import { checkCookieOptions } from './index';
-
-
 
 ruleTester.run(
   'no-insecure-cookie-options (coverage wave)',

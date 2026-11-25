@@ -65,6 +65,15 @@ const { execFile } = require('child_process');
 execFile('grep', ['--', pattern, file]);
 ```
 
+A parameter is not followed to its callers here. A wrapper such as
+``function git(dir, args) { execSync(`git ${args.join(' ')}`, { cwd: dir }) }``
+is reported even when every caller in the file passes a constant-looking array:
+an element like a temp directory (`os.tmpdir()` honours `$TMPDIR`) or a loop
+counter is not a literal, and proving such a value cannot carry a shell
+metacharacter needs value analysis this rule does not do. `no-dynamic-command-string`
+follows a parameter only when every caller passes a string literal, which an
+args array does not.
+
 ## The fix is always the same shape
 
 Replace one string with a binary plus an argument array:

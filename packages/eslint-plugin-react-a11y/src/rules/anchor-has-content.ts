@@ -13,7 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { hasAccessibleChild } from '../utils/jsx-static';
+import { hasAccessibleChild, isJsxAttributeValue } from '../utils/jsx-static';
 
 type MessageIds = 'missingContent';
 
@@ -114,6 +114,13 @@ export const anchorHasContent = createRule<RuleOptions, MessageIds>({
         }
 
         if (!anchors.has(openingElement.name.name)) {
+          return;
+        }
+
+        // A render-prop/asChild element (`<Button render={<a href="/docs" />}>`)
+        // is not rendered as written: the parent clones it with its own
+        // children, so the anchor the DOM sees is not this one (#1562).
+        if (isJsxAttributeValue(node)) {
           return;
         }
 

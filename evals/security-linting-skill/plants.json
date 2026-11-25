@@ -1,0 +1,91 @@
+{
+  "$comment": "What each fixture app plants. `required` rules must fire in the WITH arm on both ESLint 9 and 10, or the harness exits non-zero. `unflagged` plants are real issues no rule of ours reported when this file was written; the harness records whether they are flagged now and never fails on them.",
+  "apps": {
+    "express-pg": {
+      "required": [
+        {
+          "file": "src/server.js",
+          "rule": "express-security/no-permissive-cors"
+        },
+        {
+          "file": "src/server.js",
+          "rule": "postgresql-security/no-unsafe-query"
+        },
+        {
+          "file": "src/server.js",
+          "rule": "jwt-security/no-hardcoded-secret"
+        },
+        {
+          "file": "src/server.js",
+          "rule": "jwt-security/require-algorithm-whitelist"
+        },
+        {
+          "file": "src/server.js",
+          "rule": "express-security/no-user-controlled-redirect"
+        },
+        {
+          "file": "src/server.js",
+          "rule": "node-security/no-arbitrary-file-access"
+        },
+        {
+          "file": "src/server.js",
+          "rule": "node-security/no-shell-injection"
+        }
+      ],
+      "unflagged": [
+        {
+          "file": "src/server.js",
+          "rule": "express-security/require-helmet",
+          "note": "no helmet"
+        },
+        {
+          "file": "src/server.js",
+          "rule": "express-security/require-rate-limiting",
+          "note": "no rate limiter"
+        }
+      ]
+    },
+    "nest": {
+      "required": [
+        {
+          "file": "src/accounts.controller.ts",
+          "rule": "nestjs-security/no-missing-validation-pipe"
+        },
+        {
+          "file": "src/accounts.controller.ts",
+          "rule": "nestjs-security/require-guards"
+        },
+        {
+          "file": "src/accounts.controller.ts",
+          "rule": "node-security/no-shell-injection"
+        },
+        {
+          "file": "src/main.ts",
+          "rule": "nestjs-security/no-permissive-cors"
+        }
+      ],
+      "unflagged": []
+    },
+    "react": {
+      "required": [
+        {
+          "file": "src/App.tsx",
+          "rule": "browser-security/no-innerhtml"
+        },
+        {
+          "file": "src/App.tsx",
+          "rule": "browser-security/no-jwt-in-storage"
+        },
+        {
+          "file": "src/App.tsx",
+          "rule": "browser-security/no-postmessage-wildcard-origin"
+        },
+        {
+          "file": "src/App.tsx",
+          "rule": "browser-security/require-postmessage-origin-check"
+        }
+      ],
+      "unflagged": []
+    }
+  }
+}

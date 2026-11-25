@@ -218,6 +218,7 @@ describe('src/data generators route every write through writeJsonIfChanged', () 
   it('found the generators (guards against an empty scan passing vacuously)', () => {
     expect(generators.map((g) => basename(g.file)).sort()).toEqual([
       'sync-changelog.ts',
+      'sync-content-dates.ts',
       'sync-devto-cache.ts',
       'sync-plugin-stats.ts',
       'sync-tweet-cache.ts',

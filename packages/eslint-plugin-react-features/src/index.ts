@@ -10,6 +10,7 @@
 
 import type { TSESLint } from '@interlace/eslint-devkit';
 import { withCanonicalDocsUrls } from '@interlace/eslint-devkit';
+import { isInstalledAsReact } from './utils/alias-install';
 
 // React rules
 import { requiredAttributes } from './rules/react/required-attributes';
@@ -60,6 +61,17 @@ import { jsxNoScriptUrl } from './rules/react/jsx-no-script-url';
 import { jsxNoDuplicateProps } from './rules/react/jsx-no-duplicate-props';
 import { noDangerWithChildren } from './rules/react/no-danger-with-children';
 import { noDeprecated } from './rules/react/no-deprecated';
+
+// JSX scope and correctness rules (eslint-plugin-react's recommended set)
+import { jsxNoCommentTextnodes } from './rules/react/jsx-no-comment-textnodes';
+import { jsxNoUndef } from './rules/react/jsx-no-undef';
+import { jsxUsesReact } from './rules/react/jsx-uses-react';
+import { jsxUsesVars } from './rules/react/jsx-uses-vars';
+
+// Style and naming rules (eslint-plugin-react's react-app set)
+import { stylePropObject } from './rules/react/style-prop-object';
+import { jsxPascalCase } from './rules/react/jsx-pascal-case';
+import { forbidForeignPropTypes } from './rules/react/forbid-foreign-prop-types';
 
 // Deprecated API rules
 import { noFindDomNode } from './rules/react/no-find-dom-node';
@@ -134,6 +146,15 @@ export const rules = {
   'jsx-no-duplicate-props': jsxNoDuplicateProps,
   'no-danger-with-children': noDangerWithChildren,
   'no-deprecated': noDeprecated,
+  'jsx-no-comment-textnodes': jsxNoCommentTextnodes,
+  'jsx-no-undef': jsxNoUndef,
+  'jsx-uses-react': jsxUsesReact,
+  'jsx-uses-vars': jsxUsesVars,
+
+  // Style and naming rules
+  'style-prop-object': stylePropObject,
+  'jsx-pascal-case': jsxPascalCase,
+  'forbid-foreign-prop-types': forbidForeignPropTypes,
   
   // Deprecated API rules
   'no-find-dom-node': noFindDomNode,
@@ -204,6 +225,15 @@ export const rules = {
   'react/jsx-no-duplicate-props': jsxNoDuplicateProps,
   'react/no-danger-with-children': noDangerWithChildren,
   'react/no-deprecated': noDeprecated,
+  'react/jsx-no-comment-textnodes': jsxNoCommentTextnodes,
+  'react/jsx-no-undef': jsxNoUndef,
+  'react/jsx-uses-react': jsxUsesReact,
+  'react/jsx-uses-vars': jsxUsesVars,
+
+  // Style and naming rules (categorized)
+  'react/style-prop-object': stylePropObject,
+  'react/jsx-pascal-case': jsxPascalCase,
+  'react/forbid-foreign-prop-types': forbidForeignPropTypes,
 
   // Deprecated API rules (categorized)
   'react/no-find-dom-node': noFindDomNode,
@@ -240,12 +270,12 @@ withCanonicalDocsUrls('plugin-react-features', rules);
 export const plugin = {
   meta: {
     name: 'eslint-plugin-react-features',
-    version: '2.0.1',
+    version: '2.4.3',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
 
-export const configs = {
+const nativeConfigs = {
   /**
    * Flagship preset — the rule from this plugin in the ecosystem-wide
    * flagship list (`.agent/flagship-rules.md`). Head-to-head with
@@ -306,5 +336,174 @@ export const configs = {
     },
   } satisfies TSESLint.FlatConfig.Config,
 } satisfies Record<string, TSESLint.FlatConfig.Config>;
+
+/**
+ * Presets for using this package as an npm alias for eslint-plugin-react
+ * (`"eslint-plugin-react": "npm:eslint-plugin-react-features@x"`).
+ *
+ * Shape and rule ids copied from eslint-plugin-react 7.37.5 `index.js`: rule ids
+ * are `react/<rule>`, `all` and `jsx-runtime` are legacy-shaped (`plugins` is a
+ * name list) so a spread of `.rules` works, and `flat.*` register the plugin as
+ * `react`. Only rules this package exports are listed; none of upstream's other
+ * rules are claimed.
+ */
+const ERROR = 2 as const;
+const OFF = 0 as const;
+
+/** Non-deprecated rule names of eslint-plugin-react 7.37.5 (lib/rules). */
+const UPSTREAM_ACTIVE_RULES = new Set([
+  'boolean-prop-naming', 'button-has-type', 'checked-requires-onchange-or-readonly',
+  'default-props-match-prop-types', 'destructuring-assignment', 'display-name',
+  'forbid-component-props', 'forbid-dom-props', 'forbid-elements',
+  'forbid-foreign-prop-types', 'forbid-prop-types', 'forward-ref-uses-ref',
+  'function-component-definition', 'hook-use-state', 'iframe-missing-sandbox',
+  'jsx-boolean-value', 'jsx-child-element-spacing', 'jsx-closing-bracket-location',
+  'jsx-closing-tag-location', 'jsx-curly-brace-presence', 'jsx-curly-newline',
+  'jsx-curly-spacing', 'jsx-equals-spacing', 'jsx-filename-extension',
+  'jsx-first-prop-new-line', 'jsx-fragments', 'jsx-handler-names', 'jsx-indent-props',
+  'jsx-indent', 'jsx-key', 'jsx-max-depth', 'jsx-max-props-per-line', 'jsx-newline',
+  'jsx-no-bind', 'jsx-no-comment-textnodes', 'jsx-no-constructed-context-values',
+  'jsx-no-duplicate-props', 'jsx-no-leaked-render', 'jsx-no-literals',
+  'jsx-no-script-url', 'jsx-no-target-blank', 'jsx-no-undef', 'jsx-no-useless-fragment',
+  'jsx-one-expression-per-line', 'jsx-pascal-case', 'jsx-props-no-multi-spaces',
+  'jsx-props-no-spread-multi', 'jsx-props-no-spreading', 'jsx-sort-props',
+  'jsx-tag-spacing', 'jsx-uses-react', 'jsx-uses-vars', 'jsx-wrap-multilines',
+  'no-access-state-in-setstate', 'no-adjacent-inline-elements', 'no-array-index-key',
+  'no-arrow-function-lifecycle', 'no-children-prop', 'no-danger-with-children',
+  'no-danger', 'no-deprecated', 'no-did-mount-set-state', 'no-did-update-set-state',
+  'no-direct-mutation-state', 'no-find-dom-node', 'no-invalid-html-attribute',
+  'no-is-mounted', 'no-multi-comp', 'no-namespace', 'no-object-type-as-default-prop',
+  'no-redundant-should-component-update', 'no-render-return-value', 'no-set-state',
+  'no-string-refs', 'no-this-in-sfc', 'no-typos', 'no-unescaped-entities',
+  'no-unknown-property', 'no-unsafe', 'no-unstable-nested-components',
+  'no-unused-class-component-methods', 'no-unused-prop-types', 'no-unused-state',
+  'no-will-update-set-state', 'prefer-es6-class', 'prefer-exact-props',
+  'prefer-read-only-props', 'prefer-stateless-function', 'prop-types',
+  'react-in-jsx-scope', 'require-default-props', 'require-optimization',
+  'require-render-return', 'self-closing-comp', 'sort-comp', 'sort-default-props',
+  'sort-prop-types', 'state-in-constructor', 'static-property-placement',
+  'style-prop-object', 'void-dom-elements-no-children',
+]);
+
+const jsxParserOptions = { ecmaFeatures: { jsx: true } };
+
+const aliasAll: Record<string, 0 | 2> = {};
+for (const name of Object.keys(rules)) {
+  if (UPSTREAM_ACTIVE_RULES.has(name)) aliasAll[`react/${name}`] = ERROR;
+}
+
+const aliasRecommendedRules: Record<string, 0 | 2> = {
+  'react/display-name': ERROR,
+  'react/jsx-key': ERROR,
+  'react/jsx-no-comment-textnodes': ERROR,
+  'react/jsx-no-duplicate-props': ERROR,
+  'react/jsx-no-target-blank': ERROR,
+  'react/jsx-no-undef': ERROR,
+  'react/jsx-uses-react': ERROR,
+  'react/jsx-uses-vars': ERROR,
+  'react/no-children-prop': ERROR,
+  'react/no-danger-with-children': ERROR,
+  'react/no-deprecated': ERROR,
+  'react/no-direct-mutation-state': ERROR,
+  'react/no-find-dom-node': ERROR,
+  'react/no-is-mounted': ERROR,
+  'react/no-render-return-value': ERROR,
+  'react/no-string-refs': ERROR,
+  'react/no-unescaped-entities': ERROR,
+  'react/no-unknown-property': ERROR,
+  'react/no-unsafe': OFF,
+  'react/prop-types': ERROR,
+  'react/react-in-jsx-scope': ERROR,
+  'react/require-render-return': ERROR,
+};
+
+const aliasJsxRuntimeRules: Record<string, 0 | 2> = {
+  'react/react-in-jsx-scope': OFF,
+  'react/jsx-uses-react': OFF,
+};
+
+const aliasPlugins = ['react'];
+
+/** Legacy-shaped, as in eslint-plugin-react: `.rules` is what callers spread. */
+const aliasLegacy = {
+  recommended: {
+    plugins: aliasPlugins,
+    parserOptions: jsxParserOptions,
+    rules: aliasRecommendedRules,
+  },
+  all: {
+    plugins: aliasPlugins,
+    parserOptions: jsxParserOptions,
+    rules: aliasAll,
+  },
+  'jsx-runtime': {
+    plugins: aliasPlugins,
+    parserOptions: { ...jsxParserOptions, jsxPragma: null },
+    rules: aliasJsxRuntimeRules,
+  },
+};
+
+const aliasFlat = {
+  recommended: {
+    plugins: { react: plugin },
+    rules: aliasLegacy.recommended.rules,
+    languageOptions: { parserOptions: aliasLegacy.recommended.parserOptions },
+  },
+  all: {
+    plugins: { react: plugin },
+    rules: aliasLegacy.all.rules,
+    languageOptions: { parserOptions: aliasLegacy.all.parserOptions },
+  },
+  'jsx-runtime': {
+    plugins: { react: plugin },
+    rules: aliasLegacy['jsx-runtime'].rules,
+    languageOptions: { parserOptions: aliasLegacy['jsx-runtime'].parserOptions },
+  },
+};
+
+/**
+ * Installed as `eslint-plugin-react` (an npm alias), `configs.recommended` is
+ * eslint-plugin-react's: legacy-shaped, `react/<rule>` ids. That is what
+ * `plugin:react/recommended` through `FlatCompat` and a spread of
+ * `react.configs.recommended.rules` read, and a `react-features/` key under a
+ * plugin registered as `react` fails at config load. Under its own name the
+ * package keeps its own `react-features/` preset. Either way both are reachable
+ * by name: `configs['react-recommended']` is the upstream shape and
+ * `configs['react-features-recommended']` the native one.
+ */
+const installedAsReact = isInstalledAsReact(__dirname);
+
+const enumerableConfigs = {
+  ...nativeConfigs,
+  ...(installedAsReact
+    ? { recommended: aliasLegacy.recommended as unknown as typeof nativeConfigs.recommended }
+    : {}),
+};
+
+/**
+ * `all`, `jsx-runtime` and `flat` are non-enumerable on purpose: they carry
+ * eslint-plugin-react's shapes (legacy `plugins: ['react']` blocks and a
+ * dictionary of flat presets), which is what a consumer reads by key, but they are
+ * not flat config blocks, so anything that iterates `Object.keys(configs)` as
+ * blocks (the ecosystem-integrity preset lock, preset tables) must not see them.
+ * The alias test loads each of them through ESLint instead.
+ */
+export const configs = Object.defineProperties(enumerableConfigs, {
+  'react-recommended': { value: aliasLegacy.recommended },
+  'react-features-recommended': { value: nativeConfigs.recommended },
+  all: { value: aliasLegacy.all },
+  'jsx-runtime': { value: aliasLegacy['jsx-runtime'] },
+  flat: { value: aliasFlat },
+}) as typeof enumerableConfigs &
+  Omit<typeof aliasLegacy, 'recommended'> &
+  Record<'react-recommended', typeof aliasLegacy.recommended> &
+  Record<'react-features-recommended', typeof nativeConfigs.recommended> & {
+    flat: typeof aliasFlat;
+  };
+
+// eslint-plugin-react exposes its presets on the plugin object (`react.configs.flat.recommended`).
+// Not part of the declared type: `configs.flat` is a dictionary, which ESLint's
+// `Plugin['configs']` does not accept. Typed access is the named `configs` export.
+Object.assign(plugin, { configs });
 
 export default plugin;

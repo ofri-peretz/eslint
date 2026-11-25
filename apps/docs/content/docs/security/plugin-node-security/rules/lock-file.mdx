@@ -3,7 +3,7 @@ title: lock-file
 description: "CWE-829"
 tags: ['security', 'node']
 category: security
-severity: medium
+severity: high
 cwe: CWE-829
 autofix: false
 type_aware: false
@@ -92,7 +92,7 @@ This rule supports the following configuration in your ESLint config:
 {
   "rules": {
     "node-security/lock-file": ["error", {
-      "packageManager": "npm" // "npm", "yarn", or "npm"
+      "packageManager": "npm" // "any", "npm", "yarn", or "pnpm"
     }]
   }
 }
@@ -106,6 +106,16 @@ repository root: the nearest ancestor containing `.git` (a directory, or the
 a stray `~/pnpm-lock.yaml`, say — is not committed with the project and pins
 none of its installs, so it does not count. With no `.git` anywhere above the
 file, the search continues to the filesystem root.
+
+### Published libraries
+
+A package published as a library is not reported. npm never installs from a
+dependency's lock file, so a library's consumers resolve against their own,
+and libraries such as `express`, `body-parser` and `cors` ship without one on
+purpose. The rule treats the nearest `package.json` as a library when it is not
+`"private": true` and declares `main`, `exports` or `files`. Apps and private
+packages, which do install from their own lock file, are still reported, and
+so is a manifest that cannot be parsed.
 
 ### How often it reports
 
@@ -152,7 +162,7 @@ The following patterns are **not detected** due to static analysis limitations:
 
 **Why**: If you use a non-standard or custom package manager that uses a different filename, the rule will not recognize it.
 
-**Mitigation**: Standardize on `npm`, `yarn`, or `npm`.
+**Mitigation**: Standardize on `npm`, `yarn`, or `pnpm`.
 
 ## References
 

@@ -3,7 +3,7 @@ title: no-cryptojs-weak-random
 description: Disallow crypto-js WordArray.random() (CVE-2020-36732)
 tags: ['security', 'cryptography', 'cwe-338', 'nodejs', 'cve']
 category: security
-severity: critical
+severity: medium
 cwe: CWE-338
 owasp: 'A02:2021'
 autofix: false

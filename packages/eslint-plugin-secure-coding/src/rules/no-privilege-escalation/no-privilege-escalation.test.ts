@@ -631,7 +631,10 @@ describe('regression locks', () => {
           code: 'function h(req, user) { if (!checkPermission(req.user)) return; if (user) { user.role = req.body.role; } }',
         },
         // The wrapping-if style keeps working.
-        { code: 'if (hasRole(user, "admin")) { user.role = req.body.role; }' },
+        {
+          code: 'if (hasRole(user, "admin")) { user.role = req.body.role; }',
+          name: 'a role write inside an admin-role check',
+        },
       ],
       invalid: [
         // A guard that does not exit is not a guard.

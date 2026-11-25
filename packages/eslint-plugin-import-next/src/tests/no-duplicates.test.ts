@@ -21,7 +21,10 @@ const ruleTester = new RuleTester({
 describe('no-duplicates', () => {
   ruleTester.run('no-duplicates', noDuplicates, {
     valid: [
-      "import { merge, find } from 'lodash';",
+      {
+        name: 'one import of a module',
+        code: "import { merge, find } from 'lodash';",
+      },
       "import foo from 'foo'; import bar from 'bar';",
     ],
     invalid: [
@@ -29,7 +32,7 @@ describe('no-duplicates', () => {
         name: 'two value imports from the same module',
         code: "import { merge } from 'lodash'; import { find } from 'lodash';",
         output: "import { merge, find } from 'lodash'; ", // Fixer remove might leave trailing space or newline depending on whitespace
-        errors: [{ messageId: 'noDuplicates' }],
+        errors: [{ messageId: 'noDuplicates' }, { messageId: 'noDuplicates' }],
       },
     ],
   });
@@ -63,13 +66,13 @@ describe('no-duplicates — importKind is part of the identity', () => {
         // POSITIVE CONTROL: two value imports still merge. Without this the
         // valid cases above pass on a rule that stopped reporting entirely.
         code: "import { a } from './m';\nimport { b } from './m';",
-        errors: [{ messageId: 'noDuplicates' }],
+        errors: [{ messageId: 'noDuplicates' }, { messageId: 'noDuplicates' }],
         output: "import { a, b } from './m';\n",
       },
       {
         // Two TYPE-only imports are duplicates of each other, and merge.
         code: "import type { A } from './m';\nimport type { B } from './m';",
-        errors: [{ messageId: 'noDuplicates' }],
+        errors: [{ messageId: 'noDuplicates' }, { messageId: 'noDuplicates' }],
         output: "import type { A, B } from './m';\n",
       },
     ],
@@ -96,7 +99,7 @@ describe('no-duplicates — plain JavaScript, no importKind', () => {
     invalid: [
       {
         code: "import { a } from './m';\nimport { b } from './m';",
-        errors: [{ messageId: 'noDuplicates' }],
+        errors: [{ messageId: 'noDuplicates' }, { messageId: 'noDuplicates' }],
         output: "import { a, b } from './m';\n",
       },
     ],
@@ -139,34 +142,103 @@ describe('no-duplicates — fidelity', () => {
         name: "'./files/foo' and './files/foo.js' resolve to one file",
         code: "import { bar } from './files/foo';\nimport { baz } from './files/foo.js';",
         filename: APP,
-        errors: [{ messageId: 'noDuplicates' }],
+        errors: [{ messageId: 'noDuplicates' }, { messageId: 'noDuplicates' }],
         output: "import { bar, baz } from './files/foo';\n",
       },
       {
         name: "'./files/foo' and './files/foo.ts' resolve to one file",
         code: "import { bar } from './files/foo';\nimport './files/foo.ts';",
         filename: APP,
-        errors: [{ messageId: 'noDuplicates' }],
+        errors: [{ messageId: 'noDuplicates' }, { messageId: 'noDuplicates' }],
         output: "import { bar } from './files/foo';\n",
       },
       {
         name: 'two imports in one declare module block are duplicates',
         code: "declare module 'a' {\n  import { A } from './m';\n  import { B } from './m';\n}",
         filename: 'src/types.d.ts',
-        errors: [{ messageId: 'noDuplicates' }],
+        errors: [{ messageId: 'noDuplicates' }, { messageId: 'noDuplicates' }],
         output: "declare module 'a' {\n  import { A, B } from './m';\n  \n}",
       },
       {
         name: 'a default in the duplicate is not spliced into braces (no fix)',
         code: "import { a } from './m';\nimport d from './m';",
-        errors: [{ messageId: 'noDuplicates' }],
+        errors: [{ messageId: 'noDuplicates' }, { messageId: 'noDuplicates' }],
         output: null,
       },
       {
         name: 'named specifiers after a default-only import get their own braces',
         code: "import d from './m';\nimport { a } from './m';",
-        errors: [{ messageId: 'noDuplicates' }],
+        errors: [{ messageId: 'noDuplicates' }, { messageId: 'noDuplicates' }],
         output: "import d, { a } from './m';\n",
+      },
+    ],
+  });
+});
+
+/**
+ * A type-only default and a type-only named (or namespace) import of one
+ * module cannot be one statement: TypeScript rejects `import type D, { A }`
+ * (TS1363). eslint-plugin-import keeps them apart too.
+ */
+describe('no-duplicates: type-only default beside type-only named', () => {
+  ruleTester.run('type-only default and named', noDuplicates, {
+    valid: [
+      {
+        name: 'a type-only default beside type-only named names',
+        code: "import type D from './m'; import type { A } from './m';",
+      },
+      {
+        name: 'type-only named names beside a type-only default',
+        code: "import type { A } from './m'; import type D from './m';",
+      },
+      {
+        name: 'a type-only default beside a type-only namespace',
+        code: "import type D from './m'; import type * as M from './m';",
+      },
+    ],
+    invalid: [
+      {
+        name: 'two type-only defaults of one module',
+        code: "import type D from './m'; import type E from './m';",
+        errors: [{ messageId: 'noDuplicates' }, { messageId: 'noDuplicates' }],
+      },
+      {
+        name: 'two type-only named imports of one module still merge',
+        code: "import type { A } from './m'; import type { B } from './m';",
+        output: "import type { A, B } from './m'; ",
+        errors: [{ messageId: 'noDuplicates' }, { messageId: 'noDuplicates' }],
+      },
+    ],
+  });
+});
+
+describe('no-duplicates — inline type specifiers', () => {
+  // eslint-plugin-import's buckets: an import with an inline `type`
+  // specifier goes with the `import type { … }` statements, not with the
+  // value imports of the same module.
+  ruleTester.run('inline type specifiers', noDuplicates, {
+    valid: [
+      {
+        name: 'an inline type import beside a default value import',
+        code: "import { type x } from './m'; import y from './m';",
+      },
+      {
+        name: 'an inline type import beside a value import',
+        code: "import { type x } from './m'; import { y } from './m';",
+      },
+    ],
+    invalid: [
+      {
+        name: 'an inline type import beside an import type statement',
+        code: "import { type x } from 'm'; import type { y } from 'm';",
+        output: "import { type x, type y } from 'm'; ",
+        errors: [{ messageId: 'noDuplicates' }, { messageId: 'noDuplicates' }],
+      },
+      {
+        name: 'two imports with inline types merge',
+        code: "import { a, type x } from 'm'; import { type y } from 'm';",
+        output: "import { a, type x, type y } from 'm'; ",
+        errors: [{ messageId: 'noDuplicates' }, { messageId: 'noDuplicates' }],
       },
     ],
   });

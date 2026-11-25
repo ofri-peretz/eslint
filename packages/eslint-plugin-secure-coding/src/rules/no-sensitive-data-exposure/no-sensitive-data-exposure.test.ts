@@ -36,9 +36,11 @@ describe('no-sensitive-data-exposure', () => {
         },
         // Logger methods without sensitive data
         {
+          name: 'a logger call with a fixed message and no secret',
           code: `logger.info('Request received');`,
         },
         {
+          name: 'an error log with only static prose names no secret',
           code: `logger.error('Operation failed');`,
         },
         {
@@ -146,21 +148,21 @@ describe('no-sensitive-data-exposure', () => {
             errors: [{ messageId: 'sensitiveDataExposure' }],
           },
           {
+            name: 'an API key read by a quoted key and logged is exposed',
             code: `logger.info(config['apiKey']);`,
             errors: [{ messageId: 'sensitiveDataExposure' }],
           },
           // Interpolation is the evidence: unlike a constant, a template splices
-          // a runtime value into the log line. Named by the surrounding text…
+          // a runtime value into the log line — named by the interpolated
+          // expression itself. (Named only by the label in front of it, as in
+          // `token=${t}`, it is prose: a-label-is-not-a-value.test.ts.)
           {
-            code: 'console.log(`token=${t}`);',
-            errors: [{ messageId: 'sensitiveDataExposure' }],
-          },
-          // …and named by the interpolated expression itself.
-          {
+            name: 'an API key interpolated into a log line is exposed',
             code: 'console.log(`value is ${apiKey}`);',
             errors: [{ messageId: 'sensitiveDataExposure' }],
           },
           {
+            name: 'a password read off a user object and logged is exposed',
             code: 'console.log(`got ${user.password} back`);',
             errors: [{ messageId: 'sensitiveDataExposure' }],
           },
@@ -299,11 +301,6 @@ describe('no-sensitive-data-exposure', () => {
           // String literal with secret
           {
             code: `throw new Error('secret: ' + clientSecret);`,
-            errors: [{ messageId: 'sensitiveDataExposure' }],
-          },
-          // BinaryExpression with sensitive left side
-          {
-            code: `throw new Error('password: ' + value);`,
             errors: [{ messageId: 'sensitiveDataExposure' }],
           },
           // BinaryExpression with sensitive right identifier
@@ -1089,8 +1086,11 @@ ruleTester.run(
  *
  * The other two corpus findings were real (`Using token from ${source}:
  * ${tokenFromEnv}`, `Using password from dev: ${password}`) and are pinned
- * below as FN guards, because they are caught by the VALUE path — which runs
- * before the text fallback and is untouched by this gate.
+ * below as FN guards, because they are caught by the VALUE path.
+ *
+ * Since the MCP SDK scan the label is never evidence by itself: a hole is
+ * judged by its own name, and a `.message` hole reports only when a local
+ * object literal shows a secret was put there.
  */
 ruleTester.run(
   'no-sensitive-data-exposure — prose label vs diagnostic value',
@@ -1131,6 +1131,27 @@ ruleTester.run(
         name: 'a local literal that does not set the key stays diagnostic',
         code: 'export function f() { const error = { code: 404 }; console.log(`access token: ${error.message}`); }',
       },
+      // A label in front of a value the rule cannot name is prose. These four
+      // were FN guards while the label alone was evidence; the rule now needs
+      // the VALUE to name a secret (a-label-is-not-a-value.test.ts). The MCP
+      // TypeScript SDK's `resumption token: ${eventId}` and
+      // `Token: ${url}api/auth/mcp/token` are this shape.
+      {
+        name: 'an opaque hole under a credential label is not evidence on its own',
+        code: 'export function f(t) { console.log(`access token: ${t}`); }',
+      },
+      {
+        name: 'nor is an opaque hole beside a diagnostic one',
+        code: 'export function f(error, t) { console.log(`status ${error.status} access token: ${t}`); }',
+      },
+      {
+        name: '`code` names nothing a secret is called by itself',
+        code: 'export function f(err) { console.log(`access token: ${err.code}`); }',
+      },
+      {
+        name: 'a computed read names nothing',
+        code: 'export function f(error, k) { console.log(`access token: ${error[k]}`); }',
+      },
     ],
     invalid: [
       {
@@ -1141,19 +1162,6 @@ ruleTester.run(
       {
         name: 'FN GUARD: Shopify github-utils really does log the password',
         code: 'export function f(password) { console.log(`Using password from dev: ${password}`); }',
-        errors: [{ messageId: 'sensitiveDataExposure' }],
-      },
-      {
-        name: 'FN GUARD: an opaque hole under the same label still reports',
-        code: 'export function f(t) { console.log(`access token: ${t}`); }',
-        errors: [{ messageId: 'sensitiveDataExposure' }],
-      },
-      {
-        // The opaque hole sits against the separator because `literalCarriesSecret`
-        // independently requires "label, separator, ONE token" — a pre-existing
-        // guard, and the reason a clause-shaped template reports nothing at all.
-        name: 'FN GUARD: EVERY hole must be diagnostic — one opaque hole is enough',
-        code: 'export function f(error, t) { console.log(`status ${error.status} access token: ${t}`); }',
         errors: [{ messageId: 'sensitiveDataExposure' }],
       },
       {
@@ -1168,16 +1176,6 @@ ruleTester.run(
       {
         name: 'FN GUARD: the same alias through a string key',
         code: 'export function f(apiKey) { const e = { "message": apiKey }; console.log(`api key: ${e.message}`); }',
-        errors: [{ messageId: 'sensitiveDataExposure' }],
-      },
-      {
-        name: 'FN GUARD: `code` is not diagnostic — an auth code is called that too',
-        code: 'export function f(err) { console.log(`access token: ${err.code}`); }',
-        errors: [{ messageId: 'sensitiveDataExposure' }],
-      },
-      {
-        name: 'FN GUARD: a computed read names nothing, so it is not assumed diagnostic',
-        code: 'export function f(error, k) { console.log(`access token: ${error[k]}`); }',
         errors: [{ messageId: 'sensitiveDataExposure' }],
       },
     ],

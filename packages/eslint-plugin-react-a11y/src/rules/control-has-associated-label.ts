@@ -13,7 +13,13 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { findAttribute, staticAttributeValue } from '../utils/jsx-static';
+import {
+  findAttribute,
+  hasSpreadAttribute,
+  isNamedByLabelFor,
+  isJsxAttributeValue,
+  staticAttributeValue,
+} from '../utils/jsx-static';
 
 type MessageIds = 'missingLabel';
 
@@ -23,9 +29,18 @@ type Options = {
   ignoreElements?: string[];
   ignoreRoles?: string[];
   depth?: number;
+  /**
+   * Accepted for jsx-a11y's own presets (`includeRoles: ['alert', 'dialog']`).
+   * jsx-a11y 6.10.2 declares no such key and no rule code reads it; this rule
+   * does not either.
+   */
+  includeRoles?: string[];
 };
 
 type RuleOptions = [Options?];
+
+/** The deepest subtree searched for a label, whatever `depth` asks for. */
+const MAX_DEPTH = 25;
 
 const DEFAULT_IGNORE_ELEMENTS = ['audio', 'canvas', 'embed', 'tr', 'video'];
 
@@ -266,6 +281,10 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
         wcag: 'WCAG 1.3.1',
       }),
     },
+    // Shape of upstream's schema (rules/control-has-associated-label.js,
+    // v6.10.2): no `additionalProperties: false`, `depth` is an integer >= 0 and
+    // is clamped to 25 when read, as upstream does. `includeRoles` is accepted
+    // (it is in upstream's presets) and read by nothing, here or upstream.
     schema: [
       {
         type: 'object',
@@ -274,9 +293,9 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
           controlComponents: { type: 'array', items: { type: 'string' } },
           ignoreElements: { type: 'array', items: { type: 'string' } },
           ignoreRoles: { type: 'array', items: { type: 'string' } },
-          depth: { type: 'integer', minimum: 1, maximum: 25 },
+          includeRoles: { type: 'array', items: { type: 'string' } },
+          depth: { type: 'integer', minimum: 0 },
         },
-        additionalProperties: false,
       },
     ],
   },
@@ -301,8 +320,10 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
           ignoreRoles = DEFAULT_IGNORE_ROLES,
           // A real label is a label at any depth: search the whole subtree
           // (the schema maximum) unless the user caps it.
-          depth = 25,
+          depth = MAX_DEPTH,
         } = options ?? ({} as Options));
+        // Cap the recursion: upstream clamps to 25 rather than rejecting more.
+        depth = Math.min(depth, MAX_DEPTH);
       },
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;
@@ -327,12 +348,34 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
 
         if (!isControl && !hasInteractiveRoleAttr) return;
 
+        // A render-prop/asChild element (`<Button render={<a href="/docs" />}>`)
+        // is not rendered as written: the parent clones it with its own
+        // children, so the control the DOM sees is not this one (#1562).
+        if (isJsxAttributeValue(node)) return;
+
         // Hidden from assistive technology: there is nothing to name.
         if (
           staticAttributeValue(findAttribute(openingElement, 'aria-hidden')) ===
           'true'
         )
           return;
+
+        // A hidden input is never rendered, so it has no accessible name to
+        // give — upstream jsx-a11y skips `type="hidden"` for the same reason
+        // no-missing-aria-labels already does (#1563).
+        if (
+          elementName === 'input' &&
+          staticAttributeValue(findAttribute(openingElement, 'type')) ===
+            'hidden'
+        )
+          return;
+
+        // The label, aria-label, htmlFor or children this rule looks for may
+        // arrive through a spread the call site cannot see into (#1563).
+        if (hasSpreadAttribute(openingElement)) return;
+
+        // Named by a `<label htmlFor>` carrying the same value as this `id`.
+        if (isNamedByLabelFor(openingElement)) return;
 
         // Check if it has accessible text
         if (!hasAccessibleText(node, depth, labelAttributes)) {

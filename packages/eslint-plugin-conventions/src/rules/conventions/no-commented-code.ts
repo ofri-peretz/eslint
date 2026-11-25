@@ -127,9 +127,29 @@ function looksLikeCode(comment: string, isBlockComment: boolean): boolean {
     /^<[A-Z][\w$]*[\s/>]/,
   ];
 
+  const LABEL_OR_ASSIGN = /^[a-zA-Z_$][a-zA-Z0-9_$]*\s*([=:])\s*/;
+
+  /**
+   * Two bare words back-to-back, with nothing between them but whitespace,
+   * cannot be one JS expression after a COLON — a label's body is a single
+   * expression (`foo: bar()`, `foo: 1 + 2`), and a label followed by a run of
+   * such words is prose that merely starts like a label, e.g.
+   * `Always: scoped log statement (function-specific log group)` — the
+   * trailing parenthetical gives it a code-like ending, but "scoped log
+   * statement" is not valid after any operator.
+   *
+   * Deliberately NOT applied after `=`: unlike a label, several real
+   * right-hand sides are themselves two bare words with no operator between
+   * them — `new Foo`, `typeof value`, `await client` — because `new`,
+   * `typeof`, `await`, `yield`, `void` and `delete` take their operand
+   * directly. Reusing this guard for `=` turned `x = new Foo();`,
+   * `x = typeof value;` and `x = await client.connect();` silent.
+   */
+  const BARE_WORD_RUN = /^[A-Za-z_$][\w$]*\s+[A-Za-z_$]/;
+
   const codePatterns = [
     /^(const|let|var|function|class|if|for|while|return|import|export)\s+/,
-    /^[a-zA-Z_$][a-zA-Z0-9_$]*\s*[=:]\s*/,
+    LABEL_OR_ASSIGN,
     // No whitespace before the paren. `foo(x)` is a call; `Copyright (c)` and
     // `Authn (classic) api` are prose with a parenthetical, and allowing the
     // gap made every legal banner on the corpus a finding.
@@ -197,6 +217,16 @@ function looksLikeCode(comment: string, isBlockComment: boolean): boolean {
 
     // Check if line matches code patterns
     for (const pattern of codePatterns) {
+      if (pattern === LABEL_OR_ASSIGN) {
+        const match = LABEL_OR_ASSIGN.exec(line);
+        if (
+          match &&
+          match[1] === ':' &&
+          BARE_WORD_RUN.test(line.slice(match[0].length))
+        ) {
+          continue; // prose after the label, not an expression
+        }
+      }
       if (pattern.test(line)) {
         codeLikeLines++;
         break; // Count each line only once

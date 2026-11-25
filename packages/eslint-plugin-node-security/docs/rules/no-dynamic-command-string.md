@@ -119,6 +119,29 @@ await execa`git clone ${url}`;
 execa('git', ['clone', url]);
 ```
 
+### What counts as written out
+
+A command string is not "assembled" when every value in it is written in this
+file: a literal, a `const` bound to one, a property of a `const` object literal,
+a template or `+` built only from those — or a **parameter that only literals
+reach**:
+
+```javascript
+// Not reported: commandPath is file-local, never exported or passed on, and
+// its only caller passes the literal 'axe'.
+function commandPath(command) {
+  return spawnSync('sh', ['-lc', `command -v ${command}`]);
+}
+const axe = commandPath('axe');
+```
+
+All of these must hold, or it is still reported: the function is a `function`
+declaration or a `const` function expression, not exported where it is declared
+or by name; every reference to it is a direct call; every call passes a string
+literal (or a resolvable `const`) in that position, with no spread before it;
+there is at least one call; and the parameter is a plain identifier that is
+never reassigned. Methods, callbacks and cross-file callers are not followed.
+
 ## Options
 
 | Option                | Type       | Default | Description                                                                                                                  |

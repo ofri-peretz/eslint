@@ -541,6 +541,172 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    /** Does anything write to this variable after its declaration? */
+    const hasLaterWrites = (variable: TSESLint.Scope.Variable): boolean =>
+      variable.references.some(
+        (reference) => reference.isWrite() && !reference.init,
+      );
+
+    /**
+     * Is this a call to one of `node:path`'s own functions: `path.normalize(x)`
+     * or `normalize(x)` imported / required from `path`? A local function that
+     * happens to be called `normalize` says nothing about its result.
+     */
+    /** `path`, `require('path')` or `require('node:path')`. */
+    const isPathModule = (node: TSESTree.Node): boolean =>
+      (node.type === AST_NODE_TYPES.Identifier && node.name === 'path') ||
+      (node.type === AST_NODE_TYPES.CallExpression &&
+        node.callee.type === AST_NODE_TYPES.Identifier &&
+        node.callee.name === 'require' &&
+        ['path', 'node:path'].includes(
+          String(
+            node.arguments[0]?.type === AST_NODE_TYPES.Literal
+              ? node.arguments[0].value
+              : '',
+          ),
+        ));
+
+    /**
+     * `var normalize = path.normalize` — a name bound once, and never again,
+     * to a member of the path module.
+     */
+    const isPathAlias = (
+      callee: TSESTree.Identifier,
+      names: readonly string[],
+    ): boolean => {
+      const variable = resolve(callee);
+      if (variable === null || hasLaterWrites(variable)) return false;
+      const init = bindings.get(variable);
+      return (
+        init?.type === AST_NODE_TYPES.MemberExpression &&
+        isPathModule(init.object) &&
+        names.includes(propertyName(init) ?? '')
+      );
+    };
+
+    /**
+     * `isSeparatorAnchored`, plus a `sep` bound once to `path.sep`
+     * (`var sep = path.sep`), which is how the path module is usually read.
+     */
+    const isAnchoredExpression = (node: TSESTree.Node): boolean =>
+      isSeparatorAnchored(node, sourceCode) ||
+      (node.type === AST_NODE_TYPES.Identifier && isPathAlias(node, ['sep']));
+
+    const isPathCall = (
+      node: TSESTree.Node,
+      names: readonly string[],
+    ): node is TSESTree.CallExpression =>
+      node.type === AST_NODE_TYPES.CallExpression &&
+      ((node.callee.type === AST_NODE_TYPES.MemberExpression &&
+        isPathModule(node.callee.object) &&
+        names.includes(propertyName(node.callee) ?? '')) ||
+        (node.callee.type === AST_NODE_TYPES.Identifier &&
+          isPathAlias(node.callee, names)) ||
+        isModuleBinding(node.callee, sourceCode.getScope(node.callee), 'path', [
+          ...names,
+        ]));
+
+    /**
+     * Is `root` a path that provably ends at a separator?
+     *
+     * Read straight off the expression, or one hop through a binding and a
+     * `normalize()` call that wraps it:
+     * `const root = normalize(resolve(dir) + sep)`. `resolve()` alone is NOT
+     * an anchor: it strips a trailing separator (`path.resolve('/safe/')` is
+     * `'/safe'`), so only a separator appended after it counts. An anchor that
+     * cannot be read is not an anchor, for the reason `isSeparatorAnchored`
+     * gives.
+     */
+    function isAnchoredRoot(root: TSESTree.Node, depth = 0): boolean {
+      if (depth > 3) return false;
+      if (isAnchoredExpression(root)) return true;
+      if (root.type === AST_NODE_TYPES.Identifier) {
+        const variable = resolve(root);
+        // One write only: a root that is reassigned, by any assignment form,
+        // is not the root that was read here.
+        if (variable === null || hasLaterWrites(variable)) return false;
+        const init = bindings.get(variable);
+        return init !== undefined && isAnchoredRoot(init, depth + 1);
+      }
+      if (isPathCall(root, ['normalize']) && root.arguments.length === 1) {
+        return isAnchoredRoot(root.arguments[0] as TSESTree.Node, depth + 1);
+      }
+      return false;
+    }
+
+    /**
+     * Was this variable produced by `normalize` / `resolve` / `join`, and never
+     * written again? A prefix test on a path that still carries `..` segments
+     * proves nothing: `/root/../etc` starts with `/root/`.
+     */
+    function isNormalizedPath(variable: TSESLint.Scope.Variable): boolean {
+      if (hasLaterWrites(variable)) return false;
+      const init = bindings.get(variable);
+      return (
+        init !== undefined && isPathCall(init, ['normalize', 'resolve', 'join'])
+      );
+    }
+
+    /**
+     * Is `test` the prefix-containment test `(<variable> + sep).substr(0,
+     * root.length) !== root`, or its `slice` / `substring` spelling?
+     *
+     * `expressjs/serve-index` guards `readdir` with exactly this before it
+     * answers 403. It is `startsWith` written out by hand: the first
+     * `root.length` characters of the path are the root. The root must end at
+     * a separator for the same reason a `startsWith` prefix must, so an
+     * unanchored root is not accepted.
+     */
+    function isPrefixSliceMismatchOn(
+      test: TSESTree.Expression,
+      variable: TSESLint.Scope.Variable,
+    ): boolean {
+      if (
+        test.type !== AST_NODE_TYPES.BinaryExpression ||
+        (test.operator !== '!==' && test.operator !== '!=') ||
+        test.left.type !== AST_NODE_TYPES.CallExpression ||
+        test.left.callee.type !== AST_NODE_TYPES.MemberExpression ||
+        !['substr', 'substring', 'slice'].includes(
+          propertyName(test.left.callee) ?? '',
+        ) ||
+        test.right.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return false;
+      }
+      const [start, end] = test.left.arguments;
+      if (
+        start?.type !== AST_NODE_TYPES.Literal ||
+        start.value !== 0 ||
+        end?.type !== AST_NODE_TYPES.MemberExpression ||
+        propertyName(end) !== 'length' ||
+        end.object.type !== AST_NODE_TYPES.Identifier ||
+        resolve(end.object) !== resolve(test.right)
+      ) {
+        return false;
+      }
+      const subject = test.left.callee.object;
+      // `(p + sep)` appends a separator so `p` equal to the root still
+      // matches; the appended operand must BE a separator, or any suffix
+      // would be accepted.
+      const appended =
+        subject.type === AST_NODE_TYPES.BinaryExpression &&
+        subject.operator === '+';
+      if (appended && !isAnchoredExpression(subject.right)) {
+        return false;
+      }
+      const guarded = appended ? subject.left : subject;
+      return (
+        guarded.type === AST_NODE_TYPES.Identifier &&
+        resolve(guarded) === variable &&
+        isNormalizedPath(variable) &&
+        isAnchoredRoot(test.right)
+      );
+    }
+
+    const isExit = (stmt: TSESTree.Node | undefined): boolean =>
+      stmt?.type === AST_NODE_TYPES.ThrowStatement ||
+      stmt?.type === AST_NODE_TYPES.ReturnStatement;
+
     /**
      * Is the sink protected by a startsWith() guard on this variable?
      *   if (!p.startsWith(base)) { throw ... }   — BEFORE the sink
@@ -558,21 +724,26 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
           for (const stmt of current.body) {
             // A guard after the sink runs after the file was already read.
             if (stmt.range[1] > sink.range[0]) break;
-            if (
-              stmt.type !== AST_NODE_TYPES.IfStatement ||
-              stmt.test.type !== AST_NODE_TYPES.UnaryExpression ||
-              stmt.test.operator !== '!' ||
-              !isStartsWithOn(stmt.test.argument, variable)
-            )
-              continue;
+            if (stmt.type !== AST_NODE_TYPES.IfStatement) continue;
+            const isGuardTest =
+              (stmt.test.type === AST_NODE_TYPES.UnaryExpression &&
+                stmt.test.operator === '!' &&
+                isStartsWithOn(stmt.test.argument, variable)) ||
+              isPrefixSliceMismatchOn(stmt.test, variable);
+            if (!isGuardTest) continue;
             const consequent =
               stmt.consequent.type === AST_NODE_TYPES.BlockStatement
                 ? stmt.consequent.body[0]
                 : stmt.consequent;
-            if (
-              consequent?.type === AST_NODE_TYPES.ThrowStatement ||
-              consequent?.type === AST_NODE_TYPES.ReturnStatement
-            ) {
+            // A reject path may log before it leaves: serve-index writes
+            // `debug('malicious path')` and then `return next(createError(403))`.
+            // The guard holds when the block exits at its top level, wherever
+            // in the block the exit sits.
+            const exits =
+              stmt.consequent.type === AST_NODE_TYPES.BlockStatement
+                ? stmt.consequent.body.some(isExit)
+                : isExit(consequent);
+            if (exits) {
               return true;
             }
           }

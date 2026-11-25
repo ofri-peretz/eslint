@@ -5,6 +5,194 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.2.0
+
+### Minor Changes
+
+- **✨ Feature** — `require-emitter-error-handler`, and `require-stream-error-handler` reads `Readable.fromWeb`
+
+  New rule `require-emitter-error-handler` (CWE-248). A `ClientRequest` or `ChildProcess` that emits `'error'` with no listener throws from the event loop, and a `try/catch` around the call or the `await` cannot catch it. The rule reports the value returned by `http.request`, `http.get`, `https.request`, `https.get`, `child_process.spawn` and `child_process.fork`, resolved by import provenance (default, namespace and named imports, aliases, `node:` specifiers, `require`), when no `.on('error')`, `.once('error')` or `.addListener('error')` is registered on it. Being the destination of `.pipe()` is not a listener. Two production crashes found on 2026-11-24 have this shape: parse-server's GraphQL file upload and Eleventy's `spawn('git', ...)` helper.
+
+  It stays silent when the emitter escapes (returned, stored, or passed to any function other than as a pipe destination, which includes `events.once`, `stream.pipeline` and `finished`; that is the rule's ceiling). `exec` and `execFile` are not in the table: Node attaches its own `'error'` listener inside both, so they cannot crash this way, with or without a callback. Promisified forms resolve to no module.
+
+  It is a separate rule, not an extension of `require-stream-error-handler`: that rule is triggered by a `.pipe()` and reads stream constructors by name, this one by the creation of an emitter resolved to its module, with or without a pipe. It is in `strict` and not in `recommended`; the corpus measurement a promotion needs has not been made.
+
+  `require-stream-error-handler`: `Readable.fromWeb(body).pipe(dest)` reported the destination and never the source, because `fromWeb` was not a stream constructor. `Readable.fromWeb`, `Writable.fromWeb` and `Duplex.fromWeb`, resolved to `node:stream`, now count, and the report lands on the stream that emits.
+
+## 6.1.5
+
+### Patch Changes
+
+- **🐛 Fix** — no-dynamic-algorithm-selection no longer trusts a cast hidden under `satisfies` or inside a helper
+
+  `(req.query.alg as 'sha256') satisfies 'sha256'` and a helper declared `: 'sha256' | 'sha512'` whose
+  body returns `value as 'sha256'` both still report: the cast is erased at runtime. `as const` and a
+  cast of a literal keep the exemption.
+
+- **🐛 Fix** — `lock-file`: no longer reports a package published as a library (a `package.json` that is not `"private": true` and declares `main`, `exports` or `files`). npm never installs from a dependency's lock file, so libraries such as `express`, `body-parser` and `cors` ship without one on purpose. Apps, private packages and unparseable manifests still report.
+
+  `require-secure-deletion`: no longer reports a `delete` (or `Reflect.deleteProperty`) on a local binding that holds a fresh shallow copy made with `{ ...source }` or `Object.assign({}, source)` and is never reassigned, the way code strips keys before passing options on. Deletes on the original object, a parameter, an alias or a reassigned binding still report.
+
+- **🐛 Fix** — stop flagging three safe shapes found in NestJS's own code
+
+  Each exemption is narrow, and a lookalike that is a real bug still reports.
+
+  - `no-dynamic-algorithm-selection`: a value the compiler holds to a union of string literals
+    (`satisfies`, a declared return type, or a same-file helper whose cast body is built only from
+    literals and closed-typed parameters). A bare `req.query.algorithm as 'sha256'` still reports.
+  - `no-timing-unsafe-compare`: an imported binding such as Nest's `REQUEST` DI token is not the
+    request object. An imported function called with request data still reports.
+  - `require-stream-error-handler`: `return src.pipe(dest)` hands `dest` to the caller, which attaches
+    the error handler. A pipe returned from a callback still reports.
+
+- **🐛 Fix** — `no-timing-unsafe-compare` no longer lets a `scheme` word mask an unrelated secret in the same identifier
+
+  A `scheme`/`schemes` word in `nonSecretWords` used to exempt the WHOLE identifier from `secretPatterns` matching, so `schemeToken === req.body.value` was not reported even though `token` independently names a credential. The exemption now cancels only the `auth` pattern it pairs with (`auth_scheme_lower === auth_params.scheme`, the public prefix of an `Authorization` header), so a real secret compared next to a scheme word still reports (#1685).
+
+## 6.1.4
+
+### Patch Changes
+
+- **🐛 Fix** — Found linting open-source Node apps.
+
+  - `no-timing-unsafe-compare`: a value the server holds compared with another
+    value the server holds (`req.session.csrfSecret` against its own memo, a row
+    of `req.user.sessions` against the current session id) is no longer reported.
+    New detection: a configured secret (`process.env.*SECRET*`/`*KEY*`/`*TOKEN*`,
+    or a secret property of an imported `config`) compared with a parameter or a
+    constructor-supplied field is reported without a request in sight. Two secret
+    names alone stay silent, as before.
+  - `detect-eval-with-expression`: `new Function('s', 'return import(s)')` is skipped.
+
+## 6.1.3
+
+### Patch Changes
+
+- **🐛 Fix** — Fix false positives found linting popular Node.js packages.
+
+  - `no-unsafe-buffer-alloc`: a buffer filled by `fs.read(fd, buf, 0, n, pos, (err, bytesRead) => buf.slice(0, bytesRead))` is recognised in the callback spelling, as the synchronous and promise spellings already were, provided the callback's third parameter (which aliases the whole buffer) is absent or never read; and `count === buf.byteLength ? buf : buf.subarray(0, count)` after a `readSync` hands out the whole buffer only on the arm where the read filled it. A callback that reads its third parameter, a callback that hands out the whole buffer, and the unmatched arm of the length test still report.
+  - `no-deprecated-buffer`: `new Buffer(...)` in the branch of a feature check that only a runtime without `Buffer.alloc` / `Buffer.allocUnsafe` / `Buffer.from` takes is not reported. The same call in the branch that runs where the API exists, behind an unrelated test, or with no check still reports.
+  - `no-buffer-overread`: the `noAssert` argument is recognised on `Buffer`'s numeric accessors only (`readUInt32LE`, `writeDoubleBE`, `readUIntBE`...). `writeFileTo(path, data, true)` is an `overwrite` flag, not `noAssert`.
+
+- **🐛 Fix** — Fix four false positives found linting popular Express/NestJS packages.
+
+  - `no-timing-unsafe-compare`: an auth-scheme word (`auth_scheme`, `scheme`) is a public header token, not a secret, and a value bound through a chained assignment (`var id = req.sessionID = read(req)`) is now read as coming from the request, so two client-held copies of one session id are no longer reported as a secret comparison. A real token or HMAC compared with `===` still reports.
+  - `no-arbitrary-file-access`: a hand-written prefix-containment guard (`(p + sep).substr(0, root.length) !== root`, or its `slice` / `substring` spelling, against a root that provably ends at a separator) is recognised like `startsWith`, and a reject block may log before it returns. An unguarded `readFile(req.query.path)` still reports.
+  - `detect-eval-with-expression`: a discarded `new vm.Script(source)` inside a `try` whose `catch` tests `instanceof SyntaxError` is a syntax probe, not code execution. A script that is kept, chained to `.runInContext`, or has no such handler still reports.
+
+## 6.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — two false positives found by linting Vite
+
+  `detect-eval-with-expression` no longer reports `Function('return this')()`, the portable global-object probe (also `return globalThis`, with an optional strict-mode prologue). It has a fixed body and no parameters. Any other literal body, and anything assembled at runtime, still reports.
+
+  `no-math-random-crypto` no longer reports a binding whose name is an everyday identifier word (`hash`, `key`, `code`) when every read of it lands in a file name, such as a timestamped temp-file suffix: a path argument of a `path.*` or `fs.*` call (not file content), or a template that ends up in one or in a file-named binding (a `.ext` suffix alone, as in an HMAC key, is not enough). A strong secret name (`token`, `salt`, `nonce`, ...), a binding also used for anything else, and a binding nothing reads still report.
+
+## 6.1.1
+
+### Patch Changes
+
+- **📚 Docs** — Getting Started now leads each plugin README, with the ESLint install line and a flat config that loads
+
+  The install block was below the Description and the doctrine, and on 17 of the 31 plugins there was no flat-config snippet on the page at all. `eslint-plugin-secure-coding`'s README showed `...securePlugin.configs.recommended`, which throws `TypeError: ... is not iterable` when pasted, because `configs.recommended` is one object. Every plugin README now opens with `npm install --save-dev eslint <plugin>` and `import { configs } from '<plugin>'` and `export default [configs.recommended]` in an `eslint.config.mjs`, then the Description. A test now loads that snippet in ESLint for every plugin.
+
+  The star banner above the first heading, the footer block with the star counter and the Dev.to ask are replaced by one `## Support` paragraph at the end: report a false positive, or star the repo if the plugin helped.
+
+  `eslint-plugin-import-next` opens with its drop-in grade, read from the newest `benchmarks/results/ilb-import-parity` result with its date: passes 2,035 of 2,135 (95.3%) of eslint-plugin-import 2.32.0's own test cases, measured 2026-11-19.
+
+  Eight taglines now say what the plugin flags instead of "security rules for X" (secure-coding, node-security, browser-security, nestjs-security, express-security, vercel-ai-security, react-a11y, import-next). `eslint-plugin-node-security` adds one proof line: the public repositories that list it, with the date they were checked.
+
+## 6.1.0
+
+### Minor Changes
+
+- **🐛 Fix** — `no-math-random-crypto` reads a security value from the slot it lands in
+
+  A draw is now reported when the call names the slot with a string literal (`headers.set('X-SRF-TOKEN', ...)`, `res.setHeader`, `res.cookie`, `localStorage.setItem`, `url.searchParams.set('nonce', ...)`, `{ 'X-CSRF-Token': ... }`) and when it is the OAuth `state` of an authorization request (after `state=` in a URL, a `state` query parameter, or an object with `client_id` / `redirect_uri` / `response_type` / `scope`). `state` alone still decides nothing. Also no longer reported: a `.sort(() => Math.random() - 0.5)` shuffle, and keys qualified as `dom`, `element`, `node`, `item`, `list`, `child`, `component`, `render`, `data` or `color`.
+
+## 6.0.7
+
+### Patch Changes
+
+- **📚 Docs** — ship an AGENTS.md that tells AI assistants how to enable the plugin and what each preset catches
+
+  Generated from the package's own presets and rules, so it cannot drift. `eslint-plugin-secure-coding`: the README no longer shows `...configs.recommended` spread into an array, which threw "not iterable".
+
+## 6.0.6
+
+### Patch Changes
+
+- **🐛 Fix** — no-timing-unsafe-compare drops dead separator spellings of the token compounds
+
+  `api_token`, `x-session-token` and similar already match the whole-word
+  `token` default, because a separator is a word boundary. So the `_` and `-`
+  spellings of `apiToken`, `sessionToken`, `idToken` and `csrfToken` (added in
+  PR 1581, not yet published) matched nothing the rule did not already match.
+  The camelCase compounds stay: they catch a lowercase `apitoken`. No behaviour
+  change.
+
+## 6.0.5
+
+### Patch Changes
+
+- **📚 Docs** — eight doc defects found by Codacy's reviewer, and every doc's CWE and severity now match the rule
+
+  Codacy renders these docs from the release tag (codacy/codacy-eslint#5025).
+
+  - `no-unsafe-buffer-alloc`: a one-argument `copy`/`set`/`write` from a source
+    shorter than the buffer leaves the tail uninitialized. The rule accepts it as
+    covering; that is now documented as a known false negative, and the safe
+    examples size from the source or send only `buf.subarray(0, written)`.
+  - `no-toctou-vulnerability`: the suggested fix was `access()` then
+    `readFile()`, the race itself. It is now one `open` (with `O_NOFOLLOW` or
+    `'wx'` as the case needs) and an `ENOENT` handler.
+  - `no-ssrf`: the safe example allowlisted a hostname and never checked where it
+    resolved. It now resolves, rejects private, loopback and link-local
+    addresses, and pins the socket to the checked address.
+  - `detect-non-literal-fs-filename`: `startsWith(baseDir)` accepted
+    `/safe-dir-evil`. Containment is now `path.relative`-based, with a realpath
+    check for symlinks.
+  - `no-static-iv`: the AES-GCM example dropped the auth tag. It now stores
+    `getAuthTag()` with the nonce and calls `setAuthTag()` on decrypt.
+  - `detect-child-process`, `detect-non-literal-fs-filename`, `no-buffer-overread`,
+    `no-zip-slip`: a template `CWE-693` header replaced by the rule's CWE.
+    Front-matter `cwe` and `severity` now match each rule's meta and CVSS band
+    across all node-security docs.
+  - `lock-file`: "npm, yarn, or npm" now reads "npm, yarn, or pnpm", the schema's
+    enum.
+
+- **🐛 Fix** — three false positives found scanning the MCP TypeScript SDK examples and tolaria
+
+  - `no-timing-unsafe-compare`: a secret pattern shorter than six letters (`token`,
+    `auth`, `hash`, `jwt`, …) now matches only as a whole word of the identifier,
+    so `grantedMaxTokens === params.maxTokens` (a count of LLM tokens) is no longer
+    a timing oracle. `accessToken`, `x_auth_token` and `JWTValue` still match;
+    `authorization` and lowercase-safe compounds (`apiToken`, `sessionToken`,
+    `idToken`, `csrfToken`) are default patterns of their own. A pattern with regex
+    syntax keeps substring semantics.
+  - `no-unsafe-buffer-alloc`: `Buffer.allocUnsafe(n)` filled by `fs.readSync(fd, buf, 0, …)`
+    or an awaited `handle.read(buf, 0, …)` on a handle from `fs/promises` `open()`,
+    whose count is never rewritten, and then read only through
+    `subarray(0, count)`, `slice(0, count)` or `toString(enc, 0, count)` is no
+    longer reported — the uninitialized tail is never looked at. Any other read,
+    bound or offset still reports.
+  - `no-dynamic-command-string`: a parameter of a file-local, unexported function
+    whose every call passes a string literal (`commandPath('axe')`) is treated as a
+    constant, like a `const`. `no-shell-injection` does not follow parameters, and
+    its docs now say why.
+
+## 6.0.4
+
+### Patch Changes
+
+- **📚 Docs** — npm descriptions lead with what people search for
+
+  Each description now opens with the search phrase, such as "ESLint NestJS security rules — …" instead of "ESLint plugin for NestJS security — …". npm search ranks that opening phrase above download counts, so the old wording kept these packages out of the results for searches like "eslint security". The oxlint-plugin-* aliases open the same way, with "Oxlint". No rule or code changes.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.0.4`
+
 ## 6.0.3
 
 ### Patch Changes

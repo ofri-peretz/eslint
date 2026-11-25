@@ -255,6 +255,12 @@ const GRANDFATHERED: Grandfathered[] = [
     tokens: ['react'],
     reason: 'react appears in a non-crypto-context exemption (a render key is not a secret), not as a gate. The rule reports Math.random() in a crypto sink with react absent.',
   },
+  {
+    file: 'eslint-plugin-secure-coding/src/rules/no-disabled-template-escaping/index.ts',
+    tokens: ['swig'],
+    reason:
+      '`Swig` is the name of a constructor the options object is passed to (`new swig.Swig({ autoescape: false })`), matched beside setDefaults, configure and Environment. It is an entry-point name, not a package gate: the rule reports the same option in a file that imports no template engine, because the engine is usually configured in a bootstrap file that receives it.',
+  },
 ];
 
 /** Every string literal in a source file, without interpolated templates. */

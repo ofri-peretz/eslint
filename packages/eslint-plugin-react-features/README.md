@@ -22,7 +22,28 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
 
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
+## Getting Started
+
+- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-react-features?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features). 📚
+
+<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
+
+```bash
+npm install --save-dev eslint eslint-plugin-react-features
+```
+
+```js
+// eslint.config.mjs
+import { configs } from 'eslint-plugin-react-features';
+
+export default [configs.recommended];
+```
+
+`recommended` is the preset to start with. The others are listed under Configuration Presets below.
+
+Using oxlint or Vite+? Install `oxlint-plugin-react-features`: the same rules under the same `react-features/<rule>` IDs, without ESLint. Its [page](https://www.npmjs.com/package/oxlint-plugin-react-features) has the setup.
+
+<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## Description
 
@@ -44,50 +65,72 @@ That trade costs recall, and we measure it:
 
 <!-- AUTO-GENERATED:DOCTRINE:END -->
 
-## Getting Started
-
-- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-react-features?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features). 📚
-
-<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
-
-**oxlint / Vite+** — the same rules under the same `react-features/<rule>` IDs, without ESLint:
-
-```bash
-npm install oxlint-plugin-react-features --save-dev
-```
-
-```jsonc
-// .oxlintrc.json
-{ "jsPlugins": ["oxlint-plugin-react-features"] }
-```
-
-```ts
-// vite.config.ts
-import { defineConfig } from 'vite-plus';
-
-export default defineConfig({
-  lint: { jsPlugins: ['oxlint-plugin-react-features'] },
-});
-```
-
-**ESLint:**
-
-```bash
-npm install eslint-plugin-react-features --save-dev
-```
-
-<!-- AUTO-GENERATED:INSTALL:END -->
-
 ## ⚙️ Configuration Presets
 | Preset        | Description                                      |
 | :------------ | :----------------------------------------------- |
 | `recommended` | Recommended React patterns and performance rules |
 
+## Using it as an alias for eslint-plugin-react
+
+Configs that read `react.configs.flat.recommended`, `react.configs.flat['jsx-runtime']`, `plugin:react/recommended`
+through `FlatCompat`, or spread `react.configs.recommended.rules` or `react.configs['jsx-runtime'].rules` (Next.js,
+Expo and `eslint-config-react-app`-style configs do the last) can point at this package:
+
+```json
+{ "devDependencies": { "eslint-plugin-react": "npm:eslint-plugin-react-features" } }
+```
+
+Rule ids come out as `react/<rule>`, the 2-for-error, 0-for-off shape and the key names of eslint-plugin-react 7.37.5.
+The plugin object carries `configs`, as upstream's does.
+
+### Which preset you get
+
+| You write | You get |
+| :-- | :-- |
+| `react.configs.flat.recommended`, `.flat.all`, `.flat['jsx-runtime']` | Flat config blocks that register the plugin as `react`. Upstream's shape, any install name |
+| `react.configs.recommended`, `.all`, `['jsx-runtime']` (`plugin:react/recommended`, a spread of `.rules`) | Legacy-shaped (`plugins: ['react']`, `parserOptions`, `react/<rule>` keys), as upstream's. `all` and `jsx-runtime` are always this shape. `recommended` is this shape when the package is **installed as `eslint-plugin-react`** |
+| `reactFeatures.configs.recommended` under the package's own name | Unchanged: this package's own flat preset, ids prefixed `react-features/` |
+
+The two `recommended` presets share a name, so the package decides by where it sits on disk. Installed as the alias,
+its files live under `node_modules/eslint-plugin-react/` (npm, pnpm and Yarn all name the folder for the alias), and
+`configs.recommended` is upstream's. Under its own name (`node_modules/eslint-plugin-react-features/`) it keeps the
+`react-features/` preset, so existing configs do not change. Both are also reachable by name in either install, for a
+setup where the files are not under `node_modules` (a bundler, a vendored copy):
+
+```js
+reactFeatures.configs['react-recommended'];          // upstream shape, `react/*` keys, legacy block
+reactFeatures.configs['react-features-recommended']; // this package's own preset, `react-features/*` keys
+reactFeatures.configs.flat.recommended;              // upstream shape as a flat block, registers `react`
+```
+
+`flat.recommended` lists 22 rule ids (upstream's recommended set); `all` lists the rules this package exports that
+upstream has. `jsx-pascal-case`, `style-prop-object` and `forbid-foreign-prop-types` are in `all` and not in
+`recommended`, as upstream. Tests load the alias through ESLint on a JSX file and check findings come back as
+`react/*`, for the flat blocks, for a spread of `configs.recommended.rules`, and for the legacy block translated the
+way `FlatCompat` does.
+
+What is not covered: rules upstream has that this package does not export are absent from `all`, and rule
+behaviour is unchanged. Not a drop-in claim.
+
+### Parity with eslint-plugin-react
+
+Graded by eslint-plugin-react 7.37.5's own test cases for the recommended set, run on ESLint 10: 1,828 of 2,181
+(83.8%) agree. Two differences are intentional:
+
+- `display-name` does not report a `memo` or `forwardRef` wrapper assigned to a named variable (15 upstream cases).
+  The pattern is very common. React does not copy the variable name onto the inner function, so DevTools shows it
+  only when your toolchain infers names.
+- `no-deprecated` still reports `ReactDOM.findDOMNode` (2 upstream cases), because React warns on it from 18.3.
+
+The three rules added for `eslint-config-react-app`-style configs are graded the same way, on the default parser and
+on `@typescript-eslint/parser`: `style-prop-object` 70 of 70, `jsx-pascal-case` 85 of 85 and
+`forbid-foreign-prop-types` 38 of 38. Reports also land on the same line, column and node type as upstream's.
+
 ## 📦 Compatibility
 | Package | Version |
 | :--- | :--- |
 | ESLint | `^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0` |
-| Node.js | `>=22.13.0` |
+| Node.js | `^20.19.0 \|\| ^22.13.0 \|\| >=24` (ESLint 10's own range) |
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
@@ -112,15 +155,21 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [checked-requires-onchange-or-readonly](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/checked-requires-onchange-or-readonly?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | checked-requires-onchange-or-readonly rule | 🟢 |  |  |  | 💡 |  |
 | [default-props-match-prop-types](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/default-props-match-prop-types?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | default-props-match-prop-types rule | 🟢 |  |  |  | 💡 |  |
 | [display-name](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/display-name?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | display-name rule | 🟢 |  |  |  | 💡 |  |
+| [forbid-foreign-prop-types](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/forbid-foreign-prop-types?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | Disallow using another component's propTypes | 🟢 |  |  |  |  |  |
 | [hooks-exhaustive-deps](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/hooks-exhaustive-deps?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | hooks-exhaustive-deps rule | 🟢 |  | ⚠️ |  | 💡 |  |
 | [jsx-handler-names](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-handler-names?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | jsx-handler-names rule | 🟢 |  |  |  | 💡 |  |
 | [jsx-key](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-key?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | jsx-key rule | 🟢 | 💼 |  |  | 💡 |  |
 | [jsx-max-depth](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-max-depth?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | jsx-max-depth rule | 🟢 |  |  |  | 💡 |  |
 | [jsx-no-bind](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-bind?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | jsx-no-bind rule | 🟢 |  |  |  | 💡 |  |
+| [jsx-no-comment-textnodes](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-comment-textnodes?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | Disallow comments from being inserted as text nodes | 🟢 |  |  |  |  |  |
 | [jsx-no-duplicate-props](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-duplicate-props?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | Prevent duplicate props in JSX elements. This rule is part of eslint-plugin-react-features and provides LLM… | 🟢 | 💼 |  |  | 💡 |  |
 | [jsx-no-literals](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-literals?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | jsx-no-literals rule | 🟢 |  |  |  | 💡 |  |
 | [jsx-no-script-url](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-script-url?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | Prevent javascript: URLs in JSX. This rule is part of eslint-plugin-react-features and provides LLM-optimiz… | 🟢 | 💼 |  |  | 💡 |  |
 | [jsx-no-target-blank](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-target-blank?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | Require rel='noopener noreferrer' with target='_blank'. This rule is part of eslint-plugin-react-features a… | 🟢 | 💼 |  |  | 💡 |  |
+| [jsx-no-undef](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-undef?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | Disallow undeclared variables in JSX | 🟢 |  |  |  |  |  |
+| [jsx-pascal-case](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-pascal-case?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | Enforce PascalCase for user-defined JSX components | 🟢 |  |  |  |  |  |
+| [jsx-uses-react](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-uses-react?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | Disallow React to be incorrectly marked as unused | 🟢 |  |  |  |  |  |
+| [jsx-uses-vars](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-uses-vars?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | Disallow variables used in JSX to be incorrectly marked as unused | 🟢 |  |  |  |  |  |
 | [no-access-state-in-setstate](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-access-state-in-setstate?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | no-access-state-in-setstate rule | 🟢 |  |  |  | 💡 |  |
 | [no-adjacent-inline-elements](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-adjacent-inline-elements?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | no-adjacent-inline-elements rule | 🟢 |  |  |  | 💡 |  |
 | [no-arbitrary-token-class](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-arbitrary-token-class?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  |  | 🟢 |  |  |  |  |  |
@@ -151,7 +200,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [no-typos](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-typos?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | no-typos rule | 🟢 |  |  |  | 💡 |  |
 | [no-unescaped-entities](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-unescaped-entities?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | no-unescaped-entities rule | 🟢 |  |  |  | 💡 |  |
 | [no-unknown-property](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-unknown-property?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | no-unknown-property rule | 🟢 | 💼 |  |  | 💡 |  |
-| [no-unnecessary-rerenders](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-unnecessary-rerenders?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | no-unnecessary-rerenders rule | 🟢 |  |  |  | 💡 |  |
+| [no-unnecessary-rerenders](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-unnecessary-rerenders?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | Report an object, array or function created during render and passed to a component that compares props by… | 🟢 |  |  |  | 💡 |  |
 | [no-unsafe](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-unsafe?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | Warn about UNSAFE_ lifecycle methods. This rule is part of eslint-plugin-react-features and provides LLM-op… | 🟢 |  |  |  | 💡 |  |
 | [no-wrapper-sub-component](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-wrapper-sub-component?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  |  | 🟢 |  |  |  |  |  |
 | [prefer-es6-class](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/prefer-es6-class?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | prefer-es6-class rule | 🟢 |  |  |  | 💡 |  |
@@ -160,7 +209,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [react-class-to-hooks](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/react-class-to-hooks?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | react-class-to-hooks rule | 🟢 |  |  |  | 💡 |  |
 | [react-in-jsx-scope](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/react-in-jsx-scope?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | react-in-jsx-scope rule | 🟢 |  |  |  | 💡 |  |
 | [react-no-inline-functions](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/react-no-inline-functions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | react-no-inline-functions rule | 🟢 |  |  |  | 💡 |  |
-| [react-render-optimization](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/react-render-optimization?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | react-render-optimization rule | 🟢 |  |  |  | 💡 |  |
+| [react-render-optimization](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/react-render-optimization?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | Report inline object, array and function props passed to a component that compares props by identity, and p… | 🟢 |  |  |  | 💡 |  |
 | [require-data-slot](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/require-data-slot?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  |  | 🟢 |  |  |  |  |  |
 | [require-default-props](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/require-default-props?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | require-default-props rule | 🟢 |  |  |  | 💡 |  |
 | [require-optimization](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/require-optimization?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | require-optimization rule | 🟢 |  |  |  | 💡 |  |
@@ -169,6 +218,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [sort-comp](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/sort-comp?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | sort-comp rule | 🟢 |  |  |  | 💡 |  |
 | [state-in-constructor](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/state-in-constructor?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | state-in-constructor rule | 🟢 |  |  |  | 💡 |  |
 | [static-property-placement](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/static-property-placement?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | static-property-placement rule | 🟢 |  |  |  | 💡 |  |
+| [style-prop-object](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/style-prop-object?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | Enforce style prop value is an object | 🟢 |  |  |  |  |  |
 | [void-dom-elements-no-children](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/void-dom-elements-no-children?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-features) |  |  |  | Prevent void DOM elements from receiving children. This rule is part of eslint-plugin-react-features and pr… | 🟢 |  |  |  | 💡 |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:START - Do not edit manually -->
@@ -220,11 +270,10 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->
 
 <!-- INTERLACE:STAR_CTA:START -->
-## ⭐ Support & follow
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+## Support
 
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 <!-- INTERLACE:STAR_CTA:END -->
 

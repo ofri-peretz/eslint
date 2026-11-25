@@ -94,15 +94,15 @@ class UsersController {
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `detectGlobalGuards` | `boolean` | `true` | Look for globally registered guards before reporting |
-| `requiredGuards` | `string[]` | `[]` | Guard names that must be present |
-| `allowPublicDecorator` | `boolean` | `true` | Treat a `@Public()` decorator as intentionally unguarded |
-| `assumeGlobalGuards` | `boolean` | `false` | Assume global guards exist even if none are found |
-| `authDecorators` | `string[]` | `[]` | Extra decorator names that count as authentication |
-| `publicRoutes` | `string[]` | — | Route paths that may be left unguarded |
+| Option                 | Type       | Default | Description                                              |
+| ---------------------- | ---------- | ------- | -------------------------------------------------------- |
+| `allowInTests`         | `boolean`  | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files          |
+| `detectGlobalGuards`   | `boolean`  | `true`  | Look for globally registered guards before reporting     |
+| `requiredGuards`       | `string[]` | `[]`    | Guard names that must be present                         |
+| `allowPublicDecorator` | `boolean`  | `true`  | Treat a `@Public()` decorator as intentionally unguarded |
+| `assumeGlobalGuards`   | `boolean`  | `false` | Assume global guards exist even if none are found        |
+| `authDecorators`       | `string[]` | `[]`    | Extra decorator names that count as authentication       |
+| `publicRoutes`         | `string[]` | —       | Route paths that may be left unguarded                   |
 
 ```typescript
 {
@@ -164,6 +164,16 @@ only one of which (`19-auth-jwt`) authenticates anything.
 Conservative on purpose: an unreadable or absent manifest counts as _yes_, so
 the rule keeps reporting. A hand-rolled `CanActivate` with no dependency to
 declare is picked up by the module scan.
+
+**One exception: a privileged path.** A controller (or route) mounted at
+`admin`, `administrator`, `administration`, `superadmin`, `sysadmin` or
+`backoffice` is still reported in a project with no authentication system.
+Nobody mounts `@Controller('admin')` for a public resource, so the missing guard
+is the finding whatever the manifest declares. Matched per path segment and per
+hyphenated token (`admin`, `admin-panel`, `super-admin`; not `badminton`), and
+for the array and options-object forms of `@Controller()`. This is how a lone
+`@Controller('admin')` with a delete route, in a project that declares no auth
+library, went unreported before.
 
 ### Authentication is applied as middleware
 
@@ -247,6 +257,38 @@ The trailing token is what makes `auth0Login`, `githubCallback` and
 `auth0CallbackPost` work — an entry point is nearly always qualified by its
 provider or transport. Only the tail counts, so `getLoginHistory` reads as a
 resource listing and stays in scope.
+
+### Why `login` is not reported
+
+The rule does not report `POST /auth/login` (or `register`, `refresh`,
+`forgot-password`, `callback`, `webhook`) because a caller cannot present a
+credential to the route that issues it. A guard there makes the endpoint
+unreachable, not safe. The exposure these routes do carry is brute force, and
+that is `require-throttler`'s job: it targets the same
+set by default, so the two rules divide the work. Nothing about the route's
+_shape_ is what exempts it; the path and handler name are. A login handler
+named `signInWithPassword`, mounted at `@Post('session')`, is not on the list
+and is reported — add its segment to `publicRoutes` or mark it `@Public()`.
+
+The exemption reads every path form `@Controller()` accepts: `'auth'`,
+`['auth', 'sso']`, `{ path: 'auth', version: '1' }` and
+`{ path: ['auth', 'sso'] }`.
+
+### A throttler is not a guard
+
+`@UseGuards(ThrottlerGuard)` (or a subclass such as
+`ThrottlerBehindProxyGuard`) is rate limiting, and it runs for every caller. On
+a privileged path (`admin`, `superadmin`, `backoffice`, ...) a controller whose
+only guard is a throttler is reported as unguarded, and so is a global
+`app.useGlobalGuards(new ThrottlerGuard())`, which registers a throttler and no
+authentication. Name it in `requiredGuards` if you want it to count.
+
+Anywhere else a route whose only guard is a throttler is **not** reported. That
+is a deliberate trade: authors put a throttler on a route they know is public
+and abuse-prone, and measured on 294 NestJS project roots the only three routes
+this would have added were ghostfolio's passkey sign-in and sign-up, all public.
+The cost is a known false negative: a private route behind nothing but a
+throttler, outside an admin path, goes unreported.
 
 ## When Not To Use It
 

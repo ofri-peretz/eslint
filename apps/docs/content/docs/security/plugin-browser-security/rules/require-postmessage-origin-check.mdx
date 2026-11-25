@@ -132,6 +132,36 @@ BroadcastChannel or MessagePort, and as `window.onmessage` / `self.onmessage` /
 `globalThis.onmessage` / a bare global `onmessage = fn`. A handler passed by
 reference is not analysed.
 
+A worker's global scope has no cross-origin sender, so its listener is not
+reported. The global (`self`, `globalThis`, or a bare `addEventListener` /
+`onmessage`) is treated as a worker's when:
+
+- the file is a worker entry by the bundler convention, `*.worker.{js,ts,mjs,…}`
+  (Vite's `?worker` and `new Worker(new URL('./x.worker.ts', import.meta.url))`,
+  webpack's worker-loader) — a dedicated worker hears only the page that made it;
+- or the same receiver listens for a service-worker lifecycle event (`install`,
+  `activate`, `fetch`, `push`, `pushsubscriptionchange`, `sync`,
+  `notificationclick`, `notificationclose`) — only a `ServiceWorkerGlobalScope`
+  is dispatched those, and its `message` event comes from same-origin clients.
+  This covers a scope passed around under another name (`scope.addEventListener`).
+
+```javascript
+// parse.worker.ts — not reported
+self.onmessage = (event) => self.postMessage(parse(event.data));
+
+// sw.js — not reported: `self` also handles `fetch`
+self.addEventListener('message', (event) => cache(event.data));
+self.addEventListener('fetch', (event) =>
+  event.respondWith(fetch(event.request)),
+);
+```
+
+`window` is never treated as a worker, whatever the file is called or listens to.
+
+## Not reported
+
+`navigator.serviceWorker.addEventListener('message', …)`, with `navigator` the platform global: the page's ServiceWorkerContainer only receives messages from the same-origin worker controlling it.
+
 ## Options
 
 | Option         | Type      | Default | Description                                     |

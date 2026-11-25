@@ -1,16 +1,15 @@
 #!/usr/bin/env tsx
 /**
  * Version Alignment Checker
- * 
+ *
  * Ensures package.json versions match lockfile and published versions.
- * 
+ *
  * Usage:
  *   npx tsx scripts/check-version-alignment.ts
  */
 
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { execSync } from 'node:child_process';
 
 type Severity = 'error' | 'warning' | 'info';
 
@@ -33,7 +32,10 @@ interface PackageInfo {
 // pre-release tags is out of scope for this check.
 function compareSemver(a: string, b: string): number {
   const parse = (v: string) =>
-    v.replace(/-.*$/, '').split('.').map((n) => parseInt(n, 10) || 0);
+    v
+      .replace(/-.*$/, '')
+      .split('.')
+      .map((n) => parseInt(n, 10) || 0);
   const [aa, ab, ac] = parse(a);
   const [ba, bb, bc] = parse(b);
   if (aa !== ba) return aa < ba ? -1 : 1;
@@ -52,7 +54,8 @@ function getReleaseProjects(): string[] {
     .map((entry) => join(packagesDir, entry))
     .filter((path) => {
       const pkgJsonPath = join(path, 'package.json');
-      if (!statSync(path).isDirectory() || !existsSync(pkgJsonPath)) return false;
+      if (!statSync(path).isDirectory() || !existsSync(pkgJsonPath))
+        return false;
       const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
       return pkg.private !== true;
     });
@@ -62,7 +65,7 @@ function getReleaseProjects(): string[] {
 function _getPackageJsonVersion(projectPath: string): string | null {
   const packageJsonPath = join(projectPath, 'package.json');
   if (!existsSync(packageJsonPath)) return null;
-  
+
   const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
   return packageJson.version;
 }
@@ -88,17 +91,30 @@ function getLockfileVersion(packageName: string): string | null {
   }
 }
 
-// Get latest published version from npm
+// Latest published version per package, fetched once for all packages in
+// parallel. One `npm view` per package, in sequence, took 193 s for ~70
+// packages on a scanned laptop, past the pre-push hook's 180 s alarm.
+const publishedVersions = new Map<string, string | null>();
+
+async function prefetchPublishedVersions(names: string[]): Promise<void> {
+  await Promise.all(
+    names.map(async (name) => {
+      try {
+        const res = await fetch(
+          `https://registry.npmjs.org/${name.replace('/', '%2f')}/latest`,
+          { signal: AbortSignal.timeout(15_000) },
+        );
+        const body = res.ok ? ((await res.json()) as { version?: string }) : {};
+        publishedVersions.set(name, body.version ?? null);
+      } catch {
+        publishedVersions.set(name, null);
+      }
+    }),
+  );
+}
+
 function getPublishedVersion(packageName: string): string | null {
-  try {
-    const result = execSync(`npm view ${packageName} version`, { 
-      encoding: 'utf-8',
-      stdio: 'pipe'
-    });
-    return result.trim();
-  } catch {
-    return null;
-  }
+  return publishedVersions.get(packageName) ?? null;
 }
 
 // Check a single package
@@ -109,12 +125,12 @@ function checkPackage(projectPath: string): PackageInfo | null {
   const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
   const packageName = packageJson.name;
   const packageJsonVersion = packageJson.version;
-  
+
   if (!packageName || !packageJsonVersion) return null;
 
   const lockfileVersion = getLockfileVersion(packageName);
   const publishedVersion = getPublishedVersion(packageName);
-  
+
   const packageInfo: PackageInfo = {
     name: packageName,
     path: projectPath,
@@ -154,17 +170,21 @@ function checkPackage(projectPath: string): PackageInfo | null {
 
   // Check if dependencies use caret versions (best practice)
   try {
-    const packageJson = JSON.parse(readFileSync(join(projectPath, 'package.json'), 'utf-8'));
+    const packageJson = JSON.parse(
+      readFileSync(join(projectPath, 'package.json'), 'utf-8'),
+    );
     const depTypes = ['dependencies', 'devDependencies', 'peerDependencies'];
-    
+
     for (const depType of depTypes) {
       if (packageJson[depType]) {
         for (const [depName, version] of Object.entries(packageJson[depType])) {
-          if (typeof version === 'string' &&
-              version.match(/^\d+\.\d+\.\d+$/) && // Exact version (no caret/tilde)
-              !version.startsWith('file:') &&
-              !version.startsWith('link:') &&
-              !version.startsWith('workspace:')) {
+          if (
+            typeof version === 'string' &&
+            version.match(/^\d+\.\d+\.\d+$/) && // Exact version (no caret/tilde)
+            !version.startsWith('file:') &&
+            !version.startsWith('link:') &&
+            !version.startsWith('workspace:')
+          ) {
             packageInfo.issues.push({
               severity: 'warning',
               message: `Dependency "${depName}" should use caret (^) version range instead of exact version "${version}"`,
@@ -181,10 +201,19 @@ function checkPackage(projectPath: string): PackageInfo | null {
 }
 
 // Main function
-function main() {
+async function main() {
   console.log('🔍 Checking version alignment...\n');
 
   const projects = getReleaseProjects();
+  await prefetchPublishedVersions(
+    projects
+      .map((p) => join(p, 'package.json'))
+      .filter((f) => existsSync(f))
+      .map(
+        (f) => JSON.parse(readFileSync(f, 'utf-8')).name as string | undefined,
+      )
+      .filter((n): n is string => Boolean(n)),
+  );
   const packages: PackageInfo[] = [];
 
   for (const projectPath of projects) {
@@ -221,8 +250,10 @@ function main() {
   for (const pkg of packages) {
     console.log(`📦 ${pkg.name} (${pkg.path})`);
     console.log(`   package.json: ${pkg.packageJsonVersion}`);
-    if (pkg.lockfileVersion) console.log(`   lockfile:    ${pkg.lockfileVersion}`);
-    if (pkg.publishedVersion) console.log(`   published:   ${pkg.publishedVersion}`);
+    if (pkg.lockfileVersion)
+      console.log(`   lockfile:    ${pkg.lockfileVersion}`);
+    if (pkg.publishedVersion)
+      console.log(`   published:   ${pkg.publishedVersion}`);
     console.log(`   Notes:`);
     for (const issue of pkg.issues) {
       console.log(`     ${glyph[issue.severity]} ${issue.message}`);
@@ -236,12 +267,15 @@ function main() {
   }
 
   console.log('💡 To fix the errors:');
-  console.log('   1. Update package.json versions (or run: npm install for lockfile drift)');
-  console.log('   2. If a version went backward, bump it forward — never decrease.');
+  console.log(
+    '   1. Update package.json versions (or run: npm install for lockfile drift)',
+  );
+  console.log(
+    '   2. If a version went backward, bump it forward — never decrease.',
+  );
   console.log('   3. Verify: npm run check-versions');
 
   process.exit(1);
 }
 
-main();
-
+void main();

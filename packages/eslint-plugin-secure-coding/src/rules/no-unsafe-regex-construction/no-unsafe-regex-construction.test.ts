@@ -150,6 +150,7 @@ describe('no-unsafe-regex-construction', () => {
         invalid: [
           // Dynamic flags from variable
           {
+            name: 'flags read from a variable are dynamic, not a closed set of literals',
             code: 'const regex = new RegExp("^test$", flags);',
             errors: [{ messageId: 'unsafeRegexConstruction' }],
           },
@@ -216,7 +217,10 @@ describe('no-unsafe-regex-construction', () => {
       {
         valid: [
           // Unknown provenance. Owned by detect-non-literal-regexp, not here.
-          { code: 'const regex = new RegExp(pattern);' },
+          {
+            name: "a bare pattern identifier of unknown provenance is not this rule's to report",
+            code: 'const regex = new RegExp(pattern);',
+          },
           { code: 'const regex = new RegExp(userInput);' },
           { code: 'const regex = new RegExp(getPattern());' },
           { code: 'const pattern = new RegExp(`^${userPattern}$`);' },

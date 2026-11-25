@@ -30,6 +30,27 @@ export interface Options {}
 
 type RuleOptions = [Options?];
 
+/**
+ * Is this node inside an ambient context — a `.d.ts` file, a `declare` module,
+ * namespace or global block, or itself a `declare` declaration?
+ *
+ * An ambient `export let` DESCRIBES a binding that lives elsewhere; it produces
+ * no runtime output, importers cannot reassign it, and rewriting it to `const`
+ * would change a published type.
+ */
+function isAmbient(node: TSESTree.Node, filename: string): boolean {
+  if (/\.d\.[cm]?ts$/.test(filename)) return true;
+  for (let n: TSESTree.Node | undefined = node; n; n = n.parent) {
+    if (
+      (n.type === 'VariableDeclaration' || n.type === 'TSModuleDeclaration') &&
+      n.declare
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export const noMutableExports = createRule<RuleOptions, MessageIds>({
   name: 'no-mutable-exports',
   meta: {
@@ -73,7 +94,8 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
             const def = variableOf(local, context.sourceCode)?.defs[0];
             if (
               def?.type !== 'Variable' ||
-              (def.parent.kind !== 'let' && def.parent.kind !== 'var')
+              (def.parent.kind !== 'let' && def.parent.kind !== 'var') ||
+              isAmbient(def.parent, context.filename)
             )
               continue;
             context.report({
@@ -86,6 +108,7 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
         }
         if (!decl || decl.type !== 'VariableDeclaration') return;
         if (decl.kind !== 'let' && decl.kind !== 'var') return;
+        if (isAmbient(decl, context.filename)) return;
 
         context.report({
           node: decl,

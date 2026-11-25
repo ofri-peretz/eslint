@@ -18,8 +18,12 @@ type MessageIds =
   'preferDefaultExport' | 'singleNamedExport' | 'multipleNamedToDefault';
 
 export interface Options {
-  /** Target file types to check */
-  target?: 'always' | 'single' | 'as-needed';
+  /**
+   * Target file types to check. `any` is eslint-plugin-import's spelling:
+   * `always`, except that an `export * from` (whose names this file cannot
+   * see) silences it.
+   */
+  target?: 'always' | 'single' | 'as-needed' | 'any';
   /** Ignore files matching patterns */
   ignoreFiles?: string[];
   /** Allow named exports in specific contexts */
@@ -77,10 +81,10 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
         properties: {
           target: {
             type: 'string',
-            enum: ['always', 'single', 'as-needed'],
+            enum: ['always', 'single', 'as-needed', 'any'],
             default: 'single',
             description:
-              'When to enforce default exports: always (any named export and no default), single (exactly one exported name), as-needed (same as single)',
+              'When to enforce default exports: always (any named export and no default), single (exactly one exported name), as-needed (same as single), any (eslint-plugin-import: always, unless the file has an `export * from`)',
           },
           ignoreFiles: {
             type: 'array',
@@ -106,7 +110,7 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
   ],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    let target: 'always' | 'single' | 'as-needed';
+    let target: 'always' | 'single' | 'as-needed' | 'any';
     let ignoreFiles: string[];
     let allowNamedExports: boolean;
     let filename: string;
@@ -114,6 +118,12 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
     let defaultExportNode: TSESTree.Node | null;
     /** `export * from 'm'` publishes names this file cannot see. */
     let hasStarExport: boolean;
+    /**
+     * The module exports a type. A type alias cannot be a default export, so
+     * such a module needs named exports whatever else it exports, and
+     * eslint-plugin-import leaves it alone, under every target.
+     */
+    let hasTypeExport: boolean;
 
     function shouldIgnoreFile(): boolean {
       return matchesAnyFilePattern(filename, ignoreFiles);
@@ -186,10 +196,21 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
         namedExports = new Map<string, TSESTree.Node>();
         defaultExportNode = null;
         hasStarExport = false;
+        hasTypeExport = false;
         return true;
       },
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
-        // Skip TypeScript type-only exports
+        // A type alias, an interface, or a type-only export list
+        // (`export type { A }`) exports a type.
+        if (
+          node.declaration?.type === 'TSTypeAliasDeclaration' ||
+          node.declaration?.type === 'TSInterfaceDeclaration' ||
+          (node.exportKind === 'type' && !node.declaration)
+        ) {
+          hasTypeExport = true;
+          return;
+        }
+        // Any other `declare`d export publishes no value either.
         if (node.exportKind === 'type') {
           return;
         }
@@ -198,7 +219,11 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
         // (`export { b } from './m'` is a name of this module too). A name
         // published AS `default` is the default export.
         for (const specifier of node.specifiers) {
-          if (specifier.exportKind === 'type') continue;
+          if (specifier.exportKind === 'type') {
+            // `export { type A }`
+            hasTypeExport = true;
+            continue;
+          }
           const exported = nameOf(specifier.exported);
           if (exported === 'default') defaultExportNode = node;
           else addNamedExport(exported, node);
@@ -225,12 +250,15 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
             if (!declaration.const) addNamedExport(declaration.id.name, node);
             break;
           default:
-            // Interfaces, type aliases, namespaces: not values.
+            // Namespaces, overload signatures: not counted.
             break;
         }
       },
       ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
-        if (node.exportKind === 'type') return;
+        if (node.exportKind === 'type') {
+          hasTypeExport = true;
+          return;
+        }
         if (!node.exported) {
           hasStarExport = true;
           return;
@@ -245,8 +273,9 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
 
       // At the end of the file, analyze the export pattern
       'Program:exit'(node: TSESTree.Program) {
+        if (hasTypeExport) return;
         if (
-          target === 'always' &&
+          (target === 'always' || (target === 'any' && !hasStarExport)) &&
           namedExports.size > 0 &&
           !defaultExportNode
         ) {

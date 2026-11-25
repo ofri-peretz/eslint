@@ -19,15 +19,30 @@ sub-folder is skipped. `packageJsonPath` or `packageJson` replace the lookup.
 
 A package is allowed when it is listed in `dependencies`, or in
 `devDependencies`, `optionalDependencies`, `peerDependencies`,
-`bundledDependencies` / `bundleDependencies` (npm accepts both spellings)
-while the matching option is `true` (the default). With
+`bundledDependencies` / `bundleDependencies` (npm accepts both spellings,
+and `bundleDependencies` wins when both are present; an object form names
+its keys) while the matching option is `true` (the default). With
 `devDependencies: false`, a package listed only in `devDependencies` is
 reported as a dev dependency used in production. The package's own `name` is
 always allowed (Node self-reference).
 
-Never checked: Node builtins (`fs/promises`, `node:fs`), relative and
-absolute paths, `#imports`, URL schemes (`virtual:x`), and names matched by
+Never checked: Node builtins (`fs/promises`, `node:fs`), names in the
+`import/core-modules` setting (`electron`), relative and absolute paths, `#imports`, URL schemes (`virtual:x`), and names matched by
 `ignore` (exact) or `allowPatterns` (regular expressions).
+
+A specifier is a package to declare only once the configured resolvers
+(`import/resolver`, tsconfig `paths` included) resolve it, as in
+eslint-plugin-import. One that resolves to a file of this package outside
+`node_modules` is the project's own code (see `includeInternal`), and one that
+resolves to nothing is not checked: docusaurus' `@theme/*`, `@docusaurus/*`
+and `@site/*` virtual modules. An undeclared package that is not installed is left to
+`no-unresolved`. This holds when every configured resolver is one this rule
+models (`node`, `typescript`, `custom-alias`); under another, such as
+`webpack`, a specifier none of these resolves may still be a package, and is
+checked.
+
+The message names the package and the `package.json` it belongs in, in one
+line: `'zod' should be listed in the dependencies of packages/app/package.json. Run 'npm i -S zod' to add it.`
 
 Type-only imports are erased at compile time and never reported:
 `import type`, `export type ... from`, `import type x = require()`, and an
@@ -59,6 +74,21 @@ import { readFile } from 'node:fs/promises';
 import { feature } from 'app/feature';
 ```
 
+### eslint-plugin-import options
+
+A config carried over from `import/no-extraneous-dependencies` loads, and its
+options mean what they meant there:
+
+| Option                                                                               | Meaning                                                                                                                                                                                                                                                                                                                               |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `devDependencies`, `optionalDependencies`, `peerDependencies`, `bundledDependencies` | `true`/`false` as before, or a list of globs (`['**/*.test.js']`): that kind is allowed in the files a glob matches, written relative to the working directory or absolute. An empty list allows it nowhere.                                                                                                                          |
+| `packageDir`                                                                         | A folder, or a list of folders, whose `package.json` declares the dependencies, resolved from the working directory. Several merge; of several, a missing one is skipped. A single unreadable one is reported once per file.                                                                                                          |
+| `includeTypes`                                                                       | `true` checks type-only imports and exports too.                                                                                                                                                                                                                                                                                      |
+| `includeInternal`                                                                    | `true` also checks internal modules: a bare specifier matching the `import/internal-regex` setting, or one the configured resolvers (tsconfig `paths` included) resolve to a file of this package outside `node_modules` and `import/external-module-folders`, such as `@/utils`. Absent or `false`: skipped, as upstream skips them. |
+
+`whitelist` is not accepted: eslint-plugin-import 2.32.0 does not accept it
+either.
+
 ## Options
 
 ```json
@@ -67,24 +97,51 @@ import { feature } from 'app/feature';
     "type": "object",
     "properties": {
       "devDependencies": {
-        "type": "boolean",
+        "type": ["boolean", "array"],
+        "items": {
+          "type": "string"
+        },
         "default": true,
-        "description": "Allow imports from devDependencies."
+        "description": "Allow imports from devDependencies: `true`/`false`, or globs of the files that may import them."
       },
       "optionalDependencies": {
-        "type": "boolean",
+        "type": ["boolean", "array"],
+        "items": {
+          "type": "string"
+        },
         "default": true,
-        "description": "Allow imports from optionalDependencies."
+        "description": "Allow imports from optionalDependencies: `true`/`false`, or globs of the files that may import them."
       },
       "peerDependencies": {
-        "type": "boolean",
+        "type": ["boolean", "array"],
+        "items": {
+          "type": "string"
+        },
         "default": true,
-        "description": "Allow imports from peerDependencies."
+        "description": "Allow imports from peerDependencies: `true`/`false`, or globs of the files that may import them."
       },
       "bundledDependencies": {
-        "type": "boolean",
+        "type": ["boolean", "array"],
+        "items": {
+          "type": "string"
+        },
         "default": true,
-        "description": "Allow imports from bundledDependencies."
+        "description": "Allow imports from bundledDependencies: `true`/`false`, or globs of the files that may import them."
+      },
+      "packageDir": {
+        "type": ["string", "array"],
+        "items": {
+          "type": "string"
+        },
+        "description": "Folder(s) whose package.json declares the dependencies, instead of the nearest one; several are merged."
+      },
+      "includeInternal": {
+        "type": "boolean",
+        "description": "Check internal modules too (`import/internal-regex`, or resolving to a file of this package outside node_modules, such as a path alias). Absent: skipped."
+      },
+      "includeTypes": {
+        "type": "boolean",
+        "description": "Check type-only imports and exports too."
       },
       "packageJsonPath": {
         "type": "string",
@@ -96,11 +153,7 @@ import { feature } from 'app/feature';
       },
       "resolutionStrategy": {
         "type": "string",
-        "enum": [
-          "strict",
-          "workspace",
-          "monorepo"
-        ],
+        "enum": ["strict", "workspace", "monorepo"],
         "default": "strict",
         "description": "Dependency resolution strategy. 'strict' allows only packages declared in the nearest package.json. 'workspace' and 'monorepo' are aliases of each other: they additionally allow the literal '@workspace/' and '@company/' scopes, and do NOT read workspace-root or sibling manifests; for real monorepo scopes use allowPatterns."
       },

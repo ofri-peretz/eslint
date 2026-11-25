@@ -1,0 +1,607 @@
+{
+  "rule": "jsx-no-comment-textnodes",
+  "source": "eslint-plugin-react@7.37.5 tests/lib/rules/jsx-no-comment-textnodes.js (MIT)",
+  "cases": [
+    {
+      "kind": "valid",
+      "n": 0,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (\n              <div>\n                {/* valid */}\n              </div>\n            );\n          }\n        }\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 2,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (\n              <div>\n                {/* valid */}\n              </div>\n            );\n          }\n        }\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 3,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (\n              <>\n                {/* valid */}\n              </>\n            );\n          }\n        }\n      \n// features: [fragment], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 5,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (\n              <>\n                {/* valid */}\n              </>\n            );\n          }\n        }\n      \n// features: [fragment], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 6,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (<div>{/* valid */}</div>);\n          }\n        }\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 8,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (<div>{/* valid */}</div>);\n          }\n        }\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 9,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            const bar = (<div>{/* valid */}</div>);\n            return bar;\n          }\n        }\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 11,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            const bar = (<div>{/* valid */}</div>);\n            return bar;\n          }\n        }\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 12,
+      "code": "\n        var Hello = createReactClass({\n          foo: (<div>{/* valid */}</div>),\n          render() {\n            return this.foo;\n          },\n        });\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 14,
+      "code": "\n        var Hello = createReactClass({\n          foo: (<div>{/* valid */}</div>),\n          render() {\n            return this.foo;\n          },\n        });\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 15,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (\n              <div>\n                {/* valid */}\n                {/* valid 2 */}\n                {/* valid 3 */}\n              </div>\n            );\n          }\n        }\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 17,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (\n              <div>\n                {/* valid */}\n                {/* valid 2 */}\n                {/* valid 3 */}\n              </div>\n            );\n          }\n        }\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 18,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (\n              <div>\n              </div>\n            );\n          }\n        }\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 20,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (\n              <div>\n              </div>\n            );\n          }\n        }\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 21,
+      "code": "\n        var foo = require('foo');\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 23,
+      "code": "\n        var foo = require('foo');\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 24,
+      "code": "\n        <Foo bar='test'>\n          {/* valid */}\n        </Foo>\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 26,
+      "code": "\n        <Foo bar='test'>\n          {/* valid */}\n        </Foo>\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 27,
+      "code": "\n        <strong>\n          &nbsp;https://www.example.com/attachment/download/1\n        </strong>\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 29,
+      "code": "\n        <strong>\n          &nbsp;https://www.example.com/attachment/download/1\n        </strong>\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 30,
+      "code": "\n        <Foo /* valid */ placeholder={'foo'}/>\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 32,
+      "code": "\n        <Foo /* valid */ placeholder={'foo'}/>\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 33,
+      "code": "\n        </* valid */></>\n      \n// features: [fragment], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 35,
+      "code": "\n        </* valid */></>\n      \n// features: [fragment], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 36,
+      "code": "\n        <></* valid *//>\n      \n// features: [fragment,no-ts], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 37,
+      "code": "\n        <Foo title={'foo' /* valid */}/>\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 39,
+      "code": "\n        <Foo title={'foo' /* valid */}/>\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 40,
+      "code": "<pre>&#x2F;&#x2F; TODO: Write perfect code</pre>\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 42,
+      "code": "<pre>&#x2F;&#x2F; TODO: Write perfect code</pre>\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 43,
+      "code": "<pre>&#x2F;&#42; TODO: Write perfect code &#42;&#x2F;</pre>\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 45,
+      "code": "<pre>&#x2F;&#42; TODO: Write perfect code &#42;&#x2F;</pre>\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 46,
+      "code": "\n        <div>\n          <span className=\"pl-c\"><span className=\"pl-c\">&#47;&#47;</span> ...</span><br />\n        </div>\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 48,
+      "code": "\n        <div>\n          <span className=\"pl-c\"><span className=\"pl-c\">&#47;&#47;</span> ...</span><br />\n        </div>\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 0,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (<div>// invalid</div>);\n          }\n        }\n      \n// features: [no-ts-old], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 1,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (<div>// invalid</div>);\n          }\n        }\n      \n// features: [no-ts-old], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 2,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (<>// invalid</>);\n          }\n        }\n      \n// features: [fragment,no-ts-old], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 3,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (<>// invalid</>);\n          }\n        }\n      \n// features: [fragment,no-ts-old], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 4,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (<div>/* invalid */</div>);\n          }\n        }\n      \n// features: [no-ts-old], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 5,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (<div>/* invalid */</div>);\n          }\n        }\n      \n// features: [no-ts-old], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 6,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (\n              <div>\n                // invalid\n              </div>\n            );\n          }\n        }\n      \n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 8,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (\n              <div>\n                // invalid\n              </div>\n            );\n          }\n        }\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 9,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (\n              <div>\n                asdjfl\n                /* invalid */\n                foo\n              </div>\n            );\n          }\n        }\n      \n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 11,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (\n              <div>\n                asdjfl\n                /* invalid */\n                foo\n              </div>\n            );\n          }\n        }\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 12,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (\n              <div>\n                {'asdjfl'}\n                // invalid\n                {'foo'}\n              </div>\n            );\n          }\n        }\n      \n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 14,
+      "code": "\n        class Comp1 extends Component {\n          render() {\n            return (\n              <div>\n                {'asdjfl'}\n                // invalid\n                {'foo'}\n              </div>\n            );\n          }\n        }\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 15,
+      "code": "\n        const Component2 = () => {\n          return <span>/*</span>;\n        };\n      \n// features: [no-ts-old], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 16,
+      "code": "\n        const Component2 = () => {\n          return <span>/*</span>;\n        };\n      \n// features: [no-ts-old], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    }
+  ]
+}

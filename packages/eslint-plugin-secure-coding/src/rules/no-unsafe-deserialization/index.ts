@@ -12,9 +12,15 @@
  * allows attackers to execute arbitrary code or manipulate application logic.
  * This includes:
  * - Using dangerous deserialization libraries
- * - eval() or Function() on untrusted data
+ * - Strings handed to setTimeout/setInterval, which the engine compiles
  * - YAML/XML parsers that can execute code
  * - Unsafe use of serialization libraries
+ *
+ * `eval()` and the `Function` constructor are NOT reported here. They turn a
+ * string into running code, which is code injection (CWE-95), not the
+ * revival of a serialized object (CWE-502), and `node-security/
+ * detect-eval-with-expression` owns them. Two rules reporting the same call
+ * under two CWEs doubled every such finding in a combined run.
  *
  * False Positive Reduction:
  * This rule uses security utilities to reduce false positives by detecting:
@@ -46,7 +52,6 @@ type MessageIds =
   | 'unsafeDeserialization'
   | 'dangerousEvalUsage'
   | 'unsafeYamlParsing'
-  | 'dangerousFunctionConstructor'
   | 'useSafeDeserializer';
 
 export interface Options extends SecurityRuleOptions {
@@ -87,49 +92,16 @@ type RuleOptions = [Options?];
  * deserializer.
  */
 /**
- * Names that are the JavaScript code-execution sink ONLY as a global.
+ * Names that turn a string into running code. That is code injection
+ * (CWE-95), not deserialization, and `node-security/detect-eval-with-expression`
+ * owns it: it already resolves the global binding, the `globalThis.eval` /
+ * `window.eval` spellings and the `Function` constructor. This rule stays
+ * silent on them so a call is reported once, under the right class.
  *
- * `serializer.deserialize(x)` is meaningfully dangerous on any receiver, so
- * these two are listed rather than the whole dangerous set.
+ * Applies to the bare name and to any receiver: `client.eval(lua)` was never a
+ * JavaScript sink, and `window.eval(x)` belongs to the owner.
  */
-const GLOBAL_ONLY_SINKS: ReadonlySet<string> = new Set(['eval', 'Function']);
-
-/**
- * Does this identifier have a declaration in some enclosing scope?
- *
- * A true global does not — that is the whole difference between `window.eval`
- * and a parameter someone happened to name `window`.
- */
-function isLocallyBoundIn(
-  identifier: TSESTree.Identifier,
-  sourceCode: TSESLint.SourceCode,
-): boolean {
-  for (
-    let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(identifier);
-    scope !== null;
-    scope = scope.upper
-  ) {
-    const variable = scope.variables.find((v) => v.name === identifier.name);
-    if (variable !== undefined) return variable.defs.length > 0;
-  }
-  return false;
-}
-
-/**
- * Receivers on which `eval` really is THE `eval`.
- *
- * @protocol-constant The four spellings of the global object — `globalThis`
- * from the language, `window` and `self` from the DOM and worker globals,
- * `global` from Node. Not English words standing in for evidence: the set is
- * fixed by the runtimes, and a consumer given control of it could only remove
- * `window` and lose the sink this branch exists to catch.
- */
-const GLOBAL_OBJECTS: ReadonlySet<string> = new Set([
-  'window',
-  'globalThis',
-  'global',
-  'self',
-]);
+const CODE_INJECTION_SINKS: ReadonlySet<string> = new Set(['eval', 'Function']);
 
 const TIMER_FUNCTIONS = new Set(['setTimeout', 'setInterval']);
 
@@ -277,6 +249,16 @@ function isStringValued(arg: TSESTree.Node | undefined): boolean {
   return false;
 }
 
+/** Does a member chain read a property called `name` on its way to the root? */
+function receiverPassesThrough(node: TSESTree.Node, name: string): boolean {
+  let current: TSESTree.Node = node;
+  while (current.type === 'MemberExpression') {
+    if (propertyName(current) === name) return true;
+    current = current.object;
+  }
+  return false;
+}
+
 export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-deserialization',
   meta: {
@@ -302,10 +284,10 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       }),
       dangerousEvalUsage: formatLLMMessage({
         icon: MessageIcons.SECURITY,
-        issueName: 'Dangerous eval() Usage',
+        issueName: 'Implied eval() through a timer string',
         cwe: 'CWE-502',
         description:
-          'eval() used for deserialization (code execution vulnerability)',
+          'A string handed to setTimeout/setInterval is compiled and run as code (code execution vulnerability)',
         severity: 'CRITICAL',
         fix: 'Use JSON.parse() or safe deserialization libraries',
         documentationLink: 'https://cwe.mitre.org/data/definitions/502.html',
@@ -319,16 +301,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         fix: 'Use yaml.safeLoad() or disable code execution',
         documentationLink:
           'https://www.npmjs.com/package/js-yaml#loadstr---options-',
-      }),
-      dangerousFunctionConstructor: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Dangerous Function Constructor',
-        cwe: 'CWE-502',
-        description: 'Function constructor used with untrusted data',
-        severity: 'CRITICAL',
-        fix: 'Avoid Function constructor with user input',
-        documentationLink:
-          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function',
       }),
       useSafeDeserializer: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -347,8 +319,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [
-              'eval',
-              'Function',
               'setTimeout',
               'setInterval',
               'unserialize',
@@ -425,8 +395,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       dangerousFunctions: [
-        'eval',
-        'Function',
         'setTimeout',
         'setInterval',
         'unserialize',
@@ -541,6 +509,14 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         if (inertPackages.has(binding.module)) return false;
       }
 
+      // `eval(x)` / `Function(x)` belong to detect-eval-with-expression.
+      if (
+        callee.type === 'Identifier' &&
+        CODE_INJECTION_SINKS.has(callee.name)
+      ) {
+        return false;
+      }
+
       // Check for dangerous function calls
       if (
         callee.type === 'Identifier' &&
@@ -601,34 +577,32 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           return false;
         }
 
-        // `eval` and `Function` as a MEMBER are the JavaScript sink only on a
-        // global object. Everywhere else the name belongs to some library's
-        // own API and compiles nothing in this process:
-        //
-        //   client.eval(luaScript, 1, key, …)   // Redis EVAL — Lua, server-side
-        //
-        // That is animir/node-rate-limiter-flexible `lib/RateLimiterRedis.js:155`,
-        // where the script is a hardcoded class field, and it was the ONLY
-        // finding in that repository.
-        //
-        // The Identifier branch above already restricts these two names to
-        // globals for the same reason; the member branch did not, so `.eval`
-        // on any receiver was a CWE-502 sink.
-        if (GLOBAL_ONLY_SINKS.has(memberName)) {
-          // The NAME is not enough — `function run(window) { window.eval(x) }`
-          // binds a parameter, and a library client called `window` is not the
-          // global object. Require the identifier to resolve to nothing local:
-          // a global has no declaration in any enclosing scope.
-          if (!GLOBAL_OBJECTS.has(objectName)) return false;
-          const object = callee.object;
-          return (
-            object.type === 'Identifier' &&
-            !isLocallyBoundIn(object, sourceCode)
-          );
-        }
+        // `x.eval(...)` / `x.Function(...)`: on a global object this is the
+        // code-injection sink the owner rule reports (`window.eval`,
+        // `globalThis.eval`); on any other receiver it is a library's own API
+        // (`client.eval(luaScript)` is Redis EVAL, not JavaScript). Neither is
+        // deserialization.
+        if (CODE_INJECTION_SINKS.has(memberName)) return false;
 
         // Check dangerous methods
         if (dangerousFunctions.includes(memberName)) {
+          // `deserialize` is on the list by SPELLING, and every serialization
+          // protocol spells its method that way. A receiver the class holds
+          // (`this.deserializer`) or the function constructed (`new X()`) is a
+          // collaborator the project owns, not a package that revives code.
+          if (isProjectOwnedReceiver(callee.object)) return false;
+          // `config.transformer.input.deserialize(raw)`: a data transformer is the
+          // codec the application chose for its own wire format (tRPC, superjson),
+          // reached through a property named `transformer`.
+          // Only with evidence in the file: the module imports or requires tRPC or
+          // superjson. A `transformer` property alone could hold anything.
+          if (
+            memberName === 'deserialize' &&
+            receiverPassesThrough(callee.object, 'transformer') &&
+            loadsTransformerPackage()
+          ) {
+            return false;
+          }
           return true;
         }
 
@@ -890,39 +864,195 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       return true;
     };
 
+    /** Does a package (not a relative file) reach this node? */
+    const isPropertyName = (n: TSESTree.Node): boolean => {
+      const parent = n.parent;
+      return (
+        (parent?.type === 'MemberExpression' &&
+          parent.property === n &&
+          !parent.computed) ||
+        (parent?.type === 'Property' &&
+          parent.key === n &&
+          parent.value !== n &&
+          !parent.computed)
+      );
+    };
+    const reachesAPackage = (n: TSESTree.Node): boolean => {
+      // `local.serialize` and `{ serialize: 1 }` name a property; they do not
+      // read the import that happens to be called `serialize`.
+      if (
+        (n.type === 'Identifier' && !isPropertyName(n)) ||
+        n.type === 'CallExpression'
+      ) {
+        const bound = resolveModuleBinding(n, sourceCode.getScope(n));
+        if (bound !== undefined && !bound.module.startsWith('.')) return true;
+      }
+      return Object.keys(n).some((key) => {
+        if (key === 'parent') return false;
+        const value = (n as unknown as Record<string, unknown>)[key];
+        return (Array.isArray(value) ? value : [value]).some(
+          (child) =>
+            child !== null &&
+            typeof child === 'object' &&
+            typeof (child as TSESTree.Node).type === 'string' &&
+            reachesAPackage(child as TSESTree.Node),
+        );
+      });
+    };
+
+    /**
+     * Does the class fill `this.<field>` from a package? Through a constructor
+     * assignment (`this.codec = serialize`) or a field initializer
+     * (`codec = serialize`).
+     */
+    const classFillsFieldFromPackage = (
+      cls: TSESTree.Node,
+      field: string,
+    ): boolean => {
+      const visit = (n: TSESTree.Node): boolean => {
+        if (
+          n.type === 'AssignmentExpression' &&
+          n.left.type === 'MemberExpression' &&
+          n.left.object.type === 'ThisExpression' &&
+          // `this[k] = serialize` writes a field the rule cannot name, so it
+          // may be this one. A private `this.#x` is a different field.
+          (propertyName(n.left) === field ||
+            (n.left.computed && propertyName(n.left) === null)) &&
+          reachesAPackage(n.right)
+        ) {
+          return true;
+        }
+        if (
+          n.type === 'PropertyDefinition' &&
+          objectKeyName(n) === field &&
+          n.value !== null &&
+          reachesAPackage(n.value)
+        ) {
+          return true;
+        }
+        return Object.keys(n).some((key) => {
+          if (key === 'parent') return false;
+          const value = (n as unknown as Record<string, unknown>)[key];
+          return (Array.isArray(value) ? value : [value]).some(
+            (child) =>
+              child !== null &&
+              typeof child === 'object' &&
+              typeof (child as TSESTree.Node).type === 'string' &&
+              visit(child as TSESTree.Node),
+          );
+        });
+      };
+      return visit(cls);
+    };
+
+    /** Is the class of `new X()` code the project owns, not a package's? */
+    const isOwnedConstructor = (callee: TSESTree.Node): boolean => {
+      const bound = resolveModuleBinding(callee, sourceCode.getScope(callee));
+      if (bound !== undefined) return bound.module.startsWith('.');
+      if (callee.type !== 'Identifier') return true;
+      for (
+        let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(callee);
+        scope;
+        scope = scope.upper
+      ) {
+        const found = scope.variables.find((v) => v.name === callee.name);
+        if (found) {
+          const def = found.defs[0];
+          // A class this file declares may keep a package's sink in a field.
+          return def?.type !== 'ClassName' || !reachesAPackage(def.node);
+        }
+      }
+      return true;
+    };
+
+    /** Does this module import or require `@trpc/*` or `superjson`? */
+    const loadsTransformerPackage = (): boolean => {
+      const isTransformerPackage = (specifier: unknown): boolean =>
+        typeof specifier === 'string' &&
+        (specifier.startsWith('@trpc/') ||
+          specifier === 'superjson' ||
+          specifier.startsWith('superjson/'));
+      return sourceCode.ast.body.some((statement) => {
+        if (statement.type === 'ImportDeclaration') {
+          return isTransformerPackage(statement.source.value);
+        }
+        return (
+          statement.type === 'VariableDeclaration' &&
+          statement.declarations.some(
+            (declarator) =>
+              declarator.init?.type === 'CallExpression' &&
+              declarator.init.callee.type === 'Identifier' &&
+              declarator.init.callee.name === 'require' &&
+              declarator.init.arguments[0]?.type === 'Literal' &&
+              isTransformerPackage(declarator.init.arguments[0].value),
+          )
+        );
+      });
+    };
+
+    /**
+     * Is this receiver an object the surrounding code owns: a `this.<field>` the
+     * class does not fill from a package, or a binding made once with `new X()`
+     * where `X` is the project's own class? A sink that lives in a package is
+     * reached through an import, which `MODULE_SINKS` resolves on its own, and
+     * the two cases above must not let a package in through a field or a
+     * constructor.
+     */
+    const isProjectOwnedReceiver = (receiver: TSESTree.Node): boolean => {
+      let root: TSESTree.Node = receiver;
+      let nearest: TSESTree.MemberExpression | null = null;
+      while (root.type === 'MemberExpression') {
+        nearest = root;
+        root = root.object;
+      }
+      if (root.type === 'ThisExpression') {
+        // A bare `this.deserialize(...)` is exempted before this point, so the
+        // receiver always has a member that reads the field straight off `this`.
+        const field = propertyName(nearest as TSESTree.MemberExpression);
+        if (field === null) return false;
+        let cls: TSESTree.Node | null | undefined = receiver.parent;
+        while (cls && cls.type !== 'ClassBody') cls = cls.parent;
+        return !cls || !classFillsFieldFromPackage(cls, field);
+      }
+      if (root.type !== 'Identifier') return false;
+      let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(root);
+      while (scope) {
+        const found = scope.variables.find((v) => v.name === root.name);
+        if (found) {
+          if (found.defs.length !== 1) return false;
+          const [def] = found.defs;
+          const init =
+            def.type === 'Variable'
+              ? (def.node as TSESTree.VariableDeclarator).init
+              : null;
+          return (
+            init?.type === 'NewExpression' &&
+            found.references.filter((r) => r.isWrite()).length === 1 &&
+            isOwnedConstructor(init.callee) &&
+            // `c.unserialize = serialize.unserialize` plants a package's sink on
+            // the instance; it is a member write, not a binding write.
+            !found.references.some((reference) => {
+              const member = reference.identifier.parent;
+              const write = member?.parent;
+              return (
+                member?.type === 'MemberExpression' &&
+                member.object === reference.identifier &&
+                write?.type === 'AssignmentExpression' &&
+                write.left === member &&
+                reachesAPackage(write.right)
+              );
+            })
+          );
+        }
+        scope = scope.upper;
+      }
+      return false;
+    };
+
     const checkCallExpression = (
       node: TSESTree.CallExpression | TSESTree.NewExpression,
     ) => {
-      // 1. Check Function Constructor (NewExpression or CallExpression)
-      //
-      // The binding, not the spelling: `Function` imported from
-      // `aws-cdk-lib/aws-lambda` is an AWS Lambda construct, and
-      // `new Function(this, id, { runtime: Runtime.PYTHON_3_11 })` is how every CDK
-      // stack declares one. Found in cdklabs/cdk-enterprise-iac
-      // src/constructs/ecsIsoServiceAutoscaler/ecsIsoServiceAutoscaler.ts:132.
-      if (
-        (node.type === 'NewExpression' || node.type === 'CallExpression') &&
-        node.callee.type === 'Identifier' &&
-        node.callee.name === 'Function' &&
-        isGlobalBinding(node.callee)
-      ) {
-        const args: TSESTree.CallExpressionArgument[] = node.arguments;
-        const hasUntrustedInput = args.some((arg): boolean =>
-          isUntrustedInput(arg),
-        );
-
-        if (hasUntrustedInput) {
-          if (safetyChecker.isSafe(node, context)) return;
-
-          context.report({
-            node,
-            messageId: 'dangerousFunctionConstructor',
-          });
-          return;
-        }
-      }
-
-      // 2. Check CallExpressions (eval, unserialize, yaml, etc.)
+      // Check CallExpressions (timer strings, unserialize, yaml, etc.)
       if (
         isDangerousDeserialization(node) &&
         !isInsideDeserializerImplementation(node)
@@ -948,7 +1078,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
             // Check for generic dangerous functions
             if (
               node.callee.type === 'Identifier' &&
-              ['eval', 'setTimeout', 'setInterval'].includes(node.callee.name)
+              ['setTimeout', 'setInterval'].includes(node.callee.name)
             ) {
               messageId = 'dangerousEvalUsage';
             }
@@ -1010,8 +1140,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         const options = context.options[0] || {};
         ({
           dangerousFunctions = [
-            'eval',
-            'Function',
             'setTimeout',
             'setInterval',
             'unserialize',

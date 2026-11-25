@@ -20,12 +20,12 @@ describe('eslint-plugin-import-next plugin interface', () => {
     expect(ruleKeys).toContain('no-duplicates');
     expect(ruleKeys).toContain('no-self-import');
     
-    expect(ruleKeys.length).toBe(56);
+    expect(ruleKeys.length).toBe(58);
   });
 
   it('should export rules matching plugin.rules', () => {
     expect(rules).toBeDefined();
-    expect(Object.keys(rules).length).toBe(56);
+    expect(Object.keys(rules).length).toBe(58);
     expect(Object.keys(rules)).toContain('no-unresolved');
     expect(Object.keys(rules)).toContain('no-cycle');
   });

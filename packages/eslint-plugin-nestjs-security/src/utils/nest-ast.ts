@@ -43,6 +43,9 @@ export const HTTP_METHOD_DECORATORS: ReadonlySet<string> = new Set([
   'Head',
   'All',
   'Search',
+  // A server-sent-events stream is a GET route with its own decorator. It takes
+  // `@Query()` and `@Param()` like any other and needs the same guard.
+  'Sse',
 ]);
 
 /**

@@ -22,7 +22,28 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
 
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
+## Getting Started
+
+- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-postgresql-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security). 📚
+
+<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
+
+```bash
+npm install --save-dev eslint eslint-plugin-postgresql-security
+```
+
+```js
+// eslint.config.mjs
+import { configs } from 'eslint-plugin-postgresql-security';
+
+export default [configs.recommended];
+```
+
+`recommended` is the preset to start with. The others are listed under Configuration Presets below.
+
+Using oxlint or Vite+? Install `oxlint-plugin-postgresql-security`: the same rules under the same `postgresql-security/<rule>` IDs, without ESLint. Its [page](https://www.npmjs.com/package/oxlint-plugin-postgresql-security) has the setup.
+
+<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## Description
 
@@ -47,40 +68,6 @@ That trade costs recall, and we measure it:
 · [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).
 
 <!-- AUTO-GENERATED:DOCTRINE:END -->
-
-## Getting Started
-
-- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-postgresql-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security). 📚
-
-<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
-
-**oxlint / Vite+** — the same rules under the same `postgresql-security/<rule>` IDs, without ESLint:
-
-```bash
-npm install oxlint-plugin-postgresql-security --save-dev
-```
-
-```jsonc
-// .oxlintrc.json
-{ "jsPlugins": ["oxlint-plugin-postgresql-security"] }
-```
-
-```ts
-// vite.config.ts
-import { defineConfig } from 'vite-plus';
-
-export default defineConfig({
-  lint: { jsPlugins: ['oxlint-plugin-postgresql-security'] },
-});
-```
-
-**ESLint:**
-
-```bash
-npm install eslint-plugin-postgresql-security --save-dev
-```
-
-<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## ⚙️ Configuration Presets
 | Preset        | Description                                              |
@@ -156,12 +143,12 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-hardcoded-credentials?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-798 |  |  | Prevents hardcoded passwords and connection strings in PostgreSQL client initialization. | 🟢 | 💼 |  |  |  |  |
 | [no-insecure-ssl](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-insecure-ssl?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-295 |  |  | Prevents disabling SSL certificate validation in PostgreSQL connections. | 🟢 | 💼 |  |  |  |  |
 | [no-missing-client-release](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-missing-client-release?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-772 |  |  | Ensures acquired pool clients are released back to the pool. | 🟢 | 💼 |  |  |  |  |
-| [no-select-all](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-select-all?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-693 |  |  | Discourages SELECT  in favor of explicit column lists. | 🟢 |  | ⚠️ |  |  |  |
+| [no-select-all](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-select-all?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-1049 |  |  | Discourages SELECT  in favor of explicit column lists. | 🟢 |  | ⚠️ |  |  |  |
 | [no-transaction-on-pool](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-transaction-on-pool?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-362 |  |  | Prevents running transaction commands directly on pool (must use dedicated client). | 🟢 | 💼 |  |  |  |  |
 | [no-unsafe-copy-from](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-unsafe-copy-from?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-73 | A03:2021 |  | Prevents COPY FROM with file paths (should use STDIN for safe client-side data loading). | 🟢 | 💼 |  |  |  |  |
 | [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-unsafe-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-89 |  |  | SQL injection is one of the most critical security vulnerabilities | 🟢 | 💼 |  |  |  |  |
 | [no-unsafe-search-path](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/no-unsafe-search-path?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-426 |  |  | Prevents dynamic SET searchpath queries that could enable schema hijacking. | 🟢 | 💼 |  |  |  |  |
-| [prefer-pool-query](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/prefer-pool-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-693 |  |  | Suggests using pool.query() for single-shot queries instead of manual connect/release. | 🟢 |  | ⚠️ |  |  |  |
+| [prefer-pool-query](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/prefer-pool-query?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-400 |  |  | Suggests using pool.query() for single-shot queries instead of manual connect/release. | 🟢 |  | ⚠️ |  |  |  |
 | [prevent-double-release](https://eslint.interlace.tools/docs/security/plugin-postgresql-security/rules/prevent-double-release?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-postgresql-security) | CWE-415 |  |  | Prevents calling client.release() multiple times on the same client. | 🟢 |  | ⚠️ |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:START - Do not edit manually -->
@@ -213,11 +200,10 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->
 
 <!-- INTERLACE:STAR_CTA:START -->
-## ⭐ Support & follow
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+## Support
 
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 <!-- INTERLACE:STAR_CTA:END -->
 

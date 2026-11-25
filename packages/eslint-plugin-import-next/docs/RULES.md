@@ -16,19 +16,20 @@
 | [no-self-import](./rules/no-self-import.md) | Prevent module from importing itself        | 💼  |     |     | 💡  |
 | [no-duplicates](./rules/no-duplicates.md)   | Prevent duplicate imports                   | 💼  |     | 🔧  |     |
 
-## Module System (3 rules)
+## Module System (4 rules)
 
-| Name                                              | Description                       | 💼  | ⚠️  | 🔧  | 💡  |
-| ------------------------------------------------- | --------------------------------- | --- | --- | --- | --- |
-| [no-amd](./rules/no-amd.md)                       | Disallow AMD define/require       |     | ⚠️  |     | 💡  |
-| [no-commonjs](./rules/no-commonjs.md)             | Disallow CommonJS require/exports |     | ⚠️  |     | 💡  |
-| [no-nodejs-modules](./rules/no-nodejs-modules.md) | Disallow Node.js built-in modules |     |     |     | 💡  |
+| Name                                                            | Description                               | 💼  | ⚠️  | 🔧  | 💡  |
+| --------------------------------------------------------------- | ----------------------------------------- | --- | --- | --- | --- |
+| [no-amd](./rules/no-amd.md)                                     | Disallow AMD define/require               |     | ⚠️  |     | 💡  |
+| [no-commonjs](./rules/no-commonjs.md)                           | Disallow CommonJS require/exports         |     | ⚠️  |     | 💡  |
+| [no-nodejs-modules](./rules/no-nodejs-modules.md)               | Disallow Node.js built-in modules         |     |     |     | 💡  |
+| [no-webpack-loader-syntax](./rules/no-webpack-loader-syntax.md) | Disallow webpack loader syntax in imports |     |     |     |     |
 
 ## Dependency Boundaries (6 rules)
 
 | Name                                                                    | Description                         | 💼  | ⚠️  | 🔧  | 💡  |
 | ----------------------------------------------------------------------- | ----------------------------------- | --- | --- | --- | --- |
-| [no-cycle](./rules/no-cycle.md)         | Detect circular dependency chains   | 💼  |     |     | 💡  |
+| [no-cycle](./rules/no-cycle.md)                                         | Detect circular dependency chains   | 💼  |     |     | 💡  |
 | [no-internal-modules](./rules/no-internal-modules.md)                   | Forbid deep/internal module imports |     |     |     | 💡  |
 | [no-cross-domain-imports](./rules/no-cross-domain-imports.md)           | Enforce domain boundaries           |     |     |     | 💡  |
 | [enforce-dependency-direction](./rules/enforce-dependency-direction.md) | Enforce layered architecture        |     |     |     | 💡  |
@@ -55,14 +56,15 @@
 | [newline-after-import](./rules/newline-after-import.md) | Require newline after import section  |     | ⚠️  | 🔧  |     |
 | [no-unassigned-import](./rules/no-unassigned-import.md) | Disallow side-effect-only imports     |     |     |     | 💡  |
 
-## Dependency Management (4 rules)
+## Dependency Management (5 rules)
 
-| Name                                                                | Description                          | 💼  | ⚠️  | 🔧  | 💡  |
-| ------------------------------------------------------------------- | ------------------------------------ | --- | --- | --- | --- |
-| [no-extraneous-dependencies](./rules/no-extraneous-dependencies.md) | Disallow importing unlisted packages |     | ⚠️  |     | 💡  |
-| [no-unused-modules](./rules/no-unused-modules.md)                   | Detect unused exports and modules    |     |     |     | 💡  |
-| [max-dependencies](./rules/max-dependencies.md)                     | Limit maximum number of dependencies |     |     |     | 💡  |
-| [prefer-node-protocol](./rules/prefer-node-protocol.md)             | Prefer `node:` protocol for builtins |     |     | 🔧  |     |
+| Name                                                                  | Description                                         | 💼  | ⚠️  | 🔧  | 💡  |
+| --------------------------------------------------------------------- | --------------------------------------------------- | --- | --- | --- | --- |
+| [no-extraneous-dependencies](./rules/no-extraneous-dependencies.md)   | Disallow importing unlisted packages                |     | ⚠️  |     | 💡  |
+| [no-unused-modules](./rules/no-unused-modules.md)                     | Detect unused exports and modules                   |     |     |     | 💡  |
+| [max-dependencies](./rules/max-dependencies.md)                       | Limit maximum number of dependencies                |     |     |     | 💡  |
+| [prefer-node-protocol](./rules/prefer-node-protocol.md)               | Prefer `node:` protocol for builtins                |     |     | 🔧  |     |
+| [enforce-node-protocol-usage](./rules/enforce-node-protocol-usage.md) | Always, or never, the `node:` protocol for builtins |     |     | 🔧  |     |
 
 ---
 

@@ -41,6 +41,7 @@ import {
 } from '@interlace/eslint-devkit';
 
 type MessageIds =
+  | 'angularSanitizerBypass'
   | 'insufficientXssProtection'
   | 'incompleteHtmlEscaping'
   | 'unsafeReplaceSanitization';
@@ -77,6 +78,16 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       cwe: 'CWE-116',
     },
     messages: {
+      angularSanitizerBypass: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Angular Sanitizer Bypass',
+        cwe: 'CWE-79',
+        description:
+          '{{method}}() tells Angular not to sanitize a value that is not a constant',
+        severity: 'MEDIUM',
+        fix: 'Sanitize first (DOMPurify.sanitize, or sanitizer.sanitize(SecurityContext.HTML, value)), or drop the bypass and bind the value with interpolation or [innerText]',
+        documentationLink: 'https://angular.dev/best-practices/security',
+      }),
       insufficientXssProtection: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Insufficient XSS Protection',
@@ -296,6 +307,100 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * `s = s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+     *  if (quote) { s = s.replace(/"/g, '&quot;'); }`
+     *
+     * An escaper that takes the quote decision as a parameter: ampersand and
+     * the angle brackets always, the double quote when the caller says the
+     * output lands in an attribute. The chain on its own is incomplete only if
+     * the quote step is missing, and here the very next statements of the same
+     * block escape it into the same variable — so the helper does escape every
+     * character the rule asks for, on a path the caller chooses. The chain has
+     * to be assigned back to a plain identifier, and a LATER statement of the
+     * same block (as itself, or the body of an `if`) has to rewrite that same
+     * identifier with a `"` pattern and a quote entity.
+     */
+    const quoteEscapedLater = (call: TSESTree.CallExpression): boolean => {
+      const assignment = call.parent;
+      if (
+        assignment?.type !== AST_NODE_TYPES.AssignmentExpression ||
+        assignment.operator !== '=' ||
+        assignment.right !== call ||
+        assignment.left.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return false;
+      }
+      /** The variable an identifier reads or writes, by scope — not by spelling. */
+      const variableOf = (id: TSESTree.Identifier) =>
+        sourceCode.getScope(id).references.find((ref) => ref.identifier === id)
+          ?.resolved ?? null;
+      const target = variableOf(assignment.left);
+      const statement = assignment.parent;
+      const block = statement.parent;
+      if (
+        statement.type !== AST_NODE_TYPES.ExpressionStatement ||
+        (block?.type !== AST_NODE_TYPES.BlockStatement &&
+          block?.type !== AST_NODE_TYPES.Program)
+      ) {
+        return false;
+      }
+      const escapesQuoteInto = (stmt: TSESTree.Node | null): boolean => {
+        if (stmt?.type === AST_NODE_TYPES.BlockStatement) {
+          return stmt.body.some((inner) => escapesQuoteInto(inner));
+        }
+        if (stmt?.type !== AST_NODE_TYPES.ExpressionStatement) return false;
+        const write = stmt.expression;
+        if (
+          write.type !== AST_NODE_TYPES.AssignmentExpression ||
+          write.operator !== '=' ||
+          write.left.type !== AST_NODE_TYPES.Identifier ||
+          variableOf(write.left) !== target ||
+          !isReplaceCall(write.right)
+        ) {
+          return false;
+        }
+        const quote = write.right;
+        const receiver = (quote.callee as TSESTree.MemberExpression).object;
+        return (
+          receiver.type === AST_NODE_TYPES.Identifier &&
+          variableOf(receiver) === target &&
+          staticPattern(quote.arguments[0]) === '"' &&
+          /^(?:&quot;|&#0?34;|&#x22;)$/i.test(
+            staticReplacement(quote.arguments[1]) ?? '',
+          )
+        );
+      };
+      /** Does anything in this statement read or write the escaped variable? */
+      const touchesTarget = (stmt: TSESTree.Node): boolean =>
+        target !== null &&
+        target.references.some(
+          (ref) =>
+            ref.identifier.range[0] >= stmt.range[0] &&
+            ref.identifier.range[1] <= stmt.range[1],
+        );
+      for (const later of block.body.slice(block.body.indexOf(statement) + 1)) {
+        // An unconditional exit ends the scan: nothing after it runs.
+        if (
+          later.type === AST_NODE_TYPES.ReturnStatement ||
+          later.type === AST_NODE_TYPES.ThrowStatement
+        ) {
+          return false;
+        }
+        if (
+          later.type === AST_NODE_TYPES.IfStatement
+            ? escapesQuoteInto(later.consequent)
+            : escapesQuoteInto(later)
+        ) {
+          return true;
+        }
+        // Any other statement that touches the value uses it before the quote
+        // step has run.
+        if (touchesTarget(later)) return false;
+      }
+      return false;
+    };
+
+    /**
      * Check whether a `.replace()` chain is an INCOMPLETE HTML escaper.
      *
      * Two conditions, both about meaning rather than shape:
@@ -313,6 +418,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
      */
     const isIncompleteReplaceSanitization = (
       callExpression: TSESTree.CallExpression,
+      quoteEscapedAfter = false,
     ): boolean => {
       const pairs = replaceChain(callExpression);
 
@@ -330,7 +436,109 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       );
       const hasAmpersandEscaping = /&amp;/.test(replacements);
 
-      return !(hasQuoteEscaping && hasAmpersandEscaping);
+      // A quote step that runs later satisfies the quote requirement only; the
+      // ampersand requirement is independent.
+      return !((hasQuoteEscaping || quoteEscapedAfter) && hasAmpersandEscaping);
+    };
+
+    /**
+     * Angular's `DomSanitizer` escape hatches. Each one marks a value as already
+     * safe for one context and switches off the framework's sanitiser for it; the
+     * method names exist nowhere else, so the name is the evidence.
+     */
+    const ANGULAR_BYPASS = new Set([
+      'bypassSecurityTrustHtml',
+      'bypassSecurityTrustScript',
+      'bypassSecurityTrustStyle',
+      'bypassSecurityTrustUrl',
+      'bypassSecurityTrustResourceUrl',
+    ]);
+
+    const MAX_CONSTANT_DEPTH = 8;
+
+    /** The `const` a name resolves to, if it resolves to exactly one. */
+    const constInitializer = (
+      id: TSESTree.Identifier,
+    ): TSESTree.Expression | undefined => {
+      let scope: ReturnType<typeof sourceCode.getScope> | null =
+        sourceCode.getScope(id);
+      while (scope) {
+        const variable = scope.set.get(id.name);
+        if (variable) {
+          const [def, ...rest] = variable.defs;
+          if (
+            rest.length === 0 &&
+            def?.type === 'Variable' &&
+            def.parent.kind === 'const' &&
+            def.node.id.type === AST_NODE_TYPES.Identifier
+          ) {
+            return def.node.init ?? undefined;
+          }
+          return undefined;
+        }
+        scope = scope.upper;
+      }
+      return undefined;
+    };
+
+    /** `DOMPurify.sanitize(x)`, `sanitizer.sanitize(ctx, x)`, `escapeHtml(x)`. */
+    const isSanitizerCall = (node: TSESTree.CallExpression): boolean => {
+      const callee = node.callee;
+      const text = sourceCode.getText(callee);
+      if (
+        [
+          ...safeSanitizers,
+          ...trustedSanitizers,
+          'escapeHtml',
+          'escapeHTML',
+          'htmlEscape',
+        ].some((name) => text === name || text.endsWith(`.${name}`))
+      ) {
+        return true;
+      }
+      return (
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        propertyName(callee) === 'sanitize'
+      );
+    };
+
+    /**
+     * Is every leaf of this expression text the developer typed, or the output
+     * of a sanitizer? A `const` bound to such an expression counts; a `let`, a
+     * parameter, a property read and an arbitrary call do not.
+     */
+    const isTrustedInput = (expr: TSESTree.Node, depth = 0): boolean => {
+      if (depth > MAX_CONSTANT_DEPTH) return false;
+      switch (expr.type) {
+        case AST_NODE_TYPES.Literal:
+          return !('regex' in expr && expr.regex);
+        case AST_NODE_TYPES.TemplateLiteral:
+          return expr.expressions.every((e) => isTrustedInput(e, depth + 1));
+        case AST_NODE_TYPES.BinaryExpression:
+          return (
+            expr.operator === '+' &&
+            isTrustedInput(expr.left, depth + 1) &&
+            isTrustedInput(expr.right, depth + 1)
+          );
+        case AST_NODE_TYPES.LogicalExpression:
+          return (
+            isTrustedInput(expr.left, depth + 1) &&
+            isTrustedInput(expr.right, depth + 1)
+          );
+        case AST_NODE_TYPES.TSAsExpression:
+        case AST_NODE_TYPES.TSSatisfiesExpression:
+        case AST_NODE_TYPES.TSNonNullExpression:
+        case AST_NODE_TYPES.TSTypeAssertion:
+          return isTrustedInput(expr.expression, depth + 1);
+        case AST_NODE_TYPES.CallExpression:
+          return isSanitizerCall(expr);
+        case AST_NODE_TYPES.Identifier: {
+          const init = constInitializer(expr);
+          return init !== undefined && isTrustedInput(init, depth + 1);
+        }
+        default:
+          return false;
+      }
     };
 
     return {
@@ -365,6 +573,27 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 
+        // `sanitizer.bypassSecurityTrustHtml(value)`: Angular's sanitiser, off
+        // for a value that is not a constant.
+        if (callee.type === 'MemberExpression') {
+          const method = propertyName(callee);
+          if (method !== null && ANGULAR_BYPASS.has(method)) {
+            const [argument] = node.arguments;
+            if (
+              argument === undefined ||
+              argument.type === AST_NODE_TYPES.SpreadElement ||
+              !isTrustedInput(argument)
+            ) {
+              context.report({
+                node,
+                messageId: 'angularSanitizerBypass',
+                data: { method },
+              });
+            }
+            return;
+          }
+        }
+
         // Check for replace() sanitization
         if (
           callee.type === 'MemberExpression' &&
@@ -375,7 +604,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             return;
           }
 
-          if (isIncompleteReplaceSanitization(node)) {
+          if (isIncompleteReplaceSanitization(node, quoteEscapedLater(node))) {
             if (safetyChecker.isSafe(node, context)) {
               return;
             }

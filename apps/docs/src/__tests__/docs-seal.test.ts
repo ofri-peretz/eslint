@@ -43,7 +43,8 @@ const UNDOCUMENTED_ALLOWLIST = new Set<string>([
  * target — and it is why exported-id counts exceed implementation counts.
  */
 const RULE_ALIASES: Record<string, Record<string, string>> = {
-  'eslint-plugin-import-next': { order: 'enforce-import-order' },
+  // import-next's `order` was an alias of `enforce-import-order` until 4.0;
+  // it is now eslint-plugin-import's own rule, with a page of its own.
 };
 
 interface ManifestRule {
@@ -57,7 +58,10 @@ const manifest = JSON.parse(
 
 const pluginStats = JSON.parse(
   readFileSync(join(APP, 'src/data/plugin-stats.json'), 'utf8'),
-) as { totalRules: number; plugins: { name: string; rules: number; published: boolean }[] };
+) as {
+  totalRules: number;
+  plugins: { name: string; rules: number; published: boolean }[];
+};
 
 const docsDirFor = (pkg: string): string | null => {
   const slug = pkg.replace(/^eslint-/, ''); // plugin-<name>
@@ -95,8 +99,14 @@ describe('docs seal: plugin coverage', () => {
 
   it('the allowlist only shrinks — every entry is still a real, undocumented package', () => {
     for (const pkg of UNDOCUMENTED_ALLOWLIST) {
-      expect(existsSync(join(REPO, 'packages', pkg)), `${pkg} left the repo`).toBe(true);
-      expect(docsDirFor(pkg), `${pkg} gained docs — remove it from the allowlist`).toBeNull();
+      expect(
+        existsSync(join(REPO, 'packages', pkg)),
+        `${pkg} left the repo`,
+      ).toBe(true);
+      expect(
+        docsDirFor(pkg),
+        `${pkg} gained docs — remove it from the allowlist`,
+      ).toBeNull();
     }
   });
 });
@@ -114,14 +124,19 @@ describe('docs seal: rule coverage (no gaps, no orphans)', () => {
             .map((f) => f.replace(/\.mdx$/, ''))
         : [],
     );
-    const ids = manifest.rules.filter((r) => r.plugin === pkg).map((r) => r.rule);
+    const ids = manifest.rules
+      .filter((r) => r.plugin === pkg)
+      .map((r) => r.rule);
     expect(ids.length, `${pkg} missing from rules-manifest`).toBeGreaterThan(0);
     const missing = ids.filter((id) => !pages.has(id) && !(id in aliases));
     expect(missing, `rules without a page`).toEqual([]);
     // Every alias must point at a page that exists — otherwise it is a gap
     // wearing an alias costume.
     for (const [alias, target] of Object.entries(aliases)) {
-      expect(pages.has(target), `alias ${alias} → ${target} has no target page`).toBe(true);
+      expect(
+        pages.has(target),
+        `alias ${alias} → ${target} has no target page`,
+      ).toBe(true);
     }
   });
 
@@ -151,7 +166,9 @@ describe('docs seal: the two public counts reconcile by definition', () => {
     // Unpublished plugins sit in plugin-stats with `published: false` and are kept out
     // of the public manifest by the same rule, so only published ones reconcile.
     const statsByName = new Map(
-      pluginStats.plugins.filter((p) => p.published).map((p) => [p.name, p.rules]),
+      pluginStats.plugins
+        .filter((p) => p.published)
+        .map((p) => [p.name, p.rules]),
     );
     for (const [pkg, stats] of statsByName) {
       const ids = manifest.rules.filter((r) => r.plugin === pkg).length;
@@ -193,11 +210,18 @@ describe('docs seal: every plugin overview sells before it lectures', () => {
     const body = readFileSync(join(CONTENT, rel), 'utf8');
     const slug = rel.split('/')[1]; // plugin-<name>
     // Both engines' install + config, oxlint first, derived from the slug.
-    const install = body.indexOf(`<EngineSetup plugin="${slug.replace(/^plugin-/, '')}" />`);
+    const install = body.indexOf(
+      `<EngineSetup plugin="${slug.replace(/^plugin-/, '')}" />`,
+    );
     const readme = body.indexOf('<RemoteReadme');
-    expect(install, 'EngineSetup for the wrong plugin, or missing').toBeGreaterThan(-1);
+    expect(
+      install,
+      'EngineSetup for the wrong plugin, or missing',
+    ).toBeGreaterThan(-1);
     expect(readme, 'RemoteReadme missing').toBeGreaterThan(-1);
-    expect(install, 'install must come before the fetched README').toBeLessThan(readme);
+    expect(install, 'install must come before the fetched README').toBeLessThan(
+      readme,
+    );
   });
 });
 

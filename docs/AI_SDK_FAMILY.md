@@ -89,7 +89,7 @@ npm version, so it stays quiet for a package that has never been published.
 > "agentic-security should exist only if there are global rules. If the securities are
 > dependent on how each SDK is developed, then we should have only the SDK-specific."
 
-This is [`AGENTS.md` › Plugin Scope Rules](../AGENTS.md) applied to this family: a shared
+This is [Rule authoring › Plugin Scope Rules](./RULE_AUTHORING.md) applied to this family: a shared
 plugin has to earn its existence with rules that fire **with no SDK installed**. Anything
 gated on a provider's call shape ships in that provider's plugin. Enforced in spirit by
 `npm run lint:taxonomy`; see the finding below for why this family needs its own discipline.

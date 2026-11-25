@@ -18,7 +18,9 @@ import { Linter } from 'eslint';
 import { RuleTester } from 'oxlint/plugins-dev';
 import { createRule } from './rule-creator';
 
-RuleTester.describe = describe;
+// oxlint's RuleTester needs Node 22+ (raw transfer); skipped, visibly, below it.
+RuleTester.describe =
+  Number(process.versions.node.split('.')[0]) >= 22 ? describe : describe.skip;
 RuleTester.it = it;
 const oxlint = new RuleTester({ eslintCompat: true });
 

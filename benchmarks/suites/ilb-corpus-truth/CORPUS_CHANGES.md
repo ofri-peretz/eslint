@@ -7,9 +7,10 @@ subtracting the removed repositories' own contributions, never by re-recording
 the whole corpus, because a fresh full re-measure would silently absorb any
 regression that landed since the last recording.
 
-| Date       | Change                    | Repository                                      | Pin                                        | Reason           |
-| ---------- | ------------------------- | ----------------------------------------------- | ------------------------------------------ | ---------------- |
-| 2026-10-19 | removed (107 → 106 repos) | `autobe` — `https://github.com/wrtnlabs/autobe` | `f5de9927c8eee6805afa3aeafd204f4c45037e49` | upstream deleted |
+| Date       | Change                    | Repository                                                 | Pin                                        | Reason           |
+| ---------- | ------------------------- | ---------------------------------------------------------- | ------------------------------------------ | ---------------- |
+| 2026-10-19 | removed (107 → 106 repos) | `autobe` — `https://github.com/wrtnlabs/autobe`            | `f5de9927c8eee6805afa3aeafd204f4c45037e49` | upstream deleted |
+| 2026-11-15 | removed (106 → 105 repos) | `reactpress` — `https://github.com/fecommunity/reactpress` | `39ea6e0ff5cc7a570ee7673da1c79d8228fe3f2a` | upstream deleted |
 
 ## 2026-10-19 — autobe removed
 
@@ -154,3 +155,40 @@ needs and ships Node 22, one major below this repo's pinned Node 24, so
 re-running `ilb:corpus-truth` here was not practical. A human or a later CI
 run can re-verify by re-running `npm run ilb:corpus-truth` and checking the
 new counts do not exceed these.
+
+## 2026-11-15 — reactpress removed
+
+The upstream repository `fecommunity/reactpress` is gone, along with the whole
+`fecommunity` account: the GitHub API returns 404 for the repository, the
+pinned commit and the account. The scheduled run on 2026-11-10
+([42857599724](https://github.com/ofri-peretz/eslint/actions/runs/42857599724),
+issue #1514) failed in both corpus jobs with `Could not pin reactpress to
+39ea6e0…`, and every later run would fail the same way. No fork or rename
+carries the repository (a GitHub search for `reactpress` finds only unrelated
+projects), so it is removed rather than re-pinned. The other 105 pins were
+re-checked on 2026-11-15 through the commits API, and every one still resolves.
+
+reactpress's contribution was measured on a clean clone of the pinned commit
+(tracked files only, which is what CI's depth-1 fetch sees, taken from the
+local `oos/` copy still at that commit), with `run.ts` itself on `main` at
+`ae3107bf8`:
+
+| Rules measured with   | Rules | Files | Findings | Off-SDK |
+| --------------------- | ----: | ----: | -------: | ------: |
+| `main` at `ae3107bf8` |   163 |   836 |       81 |       2 |
+
+Both off-SDK findings are `express-security/no-missing-security-headers`.
+
+Baseline arithmetic:
+
+- `express-security/no-missing-security-headers`: `22 − 2 = 20`. Every other
+  rule's ceiling is `ceiling − 0 = ceiling`.
+- `filesScanned`: 106,002 − 836 = **105,166**.
+- `corpusHash`: `sha256:c1702ff5…8a11` (106 pins) became
+  `sha256:6f53d929…4675` (105 pins), re-derived from `name@commit` of the
+  remaining pins the same way `corpusHash()` computes it. The old value
+  reproduces exactly from the old `repos.json`.
+
+`benchmarks/corpus-index.json` still lists reactpress, for the same reason it
+still lists autobe: it indexes the local `oos/` clone set, and the gate does
+not read it.

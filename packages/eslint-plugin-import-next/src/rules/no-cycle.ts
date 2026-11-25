@@ -33,6 +33,7 @@ import {
   shouldIgnoreFile,
 } from '@interlace/eslint-devkit';
 import { realpathSync } from 'node:fs';
+import path from 'node:path';
 import {
   type ImportInfo,
   type FileSystemCache,
@@ -42,6 +43,7 @@ import {
   hasOnlyTypeImports,
   computeSCCsFromFile,
   findShortestCyclePath,
+  getFileImports,
   exportKindsOf,
   type ExportKindResolver,
   clearExportKindCache,
@@ -205,6 +207,33 @@ export interface Options {
    * Working directory for resolving paths (auto-detected if not provided)
    */
   workspaceRoot?: string;
+
+  // ── eslint-plugin-import's option names, with its meaning ──────────────
+  // A config carried over from `import/no-cycle` loads and lints the same.
+
+  /** Skip imports that resolve into an external module folder. */
+  ignoreExternal?: boolean;
+  /**
+   * `true`: a dynamic `import()` anywhere in the chain breaks the cycle (this
+   * rule's default when the option is absent). `false`: `import()` is an edge
+   * like any other, in the linted file and along the chain — the
+   * eslint-plugin-import default.
+   */
+  allowUnsafeDynamicCyclicDependency?: boolean;
+  /** Accepted for compatibility. A performance switch upstream; no effect on findings. */
+  disableScc?: boolean;
+  /**
+   * `true`: also check `require()` calls at any depth. `false`: check no
+   * `require()` at all. Absent: top-level `require()` only (this rule's own
+   * default).
+   */
+  commonjs?: boolean;
+  /** `true`: also check AMD `define([...])` / `require([...])` dependencies. */
+  amd?: boolean;
+  /** `false`: skip `import` / `export … from` declarations. Default `true`. */
+  esmodule?: boolean;
+  /** Regular expressions; an import whose specifier matches one is skipped. */
+  ignore?: string[];
 }
 
 export type RuleOptions = [Options?];
@@ -392,8 +421,8 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           maxDepth: {
-            type: 'number',
-            default: Number.MAX_SAFE_INTEGER,
+            // A number, or eslint-plugin-import's `'∞'` spelling of unlimited.
+            anyOf: [{ type: 'number' }, { type: 'string', enum: ['∞'] }],
             description:
               'Maximum depth to traverse when detecting cycles. Default: unlimited (matches eslint-plugin-import and oxlint). Lower values are a performance escape hatch — but with our nonCyclicFiles cache, traversal cost is amortized, and a low cap silently misses cycles deeper than the limit. Set to a finite number only on huge graphs where the bench latency hurts you.',
           },
@@ -461,6 +490,44 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
             description:
               'Suffix for extended module when splitting (e.g., "extended", "api", "helpers")',
           },
+          ignoreExternal: {
+            type: 'boolean',
+            description:
+              'eslint-plugin-import: skip imports that resolve into an external module folder',
+          },
+          allowUnsafeDynamicCyclicDependency: {
+            type: 'boolean',
+            description:
+              'eslint-plugin-import: true lets a dynamic import() anywhere in the chain break the cycle; false makes import() an edge like any other. Absent: import() breaks the cycle.',
+          },
+          disableScc: {
+            type: 'boolean',
+            description:
+              'eslint-plugin-import performance switch. Accepted for compatibility; findings are the same either way.',
+          },
+          commonjs: {
+            type: 'boolean',
+            description:
+              'eslint-plugin-import: true checks require() at any depth, false checks no require(). Absent: top-level require() only.',
+          },
+          amd: {
+            type: 'boolean',
+            description:
+              'eslint-plugin-import: also check AMD define([...]) / require([...]) dependencies',
+          },
+          esmodule: {
+            type: 'boolean',
+            description:
+              'eslint-plugin-import: false skips import and export-from declarations',
+          },
+          ignore: {
+            type: 'array',
+            items: { type: 'string' },
+            minItems: 1,
+            uniqueItems: true,
+            description:
+              'eslint-plugin-import: regular expressions; matching import specifiers are skipped',
+          },
         },
         additionalProperties: false,
       },
@@ -500,6 +567,73 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
     let workspaceRoot: string;
     let resolverSettings: ResolverSetting | undefined;
     let reportedImportNodes: Set<TSESTree.Node>;
+    /** `allowUnsafeDynamicCyclicDependency: false` — `import()` is an edge. */
+    let followDynamic: boolean;
+    let ignoreExternal: boolean;
+    let externalFolders: string[];
+    let commonjs: boolean | undefined;
+    let amd: boolean;
+    let esmodule: boolean;
+    let ignoreSpecifiers: RegExp[];
+
+    /**
+     * Inside an external module folder: `node_modules`, or the folders named
+     * by eslint-plugin-import's `import/external-module-folders` setting.
+     */
+    function isExternalPath(file: string): boolean {
+      return externalFolders.some((folder) =>
+        file.includes(`${path.sep}${folder}${path.sep}`),
+      );
+    }
+
+    /**
+     * Does the linted file's import list ON DISK reach `target`? The
+     * component shortcut is built from it, so when it does not, the shortcut
+     * cannot have seen this edge.
+     */
+    function diskHasEdge(target: string): boolean {
+      return getFileImports(normalizedFilename, {
+        workspaceRoot,
+        barrelExports,
+        cache: sharedCache,
+        resolverSettings,
+      }).some((imp) => imp.path === target);
+    }
+
+    /**
+     * Breadth-first search from `target` back to the linted file, over the
+     * graph as it is on disk, without the strongly-connected-component
+     * shortcut. Used when the shortcut cannot answer: the linted file's own
+     * edges come from the source being linted, which may differ from disk
+     * (an unsaved editor buffer, `--stdin`), or the options change which
+     * edges count (`import()` followed, external folders skipped).
+     */
+    function walkBack(target: string): string[] | null {
+      const queue: string[][] = [[target]];
+      const visited = new Set<string>([target]);
+      while (queue.length > 0) {
+        const route = queue.shift()!;
+        if (route.length > maxDepth) break;
+        const current = route[route.length - 1];
+        const imports = getFileImports(current, {
+          workspaceRoot,
+          barrelExports,
+          cache: sharedCache,
+          resolverSettings,
+        });
+        for (const imp of imports) {
+          if (imp.dynamic && !followDynamic) continue;
+          if (imp.typeOnly) continue;
+          if (imp.inlineTypeOnly && !verbatimModuleSyntax) continue;
+          if (ignoreExternal && isExternalPath(imp.path)) continue;
+          if (imp.path === normalizedFilename) return [...route, imp.path];
+          if (visited.has(imp.path)) continue;
+          visited.add(imp.path);
+          queue.push([...route, imp.path]);
+        }
+      }
+      return null;
+    }
 
     /**
      * Select fix strategy based on cycle characteristics
@@ -674,6 +808,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       // Each import node should produce at most ONE error regardless of how
       // many distinct cycle paths pass through this import.
       if (reportedImportNodes.has(node)) return;
+      if (ignoreSpecifiers.some((re) => re.test(importSource))) return;
 
       const resolved = resolveImportPath(importSource, {
         fromFile: normalizedFilename,
@@ -684,10 +819,42 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       });
 
       if (!resolved) return;
+      if (resolved === normalizedFilename) return; // no-self-import territory
+      if (ignoreExternal && isExternalPath(resolved)) return;
 
       if (erased?.(resolved)) return;
 
-      if (sharedCache.nonCyclicFiles.has(resolved)) return;
+      // The strongly-connected-component shortcut skips `import()` and
+      // external folders are not its concern: when the options change which
+      // edges count, walk the graph instead.
+      if (followDynamic || ignoreExternal) {
+        const route = walkBack(resolved);
+        if (route) report(node, importSource, resolved, route);
+        return;
+      }
+
+      const cyclePath = sccCyclePath(resolved);
+      if (cyclePath) {
+        report(node, importSource, resolved, cyclePath);
+        return;
+      }
+
+      // The shortcut read the linted file's own edges from DISK. When the
+      // source being linted imports something the file on disk does not (an
+      // unsaved editor buffer, `--stdin`), it could not have seen a cycle
+      // through this edge.
+      if (!diskHasEdge(resolved)) {
+        const route = walkBack(resolved);
+        if (route) report(node, importSource, resolved, route);
+      }
+    }
+
+    /**
+     * The cycle through `linted file → target`, found within one strongly
+     * connected component of the graph as it is on disk.
+     */
+    function sccCyclePath(resolved: string): string[] | null {
+      if (sharedCache.nonCyclicFiles.has(resolved)) return null;
 
       let tgtSCC = sharedCache.sccIndex.get(resolved);
       if (tgtSCC === undefined) {
@@ -716,10 +883,10 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       }
 
       if (srcSCC === undefined || tgtSCC === undefined || srcSCC !== tgtSCC) {
-        return;
+        return null;
       }
 
-      const cyclePath = findShortestCyclePath(normalizedFilename, resolved, {
+      return findShortestCyclePath(normalizedFilename, resolved, {
         maxDepth,
         workspaceRoot,
         barrelExports,
@@ -727,9 +894,14 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
         resolverSettings,
         verbatimModuleSyntax,
       });
+    }
 
-      if (!cyclePath) return;
-
+    function report(
+      node: TSESTree.Node,
+      importSource: string,
+      resolved: string,
+      cyclePath: string[],
+    ): void {
       reportedImportNodes.add(node);
 
       const cycleStart = cyclePath.indexOf(normalizedFilename);
@@ -755,7 +927,16 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const options = context.options[0] || {};
-        maxDepth = options.maxDepth ?? Infinity;
+        maxDepth =
+          typeof options.maxDepth === 'number' ? options.maxDepth : Infinity;
+        followDynamic = options.allowUnsafeDynamicCyclicDependency === false;
+        ignoreExternal = options.ignoreExternal === true;
+        commonjs = options.commonjs;
+        amd = options.amd === true;
+        esmodule = options.esmodule !== false;
+        ignoreSpecifiers = (options.ignore ?? []).map(
+          (pattern) => new RegExp(pattern),
+        );
         verbatimModuleSyntax = options.verbatimModuleSyntax ?? false;
         sharedCache = verbatimModuleSyntax
           ? verbatimGraphCache
@@ -802,6 +983,8 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
         resolverSettings =
           (settings?.['import/resolver'] as ResolverSetting) ||
           (settings?.['import-next/resolver'] as ResolverSetting);
+        externalFolders = (settings['import/external-module-folders'] as
+          string[] | undefined) ?? ['node_modules'];
 
         // Skip ignored files early
         if (
@@ -838,6 +1021,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       },
 
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        if (!esmodule) return;
         // Type-only imports are erased at compile time — no runtime cycle risk.
         if (node.importKind === 'type') return;
         checkEdge(node, node.source.value, (resolved) =>
@@ -858,6 +1042,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       },
 
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (!esmodule) return;
         if (!node.source) return; // no 'from' clause → not a re-export
         // `export type { T } from` is erased like `import type`.
         if (node.exportKind === 'type') return;
@@ -867,12 +1052,14 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       // `export * from './b'` and `export * as ns from './b'` load the module
       // at runtime like an import does; `export type * from` is erased.
       ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        if (!esmodule) return;
         if (node.exportKind === 'type') return;
         checkEdge(node, node.source.value);
       },
 
       // TS `import b = require('./b')` compiles to a top-level `require()`.
       TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+        if (commonjs === false) return;
         if (
           node.importKind === 'type' ||
           node.moduleReference.type !== 'TSExternalModuleReference'
@@ -883,27 +1070,66 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
         checkEdge(node, arg.value);
       },
 
+      // `import('./b')`. Off by default: it runs after both modules have
+      // initialized. eslint-plugin-import counts it unless
+      // `allowUnsafeDynamicCyclicDependency` is set, so setting that option to
+      // `false` turns it on here too.
+      ImportExpression(node: TSESTree.ImportExpression) {
+        if (!followDynamic) return;
+        const arg = node.source;
+        if (arg.type !== 'Literal' || typeof arg.value !== 'string') return;
+        checkEdge(node, arg.value);
+      },
+
       // A `require('./b')` that runs while the module initializes: one not
       // nested in a function. A `require()` inside a function body runs later,
-      // after both modules initialized, like `import()`.
+      // after both modules initialized, like `import()`. eslint-plugin-import's
+      // `commonjs: true` checks every `require()`, and `commonjs: false` none.
+      // `amd: true` adds `define(['./b'], …)` and `require(['./b'], …)`.
       CallExpression(node: TSESTree.CallExpression) {
+        if (node.callee.type !== 'Identifier') return;
+        const callee = node.callee.name;
         const arg = node.arguments[0];
         if (
-          node.callee.type !== 'Identifier' ||
-          node.callee.name !== 'require' ||
+          amd &&
+          (callee === 'define' || callee === 'require') &&
+          node.arguments.length === 2 &&
+          arg.type === 'ArrayExpression'
+        ) {
+          for (const element of arg.elements) {
+            if (
+              element?.type === 'Literal' &&
+              typeof element.value === 'string' &&
+              element.value !== 'require' &&
+              element.value !== 'exports'
+            ) {
+              checkEdge(element, element.value);
+            }
+          }
+          return;
+        }
+        if (
+          commonjs === false ||
+          callee !== 'require' ||
           node.arguments.length !== 1 ||
           arg.type !== 'Literal' ||
           typeof arg.value !== 'string'
         ) {
           return;
         }
-        for (let p: TSESTree.Node | undefined = node.parent; p; p = p.parent) {
-          if (
-            p.type === 'FunctionDeclaration' ||
-            p.type === 'FunctionExpression' ||
-            p.type === 'ArrowFunctionExpression'
+        if (commonjs !== true) {
+          for (
+            let p: TSESTree.Node | undefined = node.parent;
+            p;
+            p = p.parent
           ) {
-            return;
+            if (
+              p.type === 'FunctionDeclaration' ||
+              p.type === 'FunctionExpression' ||
+              p.type === 'ArrowFunctionExpression'
+            ) {
+              return;
+            }
           }
         }
         checkEdge(node, arg.value);

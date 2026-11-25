@@ -14,7 +14,7 @@ autofix: false
 Prevents disabling SSL certificate validation in PostgreSQL connections.
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
+**CWE:** [CWE-319](https://cwe.mitre.org/data/definitions/319.html)
 
 Prevents disabling SSL certificate validation in PostgreSQL connections.
 

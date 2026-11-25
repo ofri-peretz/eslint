@@ -34,16 +34,7 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Per-(node.type) cache of which property keys point at child AST nodes.
- *
- * The previous traversal allocated `Object.keys(node)` for every visited
- * node and filtered out metadata (`loc`, `range`, `parent`, …). On next.js's
- * 14K-file lint pass the same node types recur millions of times — the
- * Object.keys allocation alone showed up as ~4% of the rule's runtime in
- * the v2 profile. Caching by node.type makes the second-and-later visit
- * per type a single map lookup.
- *
- * Module-level so the cache amortizes across files in one ESLint run.
+ * Keys that never hold a child node, for the fallback walk below.
  */
 const SKIP_KEYS = new Set([
   'parent',
@@ -53,23 +44,29 @@ const SKIP_KEYS = new Set([
   'comments',
   'type',
 ]);
-const CHILD_KEYS_CACHE = new Map<string, string[]>();
 
-function getChildKeys(node: TSESTree.Node): string[] {
-  const cached = CHILD_KEYS_CACHE.get(node.type);
-  if (cached) return cached;
-  const keys: string[] = [];
-  for (const key of Object.keys(node)) {
-    if (SKIP_KEYS.has(key)) continue;
-    const v = (node as unknown as Record<string, unknown>)[key];
-    if (v && typeof v === 'object') {
-      // Either an AST node or an array of nodes — record either way; the
-      // traversal logic at the call site handles both shapes.
-      keys.push(key);
-    }
-  }
-  CHILD_KEYS_CACHE.set(node.type, keys);
-  return keys;
+/**
+ * Which keys of this node can hold child nodes.
+ *
+ * The parser's own visitor keys answer that per node TYPE, so a type's answer
+ * is the same on every node and in every file. This function used to build the
+ * answer from the first node of each type it met, keeping a key only when that
+ * one node had an object under it: the first `if` without an `else` dropped
+ * `alternate` for the rest of the run, and from then on no `else` branch was
+ * walked, in any file. What the rule reported then depended on the order files
+ * were linted in (Shopify/cli: 12, 14, 12 on one commit).
+ *
+ * A node with no visitor-key entry (a synthetic node from a test, a type the
+ * parser does not know) is walked by its own keys, which is the one thing that
+ * can be said about that node alone.
+ */
+function getChildKeys(
+  node: TSESTree.Node,
+  visitorKeys: Readonly<Record<string, readonly string[] | undefined>>,
+): readonly string[] {
+  const known = visitorKeys[node.type];
+  if (known) return known;
+  return Object.keys(node).filter((key) => !SKIP_KEYS.has(key));
 }
 
 // Hook names that require dependency array checking
@@ -293,8 +290,8 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           for (const param of n.params ?? []) collectFromPattern(param);
         }
 
-        // Traverse children using the cached child-keys table.
-        const keys = getChildKeys(n);
+        // Traverse children through the parser's visitor keys (see getChildKeys).
+        const keys = getChildKeys(n, context.sourceCode.visitorKeys ?? {});
         for (let i = 0; i < keys.length; i++) {
           const child = (n as unknown as Record<string, unknown>)[keys[i]];
           if (Array.isArray(child)) {
@@ -367,8 +364,8 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           used.add(n.name);
         }
 
-        // Traverse child nodes (cached child-keys table — see getChildKeys).
-        const keys = getChildKeys(n);
+        // Traverse child nodes through the parser's visitor keys (see getChildKeys).
+        const keys = getChildKeys(n, context.sourceCode.visitorKeys ?? {});
         for (let i = 0; i < keys.length; i++) {
           const child = (n as unknown as Record<string, unknown>)[keys[i]];
           if (Array.isArray(child)) {

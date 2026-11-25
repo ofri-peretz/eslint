@@ -52,6 +52,32 @@ function isMongoSpecifier(specifier: string): boolean {
 }
 
 /**
+ * The packages that put a **Mongoose** handle in a file: the ODM, its Nest
+ * binding and every `mongoose-*` / `*-mongoose` plugin (all three read off
+ * {@link MONGOOSE_PACKAGE_PATTERN}), plus Typegoose, whose name carries no
+ * `mongoose` to match.
+ *
+ * Deliberately a different list from {@link MONGO_PACKAGES}: `mongodb`, `bson`
+ * and `connect-mongo` are the native driver and its neighbours. They prove
+ * MongoDB, and prove nothing about Mongoose middleware, populate, or schemas.
+ */
+const MONGOOSE_PACKAGES: ReadonlySet<string> = new Set([
+  '@typegoose/typegoose',
+]);
+
+/** `mongoose-paginate`, `passport-local-mongoose`, `@types/mongoose`. */
+const MONGOOSE_PACKAGE_PATTERN = /(^|[-@/])mongoose($|[-/])/;
+
+function isMongooseSpecifier(specifier: string): boolean {
+  if (specifier.startsWith('.') || specifier.startsWith('/')) return false;
+  const parts = specifier.split('/');
+  const root = specifier.startsWith('@')
+    ? parts.slice(0, 2).join('/')
+    : parts[0];
+  return MONGOOSE_PACKAGES.has(root) || MONGOOSE_PACKAGE_PATTERN.test(root);
+}
+
+/**
  * Whether a scope-introducing node binds the name `require`.
  *
  * Lexical, propagated down the walk — never a file-wide flag. See #483: a
@@ -86,11 +112,14 @@ function bindsRequire(node: TSESTree.Node): boolean {
 }
 
 /** A string literal whose value names a Mongo package. */
-function isMongoLiteral(node: TSESTree.Node | undefined): boolean {
+function isMongoLiteral(
+  node: TSESTree.Node | undefined,
+  matches: (specifier: string) => boolean = isMongoSpecifier,
+): boolean {
   return (
     node?.type === AST_NODE_TYPES.Literal &&
     typeof node.value === 'string' &&
-    isMongoSpecifier(node.value)
+    matches(node.value)
   );
 }
 
@@ -104,9 +133,10 @@ function isMongoLiteral(node: TSESTree.Node | undefined): boolean {
 function isMongoDynamicLoad(
   node: TSESTree.Node,
   requireIsShadowed: boolean,
+  matches: (specifier: string) => boolean = isMongoSpecifier,
 ): boolean {
   if (node.type === AST_NODE_TYPES.ImportExpression) {
-    return isMongoLiteral(node.source);
+    return isMongoLiteral(node.source, matches);
   }
   // A locally bound `require` is a parameter or variable, not module loading.
   if (requireIsShadowed) return false;
@@ -117,7 +147,7 @@ function isMongoDynamicLoad(
   ) {
     return false;
   }
-  return isMongoLiteral(node.arguments[0]);
+  return isMongoLiteral(node.arguments[0], matches);
 }
 
 /**
@@ -197,15 +227,17 @@ export function nonMongoImports(ast: TSESTree.Program): ReadonlySet<string> {
  * identifier is a type name in a dozen unrelated libraries; `Types.ObjectId` is
  * Mongoose's own namespace and `new ObjectId()` is the BSON constructor.
  */
-function isObjectIdEvidence(node: TSESTree.Node): boolean {
-  if (
+function isMongooseObjectId(node: TSESTree.Node): boolean {
+  return (
     node.type === AST_NODE_TYPES.MemberExpression &&
     node.object.type === AST_NODE_TYPES.Identifier &&
     node.object.name === 'Types' &&
     propertyName(node) === 'ObjectId'
-  ) {
-    return true;
-  }
+  );
+}
+
+function isObjectIdEvidence(node: TSESTree.Node): boolean {
+  if (isMongooseObjectId(node)) return true;
   return (
     node.type === AST_NODE_TYPES.NewExpression &&
     node.callee.type === AST_NODE_TYPES.Identifier &&
@@ -300,13 +332,16 @@ function isConnectionString(node: TSESTree.Node): boolean {
  * CommonJS type test this way, and three corpus files were silenced by the
  * omission until the recall diff surfaced them.
  */
-function isImportEquals(node: TSESTree.Node): boolean {
+function isImportEquals(
+  node: TSESTree.Node,
+  matches: (specifier: string) => boolean = isMongoSpecifier,
+): boolean {
   return (
     node.type === AST_NODE_TYPES.TSImportEqualsDeclaration &&
     node.moduleReference.type === AST_NODE_TYPES.TSExternalModuleReference &&
     node.moduleReference.expression.type === AST_NODE_TYPES.Literal &&
     typeof node.moduleReference.expression.value === 'string' &&
-    isMongoSpecifier(node.moduleReference.expression.value)
+    matches(node.moduleReference.expression.value)
   );
 }
 
@@ -413,13 +448,101 @@ export function isNativeCollectionHandle(node: TSESTree.Node): boolean {
  * `NATIVE_COLLECTION_METHODS` for the set and for the two methods rejected from
  * it.
  */
-function isNativeCollectionCall(node: TSESTree.Node): boolean {
+function isNativeCollectionCall(
+  node: TSESTree.Node,
+  handles: ReadonlySet<string> = new Set(),
+): boolean {
+  if (
+    node.type !== AST_NODE_TYPES.CallExpression ||
+    node.callee.type !== AST_NODE_TYPES.MemberExpression ||
+    !namesOneOf(propertyName(node.callee), NATIVE_COLLECTION_METHODS)
+  ) {
+    return false;
+  }
   return (
-    node.type === AST_NODE_TYPES.CallExpression &&
-    node.callee.type === AST_NODE_TYPES.MemberExpression &&
-    namesOneOf(propertyName(node.callee), NATIVE_COLLECTION_METHODS) &&
-    isNativeCollectionHandle(node.callee.object)
+    isNativeCollectionHandle(node.callee.object) ||
+    isRootedAtBoundHandle(node.callee.object, handles)
   );
+}
+
+/**
+ * The identifier at the root of `a.b(...).c`: `allocationsCol` in
+ * `allocationsCol.find(q).toArray(cb)`. `null` when the chain starts anywhere
+ * else (`this`, a call result, a literal).
+ */
+function chainRootName(node: TSESTree.Node): string | null {
+  let current: TSESTree.Node = node;
+  for (;;) {
+    if (current.type === AST_NODE_TYPES.Identifier) return current.name;
+    if (current.type === AST_NODE_TYPES.CallExpression) {
+      current = current.callee;
+    } else if (current.type === AST_NODE_TYPES.MemberExpression) {
+      current = current.object;
+    } else {
+      return null;
+    }
+  }
+}
+
+function isRootedAtBoundHandle(
+  node: TSESTree.Node,
+  handles: ReadonlySet<string>,
+): boolean {
+  if (handles.size === 0) return false;
+  const root = chainRootName(node);
+  return root !== null && handles.has(root);
+}
+
+/**
+ * Names this file binds to a `.collection('name')` handle:
+ *
+ *   const allocationsCol = db.collection('allocations');
+ *
+ * is the idiomatic way DAO modules use the native driver — the handle is
+ * opened once in a constructor and every query goes through the variable, so
+ * `allocationsCol.find(q).toArray(cb)` carries no `.collection('…')` of its own
+ * for the chained arm to see. The handle is evidence only when a native-driver
+ * method is then called through it (see `isNativeCollectionCall`), so a
+ * Firestore `const col = db.collection('x'); col.doc(id).get()` still opens
+ * nothing.
+ */
+function collectionHandleNames(ast: TSESTree.Program): ReadonlySet<string> {
+  const names = new Set<string>();
+  const visit = (node: TSESTree.Node): void => {
+    if (
+      node.type === AST_NODE_TYPES.VariableDeclarator &&
+      node.id.type === AST_NODE_TYPES.Identifier &&
+      node.init != null &&
+      isNativeCollectionHandle(node.init)
+    ) {
+      names.add(node.id.name);
+    } else if (
+      node.type === AST_NODE_TYPES.AssignmentExpression &&
+      node.left.type === AST_NODE_TYPES.Identifier &&
+      isNativeCollectionHandle(node.right)
+    ) {
+      names.add(node.left.name);
+    }
+    for (const key of Object.keys(node)) {
+      if (key === 'parent') continue;
+      const value = (node as unknown as Record<string, unknown>)[key];
+      if (Array.isArray(value)) {
+        for (const child of value) {
+          if (child && typeof (child as TSESTree.Node).type === 'string') {
+            visit(child as TSESTree.Node);
+          }
+        }
+      } else if (
+        value &&
+        typeof value === 'object' &&
+        typeof (value as TSESTree.Node).type === 'string'
+      ) {
+        visit(value as TSESTree.Node);
+      }
+    }
+  };
+  visit(ast);
+  return names;
 }
 
 const cache = new WeakMap<TSESTree.Program, boolean>();
@@ -461,14 +584,47 @@ const cache = new WeakMap<TSESTree.Program, boolean>();
 export function fileUsesMongo(ast: TSESTree.Program): boolean {
   const cached = cache.get(ast);
   if (cached !== undefined) return cached;
-  const result = computeUsesMongo(ast);
+  const result = computeUsesMongo(ast, false);
   cache.set(ast, result);
   return result;
 }
 
-function computeUsesMongo(ast: TSESTree.Program): boolean {
+const mongooseCache = new WeakMap<TSESTree.Program, boolean>();
+
+/**
+ * Whether this file has **Mongoose** in it, as opposed to MongoDB.
+ *
+ * {@link fileUsesMongo} answers "is this a MongoDB file", and its native-driver
+ * arms (a `mongodb` import, `new ObjectId()`, a connection string, a chained
+ * `.collection('x').updateOne()`) are what keep the injection and connection
+ * rules working on the driver. A rule about something only Mongoose has
+ * (`pre('updateOne')` middleware, `populate`, schema validators) cannot lean on
+ * them: the native driver has no middleware to bypass, and reporting one on
+ * `db.collection('apps').updateOne(...)` named a feature the code does not
+ * have. Measured on a Node app that wraps the driver, that was 301 findings.
+ *
+ * Evidence is therefore the Mongoose-only subset of the gate: a Mongoose
+ * package or plugin (`mongoose`, `@nestjs/mongoose`, `mongoose-paginate`), a
+ * binding named `mongoose`, `new Schema(...)`, `Types.ObjectId` and `.lean()`.
+ * A model reached only through a relative import still has no evidence here,
+ * which is the same trade {@link fileUsesMongo} makes for the file as a whole.
+ */
+export function fileUsesMongoose(ast: TSESTree.Program): boolean {
+  const cached = mongooseCache.get(ast);
+  if (cached !== undefined) return cached;
+  const result = computeUsesMongo(ast, true);
+  mongooseCache.set(ast, result);
+  return result;
+}
+
+function computeUsesMongo(
+  ast: TSESTree.Program,
+  mongooseOnly: boolean,
+): boolean {
   let found = false;
   const foreign = nonMongoImports(ast);
+  const handles = collectionHandleNames(ast);
+  const matches = mongooseOnly ? isMongooseSpecifier : isMongoSpecifier;
 
   const visit = (node: TSESTree.Node, requireIsShadowed: boolean): void => {
     if (
@@ -477,20 +633,22 @@ function computeUsesMongo(ast: TSESTree.Program): boolean {
         node.type === AST_NODE_TYPES.ExportAllDeclaration) &&
       node.source?.type === AST_NODE_TYPES.Literal &&
       typeof node.source.value === 'string' &&
-      isMongoSpecifier(node.source.value)
+      matches(node.source.value)
     ) {
       found = true;
       return;
     }
     if (
-      isImportEquals(node) ||
+      isImportEquals(node, matches) ||
       bindsMongooseName(node) ||
-      isMongoDynamicLoad(node, requireIsShadowed) ||
+      isMongoDynamicLoad(node, requireIsShadowed, matches) ||
       isSchemaConstruction(node, foreign) ||
-      isObjectIdEvidence(node) ||
       isLeanCall(node) ||
-      isNativeCollectionCall(node) ||
-      isConnectionString(node)
+      (mongooseOnly
+        ? isMongooseObjectId(node)
+        : isObjectIdEvidence(node) ||
+          isNativeCollectionCall(node, handles) ||
+          isConnectionString(node))
     ) {
       found = true;
       return;
