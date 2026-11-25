@@ -1,9 +1,0 @@
----
-'eslint-plugin-express-security': patch
----
-
-False positives and coverage gaps found linting popular Node.js packages and Express/NestJS starters.
-
-- `no-client-controlled-authorization`: `req.params.userId !== user.id` is not reported when `user` is a never-reassigned parameter, with nothing written below it (directly or through `req.user`), of the callback `passport.authenticate` invokes (its second parameter, the user, not `info`) (inline, or returned by a local factory whose call is passed to it), stored on the same request (`req.user = user`). A parameter of an ordinary function (`check(req, req.body)`), a local copy of client input, a parameter stored on another request, a rewritten parameter, a principal whose properties are overwritten, and a comparison against a second client value still report.
-- `no-exposed-debug-endpoints`: a path segment spelled as a health probe (`health-check`, `healthcheck`, `health_check`, `healthz`) is not a debug endpoint, unless an inline handler reads the global `process`, a `process` or `os` module binding (`res.json(process.env)`). `/health` itself and `/health-check/debug` still report, and an `endpoints` list you configure is matched against the route as written.
-- `require-helmet`: a call that hands the app to a function this file defines, and uses the parameter only as a receiver, is read instead of treated as the app leaving the file. Helmet applied through the parameter counts, and its absence is reported at `express()`. A module that only receives the app (the loader shape) is never reported, because helmet applied by its caller is not provable in the file; imported functions, method calls, a reassigned function declaration, an app reached through `arguments`, and parameters that are passed on, returned, stored or rewritten still count as an escape.
