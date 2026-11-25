@@ -38,6 +38,7 @@ import { noDeprecatedCipherMethod } from './rules/no-deprecated-cipher-method';
 import { noEcbMode } from './rules/no-ecb-mode';
 import { noInsecureKeyDerivation } from './rules/no-insecure-key-derivation';
 import { noMathRandomCrypto } from './rules/no-math-random-crypto';
+import { noModuloBiasedRandom } from './rules/no-modulo-biased-random';
 import { noInsecureRsaPadding } from './rules/no-insecure-rsa-padding';
 import { noSelfSignedCerts } from './rules/no-self-signed-certs';
 import { noSha1Hash } from './rules/no-sha1-hash';
@@ -96,6 +97,7 @@ export const rules: Record<
   'no-insecure-key-derivation': noInsecureKeyDerivation,
   'no-insecure-rsa-padding': noInsecureRsaPadding,
   'no-math-random-crypto': noMathRandomCrypto,
+  'no-modulo-biased-random': noModuloBiasedRandom,
   'no-self-signed-certs': noSelfSignedCerts,
   'no-sha1-hash': noSha1Hash,
   'no-static-iv': noStaticIv,

@@ -1,5 +1,5 @@
 // CWE-674: Uncontrolled Recursion — copying an error and its cause chain
-// @author       claude-opus-5.5
+// @author       claude
 // @reviewedBy    benchmark-validator
 // @lastReviewed  2026-11-25
 // This MUST be detected — shape of Node.js copyError before the fix for

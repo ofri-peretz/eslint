@@ -1,5 +1,5 @@
 // A depth bound, checked and passed on, ends the walk on any chain.
-// @author       claude-opus-5.5
+// @author       claude
 // @reviewedBy    benchmark-validator
 // @lastReviewed  2026-11-25
 function flattenError(err, depth = 0) {

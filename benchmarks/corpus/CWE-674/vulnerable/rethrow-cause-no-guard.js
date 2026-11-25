@@ -1,5 +1,5 @@
 // CWE-674: Uncontrolled Recursion — a cause-chain walk with no visited set
-// @author       claude-opus-5.5
+// @author       claude
 // @reviewedBy    benchmark-validator
 // @lastReviewed  2026-11-25
 // This MUST be detected — shape of Next.js 16.4.6 unstable_rethrow. Called on

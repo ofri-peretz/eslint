@@ -1,5 +1,5 @@
 // CWE-248: the page decodes its own location hash with no try/catch.
-// @author       claude-opus-5.5
+// @author       claude
 // @reviewedBy    benchmark-validator
 // @lastReviewed  2026-11-25
 // A link to #%E0%A4%A throws URIError before the router renders anything.

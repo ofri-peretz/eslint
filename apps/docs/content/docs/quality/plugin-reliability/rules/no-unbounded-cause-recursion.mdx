@@ -20,13 +20,13 @@ Detects a function that calls itself on `error.cause`, or maps itself over `erro
 
 ## Quick Summary
 
-| Aspect            | Details                                                                            |
-| ----------------- | ---------------------------------------------------------------------------------- |
+| Aspect            | Details                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------- |
 | **CWE Reference** | [CWE-674](https://cwe.mitre.org/data/definitions/674.html) (Uncontrolled Recursion) |
-| **Severity**      | Medium (the error handler itself throws)                                           |
-| **Auto-Fix**      | None                                                                               |
-| **Category**      | Reliability                                                                        |
-| **Best For**      | Error formatters, serializers, loggers and framework `catch` helpers               |
+| **Severity**      | Medium (the error handler itself throws)                                            |
+| **Auto-Fix**      | None                                                                                |
+| **Category**      | Reliability                                                                         |
+| **Best For**      | Error formatters, serializers, loggers and framework `catch` helpers                |
 
 ## Why this matters
 
@@ -71,16 +71,22 @@ const errorToErrorLike = (error) => ({
 ### ✅ Correct
 
 ```typescript
-export function unstable_rethrow(error: unknown, seen = new Set<unknown>()): void {
+export function unstable_rethrow(
+  error: unknown,
+  seen = new Set<unknown>(),
+): void {
   if (seen.has(error)) return;
   seen.add(error);
   if (isNextRouterError(error)) throw error;
-  if (error instanceof Error && 'cause' in error) unstable_rethrow(error.cause, seen);
+  if (error instanceof Error && 'cause' in error)
+    unstable_rethrow(error.cause, seen);
 }
 
 function flatten(err: Error, depth = 0): string {
   if (depth > 10) return '…';
-  return err.cause instanceof Error ? `${err.message}: ${flatten(err.cause, depth + 1)}` : err.message;
+  return err.cause instanceof Error
+    ? `${err.message}: ${flatten(err.cause, depth + 1)}`
+    : err.message;
 }
 ```
 

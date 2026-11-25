@@ -3,8 +3,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-11-25",
   "totalPlugins": 32,
-  "totalRules": 519,
-  "oxlintCompatible": 519,
+  "totalRules": 520,
+  "oxlintCompatible": 520,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1771,7 +1771,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 44,
+      "ruleCount": 45,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1901,6 +1901,12 @@
         },
         {
           "name": "no-math-random-crypto",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-modulo-biased-random",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

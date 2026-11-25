@@ -13,7 +13,7 @@ cases: []
 > fix for a `Math.random` password also had to remove a modulo bias that no
 > rule of ours reports.
 
-**Status:** draft · **Opened:** 2026-11-25 · **Owner:** @ofri-peretz
+**Status:** review · **Opened:** 2026-11-25 · **Owner:** @ofri-peretz
 
 ---
 

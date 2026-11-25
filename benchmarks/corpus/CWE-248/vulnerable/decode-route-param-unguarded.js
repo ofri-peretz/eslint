@@ -1,5 +1,5 @@
 // CWE-248: decodeURIComponent on a route parameter with no try/catch.
-// @author       claude-opus-5.5
+// @author       claude
 // @reviewedBy    benchmark-validator
 // @lastReviewed  2026-11-25
 // GET /files/a%zz throws URIError: URI malformed, so any client gets a 500

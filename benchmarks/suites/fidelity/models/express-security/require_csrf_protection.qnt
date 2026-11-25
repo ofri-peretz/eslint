@@ -15,7 +15,9 @@
 // per-route, or inside a middleware array protects it. So does lusca: a
 // global wrapper that builds lusca.csrf() and hands it the request and its own
 // next (LuscaWrapper), or lusca({ csrf: true }) in the route chain (LuscaRoute).
-// lusca({ csrf: false }) mounted globally turns CSRF off (LuscaOff). ignorePatterns
+// lusca({ csrf: false }) mounted globally turns CSRF off (LuscaOff). Loading
+// lusca, like csurf, is itself credential evidence: a CSRF library means a
+// cookie session, so LuscaOff reports even with no other credential. ignorePatterns
 // silences a matching route path. Options: protectedMethods ['post'] narrows
 // the methods (PostOnly); ignorePatterns ['/transfer'] (IgnoreMatch) or
 // ['/api/webhook'] (IgnoreOther, does not match). Spellings: app = express(),
@@ -45,7 +47,7 @@ module require_csrf_protection {
     sh == GuardOnly or (sh == Bearer and c != CookieRead)
 
   pure def reports(c: Cred, a: Auth, x: Csrf, m: Method, sp: Spelling, o: Opts, sh: Shape): bool =
-    ambient(c) and a != NoAuth and (x == NoCsrf or x == LuscaOff) and protectedMethod(m, o) and o != IgnoreMatch
+    (ambient(c) or x == LuscaOff) and a != NoAuth and (x == NoCsrf or x == LuscaOff) and protectedMethod(m, o) and o != IgnoreMatch
       and not(exemptShape(sh, c))
 
   // The credential x auth x csrf core is crossed at app/post/default options;

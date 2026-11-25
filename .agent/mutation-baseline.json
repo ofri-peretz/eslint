@@ -1162,6 +1162,13 @@
           "noCoverage": 0,
           "timeout": 9
         },
+        "no-hardcoded-credentials": {
+          "score": 93.5,
+          "killed": 1211,
+          "survived": 83,
+          "noCoverage": 0,
+          "timeout": 2
+        },
         "no-homoglyph-identifiers": {
           "score": 53.7,
           "killed": 104,
@@ -1196,6 +1203,13 @@
           "survived": 30,
           "noCoverage": 0,
           "timeout": 1
+        },
+        "no-unguarded-uri-decode": {
+          "score": 76.7,
+          "killed": 221,
+          "survived": 61,
+          "noCoverage": 7,
+          "timeout": 4
         },
         "no-weak-password-recovery": {
           "score": 70.4,
@@ -1244,7 +1258,6 @@
         "no-electron-security-issues",
         "no-format-string-injection",
         "no-graphql-injection",
-        "no-hardcoded-credentials",
         "no-hardcoded-session-tokens",
         "no-improper-type-validation",
         "no-insecure-comparison",

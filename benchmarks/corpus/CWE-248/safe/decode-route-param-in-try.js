@@ -1,5 +1,5 @@
 // The same decode, guarded: a malformed escape is answered with 400.
-// @author       claude-opus-5.5
+// @author       claude
 // @reviewedBy    benchmark-validator
 // @lastReviewed  2026-11-25
 const express = require('express');

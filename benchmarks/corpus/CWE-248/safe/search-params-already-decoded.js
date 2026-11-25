@@ -1,5 +1,5 @@
 // URLSearchParams values are decoded by the URL parser, which never throws
-// @author       claude-opus-5.5
+// @author       claude
 // @reviewedBy    benchmark-validator
 // @lastReviewed  2026-11-25
 // on a stray '%', so there is nothing to guard.

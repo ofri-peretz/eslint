@@ -1,5 +1,5 @@
 // The copyError shape after the fix: a map of copies made so far ends a cycle.
-// @author       claude-opus-5.5
+// @author       claude
 // @reviewedBy    benchmark-validator
 // @lastReviewed  2026-11-25
 function copyError(source, copies = new Map()) {

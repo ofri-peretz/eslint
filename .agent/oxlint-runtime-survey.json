@@ -1374,96 +1374,92 @@
       "examples": []
     },
     "eslint-plugin-node-security/detect-child-process": {
-      "cases": 251,
+      "cases": 274,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/detect-eval-with-expression": {
-      "cases": 156,
+      "cases": 215,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/detect-non-literal-fs-filename": {
-      "cases": 244,
+      "cases": 332,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/detect-suspicious-dependencies": {
-      "cases": 45,
+      "cases": 51,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/lock-file": {
-      "cases": 13,
-      "failed": 7,
-      "examples": [
-        "a lock file for a package manager the project does not use: Should have 1 error but had 0: []",
-        "const invalidYarn = 1: Should have 1 error but had 0: []",
-        "const invalidOutside = 1: Should have 1 error but had 0: []"
-      ]
+      "cases": 21,
+      "failed": 0,
+      "examples": []
     },
     "eslint-plugin-node-security/no-arbitrary-file-access": {
-      "cases": 158,
+      "cases": 224,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/no-buffer-overread": {
-      "cases": 168,
+      "cases": 246,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/no-cryptojs": {
-      "cases": 30,
+      "cases": 33,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/no-cryptojs-weak-random": {
-      "cases": 29,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/no-data-in-temp-storage": {
-      "cases": 89,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/no-deprecated-buffer": {
       "cases": 37,
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-node-security/no-data-in-temp-storage": {
+      "cases": 115,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/no-deprecated-buffer": {
+      "cases": 69,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-node-security/no-deprecated-cipher-method": {
-      "cases": 15,
+      "cases": 21,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/no-dynamic-algorithm-selection": {
-      "cases": 32,
+      "cases": 90,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/no-dynamic-command-string": {
-      "cases": 83,
+      "cases": 138,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/no-dynamic-dependency-loading": {
-      "cases": 44,
+      "cases": 48,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/no-dynamic-require": {
-      "cases": 53,
+      "cases": 70,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/no-ecb-mode": {
-      "cases": 19,
+      "cases": 26,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/no-env-injection": {
-      "cases": 45,
+      "cases": 49,
       "failed": 0,
       "examples": []
     },
@@ -1473,127 +1469,132 @@
       "examples": []
     },
     "eslint-plugin-node-security/no-insecure-key-derivation": {
-      "cases": 65,
+      "cases": 79,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/no-insecure-rsa-padding": {
-      "cases": 12,
+      "cases": 23,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/no-math-random-crypto": {
-      "cases": 135,
+      "cases": 222,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/no-modulo-biased-random": {
+      "cases": 34,
       "failed": 0,
       "examples": []
     },
     "eslint-plugin-node-security/no-self-signed-certs": {
-      "cases": 37,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/no-sha1-hash": {
-      "cases": 11,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/no-shell-injection": {
-      "cases": 104,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/no-ssrf": {
-      "cases": 73,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/no-static-iv": {
-      "cases": 76,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/no-timing-unsafe-compare": {
-      "cases": 240,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/no-toctou-vulnerability": {
-      "cases": 119,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/no-unbounded-decompression": {
-      "cases": 72,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/no-unsafe-buffer-alloc": {
-      "cases": 170,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/no-unsafe-dynamic-require": {
-      "cases": 77,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/no-weak-cipher-algorithm": {
-      "cases": 35,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/no-weak-dh-parameters": {
-      "cases": 29,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/no-weak-hash-algorithm": {
-      "cases": 152,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/no-zip-slip": {
-      "cases": 141,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/prefer-native-crypto": {
-      "cases": 49,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/require-aead-tag-verification": {
-      "cases": 26,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/require-dependency-integrity": {
-      "cases": 46,
-      "failed": 0,
-      "examples": []
-    },
-    "eslint-plugin-node-security/require-emitter-error-handler": {
       "cases": 45,
       "failed": 0,
       "examples": []
     },
-    "eslint-plugin-node-security/require-secure-credential-storage": {
-      "cases": 107,
+    "eslint-plugin-node-security/no-sha1-hash": {
+      "cases": 18,
       "failed": 0,
       "examples": []
     },
-    "eslint-plugin-node-security/require-secure-deletion": {
-      "cases": 59,
+    "eslint-plugin-node-security/no-shell-injection": {
+      "cases": 135,
       "failed": 0,
       "examples": []
     },
-    "eslint-plugin-node-security/require-storage-encryption": {
+    "eslint-plugin-node-security/no-ssrf": {
+      "cases": 108,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/no-static-iv": {
+      "cases": 86,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/no-timing-unsafe-compare": {
+      "cases": 372,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/no-toctou-vulnerability": {
+      "cases": 138,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/no-unbounded-decompression": {
+      "cases": 127,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/no-unsafe-buffer-alloc": {
+      "cases": 389,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/no-unsafe-dynamic-require": {
+      "cases": 99,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/no-weak-cipher-algorithm": {
+      "cases": 40,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/no-weak-dh-parameters": {
       "cases": 31,
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-node-security/no-weak-hash-algorithm": {
+      "cases": 164,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/no-zip-slip": {
+      "cases": 156,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/prefer-native-crypto": {
+      "cases": 51,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/require-aead-tag-verification": {
+      "cases": 32,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/require-dependency-integrity": {
+      "cases": 75,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/require-emitter-error-handler": {
+      "cases": 59,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/require-secure-credential-storage": {
+      "cases": 114,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/require-secure-deletion": {
+      "cases": 77,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-node-security/require-storage-encryption": {
+      "cases": 41,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-node-security/require-stream-error-handler": {
-      "cases": 30,
+      "cases": 62,
       "failed": 0,
       "examples": []
     },
