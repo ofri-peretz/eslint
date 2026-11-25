@@ -5409,6 +5409,78 @@
         }
       ],
       "peers": []
+    },
+    {
+      "id": "ILB-0188",
+      "added": "2026-11-24",
+      "title": "An emoji in a span with no label",
+      "rationale": "NOT a defect: a deprecated no-op stub kept so jsx-a11y configs naming it load. Upstream's `accessible-emoji` asked for `role=\"img\"` and an `aria-label`, and is deprecated there; this rule never reports.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "export const a = <span>🐼</span>;",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "react-a11y/accessible-emoji",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-react-a11y/src/tests/deprecated-stubs.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0189",
+      "added": "2026-11-24",
+      "title": "A label with no id or nesting",
+      "rationale": "NOT a defect: a deprecated no-op stub kept so jsx-a11y configs naming it load. Upstream's `label-has-for` is replaced by `label-has-associated-control`, which does the checking; this rule never reports.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "export const a = <label>Name</label>;",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "react-a11y/label-has-for",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-react-a11y/src/tests/deprecated-stubs.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0190",
+      "added": "2026-11-24",
+      "title": "A select with an onChange handler",
+      "rationale": "NOT a defect: a deprecated no-op stub kept so jsx-a11y configs naming it load. Upstream's `no-onchange` asked for `onBlur`, and is deprecated there; this rule never reports.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "export const a = <select onChange={go}><option /></select>;",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "react-a11y/no-onchange",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-react-a11y/src/tests/deprecated-stubs.test.ts"
+        }
+      ],
+      "peers": []
     }
   ]
 }
