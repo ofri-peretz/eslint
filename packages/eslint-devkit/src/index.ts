@@ -36,6 +36,7 @@ export * from './ast/static-expression';
 export * from './ast/identifier-words';
 export * from './ast/type-syntax';
 export * from './ast/user-regex';
+export * from './ast/separator-anchored';
 
 // Type utilities
 export * from './types/type-utils';

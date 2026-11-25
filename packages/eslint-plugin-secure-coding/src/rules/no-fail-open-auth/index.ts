@@ -395,6 +395,68 @@ export const noFailOpenAuth = createRule<RuleOptions, MessageIds>({
       return hasExitingGuard(tryStatement, names);
     }
 
+    /**
+     * Does the catch record the failure in a variable that a guard right after
+     * the try reads and leaves on?
+     *
+     * FastMCP, bundled into firecrawl-mcp's `dist/server.js`, authenticates
+     * the stdio transport like this:
+     *
+     *   let failure;
+     *   try {
+     *     session = await this.#options.authenticate(void 0);
+     *     if (!session || isRejected(session)) failure = '…';
+     *   } catch (error2) {
+     *     failure = error2 instanceof Error ? error2.message : String(error2);
+     *   }
+     *   if (failure !== void 0) { throw new Error(`Authentication failed …`); }
+     *
+     * The catch does not swallow the error: it hands it to the throw below.
+     *
+     * Deliberately narrow:
+     * - the write is a top-level statement of the catch body, so it always runs;
+     * - its target is a plain binding declared before the try;
+     * - the assigned value does not read that binding, so a counter such as
+     *   `failures = failures + 1` with `if (failures > 3) throw` (which lets the
+     *   first failures through) does not count;
+     * - and `hasExitingGuard` must find an exiting `if` that reads the binding
+     *   before any statement that can do work.
+     */
+    function recordsFailureForAGuard(
+      tryStatement: TSESTree.TryStatement,
+      handler: TSESTree.CatchClause,
+    ): boolean {
+      const names = new Set<string>();
+      for (const statement of handler.body.body) {
+        if (statement.type !== AST_NODE_TYPES.ExpressionStatement) continue;
+        const write = statement.expression;
+        if (
+          write.type !== AST_NODE_TYPES.AssignmentExpression ||
+          write.operator !== '=' ||
+          write.left.type !== AST_NODE_TYPES.Identifier
+        )
+          continue;
+        const target = write.left;
+        const variable = context.sourceCode
+          .getScope(target)
+          .references.find(
+            (reference) => reference.identifier === target,
+          )?.resolved;
+        const definition = variable?.defs[0];
+        if (definition?.type !== 'Variable') continue;
+        if (definition.node.range[1] >= tryStatement.range[0]) continue;
+        const readsItself = variable!.references.some(
+          (reference) =>
+            reference.isRead() &&
+            reference.identifier.range[0] >= write.right.range[0] &&
+            reference.identifier.range[1] <= write.right.range[1],
+        );
+        if (readsItself) continue;
+        names.add(target.name);
+      }
+      return names.size > 0 && hasExitingGuard(tryStatement, names);
+    }
+
     /** An `if` after the try that reads one of `names` and leaves the function. */
     function hasExitingGuard(
       tryStatement: TSESTree.TryStatement,
@@ -569,6 +631,7 @@ export const noFailOpenAuth = createRule<RuleOptions, MessageIds>({
         if (handledScopes.has(handler) || handledScopes.has(node)) return;
         if (!hasWorkAfter(node)) return;
         if (preservesDenyState(node)) return;
+        if (recordsFailureForAGuard(node, handler)) return;
 
         context.report({ node: handler, messageId: 'failOpenSwallow' });
       },
