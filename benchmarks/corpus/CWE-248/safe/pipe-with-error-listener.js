@@ -16,7 +16,9 @@ const fs = require('fs');
 const path = require('path');
 
 function download(req, res) {
-  const stream = fs.createReadStream(path.join('./uploads', path.basename(req.params.id)));
+  const stream = fs.createReadStream(
+    path.join('./uploads', path.basename(req.params.id)),
+  );
   stream.on('error', () => {
     if (!res.headersSent) res.status(404).end();
   });

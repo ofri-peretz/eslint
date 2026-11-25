@@ -43,6 +43,8 @@ ruleTester.run(
       `export const INFRA_TOKEN_INVALID_TOKEN = 'infra_token/invalid_token';`,
       `export const ACCESS_TOKEN_EXPIRED = 'access_token/expired';`,
       `const errors = { secretMissing: 'auth/secret-missing' };`,
+      // A part may hold several words.
+      `export const AUTH_TOKEN_EXPIRED = 'invalid_auth_token/expired';`,
     ],
     invalid: [
       // A segment in braces is a slot only when it is an identifier.
@@ -53,6 +55,15 @@ ruleTester.run(
       // Digits are not an error code.
       {
         code: `const apiToken = 'tok_live/x9k2m4q8';`,
+        errors: 1,
+      },
+      // A capital at the start or end of a part is not an error code.
+      {
+        code: `const apiToken = 'Token_x/invalid_token';`,
+        errors: 1,
+      },
+      {
+        code: `const apiToken = 'invalid_token/token_X';`,
         errors: 1,
       },
       // Mixed case is not an error code.

@@ -328,13 +328,14 @@ function isNamespacedKey(value: string): boolean {
  * case; a code is written to be read and to be matched by a client.
  */
 function isSlashNamespacedCode(value: string): boolean {
-  const parts = value.split('/');
-  return (
-    parts.length >= 2 &&
-    parts.every(
-      (part) => /^[a-z]+(?:[_-][a-z]+)*$/.test(part) && isNaturalWordString(part),
-    )
-  );
+  // A value with no slash is one part: it is decided by isNaturalWordString
+  // before this runs, so no length check is needed here.
+  return value
+    .split('/')
+    .every(
+      (part) =>
+        /^[a-z]+(?:[_-][a-z]+)*$/.test(part) && isNaturalWordString(part),
+    );
 }
 
 /**

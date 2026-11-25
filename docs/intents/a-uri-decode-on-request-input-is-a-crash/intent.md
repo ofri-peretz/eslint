@@ -12,7 +12,7 @@ cases: []
 > Stage 1 artifact. Opened from two URIError crashes we hit ourselves on
 > 2026-11-24 and a measurement of how often the call goes unguarded.
 
-**Status:** draft · **Opened:** 2026-11-25 · **Owner:** @ofri-peretz
+**Status:** review · **Opened:** 2026-11-25 · **Owner:** @ofri-peretz
 
 ---
 
