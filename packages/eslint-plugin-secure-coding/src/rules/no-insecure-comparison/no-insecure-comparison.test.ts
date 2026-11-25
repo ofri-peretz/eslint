@@ -815,7 +815,10 @@ ruleTester.run(
         name: 'checking that a secret is absent compares nothing secret',
         code: 'function f(token) { return token.password === null; }',
       },
-      { code: 'function f(token) { return token.secret === undefined; }' },
+      {
+        name: 'comparing a secret field to undefined tests presence, not value',
+        code: 'function f(token) { return token.secret === undefined; }',
+      },
       { code: 'function f(token) { return undefined === token.apiKey; }' },
     ],
     invalid: [],
