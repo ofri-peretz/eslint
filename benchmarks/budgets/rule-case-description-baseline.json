@@ -243,7 +243,7 @@
     "node-security/no-shell-injection": 59,
     "node-security/no-ssrf": 54,
     "node-security/no-static-iv": 70,
-    "node-security/no-timing-unsafe-compare": 174,
+    "node-security/no-timing-unsafe-compare": 173,
     "node-security/no-toctou-vulnerability": 82,
     "node-security/no-unbounded-decompression": 43,
     "node-security/no-unsafe-buffer-alloc": 134,

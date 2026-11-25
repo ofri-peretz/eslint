@@ -366,6 +366,16 @@ export function findProperty(
   return null;
 }
 
+/** How many writes the module-level binding `name` has (its initialiser counts). */
+function writesTo(name: string, module: ModuleInfo, env: Env): number {
+  // The module declares `name` (its export does), so the lookup finds it.
+  const variable = lookup(
+    name,
+    env.scopeOf(module.ast),
+  ) as TSESLint.Scope.Variable;
+  return variable.references.filter((reference) => reference.isWrite()).length;
+}
+
 /** The value `name` is exported as from `module` — `'default'` for the default export. */
 export function exportedValue(
   module: ModuleInfo,
@@ -387,7 +397,13 @@ export function exportedValue(
         const declarator = declaration.declarations.find(
           (d) => d.id.type === AST_NODE_TYPES.Identifier && d.id.name === name,
         );
-        if (declarator?.init) return valueAt(declarator.init, env);
+        // `export let token;` owns the name even with no initialiser: a star
+        // re-export of another `token` never shadows it.
+        if (declarator !== undefined) {
+          return declarator.init && writesTo(name, module, env) <= 1
+            ? valueAt(declarator.init, env)
+            : null;
+        }
       } else if (
         (declaration?.type === AST_NODE_TYPES.FunctionDeclaration ||
           declaration?.type === AST_NODE_TYPES.ClassDeclaration ||
@@ -395,7 +411,11 @@ export function exportedValue(
           declaration?.type === AST_NODE_TYPES.TSInterfaceDeclaration) &&
         declaration.id?.name === name
       ) {
-        return valueAt(declaration, env);
+        // `export function isDev() {…}; isDev = () => true;` exports what the
+        // name holds, not the declaration. A declaration is not a write.
+        return writesTo(name, module, env) === 0
+          ? valueAt(declaration, env)
+          : null;
       }
       for (const specifier of statement.specifiers) {
         if (moduleExportName(specifier.exported) !== name) continue;
@@ -416,6 +436,19 @@ export function exportedValue(
           : follow(valueAt(variable.identifiers[0], env), depth + 1);
       }
       continue;
+    }
+    // `export * as name from './x'` names the namespace of `./x` explicitly.
+    if (
+      statement.type === AST_NODE_TYPES.ExportAllDeclaration &&
+      statement.exported !== null
+    ) {
+      if (moduleExportName(statement.exported) !== name) continue;
+      const target = resolveRelative(
+        module.file,
+        String(statement.source.value),
+      );
+      const next = target === null ? null : loadModule(target, parser);
+      return next === null ? null : valueAt(next.ast, moduleEnv(next, parser));
     }
     // CommonJS: `module.exports = { … }` / `module.exports.name = …` / `exports.name = …`
     if (
@@ -440,7 +473,28 @@ export function exportedValue(
       }
     }
   }
-  return null;
+  // `export * from './x'` re-exports every named export of `./x` except
+  // `default`. A name declared here wins over one a star re-export carries,
+  // so these are read only after every explicit export missed.
+  if (name === 'default') return null;
+  let starred: Value | null = null;
+  for (const statement of module.ast.body) {
+    if (
+      statement.type !== AST_NODE_TYPES.ExportAllDeclaration ||
+      statement.exported !== null
+    )
+      continue;
+    const target = resolveRelative(module.file, String(statement.source.value));
+    const next = target === null ? null : loadModule(target, parser);
+    const found =
+      next === null ? null : exportedValue(next, name, parser, depth + 1);
+    if (found === null) continue;
+    // Two star re-exports carrying the same name to different values make it
+    // ambiguous, and the module does not export it at all.
+    if (starred !== null && starred.node !== found.node) return null;
+    starred = found;
+  }
+  return starred;
 }
 
 /**
@@ -631,8 +685,15 @@ export function follow(
     const variable = lookup(node.name, scope);
     if (variable === null) return start;
     const def = variable.defs[0];
-    if (def?.type === 'FunctionName' || def?.type === 'ClassName')
+    if (def?.type === 'FunctionName' || def?.type === 'ClassName') {
+      // `function isDev() {…}; isDev = () => true;` — the declaration is no
+      // longer what the name holds. A declaration is not a write, so any
+      // write is a reassignment.
+      if (variable.references.some((reference) => reference.isWrite())) {
+        return start;
+      }
       return next(def.node);
+    }
     const origin = importOrigin(variable, env);
     if (origin !== null) {
       // `const config = require('./config')` is `module.exports`, when the

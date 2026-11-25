@@ -1,4 +1,7 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 import { noMissingValidationPipe } from './index';
 
 /**
@@ -454,6 +457,31 @@ ruleTester.run(
         }
       `,
         options: [{ assumeGlobalPipes: true }],
+        errors: [{ messageId: 'shapeWithoutClass' }],
+      },
+      {
+        // @source ghostfolio apps/api/src/app/endpoints/subscription/subscription.controller.ts:52
+        // @found real-source scan
+        name: 'a registered global pipe has no class to validate an inline body type against',
+        code: `
+        app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+        @Controller('subscription')
+        export class SubscriptionController {
+          @Post('redeem-coupon')
+          redeemCoupon(@Body() { couponCode }: { couponCode: string }) {}
+        }
+      `,
+        errors: [{ messageId: 'shapeWithoutClass' }],
+      },
+      {
+        name: 'with no pipe anywhere, an inline body type is reported as missing validation',
+        code: `
+        @Controller('subscription')
+        export class SubscriptionController {
+          @Post('redeem-coupon')
+          redeemCoupon(@Body() { couponCode }: { couponCode: string }) {}
+        }
+      `,
         errors: [{ messageId: 'missingValidation' }],
       },
       {
@@ -899,3 +927,181 @@ ruleTester.run(
     ]),
   },
 );
+
+/**
+ * A project helper around `UsePipes(new ValidationPipe())`, followed to where
+ * it is written. Ever Gauzy (packages/core/src/lib/shared/pipes/
+ * use-validation.pipe.ts) applies one through an `export *` barrel on 1,386
+ * route parameters, and each was reported as unvalidated.
+ */
+describe('a decorator that wraps ValidationPipe', () => {
+  const root = mkdtempSync(join(tmpdir(), 'nest-validation-wrapper-'));
+  const write = (name: string, text: string): string => {
+    const file = join(root, name);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, text);
+    return file;
+  };
+  afterAll(() => rmSync(root, { recursive: true, force: true }));
+
+  write(
+    'shared/pipes/use-validation.pipe.ts',
+    `import { UsePipes, ValidationPipe, ValidationPipeOptions } from '@nestjs/common';
+export function UseValidationPipe(options?: Partial<ValidationPipeOptions>) {
+  return UsePipes(new ValidationPipe(options ?? {}));
+}`,
+  );
+  write(
+    'shared/pipes/compose.ts',
+    `import { applyDecorators, ParseIntPipe, UsePipes, ValidationPipe } from '@nestjs/common';
+const pipe = UsePipes(ValidationPipe);
+export const ParseThenValidate = UsePipes(ParseIntPipe, new ValidationPipe());
+export const Validated = () => applyDecorators(ApiOk(), pipe);
+export const UseValidation = UsePipes(new ValidationPipe());
+export const Loop: any = applyDecorators(Loop);`,
+  );
+  write(
+    'shared/pipes/not-validation.ts',
+    `import { UsePipes, ParseIntPipe, ValidationPipe } from '@nestjs/common';
+export function UseParse() { return UsePipes(ParseIntPipe); }
+export function Sometimes(on: boolean) {
+  if (on) return UsePipes(new ValidationPipe());
+  return UsePipes(ParseIntPipe);
+}
+import { ValidationPipe as Other } from 'some-other-lib';
+export function Foreign() { return UsePipes(new Other()); }
+export const notAFunction = 1;`,
+  );
+  write(
+    'shared/pipes/index.ts',
+    `export * from './use-validation.pipe';
+export * from './compose';
+export * from './not-validation';`,
+  );
+  const controller = (decorator: string, imports: string): string => `
+${imports}
+@Controller('users')
+class UsersController {
+  ${decorator}
+  @Post()
+  create(@Body() payload: any) {}
+}`;
+  const at = join(root, 'users/users.controller.ts');
+  const fromBarrel = (names: string) =>
+    `import { ${names} } from '../shared/pipes';`;
+
+  ruleTester.run(
+    'no-missing-validation-pipe (wrapped pipe)',
+    noMissingValidationPipe,
+    {
+      valid: nest([
+        {
+          name: 'a helper imported through an export * barrel',
+          filename: at,
+          code: controller(
+            '@UseValidationPipe({ whitelist: true })',
+            fromBarrel('UseValidationPipe'),
+          ),
+        },
+        {
+          name: 'a helper on the controller class',
+          filename: at,
+          code: `${fromBarrel('UseValidationPipe')}
+@UseValidationPipe()
+@Controller('users')
+class UsersController {
+  @Post()
+  create(@Body() payload: any) {}
+}`,
+        },
+        {
+          name: 'applyDecorators composing the pipe through a binding',
+          filename: at,
+          code: controller('@Validated()', fromBarrel('Validated')),
+        },
+        {
+          name: 'a decorator value, applied without a call',
+          filename: at,
+          code: controller('@UseValidation', fromBarrel('UseValidation')),
+        },
+        {
+          name: 'ValidationPipe as one of several pipes in the list',
+          filename: at,
+          code: controller(
+            '@ParseThenValidate',
+            fromBarrel('ParseThenValidate'),
+          ),
+        },
+        {
+          name: 'a helper written in the same file',
+          filename: at,
+          code: controller(
+            '@Check()',
+            `import { UsePipes, ValidationPipe } from '@nestjs/common';
+const Check = () => UsePipes(new ValidationPipe());`,
+          ),
+        },
+      ]),
+      invalid: nest([
+        {
+          name: 'a parameter named ValidationPipe is whatever the caller passes',
+          filename: at,
+          code: controller(
+            '@Check(ParseIntPipe)',
+            `import { ParseIntPipe, UsePipes } from '@nestjs/common';
+const Check = (ValidationPipe) => UsePipes(new ValidationPipe());`,
+          ),
+          errors: [{ messageId: 'missingValidation' }],
+        },
+        {
+          name: 'a helper that installs a different pipe',
+          filename: at,
+          code: controller('@UseParse()', fromBarrel('UseParse')),
+          errors: [{ messageId: 'missingValidation' }],
+        },
+        {
+          name: 'a helper that validates on only one of its paths',
+          filename: at,
+          code: controller('@Sometimes(flag)', fromBarrel('Sometimes')),
+          errors: [{ messageId: 'missingValidation' }],
+        },
+        {
+          name: 'a ValidationPipe from another package is not the NestJS one',
+          filename: at,
+          code: controller('@Foreign()', fromBarrel('Foreign')),
+          errors: [{ messageId: 'missingValidation' }],
+        },
+        {
+          name: 'a composition that refers to itself',
+          filename: at,
+          code: controller('@Loop', fromBarrel('Loop')),
+          errors: [{ messageId: 'missingValidation' }],
+        },
+        {
+          name: 'a binding that is no decorator factory',
+          filename: at,
+          code: controller('@notAFunction()', fromBarrel('notAFunction')),
+          errors: [{ messageId: 'missingValidation' }],
+        },
+        {
+          name: 'a helper this cannot reach is not assumed to validate',
+          filename: at,
+          code: controller(
+            '@UseValidationPipe()',
+            `import { UseValidationPipe } from '@app/shared';`,
+          ),
+          errors: [{ messageId: 'missingValidation' }],
+        },
+        {
+          name: 'a member-expression decorator is not followed',
+          filename: at,
+          code: controller(
+            '@pipes.UseValidationPipe()',
+            `import * as pipes from '../shared/pipes';`,
+          ),
+          errors: [{ messageId: 'missingValidation' }],
+        },
+      ]),
+    },
+  );
+});
