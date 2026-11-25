@@ -711,13 +711,6 @@
           "survived": 36,
           "noCoverage": 0,
           "timeout": 1
-        },
-        "utils/separator-anchored": {
-          "score": 85.9,
-          "killed": 61,
-          "survived": 10,
-          "noCoverage": 0,
-          "timeout": 0
         }
       }
     },
