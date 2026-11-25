@@ -88,7 +88,10 @@ describe('no-unbounded-decompression', () => {
       {
         code: `${REQUIRE}zlib.gunzipSync(other.from('x'), { maxOutputLength: 1 });`,
       },
-      { code: `${REQUIRE}zlib.gunzipSync(read(), { maxOutputLength: 1 });` },
+      {
+        name: 'a call result as input is fine when maxOutputLength caps the output',
+        code: `${REQUIRE}zlib.gunzipSync(read(), { maxOutputLength: 1 });`,
+      },
       {
         code: `${REQUIRE}zlib.gunzipSync(body, { [key]: 1, maxOutputLength: 1 });`,
       },

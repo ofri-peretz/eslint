@@ -46,7 +46,7 @@ type MessageIds = 'unboundedDecompression';
 const AEAD_ALGORITHM = /-(gcm|ccm|ocb)$|^chacha20-poly1305$/i;
 
 export interface Options {
-  /** Allow unbounded decompression in test files. Default: false */
+  /** Skip test and spec files. Default: true; set false to lint them too */
   allowInTests?: boolean;
 }
 
@@ -106,7 +106,7 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
         properties: {
           allowInTests: {
             type: 'boolean',
-            default: false,
+            default: true,
             description: 'Allow unbounded decompression in test files',
           },
         },
@@ -116,7 +116,7 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      allowInTests: false,
+      allowInTests: true,
     },
   ],
   createOnce(
@@ -427,7 +427,7 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
     return {
       before() {
         const [options = {}] = currentOptions();
-        const { allowInTests = false } = options as Options;
+        const { allowInTests = true } = options as Options;
 
         isTestFile = allowInTests && isTestFilePath(context.filename);
       },
