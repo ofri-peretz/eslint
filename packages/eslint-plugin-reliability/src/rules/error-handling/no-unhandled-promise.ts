@@ -258,6 +258,82 @@ const PROMISE_STATICS: ReadonlySet<string> = new Set([
   'reject',
 ]);
 
+/**
+ * Can anything inside `node` make an async function's promise reject?
+ *
+ * Looks for the four ways a handler or finalizer lets a rejection out: `throw`,
+ * `Promise.reject(...)`, `await` (the awaited promise may reject), and
+ * `return <call or new>` (the returned promise settles the outer one). Nested
+ * functions are searched too: a `throw` in a callback is not a rethrow, but
+ * telling the two apart is not worth a missed rejection, so it counts.
+ */
+function mayRejectOut(node: TSESTree.Node): boolean {
+  let found = false;
+  const visit = (n: unknown): void => {
+    if (found || !n || typeof n !== 'object') return;
+    if (Array.isArray(n)) {
+      n.forEach(visit);
+      return;
+    }
+    const cur = n as TSESTree.Node;
+    if (typeof cur.type !== 'string') return;
+    if (
+      cur.type === AST_NODE_TYPES.ThrowStatement ||
+      cur.type === AST_NODE_TYPES.AwaitExpression ||
+      (cur.type === AST_NODE_TYPES.ReturnStatement &&
+        cur.argument &&
+        (cur.argument.type === AST_NODE_TYPES.CallExpression ||
+          cur.argument.type === AST_NODE_TYPES.NewExpression)) ||
+      (cur.type === AST_NODE_TYPES.MemberExpression &&
+        cur.object.type === AST_NODE_TYPES.Identifier &&
+        cur.object.name === 'Promise' &&
+        propertyName(cur) === 'reject')
+    ) {
+      found = true;
+      return;
+    }
+    for (const key of Object.keys(cur)) {
+      if (key === 'parent') continue;
+      visit((cur as unknown as Record<string, unknown>)[key]);
+    }
+  };
+  visit(node);
+  return found;
+}
+
+/**
+ * Is this function an `async` function whose ENTIRE body is one `try` with a
+ * `catch` that cannot let a rejection out?
+ *
+ * Such a promise settles fulfilled whatever the body does: every throw and
+ * every rejected `await` inside the `try` lands in the `catch`, and the catch
+ * (and any `finally`) contain no `throw`, `Promise.reject`, `await` or
+ * `return <call>`. Statements ahead of the `try`, a missing `catch`
+ * (`try/finally`) and an expression-bodied arrow all fall outside this and
+ * stay reported: code before the `try` can throw into the promise.
+ */
+export function isNonRejectingAsyncWrapper(
+  fn: TSESTree.Node | null | undefined,
+): boolean {
+  if (
+    !fn ||
+    (fn.type !== AST_NODE_TYPES.FunctionDeclaration &&
+      fn.type !== AST_NODE_TYPES.FunctionExpression &&
+      fn.type !== AST_NODE_TYPES.ArrowFunctionExpression) ||
+    !fn.async ||
+    fn.generator ||
+    fn.body.type !== AST_NODE_TYPES.BlockStatement ||
+    fn.body.body.length !== 1
+  ) {
+    return false;
+  }
+  const only = fn.body.body[0];
+  if (only.type !== AST_NODE_TYPES.TryStatement || !only.handler) return false;
+  if (mayRejectOut(only.handler.body)) return false;
+  if (only.finalizer && mayRejectOut(only.finalizer)) return false;
+  return true;
+}
+
 function isAsyncFunctionNode(node: TSESTree.Node | undefined | null): boolean {
   if (!node) return false;
   return (
@@ -956,6 +1032,15 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
         !hasPromiseEvidence(node, promiseNames, (name) =>
           resolveBinding(name, node),
         )
+      ) {
+        return;
+      }
+
+      // `f()` where `f` is declared in this file as an async function whose whole
+      // body is a try/catch that does not rethrow: its promise cannot reject.
+      if (
+        node.callee.type === AST_NODE_TYPES.Identifier &&
+        isNonRejectingAsyncWrapper(resolveBinding(node.callee.name, node))
       ) {
         return;
       }
