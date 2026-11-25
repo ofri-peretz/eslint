@@ -374,13 +374,106 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
      * (`Shopify/cli` `packages/e2e/setup/app.ts` and
      * `bin/bundling/esbuild-plugin-dedup-cli-kit.js`): neither contains the
      * substring `zip`, `tar` or `archive` anywhere.
+     *
+     * `gzip` and `gunzip` are not on the list: they compress or inflate ONE
+     * stream and carry no entry names, so `zlib.createGzip()` says nothing about
+     * an archive. winston's file transport calls it to rotate logs and then
+     * joined `this.dirname` with `this.filename` (its own constructor options),
+     * which this rule reported as an archive entry in three places. A real
+     * tarball still names itself: `gunzip().pipe(tar.extract())` contains `tar`.
      */
     const ARCHIVE_NAME =
-      /zip|tarball|archive|gzip|gunzip|untar|tarstream|\btar\b/i;
+      /(?<!g)(?<!gun)zip|tarball|archive|untar|tarstream|\btar\b/i;
     let pending: (() => void)[];
     let EXITS: Set<string>;
     const isArchiveModule = (specifier: string | null): boolean =>
       specifier !== null && archiveModuleSet.has(specifier.toLowerCase());
+    /**
+     * Is this identifier bound, through scope, to something a RELATIVE module
+     * exports (`const unzip = require('./unzip')`, `import { unzip } from
+     * './unzip'`)? That is the project's own code, whose body is judged where
+     * it is written; a call to it is not an archive library call, and its
+     * name is the project's choice. unzipper's `lib/Open/directory.js` calls
+     * its own `./unzip` module with an offset and a password, and was reported
+     * as an extraction without validation.
+     */
+    const isProjectLocalBinding = (node: TSESTree.Expression): boolean =>
+      resolveModuleBinding(
+        node,
+        context.sourceCode.getScope(node),
+      )?.module.startsWith('.') === true;
+    /** @vocabulary Node path API */
+    const pathFns = ['join', 'resolve', 'relative', 'normalize'];
+    const isPathFunctionCallee = (callee: TSESTree.Expression): boolean =>
+      (callee.type === 'MemberExpression' &&
+        namesOneOf(propertyName(callee), pathFns)) ||
+      // `import { join } from 'node:path'` / `const { join } = require('path')`.
+      // Resolved through the module graph, not matched on the callee's NAME:
+      // a local function called `join` is not `path.join`.
+      isNamedPathFunction(callee, pathFns);
+    /**
+     * `opts.path = path.resolve(path.normalize(opts.path))`: the member is
+     * canonicalized and written back to itself. That statement is not a join
+     * onto anything, so it cannot escape a directory; any LATER read of the
+     * member (a join, a write) is judged on its own. The chain must be single
+     * argument path calls ending in an assignment to the same binding and
+     * property.
+     */
+    /**
+     * Same text names the same member only when reading it has no side effect:
+     * `entries[i++].path` is a different entry on each side of the `=`. Plain
+     * identifiers, `this`, static properties and literal indexes are stable.
+     */
+    const isStableMember = (node: TSESTree.Node): boolean => {
+      if (node.type === 'Identifier' || node.type === 'ThisExpression') {
+        return true;
+      }
+      if (node.type !== 'MemberExpression') return false;
+      if (
+        node.computed &&
+        node.property.type !== 'Literal' &&
+        node.property.type !== 'Identifier'
+      ) {
+        return false;
+      }
+      return isStableMember(node.object);
+    };
+    const isCanonicalizedInPlace = (
+      arg: TSESTree.MemberExpression,
+    ): boolean => {
+      let current: TSESTree.Node = arg;
+      for (;;) {
+        // An argument or a call is never the Program, so it has a parent.
+        const parent = current.parent as TSESTree.Node;
+        const kind = parent.type;
+        // The same spelling on both sides of one statement is one binding:
+        // a statement cannot shadow a name inside itself.
+        if (kind === 'AssignmentExpression') {
+          const assignment = parent as TSESTree.AssignmentExpression;
+          // A STATEMENT, not an expression whose value feeds something else:
+          // `path.join(dest, (entry.path = path.normalize(entry.path)))` hands
+          // the unchecked entry to the join.
+          return (
+            assignment.parent.type === 'ExpressionStatement' &&
+            assignment.operator === '=' &&
+            isStableMember(arg) &&
+            context.sourceCode.getText(assignment.left) ===
+              context.sourceCode.getText(arg)
+          );
+        }
+        if (kind !== 'CallExpression') return false;
+        // Resolved to the path module: a method that merely shares the name
+        // (`output.resolve(p)`) may do anything with the value.
+        const call = parent as TSESTree.CallExpression;
+        if (
+          call.arguments.length !== 1 ||
+          !isNamedPathFunction(call.callee, pathFns)
+        ) {
+          return false;
+        }
+        current = call;
+      }
+    };
     const namesArchive = (node: TSESTree.Node): boolean => {
       if (node.type === 'Identifier') return ARCHIVE_NAME.test(node.name);
       if (node.type === 'MemberExpression') {
@@ -428,7 +521,8 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       // Check for standalone archive functions (e.g., extractArchive)
       if (
         callee.type === 'Identifier' &&
-        archiveFunctions.includes(callee.name)
+        archiveFunctions.includes(callee.name) &&
+        !isProjectLocalBinding(callee)
       ) {
         // A bare identifier carries strictly LESS evidence than the method
         // call above: there is no receiver to name an archive. So the same
@@ -448,7 +542,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
 
     /** A bare callee bound to one of `fns` exported by `path` / `path/posix`. */
     const isNamedPathFunction = (
-      callee: TSESTree.Identifier,
+      callee: TSESTree.Expression,
       fns: readonly string[],
     ): boolean => {
       const binding = resolveModuleBinding(
@@ -782,7 +876,9 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         // trace-context propagation. Neither file contains the substring `zip`,
         // `tar` or `archive` anywhere. A password manager would have received a
         // pull request whose entire content was that mistake.
-        if (namesArchive(node.callee)) hasArchiveContext = true;
+        if (namesArchive(node.callee) && !isProjectLocalBinding(node.callee)) {
+          hasArchiveContext = true;
+        }
         if (isArchiveExtraction(node) && !isSafeLibrary(node)) {
           // An `@safe` annotation covers the statement it sits directly above
           // — and everything inside it, so one on a function covers that
@@ -884,16 +980,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
 
         // Check for path.join or similar operations with archive entry names
         const callee = node.callee;
-        // @vocabulary Node path API
-        const pathFns = ['join', 'resolve', 'relative', 'normalize'];
-        if (
-          (callee.type === 'MemberExpression' &&
-            namesOneOf(propertyName(callee), pathFns)) ||
-          // `import { join } from 'node:path'` / `const { join } = require('path')`.
-          // Resolved through the module graph, not matched on the callee's
-          // NAME: a local function called `join` is not `path.join`.
-          (callee.type === 'Identifier' && isNamedPathFunction(callee, pathFns))
-        ) {
+        if (isPathFunctionCallee(callee)) {
           // Check arguments for potential archive entry usage
           const args = node.arguments;
           for (const arg of args) {
@@ -909,6 +996,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
               if (!isPathValidated(arg)) {
                 pending.push(() => {
                   if (!hasArchiveContext) return;
+                  if (isCanonicalizedInPlace(arg)) return;
                   context.report({
                     node: arg,
                     messageId: 'unvalidatedArchivePath',

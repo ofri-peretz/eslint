@@ -59,6 +59,13 @@ class AuthController {
 export class AppModule {}
 ```
 
+## Where the finding is reported
+
+The report sits on the route decorator (`@Post`, `@Get`, ...), not on the method.
+A method's range starts at its first decorator, which on real controllers is often
+`@ApiOkResponse`, `@SerializeOptions` or `@Public`, so the line number pointed at
+the wrong thing.
+
 ## Options
 
 | Option                  | Type       | Default | Description                                                                                   |

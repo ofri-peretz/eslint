@@ -36,8 +36,8 @@
         },
         "generatedAt": {
             "type": "string",
-            "format": "date-time",
-            "description": "ISO 8601 timestamp when data was generated"
+            "format": "date",
+            "description": "ISO 8601 calendar date the data was generated (date only, so a same-day rerun leaves the file unchanged)"
         }
     },
     "definitions": {

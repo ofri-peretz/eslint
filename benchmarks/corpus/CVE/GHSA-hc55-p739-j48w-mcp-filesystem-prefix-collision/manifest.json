@@ -1,0 +1,30 @@
+{
+  "cve": null,
+  "ghsa": "GHSA-hc55-p739-j48w",
+  "cwe": "CWE-022",
+  "owasp": "A01:2021",
+  "package": "@modelcontextprotocol/server-filesystem",
+  "vulnerableVersions": "<=0.6.2",
+  "fixedVersion": "2025.7.1",
+  "summary": "validatePath() accepted any path that startsWith() an allowed directory, with no separator — an allowed /srv/data also admitted /srv/data-secrets, so a tool call read or wrote outside the configured roots.",
+  "publishedAt": null,
+  "fixCommit": "https://github.com/advisories/GHSA-hc55-p739-j48w",
+  "expectedPlugins": ["eslint-plugin-mcp-sdk-security"],
+  "expectedRules": ["mcp-sdk-security/no-path-traversal-in-tool"],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "read-file-prefix-check.js",
+        "description": "validatePath() trusts allowedDirectories.some(dir => p.startsWith(dir))"
+      }
+    ],
+    "safe": [
+      {
+        "file": "read-file-separator-check.js",
+        "description": "Containment is p === dir || p.startsWith(dir + path.sep)"
+      }
+    ]
+  },
+  "fixtureMetadataRequired": true,
+  "notes": "Verified by diffing the published 0.6.2 and 2025.7.1 tarballs (dist/index.js vs dist/path-validation.js). Before this fixture the rule accepted any startsWith() on the path as containment; it now requires a separator-anchored prefix, the same verdict node-security/no-arbitrary-file-access gives."
+}

@@ -14,9 +14,11 @@ import {
   MessageIcons,
   namesOneOf,
   propertyName,
+  resolveModuleBinding,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
+import { walk } from '../../utils';
 
 type MessageIds = 'violationDetected';
 
@@ -35,6 +37,31 @@ const DEFAULT_DEBUG_PATHS = [
   '/test',
   '/health',
 ];
+
+/**
+ * Path segments that name a liveness or readiness probe.
+ *
+ * `/health` itself stays a finding (a health route that reports memory, config
+ * or dependency detail is a disclosure — see the rule docs). A segment that is
+ * spelled as a PROBE — `health-check`, `healthcheck`, `health_check`,
+ * `healthz` — is the load-balancer contract, and matched `/health` only
+ * because the old test was a substring one: edwinhern/express-typescript
+ * mounts `app.use('/health-check', healthCheckRouter)` and was reported.
+ * Removed segment by segment, so `/health-check/debug` still reaches `/debug`.
+ *
+ * Only a DEFAULT-list match is excused, and only while nothing shows the
+ * handler reporting on the host: an inline handler that reads the global
+ * `process` or a binding of the `os` module (`res.json(process.env)`) is an
+ * information endpoint whatever the path is called. A handler this file
+ * cannot read (an imported router) is excused by the spelling alone. An
+ * `endpoints` list the user wrote is matched against the route as written.
+ */
+const HEALTH_PROBE_SEGMENTS: ReadonlySet<string> = new Set([
+  'health-check',
+  'healthcheck',
+  'health_check',
+  'healthz',
+]);
 
 // Express route-registration methods, incl. `use` for mounted sub-routers and
 // `route` for the chained builder (`app.route('/admin').delete(handler)`).
@@ -126,6 +153,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{}],
   createOnce(context) {
     let debugPaths: string[];
+    let usingDefaultPaths: boolean;
 
     // oxlint-disable-next-line consistent-function-scoping
     const isExpressRouteCall = (node: TSESTree.CallExpression) => {
@@ -135,6 +163,79 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
         ['app', 'router', 'express'].includes(node.callee.object.name) &&
         namesOneOf(propertyName(node.callee), HTTP_METHODS)
       );
+    };
+
+    /** Does an inline handler of this registration read the host (`process`, `os`)? */
+    // oxlint-disable-next-line consistent-function-scoping
+    const readsHostInfo = (node: TSESTree.CallExpression): boolean => {
+      let found = false;
+      // Express takes handlers inline or in (nested) arrays of callbacks.
+      const handlers: TSESTree.Node[] = [];
+      const collect = (argument: TSESTree.Node | null): void => {
+        if (argument === null) return;
+        if (argument.type === 'ArrayExpression') {
+          argument.elements.forEach(collect);
+        } else if (
+          argument.type === 'ArrowFunctionExpression' ||
+          argument.type === 'FunctionExpression'
+        ) {
+          handlers.push(argument);
+        }
+      };
+      node.arguments.forEach(collect);
+      /** Is `name` bound to a declaration (not a configured global) at `child`? */
+      const isDeclared = (child: TSESTree.Node, name: string): boolean => {
+        for (
+          let s: ReturnType<typeof context.sourceCode.getScope> | null =
+            context.sourceCode.getScope(child);
+          s;
+          s = s.upper
+        ) {
+          if ((s.set.get(name)?.defs.length ?? 0) > 0) return true;
+        }
+        return false;
+      };
+      for (const argument of handlers) {
+        walk(argument, (child) => {
+          if (found || child.type !== 'Identifier') return;
+          // `x.process` and `{ process: 1 }` name a property, not the global.
+          const parent = child.parent;
+          // `globalThis.process` is the global, unless `globalThis` is shadowed.
+          if (
+            child.name === 'process' &&
+            parent?.type === 'MemberExpression' &&
+            parent.property === child &&
+            !parent.computed &&
+            parent.object.type === 'Identifier' &&
+            parent.object.name === 'globalThis' &&
+            !isDeclared(parent.object, 'globalThis')
+          ) {
+            found = true;
+            return;
+          }
+          if (
+            (parent?.type === 'MemberExpression' &&
+              parent.property === child &&
+              !parent.computed) ||
+            (parent?.type === 'Property' &&
+              parent.key === child &&
+              !parent.computed)
+          ) {
+            return;
+          }
+          const scope = context.sourceCode.getScope(child);
+          // A variable with no definition is a configured GLOBAL (ESLint adds
+          // `languageOptions.globals` to the global scope), not a declaration
+          // that shadows it.
+          if (!isDeclared(child, child.name)) {
+            found = child.name === 'process';
+            return;
+          }
+          const module = resolveModuleBinding(child, scope)?.module;
+          found = module !== undefined && /^(node:)?(os|process)$/.test(module);
+        });
+      }
+      return found;
     };
 
     return {
@@ -147,6 +248,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
 
         const options = context.options[0] || {};
         debugPaths = options.endpoints || DEFAULT_DEBUG_PATHS;
+        usingDefaultPaths = options.endpoints === undefined;
         const ignoreFiles = options.ignoreFiles || [];
         const filename = context.filename;
 
@@ -180,7 +282,14 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
           pathArg.type === 'Literal' &&
           typeof pathArg.value === 'string'
         ) {
-          const path = pathArg.value.toLowerCase();
+          const written = pathArg.value.toLowerCase();
+          const path =
+            usingDefaultPaths && !readsHostInfo(node)
+              ? written
+                  .split('/')
+                  .filter((segment) => !HEALTH_PROBE_SEGMENTS.has(segment))
+                  .join('/')
+              : written;
           if (debugPaths.some((dp) => path.includes(dp.toLowerCase()))) {
             context.report({ node: pathArg, messageId: 'violationDetected' });
           }

@@ -217,7 +217,28 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
     currentOptions,
   ) {
     let handled: Set<string>;
+    /** Bindings with an `'error'` listener, by identity, not by name. */
+    let handledVariables: Set<TSESLint.Scope.Variable>;
     let escaped: Set<string>;
+    /** Destinations built in place that a chain-ending listener covers. */
+    let handledNodes: Set<TSESTree.Node | null>;
+    /** Bindings handed to the caller with `return name`. */
+    let returned: Set<TSESLint.Scope.Variable>;
+
+    function variableOf(
+      identifier: TSESTree.Identifier,
+    ): TSESLint.Scope.Variable | undefined {
+      for (
+        let scope: TSESLint.Scope.Scope | null =
+          context.sourceCode.getScope(identifier);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.set.get(identifier.name);
+        if (variable) return variable;
+      }
+      return undefined;
+    }
     let streamBindings: Set<string>;
     let pending: { node: TSESTree.CallExpression; offender: TSESTree.Node }[];
 
@@ -230,10 +251,23 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
      */
     function unhandledStream(node: TSESTree.Node): TSESTree.Node | null {
       // Constructed inline: it has no name, so nothing can have listened to it.
-      if (constructsStreamHere(node)) return node;
+      if (constructsStreamHere(node))
+        return handledNodes.has(node) ? null : node;
       if (node.type !== AST_NODE_TYPES.Identifier) return null;
       if (!streamBindings.has(node.name)) return null;
-      if (handled.has(node.name) || escaped.has(node.name)) return null;
+      if (escaped.has(node.name)) return null;
+      const bound = variableOf(node);
+      if (
+        bound !== undefined
+          ? handledVariables.has(bound)
+          : handled.has(node.name)
+      ) {
+        return null;
+      }
+      // Returned BINDINGS, not names: a same-named stream in a sibling
+      // function is a different variable and is still judged on its own.
+      // An unbound name (`bound` undefined) was never returned as a binding.
+      if (returned.has(bound as TSESLint.Scope.Variable)) return null;
       return node;
     }
 
@@ -274,6 +308,39 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    /**
+     * The name an `'error'` listener is attached to.
+     *
+     * `.on()` returns its emitter and `.pipe(dest)` returns `dest`, so in
+     * `src.pipe(dest).on('finish', f).on('error', h)` the listener is on
+     * `dest`. Reading only an identifier receiver missed that chain:
+     * unzipper's `PullStream.js` pipes into a `Transform` and ends the chain
+     * with `.on('error', reject)`, and the destination was reported as
+     * having no listener.
+     */
+    function listenedStream(receiver: TSESTree.Node): TSESTree.Node | null {
+      let current: TSESTree.Node = receiver;
+      for (;;) {
+        if (current.type === AST_NODE_TYPES.Identifier) return current;
+        if (
+          current.type !== AST_NODE_TYPES.CallExpression ||
+          current.callee.type !== AST_NODE_TYPES.MemberExpression
+        ) {
+          return null;
+        }
+        const method = propertyName(current.callee);
+        if (method === 'pipe') {
+          const destination = current.arguments[0];
+          if (destination === undefined) return null;
+          // A binding's identifier, or the node itself for a destination
+          // built in place (`src.pipe(fs.createWriteStream(p)).on('error', h)`).
+          return destination;
+        }
+        if (method === null || !LISTENER_METHODS.has(method)) return null;
+        current = current.callee.object;
+      }
+    }
+
     return {
       before() {
         const [options = {}] = currentOptions();
@@ -284,12 +351,15 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
 
         /** Names that appear with an `'error'` listener anywhere in this file. */
         handled = new Set<string>();
+        handledVariables = new Set();
         /**
          * Names handed to a call other than `.pipe()`: `attachHandlers(s)`,
          * `pipeline(s, res)`. The callee may attach the listener, and
          * unproven is not unhandled.
          */
         escaped = new Set<string>();
+        handledNodes = new Set();
+        returned = new Set();
         /** Names bound to a stream constructor. */
         streamBindings = new Set<string>();
         /** Pipes to judge at Program:exit, once every listener is known. */
@@ -303,6 +373,47 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
           constructsStreamHere(node.init)
         ) {
           streamBindings.add(node.id.name);
+        }
+      },
+
+      // `return entry` hands the stream to the caller, who owns its listeners:
+      // the same "unproven is not unhandled" as passing it to another call.
+      // unzipper's `Open/unzip.js` builds a PassThrough, forwards its sources'
+      // errors into it with `entry.emit('error', e)`, pipes into it, and
+      // returns it — the consumer is who listens.
+      ReturnStatement(node: TSESTree.ReturnStatement) {
+        if (node.argument?.type !== AST_NODE_TYPES.Identifier) return;
+        const variable = variableOf(node.argument);
+        if (variable === undefined) return;
+        // The function that OWNS the binding must be the one returning it: a
+        // `return entry` in a nested function nobody calls hands nothing
+        // over. And the binding must be assigned once, or the returned value
+        // may not be the one that was piped into.
+        // A CommonJS top-level `return` has no function: the walk ends at
+        // the Program, whose parent is null (not undefined) in some parsers.
+        let owner: TSESTree.Node | null | undefined = node.parent;
+        while (
+          owner &&
+          owner.type !== AST_NODE_TYPES.FunctionDeclaration &&
+          owner.type !== AST_NODE_TYPES.FunctionExpression &&
+          owner.type !== AST_NODE_TYPES.ArrowFunctionExpression
+        ) {
+          owner = owner.parent;
+        }
+        // A callback's return goes to the callee, which may drop it: a
+        // Promise executor's `return entry` reaches no one.
+        const holder = owner?.parent;
+        const isCallback =
+          (holder?.type === AST_NODE_TYPES.CallExpression ||
+            holder?.type === AST_NODE_TYPES.NewExpression) &&
+          holder.arguments.includes(owner as TSESTree.CallExpressionArgument);
+        if (
+          !isCallback &&
+          owner === variable.scope.variableScope.block &&
+          variable.references.filter((reference) => reference.isWrite())
+            .length <= 1
+        ) {
+          returned.add(variable);
         }
       },
 
@@ -328,10 +439,18 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
           const event = node.arguments[0];
           if (
             event?.type === AST_NODE_TYPES.Literal &&
-            event.value === 'error' &&
-            callee.object.type === AST_NODE_TYPES.Identifier
+            event.value === 'error'
           ) {
-            handled.add(callee.object.name);
+            const listened = listenedStream(callee.object);
+            if (listened?.type === AST_NODE_TYPES.Identifier) {
+              // The variable, not the name: a same-named stream in another
+              // function is a different binding with its own listeners.
+              const variable = variableOf(listened);
+              if (variable !== undefined) handledVariables.add(variable);
+              else handled.add(listened.name);
+            } else {
+              handledNodes.add(listened);
+            }
           }
           return;
         }

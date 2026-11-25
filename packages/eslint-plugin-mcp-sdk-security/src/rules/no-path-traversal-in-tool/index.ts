@@ -55,9 +55,11 @@ import {
   MessageIcons,
   propertyName,
   resolveModuleBinding,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { fsExport } from '../../utils/fs-module';
 import { createGuards, isConversion } from '../../utils/guards';
+import { isSeparatorAnchored } from '../../utils/separator-anchored';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 import { valueResolverFor } from '../../utils/module-resolver';
 import { createHandlerCollector } from '../../utils/tool-handlers';
@@ -299,13 +301,28 @@ export const noPathTraversalInTool = createRule<[], MessageIds>({
           if (node.callee.type === 'MemberExpression') {
             const method = propertyName(node.callee);
             if (method !== null && NOT_A_CHECK.has(method)) return false;
-            if (involves(node.callee.object)) return true;
+            if (involves(node.callee.object))
+              return method !== 'startsWith' || isRootPrefix(node.arguments[0]);
           }
           const helper = inHelper
             ? undefined
             : resolveFunction(node.callee, scope);
           if (helper !== undefined && !holdsCheck(helper)) return false;
           return node.arguments.some(involves);
+        }
+
+        /**
+         * Does this `startsWith` argument end a root prefix at a separator?
+         * `'/srv/data-secrets'.startsWith('/srv/data')` is true, so a bare root
+         * admits every sibling that shares its name (GHSA-hc55-p739-j48w). A
+         * static prefix that is not a root — `rel.startsWith('..')` on a
+         * `path.relative` result — tests for an escape and stays a check.
+         */
+        function isRootPrefix(arg: TSESTree.Node | undefined): boolean {
+          if (arg?.type === 'SpreadElement') return false;
+          const text = arg === undefined ? null : staticString(arg);
+          if (text !== null && !/^(?:[/\\]|[A-Za-z]:)/.test(text)) return true;
+          return isSeparatorAnchored(arg, sourceCode);
         }
 
         /** Does a same-file predicate's body make a check-shaped call? */

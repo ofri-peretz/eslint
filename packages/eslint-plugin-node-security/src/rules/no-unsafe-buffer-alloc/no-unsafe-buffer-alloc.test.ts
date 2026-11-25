@@ -42,7 +42,10 @@ describe('no-unsafe-buffer-alloc', () => {
         code: 'Buffer.allocUnsafeSlow(64).fill(0);',
       },
       // Not the global Buffer.
-      { code: 'pool.allocUnsafe(64)' },
+      {
+        name: 'allocUnsafe on a receiver that is not Buffer is not the Buffer API',
+        code: 'pool.allocUnsafe(64)',
+      },
       // A bare `allocUnsafe` whose binding this file cannot see is unresolved,
       // which is not the same as safe — but it is not evidence either.
       { code: 'allocUnsafe(64)' },

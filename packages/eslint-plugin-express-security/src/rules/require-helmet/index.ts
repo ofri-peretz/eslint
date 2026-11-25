@@ -14,6 +14,7 @@
  * @see https://owasp.org/www-project-secure-headers/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 import {
   packageBindings,
@@ -132,6 +133,86 @@ function isAlternativeMiddleware(
     }
   }
   return false;
+}
+
+/**
+ * The function a call hands `binding` to, when this file defines it and
+ * every use of the receiving parameter is as a RECEIVER (`app.use(...)`).
+ *
+ * A call to a function declared in this very file is not an app leaving the
+ * file: its body is right here, so "no helmet in it" is as provable as "no
+ * helmet next to `express()`". Anything the file cannot read still escapes —
+ * an imported function, a method, a parameter that is passed on, returned,
+ * stored or reassigned, an argument position the function has no parameter
+ * for — because there the stack is assembled out of view.
+ */
+function localReceiverOnly(
+  node: TSESTree.CallExpression,
+  binding: string,
+  sourceCode: Readonly<TSESLint.SourceCode>,
+): boolean {
+  const scopeOf = (n: TSESTree.Node): TSESLint.Scope.Scope =>
+    sourceCode.getScope(n);
+  if (node.callee.type !== AST_NODE_TYPES.Identifier) return false;
+  const calleeName = node.callee.name;
+  let variable: TSESLint.Scope.Variable | undefined;
+  for (let s: TSESLint.Scope.Scope | null = scopeOf(node); s; s = s.upper) {
+    variable = s.set.get(calleeName);
+    if (variable) break;
+  }
+  const def = variable?.defs[0];
+  if (!variable || !def) return false;
+  let fn: TSESTree.Node | null = null;
+  if (def.type === 'FunctionName') {
+    // A declaration can be reassigned (`configure = imported`); the callee is
+    // then whatever it was last set to, which this file may not hold.
+    if (variable.references.some((ref) => ref.isWrite())) return false;
+    fn = def.node;
+  } else if (
+    def.node.type === AST_NODE_TYPES.VariableDeclarator &&
+    variable.references.filter((ref) => ref.isWrite()).length === 1
+  ) {
+    fn = def.node.init;
+  }
+  if (
+    fn?.type !== AST_NODE_TYPES.FunctionDeclaration &&
+    fn?.type !== AST_NODE_TYPES.FunctionExpression &&
+    fn?.type !== AST_NODE_TYPES.ArrowFunctionExpression
+  ) {
+    return false;
+  }
+  // `arguments[0]` is the app by another name, and passing it on is an escape
+  // the parameter's own references cannot show. (An arrow has no `arguments`
+  // of its own.)
+  if (
+    fn.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+    sourceCode.getScope(fn).set.get('arguments')?.references.length
+  ) {
+    return false;
+  }
+  const params = fn.params;
+  for (const [index, argument] of node.arguments.entries()) {
+    if (argument.type === AST_NODE_TYPES.SpreadElement) return false;
+    if (argument.type !== AST_NODE_TYPES.Identifier) continue;
+    if (argument.name !== binding) continue;
+    const param = params[index];
+    if (param?.type !== AST_NODE_TYPES.Identifier) return false;
+    const notAReceiver = sourceCode
+      .getDeclaredVariables(fn)
+      .filter((candidate) => candidate.name === param.name)
+      .some((variable) =>
+        variable.references.some((reference) => {
+          const parent = reference.identifier.parent;
+          const asReceiver =
+            parent?.type === AST_NODE_TYPES.MemberExpression &&
+            parent.object === reference.identifier;
+          // A rewritten parameter is not the app any more.
+          return !asReceiver || reference.isWrite();
+        }),
+      );
+    if (notAReceiver) return false;
+  }
+  return true;
 }
 
 export const requireHelmet = createRule<RuleOptions, MessageIds>({
@@ -296,8 +377,13 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
 
-        // `setAppConfigurations(app)` — the app leaves this file.
-        if (appBinding !== null && nodeReleasesBinding(node, appBinding)) {
+        // `setAppConfigurations(app)` — the app leaves this file, unless the
+        // callee is a function this file defines and only calls methods on it.
+        if (
+          appBinding !== null &&
+          nodeReleasesBinding(node, appBinding) &&
+          !localReceiverOnly(node, appBinding, context.sourceCode)
+        ) {
           appEscapes = true;
         }
 

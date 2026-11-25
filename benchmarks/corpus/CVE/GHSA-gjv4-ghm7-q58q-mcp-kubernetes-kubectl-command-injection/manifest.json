@@ -1,0 +1,30 @@
+{
+  "cve": null,
+  "ghsa": "GHSA-gjv4-ghm7-q58q",
+  "cwe": "CWE-078",
+  "owasp": "A03:2021",
+  "package": "mcp-server-kubernetes",
+  "vulnerableVersions": "<2.5.0",
+  "fixedVersion": "2.5.0",
+  "summary": "Several kubectl tools concatenated tool arguments (resource type, name, namespace) into a command string run by execSync(), so a crafted argument ran shell commands with the server's cluster credentials.",
+  "publishedAt": null,
+  "fixCommit": "https://github.com/advisories/GHSA-gjv4-ghm7-q58q",
+  "expectedPlugins": ["eslint-plugin-mcp-sdk-security"],
+  "expectedRules": ["mcp-sdk-security/no-command-injection-in-tool"],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "kubectl-describe-execsync.js",
+        "description": "kubectl_describe builds a shell string from tool arguments"
+      }
+    ],
+    "safe": [
+      {
+        "file": "kubectl-describe-execfilesync.js",
+        "description": "execFileSync(\"kubectl\", args) with one array element per value"
+      }
+    ]
+  },
+  "fixtureMetadataRequired": true,
+  "notes": "Verified by diffing the published 2.4.9 and 2.5.0 tarballs (dist/tools/kubectl-describe.js and siblings). The advisory lists CWE-77."
+}
