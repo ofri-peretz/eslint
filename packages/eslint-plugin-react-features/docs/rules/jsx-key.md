@@ -76,7 +76,7 @@ flowchart TD
 
 | Option             | Type      | Default | Description                              |
 | ------------------ | --------- | ------- | ---------------------------------------- |
-| `warnUnstableKeys` | `boolean` | `true`  | Report a key that is the iteration callback's index parameter (`(item, i) => <li key={i} />`), found by binding whatever it is named |
+| `warnUnstableKeys` | `boolean` | `false` | Report a key that is the iteration callback's index parameter (`(item, i) => <li key={i} />`), found by binding whatever it is named. Not in eslint-plugin-react's `jsx-key` (that is `no-array-index-key`), so opt-in |
 
 ## Examples
 
@@ -257,8 +257,8 @@ function NestedList({ categories }) {
 
 | Option                     | Type      | Default | Description |
 | -------------------------- | --------- | ------- | ----------- |
-| `warnUnstableKeys`         | `boolean` | `true`  | Report an index used as a key |
-| `checkFragmentShorthand`   | `boolean` | `false` | Also report a shorthand fragment (`<>`) in an array literal: it cannot take a key |
+| `warnUnstableKeys`         | `boolean` | `false` | Report an index used as a key (opt-in; upstream leaves this to `no-array-index-key`) |
+| `checkFragmentShorthand`   | `boolean` | `false` | Also report a shorthand fragment (`<>`) in an array literal or returned from an iterator callback: it cannot take a key |
 | `checkKeyMustBeforeSpread` | `boolean` | `false` | Report a `key` written after a `{...spread}`; the new JSX transform lets the spread win |
 | `warnOnDuplicates`         | `boolean` | `false` | Report two sibling elements, in an array literal or written out in JSX, that carry the same key |
 
