@@ -5,6 +5,13 @@ All notable changes to `eslint-plugin-reliability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.1.1
+
+### Patch Changes
+
+- **🐛 Fix** — `no-unhandled-promise`: a promise passed as the sole argument to the first parameter of an enclosing `new Promise((resolve) => …)` executor is not reported. `resolve(p)` adopts `p`, so its rejection settles the outer promise, whose handling is that site's report. `reject(p)`, any other call, a second-parameter or shadowed `resolve`, `resolve` outside an executor and a non-`Promise` constructor still report.
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.3.0`
+
 ## 5.1.0
 
 ### Minor Changes
