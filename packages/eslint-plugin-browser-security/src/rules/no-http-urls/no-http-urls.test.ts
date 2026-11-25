@@ -82,7 +82,10 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     // Recognised by the ATTRIBUTE name too, whatever the host — `xmlns` is the
     // XML spec's own declaration syntax, so the value is an identifier by
     // position rather than by who minted it.
-    { code: "const el = { xmlns: 'http://acmecorp.io/ns' }" },
+    {
+      name: 'an xmlns property holds a namespace identifier, whatever the host',
+      code: "const el = { xmlns: 'http://acmecorp.io/ns' }",
+    },
     { code: "const el = { 'xmlns:custom': 'http://acmecorp.io/ns' }" },
     // @found Stryker mutation-survivor triage, 2026-11-02
     {

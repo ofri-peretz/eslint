@@ -80,6 +80,22 @@ type RuleOptions = [Options?];
  */
 const DEFAULT_ALLOWED_HOSTS = ['localhost', '127.0.0.1'];
 
+/**
+ * JSON Schema's two identifier keywords.
+ *
+ * `$schema` names the meta-schema dialect and `$id` names the schema itself.
+ * Both are compared as opaque strings, never dereferenced by the code that
+ * holds them, and rewriting `http://json-schema.org/draft-07/schema#` to
+ * `https://` changes which dialect the validator recognises.
+ *
+ * Exactly these two keys. A value that merely looks like a schema URL under any
+ * other key (`schemaUrl`, `$ref`, `url`) is still reported. Local to this rule
+ * on purpose: no sibling reads these keys, so there is no second copy to drift.
+ */
+function isSchemaIdentifierName(name: string): boolean {
+  return name === '$schema' || name === '$id';
+}
+
 export const noHttpUrls = createRule<RuleOptions, MessageIds>({
   name: 'no-http-urls',
   /**
@@ -237,7 +253,14 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
 
       // An XML namespace URI is an opaque identifier, never fetched. Rewriting
       // it to https breaks the document, so reporting it is worse than noise.
-      if (isXmlNamespaceUri(value, declarationName(node))) {
+      const declaredAs = declarationName(node);
+      if (isXmlNamespaceUri(value, declaredAs)) {
+        return;
+      }
+
+      // `$schema` / `$id` are JSON Schema identifiers: compared as strings,
+      // never fetched, and `https://` would name a different dialect.
+      if (declaredAs !== undefined && isSchemaIdentifierName(declaredAs)) {
         return;
       }
 
