@@ -29,17 +29,6 @@ describe('no-weak-secret', () => {
       valid: [
         // Environment variable
         {
-          // @source LibreChat packages/api/src/auth/limiter.ts:68
-          name: 'an empty fallback fails closed: both libraries refuse an empty key',
-          code: `import jwt from 'jsonwebtoken';
-jwt.verify(token, process.env.JWT_SECRET ?? '');`,
-        },
-        {
-          name: 'an empty fallback fed to jose as bytes',
-          code: `import { jwtVerify } from 'jose';
-await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET || \`\`));`,
-        },
-        {
           name: 'the secret comes from the environment, length unknown here',
           code: `import jwt from 'jsonwebtoken';
 jwt.sign(payload, process.env.JWT_SECRET);`,
@@ -125,6 +114,20 @@ jwt.verify(token, 'demo123');`,
           code: `import jwt from 'jsonwebtoken';
 jwt.sign(payload, 'changeme');`,
           errors: [{ messageId: 'weakSecret' }],
+        },
+        // An empty fallback is a key, not a missing one: jose 5.10.0 verifies a
+        // token signed with '' and jsonwebtoken 8.5.1 accepts alg none with it.
+        {
+          name: 'an empty ?? fallback still reaches verify as the key',
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, process.env.JWT_SECRET ?? '');`,
+          errors: [{ messageId: 'shortSecret' }],
+        },
+        {
+          name: 'an empty || fallback still reaches sign as the key',
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, process.env.JWT_SECRET || '');`,
+          errors: [{ messageId: 'shortSecret' }],
         },
       ],
     });
