@@ -24,7 +24,10 @@ describe('require-secure-deletion coverage gaps', () => {
   ruleTester.run('require-secure-deletion', requireSecureDeletion, {
     valid: [
       // Non-delete unary operators → operator check false
-      { code: 'const negated = !flag;' },
+      {
+        name: "a logical-not unary expression (!flag) is not a delete operator, so the operator check is false",
+        code: 'const negated = !flag;',
+      },
       { code: 'const kind = typeof value;' },
       // `delete` of a non-member expression → no statically known property
       { code: 'delete window[Symbol.iterator];' },

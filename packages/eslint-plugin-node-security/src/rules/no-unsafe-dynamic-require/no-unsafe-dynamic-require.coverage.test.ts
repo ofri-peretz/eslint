@@ -24,7 +24,10 @@ describe('no-unsafe-dynamic-require coverage gaps', () => {
   ruleTester.run('no-unsafe-dynamic-require', noUnsafeDynamicRequire, {
     valid: [
       // Declarator without initializer → `node.init` operand false
-      { code: 'let pending;' },
+      {
+        name: 'a declarator with no initializer (let pending;) makes the node.init operand false',
+        code: 'let pending;',
+      },
       // Destructuring declarator → `id.type === Identifier` operand false
       { code: 'const { a } = source;' },
     ],

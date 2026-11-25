@@ -39,6 +39,7 @@ describe('detect-child-process coverage gaps', () => {
       // Pattern-2 guard with a LITERAL includes() argument → falls back to
       // the generic guard, which accepts identifier / identifier-array args.
       {
+        name: "execFile's command is the literal 'cmd', not attacker-controlled, so it is safe regardless of the guard; exercises the generic-guard fallback for a literal includes() argument",
         code: [
           "import { execFile } from 'child_process';",
           'function run(file) {',

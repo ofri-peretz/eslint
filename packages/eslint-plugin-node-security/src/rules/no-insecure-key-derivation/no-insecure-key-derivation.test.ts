@@ -45,7 +45,10 @@ describe('no-insecure-key-derivation', () => {
         code: 'crypto.pbkdf2(password, salt, iterations, 32, "sha256", callback);',
         name: 'an iteration count held in a variable cannot be judged and is not reported',
       },
-      { code: 'pbkdf2(password, salt, 100000, 32, "sha256", callback);' },
+      {
+        name: 'the bare (not crypto.-prefixed) pbkdf2 spelling at 100,000 iterations is also sufficient and not reported',
+        code: 'pbkdf2(password, salt, 100000, 32, "sha256", callback);',
+      },
       { code: 'scrypt(password, salt, 64);' },
     ],
     invalid: [

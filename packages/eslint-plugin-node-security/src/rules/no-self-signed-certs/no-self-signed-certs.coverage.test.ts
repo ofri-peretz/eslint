@@ -25,7 +25,10 @@ describe('no-self-signed-certs coverage gaps', () => {
   ruleTester.run('no-self-signed-certs', noSelfSignedCerts, {
     valid: [
       // Unrelated assignment → env-var member chain check is false
-      { code: 'settings.timeout = 0;' },
+      {
+        name: 'an unrelated settings.timeout assignment is not an env-var member chain, so the env-override check is false',
+        code: 'settings.timeout = 0;',
+      },
       // allowInTests + test filename → both listeners bail out
       {
         code: [
