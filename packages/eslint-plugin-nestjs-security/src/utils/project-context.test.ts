@@ -194,6 +194,80 @@ describe('scanProject — global provider registration', () => {
     expect(context.hasGlobalAuthGuard).toBe(true);
   });
 
+  describe('a pipe registered in a helper that main.ts imports', () => {
+    it('follows a named import (rolling-scopes/rsschool-app: src/setup.ts)', () => {
+      const root = makeProject({
+        'src/main.ts': `
+          import { NestFactory } from '@nestjs/core';
+          import { setupApp } from './setup';
+          async function bootstrap() {
+            const app = await NestFactory.create(AppModule);
+            setupApp(app);
+          }
+        `,
+        'src/setup.ts': `
+          export function setupApp(app) {
+            app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+          }
+        `,
+      });
+      expect(scanProject(root).hasGlobalValidationPipe).toBe(true);
+    });
+
+    it('follows a nested path with an ESM .js specifier (OpenWA: src/config/app-validation.ts)', () => {
+      const root = makeProject({
+        'src/main.ts': `
+          import './config/load-env';
+          import { applyGlobalValidation } from './config/app-validation.js';
+        `,
+        'src/config/load-env.ts': 'export {};',
+        'src/config/app-validation.ts': `
+          export function applyGlobalValidation(app) {
+            app.useGlobalPipes(new BodyWidthPipe(), new GlobalValidationPipe({}));
+          }
+        `,
+      });
+      expect(scanProject(root).hasGlobalValidationPipe).toBe(true);
+    });
+
+    it('follows a src/ specifier from bootstrap.ts', () => {
+      const root = makeProject({
+        'src/bootstrap.ts': "import { configure } from 'src/app-setup';",
+        'src/app-setup.ts': 'export const configure = (app) => app.useGlobalPipes(new ValidationPipe());',
+      });
+      expect(scanProject(root).hasGlobalValidationPipe).toBe(true);
+    });
+
+    it('reads only what main.ts imports, one hop deep', () => {
+      const root = makeProject({
+        'src/main.ts': "import { setupApp } from './setup';",
+        'src/setup.ts': "export { setupApp } from './deeper';",
+        'src/deeper.ts': 'export const setupApp = (app) => app.useGlobalPipes(new ValidationPipe());',
+        'src/unrelated.ts': 'app.useGlobalPipes(new ValidationPipe());',
+      });
+      expect(scanProject(root).hasGlobalValidationPipe).toBe(false);
+    });
+
+    it('does not follow package imports or helpers imported from other files', () => {
+      const root = makeProject({
+        'src/main.ts': "import { setup } from '@acme/setup';",
+        'src/app.service.ts': "import { setupApp } from './setup';",
+        'src/setup.ts': 'export const setupApp = (app) => app.useGlobalPipes(new ValidationPipe());',
+      });
+      expect(scanProject(root).hasGlobalValidationPipe).toBe(false);
+    });
+
+    it('stops once a pipe is already known', () => {
+      const root = makeProject({
+        'src/main.ts': `
+          import { setupApp } from './setup';
+          app.useGlobalPipes(new ValidationPipe());
+        `,
+      });
+      expect(scanProject(root).hasGlobalValidationPipe).toBe(true);
+    });
+  });
+
   describe('app.useGlobalGuards() registers what it names', () => {
     const bootstrap = (call: string, extra = ''): string =>
       makeProject({

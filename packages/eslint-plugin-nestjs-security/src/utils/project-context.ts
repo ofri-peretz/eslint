@@ -496,6 +496,35 @@ interface MutableContext {
   authMiddlewareTargets: Set<string>;
 }
 
+/** The bootstrap file, by name: where `app` is created and handed to helpers. */
+const BOOTSTRAP_FILE = /(?:^|[\\/])(?:main|bootstrap)\.ts$/;
+/** A project-local import: `./setup`, `src/config/app-validation`, `@/setup`. */
+const LOCAL_IMPORT_RE = /\b(?:from|import)\s*['"]((?:\.{1,2}\/|src\/|@\/)[^'"]+)['"]/g;
+
+/**
+ * A pipe registered in a helper the bootstrap file imports.
+ *
+ * `main.ts` often hands `app` to `setupApp(app)` or `applyGlobalValidation(app)`
+ * in `setup.ts` or `config/app-validation.ts`, which no module-or-bootstrap
+ * file pattern names. One hop is enough for that shape and keeps the scan
+ * bounded: only files `main.ts` imports directly are read.
+ */
+function registerHelperPipes(
+  source: string,
+  file: string,
+  root: string,
+  into: MutableContext,
+): void {
+  if (into.hasGlobalValidationPipe) return;
+  for (const [, specifier] of source.matchAll(LOCAL_IMPORT_RE)) {
+    const helper = readLocalModule(specifier, file, root);
+    if (helper && USE_GLOBAL_PIPES_RE.test(helper.source)) {
+      into.hasGlobalValidationPipe = true;
+      return;
+    }
+  }
+}
+
 /** Scan a project root (uncached). */
 export function scanProject(
   root: string,
@@ -513,7 +542,11 @@ export function scanProject(
 
   for (const file of collectConfigFiles(root, limits)) {
     // An unreadable file reads as empty: nothing to learn from it.
-    analyzeSource(readFileSync(file) ?? '', file, root, accumulator);
+    const source = readFileSync(file) ?? '';
+    analyzeSource(source, file, root, accumulator);
+    if (BOOTSTRAP_FILE.test(file)) {
+      registerHelperPipes(source, file, root, accumulator);
+    }
   }
 
   const { sawAuthInModule, ...context } = accumulator;
