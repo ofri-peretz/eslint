@@ -1,5 +1,6 @@
 {
   "permissions": {
+    "allow": ["mcp__codegraph__codegraph_explore"],
     "deny": [
       "Read(./.env)",
       "Read(./.env.local)",
@@ -85,8 +86,5 @@
       }
     ]
   },
-  "enabledMcpjsonServers": ["codegraph"],
-  "permissions": {
-    "allow": ["mcp__codegraph__codegraph_explore"]
-  }
+  "enabledMcpjsonServers": ["codegraph"]
 }
