@@ -62,9 +62,14 @@ ruleTester.run('no-timing-unsafe-compare: browser code has no remote attacker', 
       filename: 'src/chats.ts',
     },
     {
-      name: 'a .tsx component with no import (Next.js app router page)',
-      code: SOCKET_HANDLER,
-      filename: 'src/app/settings/page.tsx',
+      name: 'a .tsx component that renders JSX with no import (automatic runtime; runtipi change-password-form.tsx)',
+      code: `${SOCKET_HANDLER}\nexport const Form = () => <form />;`,
+      filename: 'src/components/change-password-form.tsx',
+    },
+    {
+      name: 'a .jsx file that renders only a fragment',
+      code: `${SOCKET_HANDLER}\nexport const List = () => <></>;`,
+      filename: 'src/list.jsx',
     },
   ],
   invalid: [
@@ -100,6 +105,18 @@ ruleTester.run('no-timing-unsafe-compare: browser code has no remote attacker', 
       errors: [{ messageId: 'timingUnsafeCompare' }],
     },
     {
+      name: 'a .tsx file with no JSX is not a component (case registry ILB-0104)',
+      code: `function f(req, apiKey) { if (req.headers.authorization === apiKey) { grant(); } }`,
+      filename: 'case.tsx',
+      errors: [{ messageId: 'timingUnsafeCompare' }],
+    },
+    {
+      name: 'a .jsx request handler with no JSX is checked (case registry ILB-0008)',
+      code: `import crypto from 'node:crypto';\nfunction check(req, secret) { if (req.headers.authorization === secret) { return true; } return false; }`,
+      filename: 'src/check.jsx',
+      errors: [{ messageId: 'timingUnsafeCompare' }],
+    },
+    {
       name: 'an equality helper call on the server is still checked',
       code: `socket.on('m', (event) => { if (isEqual(event.sessionId, selectedSessionId)) return; });`,
       filename: 'src/gateway.ts',
@@ -122,6 +139,21 @@ describe('isBrowserModule', () => {
 
   it('lets use server win over use client', () => {
     expect(isBrowserModule(parse(`'use client';\n'use server';`), 'a.tsx')).toBe(false);
+  });
+
+  it('needs JSX before a .tsx or .jsx filename counts', () => {
+    const parseJsx = (code: string) =>
+      parser.parse(code, {
+        sourceType: 'module',
+        ecmaVersion: 2022,
+        range: true,
+        loc: true,
+        ecmaFeatures: { jsx: true },
+      }) as never;
+    expect(isBrowserModule(parseJsx(''), 'a.tsx')).toBe(false);
+    expect(isBrowserModule(parseJsx('const x = [1, { y: null }];'), 'a.jsx')).toBe(false);
+    expect(isBrowserModule(parseJsx('const x = [<a />];'), 'a.tsx')).toBe(true);
+    expect(isBrowserModule(parseJsx('const x = <a />;'), 'a.ts')).toBe(false);
   });
 
   it('treats a .vue or .svelte filename as browser code', () => {

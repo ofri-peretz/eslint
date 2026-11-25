@@ -128,16 +128,23 @@ const BROWSER_FRAMEWORKS = new Set([
   'solid-js',
   '@angular/core',
 ]);
-/** Files that only exist as UI components. */
-const BROWSER_EXTENSION = /\.(?:tsx|jsx|vue|svelte)$/;
+/** Single-file components: the file only exists as a UI component. */
+const COMPONENT_EXTENSION = /\.(?:vue|svelte)$/;
+/**
+ * JSX files. The extension alone proves nothing: a `.tsx` file can hold a
+ * request handler or a Remix loader. It counts only when the file renders
+ * JSX, which a component built with the automatic runtime does with no import.
+ */
+const JSX_EXTENSION = /\.(?:tsx|jsx)$/;
 
 /**
  * Whether this module runs in the user's browser, where no remote attacker can
  * time a comparison.
  *
  * `'use server'` wins over everything: a Next.js server action in a `.tsx`
- * file runs on the server. Then `'use client'`, a component file extension, or
- * an import of a UI framework (`react/jsx-runtime` and other subpaths count).
+ * file runs on the server. Then `'use client'`, a `.vue` or `.svelte` file, a
+ * `.tsx` or `.jsx` file that renders JSX, or an import of a UI framework
+ * (`react/jsx-runtime` and other subpaths count).
  */
 export function isBrowserModule(
   program: TSESTree.Program,
@@ -151,13 +158,38 @@ export function isBrowserModule(
   }
   if (directives.has('use server')) return false;
   if (directives.has('use client')) return true;
-  if (BROWSER_EXTENSION.test(filename)) return true;
+  if (COMPONENT_EXTENSION.test(filename)) return true;
+  if (JSX_EXTENSION.test(filename) && rendersJsx(program)) return true;
   return program.body.some(
     (statement) =>
       statement.type === AST_NODE_TYPES.ImportDeclaration &&
       statement.importKind !== 'type' &&
       BROWSER_FRAMEWORKS.has(packageName(statement.source.value)),
   );
+}
+
+/** Whether a JSX element or fragment appears anywhere under `root`. */
+function rendersJsx(root: TSESTree.Node): boolean {
+  const stack: unknown[] = [root];
+  while (stack.length > 0) {
+    const value = stack.pop();
+    if (Array.isArray(value)) {
+      stack.push(...value);
+      continue;
+    }
+    if (typeof value !== 'object' || value === null) continue;
+    const node = value as TSESTree.Node;
+    if (
+      node.type === AST_NODE_TYPES.JSXElement ||
+      node.type === AST_NODE_TYPES.JSXFragment
+    ) {
+      return true;
+    }
+    for (const [key, child] of Object.entries(node)) {
+      if (key !== 'parent') stack.push(child);
+    }
+  }
+  return false;
 }
 
 /** `@scope/name/sub` → `@scope/name`, `name/sub` → `name`. */
@@ -862,7 +894,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
             type: 'boolean',
             default: false,
             description:
-              "Also check browser modules ('use client', .tsx/.jsx/.vue/.svelte files, or modules importing react, vue, svelte, preact, solid-js or @angular/core). Off by default: a comparison in the user's own browser is not a remote timing oracle.",
+              "Also check browser modules ('use client', .vue/.svelte files, .tsx/.jsx files that render JSX, or modules importing react, vue, svelte, preact, solid-js or @angular/core). Off by default: a comparison in the user's own browser is not a remote timing oracle.",
           },
           reportLiteralComparands: {
             type: 'boolean',
