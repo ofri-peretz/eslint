@@ -83,7 +83,10 @@ write(
     'assign(READ_ONLY, {});',
   ].join('\n'),
 );
-write('auth/default-routes.js', "export default { resetPassword: '/reset-password' };");
+write(
+  'auth/default-routes.js',
+  "export default { resetPassword: '/reset-password' };",
+);
 const service = join(root, 'tokens/service.js');
 
 ruleTester.run(
