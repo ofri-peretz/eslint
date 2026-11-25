@@ -12,23 +12,31 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { findingsInSummary, isActedOn } from '../review-hit-rate';
+import {
+  dedupe,
+  findingsInSummary,
+  isActedOn,
+  resolvePath,
+} from '../review-hit-rate';
 
 const SUMMARY = [
   '**Files read:** `no-unhandled-promise.ts`, `x.test.ts` (all changed files).',
   '**1. `defs[0]` on a reassigned parameter (nit)**',
   '`packages/eslint-plugin-reliability/src/rules/no-unhandled-promise.ts:745`',
-  'Also see `no-unhandled-promise.ts:745` and `index.ts:12-20`.',
+  'Also see `no-unhandled-promise.ts:745`, `index.ts:12-20` and again `index.ts:12`.',
+  'And `Dockerfile:3` and `.github/CODEOWNERS:8`.',
 ].join('\n');
 
 describe('findingsInSummary', () => {
   const found = findingsInSummary(1785, SUMMARY, '2026-11-25T10:00:00Z');
 
-  it('counts each distinct path:line citation once', () => {
-    expect(found.map((f) => f.path)).toEqual([
-      'packages/eslint-plugin-reliability/src/rules/no-unhandled-promise.ts',
-      'no-unhandled-promise.ts',
-      'index.ts',
+  it('counts each distinct path:line citation once, with its line', () => {
+    expect(found.map((f) => `${f.path}:${f.line}`)).toEqual([
+      'packages/eslint-plugin-reliability/src/rules/no-unhandled-promise.ts:745',
+      'no-unhandled-promise.ts:745',
+      'index.ts:12',
+      'Dockerfile:3',
+      '.github/CODEOWNERS:8',
     ]);
   });
 
@@ -47,38 +55,93 @@ describe('findingsInSummary', () => {
   });
 });
 
+describe('dedupe', () => {
+  it('keeps the first of a finding a re-review cites again (PR 1785, line 745 twice)', () => {
+    const at = (createdAt: string) => ({
+      pr: 1785,
+      path: 'a.ts',
+      line: 745,
+      createdAt,
+      body: '',
+    });
+    expect(
+      dedupe([at('2026-11-25T17:47:03Z'), at('2026-11-25T16:18:27Z')]),
+    ).toEqual([at('2026-11-25T16:18:27Z')]);
+  });
+});
+
+describe('resolvePath', () => {
+  const files = [
+    'packages/a/src/index.ts',
+    'packages/b/src/index.ts',
+    'packages/r/no-unhandled-promise.ts',
+  ];
+
+  it('resolves a bare name that ends exactly one PR file', () => {
+    expect(resolvePath('no-unhandled-promise.ts', files)).toBe(
+      'packages/r/no-unhandled-promise.ts',
+    );
+  });
+
+  it('refuses a bare name that ends several PR files (index.ts, PR 1766)', () => {
+    expect(resolvePath('index.ts', files)).toBeNull();
+  });
+
+  it('does not match a file whose name merely ends the same way', () => {
+    expect(
+      resolvePath('no-unhandled-promise.ts', ['my-no-unhandled-promise.ts']),
+    ).toBeNull();
+  });
+});
+
 describe('isActedOn', () => {
   const c = {
     pr: 1,
     path: 'no-unhandled-promise.ts',
+    line: 1,
     createdAt: '2026-11-25T10:00:00Z',
     body: '',
   };
+  const prFiles = ['packages/r/no-unhandled-promise.ts'];
 
-  it('is true when a later commit touches the file, matched as a path suffix', () => {
+  it('is true when a later commit touches the cited file', () => {
     expect(
-      isActedOn(c, [
-        {
-          date: '2026-11-25T11:00:00Z',
-          files: ['packages/r/no-unhandled-promise.ts'],
-        },
-      ]),
+      isActedOn(
+        c,
+        [
+          {
+            date: '2026-11-25T11:00:00Z',
+            files: ['packages/r/no-unhandled-promise.ts'],
+          },
+        ],
+        prFiles,
+      ),
     ).toBe(true);
   });
 
   it('is false when the only touching commit came before the comment', () => {
     expect(
-      isActedOn(c, [
-        { date: '2026-11-25T09:00:00Z', files: ['no-unhandled-promise.ts'] },
-      ]),
+      isActedOn(
+        c,
+        [
+          {
+            date: '2026-11-25T09:00:00Z',
+            files: ['packages/r/no-unhandled-promise.ts'],
+          },
+        ],
+        prFiles,
+      ),
     ).toBe(false);
   });
 
-  it('does not match a file whose name merely ends the same way', () => {
+  it('is false for an ambiguous bare name, whatever later commits touch', () => {
+    const files = ['packages/a/index.ts', 'packages/b/index.ts'];
     expect(
-      isActedOn(c, [
-        { date: '2026-11-25T11:00:00Z', files: ['my-no-unhandled-promise.ts'] },
-      ]),
+      isActedOn(
+        { ...c, path: 'index.ts' },
+        [{ date: '2026-11-25T11:00:00Z', files: ['packages/b/index.ts'] }],
+        files,
+      ),
     ).toBe(false);
   });
 });
