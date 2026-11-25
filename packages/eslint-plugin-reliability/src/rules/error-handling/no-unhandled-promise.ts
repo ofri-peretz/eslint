@@ -715,6 +715,52 @@ function chainHasRejectionHandler(node: TSESTree.CallExpression): boolean {
 }
 
 /**
+ * `new Promise((resolve) => resolve(p))` — `resolve` ADOPTS `p`: the outer promise
+ * settles the way `p` does, so a rejection of `p` lands there and not nowhere.
+ * Whether the outer promise is handled is the outer site's report to make.
+ *
+ * Only the executor's FIRST parameter is `resolve`, and the lookup goes through
+ * scope so a shadowing `resolve` (or the second parameter, which is `reject` and
+ * makes `p` a reason, never settling it) is not mistaken for it. The promise must
+ * be the sole argument.
+ */
+function isAdoptedByExecutorResolve(
+  node: TSESTree.CallExpression,
+  getScope: (n: TSESTree.Node) => TSESLint.Scope.Scope,
+): boolean {
+  const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+  if (
+    parent?.type !== AST_NODE_TYPES.CallExpression ||
+    parent.arguments.length !== 1 ||
+    parent.arguments[0] !== node ||
+    parent.callee.type !== AST_NODE_TYPES.Identifier
+  ) {
+    return false;
+  }
+  const name = parent.callee.name;
+  let scope: TSESLint.Scope.Scope | null = getScope(parent);
+  while (scope) {
+    const variable = scope.variables.find((v) => v.name === name);
+    if (variable) {
+      const def = variable.defs[0];
+      if (def?.type !== 'Parameter') return false;
+      const executor = def.node;
+      return (
+        (executor.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+          executor.type === AST_NODE_TYPES.FunctionExpression) &&
+        executor.params[0] === def.name &&
+        executor.parent?.type === AST_NODE_TYPES.NewExpression &&
+        executor.parent.callee.type === AST_NODE_TYPES.Identifier &&
+        executor.parent.callee.name === 'Promise' &&
+        executor.parent.arguments[0] === executor
+      );
+    }
+    scope = scope.upper;
+  }
+  return false;
+}
+
+/**
  * Check if promise is handled (has .catch, .then, or is awaited)
  *
  * Exported for direct Layer-2 unit testing: the Identifier branch is only
@@ -1053,6 +1099,13 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
       // The value goes somewhere — a binding, an argument, a property, the caller.
       // Whoever receives it is where a `.catch` belongs, not here.
       if (isValueConsumed(node)) {
+        return;
+      }
+
+      // `new Promise((resolve) => resolve(p))` — the outer promise adopts `p`.
+      if (
+        isAdoptedByExecutorResolve(node, (n) => context.sourceCode.getScope(n))
+      ) {
         return;
       }
 
