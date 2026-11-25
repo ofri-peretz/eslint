@@ -105,6 +105,22 @@ describe('consumer AGENTS.md', () => {
       );
   });
 
+  it('does not offer a deprecated rule under "Rules in no preset"', async () => {
+    const facts = factsFrom(
+      { name: 'eslint-plugin-demo', description: 'd' },
+      {
+        rules: {
+          live: { meta: { docs: { description: 'Live rule' } } },
+          old: { meta: { deprecated: true, docs: { description: 'Old' } } },
+        },
+        configs: {},
+      },
+    );
+    const text = await renderAgentsMd(facts, stack, '/nonexistent/AGENTS.md');
+    expect(text).toContain('`live`');
+    expect(text).not.toContain('`old`');
+  });
+
   it('shows the @eslint/markdown setup for a preset that lints Markdown', () => {
     const text = readFileSync(
       join(PACKAGES, 'eslint-plugin-conventions', 'AGENTS.md'),

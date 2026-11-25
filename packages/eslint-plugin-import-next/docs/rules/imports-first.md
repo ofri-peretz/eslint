@@ -4,8 +4,6 @@
 
 <!-- end auto-generated rule header -->
 
-Deprecated alias of `first`: replaced by `import-next/first`
-
 `imports-first` is the old name of [`first`](first.md). eslint-plugin-import 2.32.0 still exports it, deprecated, as `first` with a deprecated `meta`; this plugin does the same. It reports what `first` reports, for the same options. Use `first` in new configs.
 
 ## Rule Details
@@ -29,8 +27,8 @@ import importNext from 'eslint-plugin-import-next';
 
 export default [
   {
-    plugins: { import: importNext },
-    rules: { 'import/imports-first': 'error' },
+    plugins: { 'import-next': importNext },
+    rules: { 'import-next/imports-first': 'error' },
   },
 ];
 ```
@@ -38,7 +36,7 @@ export default [
 Prefer the replacement:
 
 ```javascript
-rules: { "import/first": "error" }
+rules: { 'import-next/first': 'error' }
 ```
 
 ## Further Reading
