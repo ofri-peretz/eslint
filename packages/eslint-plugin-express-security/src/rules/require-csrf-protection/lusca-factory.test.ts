@@ -1,5 +1,6 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { afterAll, describe, it } from 'vitest';
+import parser from '@typescript-eslint/parser';
 import { requireCsrfProtection } from './index';
 
 RuleTester.afterAll = afterAll;
@@ -88,6 +89,32 @@ ruleTester.run(
         code: `${HEAD}const lusca = require('lusca');
       app.use((req, res, next) => { lusca.xframe('SAMEORIGIN')(req, res, next); });
       app.post('/account/profile', requireAuth, handler);`,
+        errors: [{ messageId: 'missingCsrf' }],
+      },
+    ],
+  },
+);
+
+const tsRuleTester = new RuleTester({
+  languageOptions: { parser, ecmaVersion: 2022, sourceType: 'module' },
+});
+
+tsRuleTester.run(
+  'require-csrf-protection (lusca factory, TypeScript imports)',
+  requireCsrfProtection,
+  {
+    valid: [
+      {
+        name: 'lusca loaded with import = require() protects the route',
+        code: `${HEAD}import lusca = require('lusca');
+      app.post('/api/upload', requireAuth, lusca({ csrf: true }), handler);`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'a namespace alias named lusca is not the lusca module',
+        code: `${HEAD}import lusca = Tools.lusca;
+      app.post('/api/upload', requireAuth, lusca({ csrf: true }), handler);`,
         errors: [{ messageId: 'missingCsrf' }],
       },
     ],

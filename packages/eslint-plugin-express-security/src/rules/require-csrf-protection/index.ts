@@ -273,8 +273,13 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
           const def = variable.defs[0];
           if (!def) return undefined;
           if (def.type === 'ImportBinding') {
-            return def.parent.type === 'ImportDeclaration'
-              ? String(def.parent.source.value)
+            // `import lusca from 'lusca'` or `import lusca = require('lusca')`
+            if (def.parent.type === 'ImportDeclaration') {
+              return String(def.parent.source.value);
+            }
+            const reference = def.parent.moduleReference;
+            return reference.type === 'TSExternalModuleReference'
+              ? String(reference.expression.value)
               : undefined;
           }
           if (def.type !== 'Variable' || !def.node.init) return undefined;
