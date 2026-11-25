@@ -67,6 +67,53 @@ ruleTester.run('jsx-key options', jsxKey, {
       code: '[<></>];',
     },
     {
+      // upstream lib/rules/jsx-key.js:101 reports a fragment in an iterator
+      // only under `checkFragmentShorthand` (default false, :22); tests
+      // jsx-key.js:269-271 are the same code with the option on.
+      name: 'FP: a shorthand fragment returned from a map callback is not reported by default',
+      // @found ServerKit 2026-11-24 (jhd3197/ServerKit, drop-in comparison: upstream reports 0)
+      code: '[1, 2, 3].map(x => <>{x}</>);',
+    },
+    {
+      // upstream :143-153 and :112-136 read only `return` arguments and the
+      // arrow body; a value bound in the body and used later is not judged.
+      name: 'FP: a fragment bound to a variable inside a map callback is not reported',
+      // @found ServerKit 2026-11-24 (frontend/src/components/IconStepStrip.jsx:12, drop-in comparison: upstream reports 0)
+      code: 'items.map((s, i) => { const body = <><b>{s}</b></>; return <li key={i}>{body}</li>; });',
+    },
+    {
+      name: 'FP: an element bound to a variable inside a map callback is not reported',
+      // @found ServerKit 2026-11-24 (drop-in comparison: upstream checks return arguments only)
+      code: 'items.map(s => { const el = <b>{s}</b>; return <li key={s}>{el}</li>; });',
+    },
+    {
+      // upstream has no index-key check: that is `no-array-index-key`
+      // (a separate rule); jsx-key.js:48-65 takes no `warnUnstableKeys`.
+      name: 'FP: the index parameter as a key is not reported by default',
+      // @found ServerKit 2026-11-24 (78 reports on frontend/src, drop-in comparison: upstream reports 0)
+      code: 'items.map((s, i) => <li key={i}>{s}</li>);',
+    },
+    {
+      // upstream checks the consequent, alternate and right operand only
+      // (lib/rules/jsx-key.js:166-175): a test or a left operand is no list item.
+      name: 'an element as the test of a conditional in a map callback is not a list item',
+      code: 'items.map(s => (<b /> ? s : null));',
+    },
+    {
+      name: 'an element as the left operand of || in a map callback is not a list item',
+      code: 'items.map(s => <b /> || s);',
+    },
+    {
+      name: 'a key that is a variable, not a parameter, is not an index key with warnUnstableKeys',
+      options: [{ warnUnstableKeys: true }],
+      code: 'const n = 1; items.map(s => <li key={n}>{s}</li>);',
+    },
+    {
+      name: 'a key that is a parameter of a non-callback function is not an index key with warnUnstableKeys',
+      options: [{ warnUnstableKeys: true }],
+      code: 'function f(a, b) { return items.map(s => <li key={b}>{s}</li>); }',
+    },
+    {
       name: 'Children.toArray keys what it returns',
       code: `import { Children } from 'react'; Children.toArray([1, 2].map(x => <App />));`,
     },
@@ -110,6 +157,28 @@ ruleTester.run('jsx-key options', jsxKey, {
       options: fragments,
       code: '[1, 2, 3].map(x => <>{x}</>);',
       errors: [{ messageId: 'missingKey' }],
+    },
+    {
+      name: 'the index parameter as a key is reported when warnUnstableKeys is switched on',
+      options: [{ warnUnstableKeys: true }],
+      code: 'items.map((s, i) => <li key={i}>{s}</li>);',
+      errors: [{ messageId: 'unstableKey' }],
+    },
+    {
+      name: 'a keyless element returned inside an if block of a map callback is still reported',
+      code: 'items.map(s => { if (s) { return <li>{s}</li>; } return <li key={s} />; });',
+      errors: [
+        {
+          messageId: 'missingKey',
+          suggestions: [
+            {
+              messageId: 'suggestKey',
+              output:
+                'items.map(s => { if (s) { return <li key={s.id}>{s}</li>; } return <li key={s} />; });',
+            },
+          ],
+        },
+      ],
     },
     {
       name: 'a key after a spread in an array',

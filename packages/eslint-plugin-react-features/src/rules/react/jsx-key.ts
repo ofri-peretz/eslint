@@ -46,7 +46,11 @@ type MessageIds =
   | 'nonUniqueKeys';
 
 export interface Options {
-  /** Warn about potentially unstable keys */
+  /**
+   * Report a key that is the callback's index parameter. Not part of
+   * eslint-plugin-react's `jsx-key` (its job belongs to `no-array-index-key`),
+   * so it is off by default.
+   */
   warnUnstableKeys?: boolean;
   /** Also require a key on a shorthand fragment (`<>`) in an array literal */
   checkFragmentShorthand?: boolean;
@@ -206,7 +210,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         properties: {
           warnUnstableKeys: {
             type: 'boolean',
-            default: true,
+            default: false,
           },
           checkFragmentShorthand: { type: 'boolean', default: false },
           checkKeyMustBeforeSpread: { type: 'boolean', default: false },
@@ -216,7 +220,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
-  defaultOptions: [{ warnUnstableKeys: true }],
+  defaultOptions: [{ warnUnstableKeys: false }],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let warnUnstableKeys: boolean;
@@ -301,173 +305,71 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * Check if node is inside Array.from's mapping function (2nd argument)
+     * Is `fn` the callback an iterator call (`map`, `flatMap`, `forEach`,
+     * `Array.from(items, fn)`) runs per item?
      */
-    function isInsideArrayFromMapFn(node: TSESTree.Node): boolean {
-      let current: TSESTree.Node | undefined = node;
-
-      while (current?.parent) {
-        const parent: TSESTree.Node = current.parent;
-
-        // Found a function - check if it's Array.from's 2nd argument
-        if (
-          parent.type === 'ArrowFunctionExpression' ||
-          parent.type === 'FunctionExpression'
-        ) {
-          const grandParent: TSESTree.Node = parent.parent;
-          if (
-            grandParent?.type === 'CallExpression' &&
-            grandParent.callee.type === 'MemberExpression' &&
-            grandParent.callee.object.type === 'Identifier' &&
-            grandParent.callee.object.name === 'Array' &&
-            propertyName(grandParent.callee) === 'from' &&
-            grandParent.arguments[1] === parent
-          ) {
-            return true;
-          }
-        }
-
-        current = parent;
+    function isIteratorCallback(fn: TSESTree.Node): boolean {
+      const call = fn.parent;
+      if (
+        (fn.type !== 'ArrowFunctionExpression' &&
+          fn.type !== 'FunctionExpression') ||
+        !call ||
+        !isIteratorCall(call)
+      ) {
+        return false;
       }
-
-      return false;
+      // `Array.from(items, fn)` runs only its second argument per item.
+      return (
+        propertyName(call.callee as TSESTree.MemberExpression) !== 'from' ||
+        call.arguments[1] === fn
+      );
     }
 
     /**
-     * Check if a JSXElement is the DIRECT return value of an iterator callback.
-     * Uses node.parent traversal for reliability.
+     * Is `node` (a JSX element, a fragment or a `createElement` call) what an
+     * iterator callback hands back: the arrow's expression body, or the
+     * argument of one of its `return` statements, possibly through the
+     * branches of a conditional or the right side of `&&` / `||`?
      *
-     * Handles:
-     * - array.map(item => <div>)
-     * - array.map(function(item) { return <div>; })
-     * - Array.from(items, item => <div>)
-     * - [...items].map(item => <div>)
-     *
-     * `node` is a JSX element, a fragment or a `createElement` call.
+     * eslint-plugin-react's `jsx-key` judges exactly those positions
+     * (lib/rules/jsx-key.js:112-176). A value bound to a variable, passed as
+     * an argument or nested in another element is not the list item, so it is
+     * not judged here: climbing through any parent reported
+     * `const body = <>…</>; return <li key={i}>{body}</li>` as a keyless item.
      */
     function isDirectIteratorReturn(node: TSESTree.Node): boolean {
-      // Quick check for Array.from and Children.map patterns
-      if (isInsideArrayFromMapFn(node)) {
-        return isDirectReturnFromFunction(node);
-      }
-
       let current: TSESTree.Node = node;
-
-      while (current.parent) {
-        const parent: TSESTree.Node = current.parent;
-
-        // If we hit another JSXElement, this is a nested element - skip
-        if (parent.type === 'JSXElement' || parent.type === 'JSXFragment') {
-          return false;
-        }
-
-        // Check: arrow function expression body -> item => <div>
-        if (
-          parent.type === 'ArrowFunctionExpression' &&
-          parent.body === current
-        ) {
-          // Check if the arrow function is argument to map/forEach/flatMap
-          if (parent.parent && isIteratorCall(parent.parent)) {
-            return true;
-          }
-        }
-
-        // Check: return statement -> return <div>
-        if (parent.type === 'ReturnStatement' && parent.argument === current) {
-          // Walk up to find the function, then check if it's a map callback
-          let funcParent: TSESTree.Node | undefined = parent.parent;
-          while (funcParent) {
-            if (
-              funcParent.type === 'ArrowFunctionExpression' ||
-              funcParent.type === 'FunctionExpression'
-            ) {
-              if (funcParent.parent && isIteratorCall(funcParent.parent)) {
-                return true;
-              }
-              break;
-            }
-            if (funcParent.type === 'BlockStatement') {
-              funcParent = funcParent.parent;
-              continue;
-            }
+      for (;;) {
+        const parent: TSESTree.Node = current.parent as TSESTree.Node;
+        switch (parent.type) {
+          case 'ConditionalExpression':
+            if (parent.test === current) return false;
             break;
+          case 'LogicalExpression':
+            if (parent.right !== current) return false;
+            break;
+          case 'ArrowFunctionExpression':
+            return parent.body === current && isIteratorCallback(parent);
+          case 'ReturnStatement': {
+            if (parent.argument !== current) return false;
+            // The nearest function owns the `return`, however deeply it is
+            // nested in `if`, `try` or loop blocks.
+            let fn: TSESTree.Node | undefined = parent.parent;
+            while (
+              fn &&
+              fn.type !== 'ArrowFunctionExpression' &&
+              fn.type !== 'FunctionExpression' &&
+              fn.type !== 'FunctionDeclaration'
+            ) {
+              fn = fn.parent;
+            }
+            return fn !== undefined && isIteratorCallback(fn);
           }
-        }
-
-        // Check: JSX expression container inside another map
-        if (parent.type === 'JSXExpressionContainer') {
-          // This could be {items.map(...)} inside JSX - check if current is the map result
-          if (
-            current.type === 'JSXElement' &&
-            parent.parent?.type === 'JSXElement'
-          ) {
-            // We're inside a JSX expression, check if we came from a map callback
+          default:
             return false;
-          }
         }
-
-        // Continue walking up for: conditional expressions, parentheses, etc.
-        if (
-          parent.type === 'ConditionalExpression' ||
-          parent.type === 'LogicalExpression' ||
-          parent.type === 'SequenceExpression'
-        ) {
-          current = parent;
-          continue;
-        }
-
-        // If we hit CallExpression directly, check if it's the map callback
-        if (parent.type === 'CallExpression') {
-          // We might be the map callback's return value
-          break;
-        }
-
         current = parent;
       }
-
-      return false;
-    }
-
-    /**
-     * Helper: Check if JSX is directly returned from a function (arrow body or return statement)
-     */
-    function isDirectReturnFromFunction(node: TSESTree.Node): boolean {
-      let current: TSESTree.Node = node;
-
-      while (current.parent) {
-        const parent: TSESTree.Node = current.parent;
-
-        // Nested in another JSXElement - not a direct return
-        if (parent.type === 'JSXElement' || parent.type === 'JSXFragment') {
-          return false;
-        }
-
-        // Arrow function with expression body: item => <div>
-        if (
-          parent.type === 'ArrowFunctionExpression' &&
-          parent.body === current
-        ) {
-          return true;
-        }
-
-        // Return statement: return <div>
-        if (parent.type === 'ReturnStatement' && parent.argument === current) {
-          return true;
-        }
-
-        // Continue for conditionals/logical expressions
-        if (
-          parent.type === 'ConditionalExpression' ||
-          parent.type === 'LogicalExpression'
-        ) {
-          current = parent;
-          continue;
-        }
-
-        current = parent;
-      }
-
-      return false;
     }
 
     /**
@@ -517,10 +419,15 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
 
     /**
      * A fragment shorthand returned from an iterator callback: `<>` cannot
-     * carry a key, so the list item always lacks one.
+     * carry a key, so the list item always lacks one. Upstream reports it only
+     * under `checkFragmentShorthand` (jsx-key.js:101).
      */
     function checkFragmentInIteration(node: TSESTree.JSXFragment) {
-      if (withinChildrenToArray === 0 && isDirectIteratorReturn(node)) {
+      if (
+        checkFragmentShorthand &&
+        withinChildrenToArray === 0 &&
+        isDirectIteratorReturn(node)
+      ) {
         context.report({ node: node.openingFragment, messageId: 'missingKey' });
       }
     }
@@ -709,7 +616,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       before() {
         const [options] = context.options;
         ({
-          warnUnstableKeys = true,
+          warnUnstableKeys = false,
           checkFragmentShorthand = false,
           checkKeyMustBeforeSpread = false,
           warnOnDuplicates = false,

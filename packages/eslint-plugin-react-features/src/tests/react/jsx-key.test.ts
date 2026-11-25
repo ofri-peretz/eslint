@@ -456,8 +456,9 @@ describe('jsx-key', () => {
             },
           ],
         },
-        // Mixed content with unstable keys (warning enabled by default)
+        // Mixed content with unstable keys (opt-in: upstream leaves it to no-array-index-key)
         {
+          options: [{ warnUnstableKeys: true }],
           code: `
             posts.map((post, index) => (
               <article key={index}>
@@ -515,6 +516,7 @@ describe('jsx-key', () => {
               </>
             ))
           `,
+          options: [{ checkFragmentShorthand: true }],
           errors: [{ messageId: 'missingKey' }],
         },
         // Map in component return - should be detected
@@ -1087,11 +1089,13 @@ describe('jsx-key', () => {
         {
           name: 'the index parameter used as a key, whatever it is called',
           code: 'items.map((item, n) => <li key={n}>{item.name}</li>);',
+          options: [{ warnUnstableKeys: true }],
           errors: [{ messageId: 'unstableKey' }],
         },
         {
           name: 'a fragment shorthand list item cannot carry a key',
           code: 'items.map((item) => <>{item.name}</>);',
+          options: [{ checkFragmentShorthand: true }],
           errors: [{ messageId: 'missingKey' }],
         },
         {
