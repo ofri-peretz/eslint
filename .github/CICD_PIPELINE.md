@@ -65,7 +65,7 @@ Examples:
 | **"Already released"**   | Normal - package was already published                       |
 | **"Orphaned tag"**       | Automatic cleanup - just re-run                              |
 | **Auth error (401/403)** | See [NPM Authentication Guide](./docs/NPM_AUTHENTICATION.md) |
-| **First release**        | Needs `NPM_TOKEN`, then configure Trusted Publishers         |
+| **First release**        | Claim the name by hand, then configure Trusted Publishers    |
 
 ### Key Principle
 
@@ -154,10 +154,8 @@ The release logic is extracted to `.github/scripts/release-packages.sh` to avoid
 **Key Features:**
 
 - Processes packages in Nx dependency order
-- Handles first releases with direct `npm publish` + NPM_TOKEN
-- Uses OIDC/Trusted Publishers for existing packages
+- Publishes every package with OIDC/Trusted Publishers (no npm token)
 - Auto-cleans orphaned git tags
-- Validates `NPM_TOKEN` before first-release publishes
 - **Creates GitHub Releases** with changelog for successfully published packages
 
 ---
@@ -323,16 +321,16 @@ This prevents deadlocks where previous failed releases left git tags without cor
 ```mermaid
 flowchart LR
     A[Package] --> B{Exists on npm?}
-    B -->|No| C[Use NPM_TOKEN + --first-release]
+    B -->|No| C[Claim name by hand: 0.0.0-stage]
+    C --> E[Configure Trusted Publisher]
+    E --> D
     B -->|Yes| D[Use Trusted Publishers]
-    C --> E[Configure Trusted Publishers]
     D --> F[✅ Published with provenance]
 ```
 
 | Method                        | When to Use                     |
 | ----------------------------- | ------------------------------- |
-| **Trusted Publishers (OIDC)** | Existing packages (recommended) |
-| **NPM_TOKEN**                 | First-time releases only        |
+| **Trusted Publishers (OIDC)** | Every package (no npm token)    |
 
 ---
 

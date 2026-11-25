@@ -70,17 +70,11 @@ permissions:
 
 This allows GitHub Actions to request an OIDC token from npm.
 
-### Step 4: Remove NPM_TOKEN Secret
+### Step 4: No npm token
 
-Since you don't need `NPM_TOKEN` anymore:
-
-```bash
-# (Optional) Remove old secret
-gh secret delete NPM_TOKEN
-
-# Verify it's gone
-gh secret list
-```
+There is no `NPM_TOKEN` in this repo's CI. `release.yml` has no token fallback, and the weekly token health check that
+watched one was removed in #1213. If an `NPM_TOKEN` repository secret still exists, nothing reads it and it can be
+deleted (`gh secret delete NPM_TOKEN`).
 
 ---
 
@@ -139,7 +133,7 @@ gh run view <run-id> --log
 # Look for:
 # ✅ "Successfully published to npm"
 # ✅ No "403 Forbidden" errors
-# ❌ If you see NPM_TOKEN errors, Trusted Publishing isn't configured yet
+# ❌ If you see E404 PUT / 403 errors, Trusted Publishing isn't configured for that package yet
 ```
 
 ---
@@ -171,8 +165,7 @@ npm verifies:
 - [ ] Packages owned on npmjs.com
 - [ ] Trusted Publisher configured on npm
 - [ ] GitHub Actions has `id-token: write` permission
-- [ ] `release.yml` workflow updated (removed NPM_TOKEN)
-- [ ] NPM_TOKEN secret deleted from GitHub
+- [x] `release.yml` reads no npm token (#1213)
 - [ ] Test workflow runs successfully
 - [ ] Real release works
 - [ ] Verified packages published to npm
@@ -212,22 +205,14 @@ No special configuration needed for Trusted Publishing - npm handles OIDC automa
 
 ### Error: "404 Not Found - PUT https://registry.npmjs.org/eslint-plugin-xxx - Not found"
 
-**Cause:** Trusted Publishing (OIDC) doesn't work for unscoped packages without npm support approval
+**Cause:** The package has no Trusted Publisher configured on npmjs.com (or the name was never claimed), so npm
+refuses the OIDC publish. There is no token fallback.
 
 **Solution:**
-1. **For unscoped packages** (e.g., `eslint-plugin-postgresql-security`, `eslint-plugin-secure-coding`):
-   - Contact npm support to enable Trusted Publishing for your specific unscoped packages
-   - OR use `NPM_TOKEN` secret as fallback (uncomment in workflow)
-   - OR move packages to a scope (e.g., `@interlace/<name>`)
-
-2. **For scoped packages** (`@interlace/*`):
-   - Trusted Publishing works automatically if configured in npm organization settings
-   - Verify GitHub repository is added as trusted publisher in npm organization settings
-
-3. **Quick fix (temporary):**
-   - Add `NPM_TOKEN: ${{ secrets.NPM_TOKEN }}` to workflow env for unscoped packages
-   - Generate token at npmjs.com → Access Tokens → Generate New Token (Automation)
-   - Add as GitHub secret: `NPM_TOKEN`
+1. If the package is not on npm at all, claim the name first (see "New package names" above).
+2. On npmjs.com → the package → Settings → Trusted Publisher, add GitHub Actions: repository `ofri-peretz/eslint`,
+   workflow `release.yml`.
+3. Re-run the release; already-published siblings are skipped.
 
 ### Error: "npm ERR! Not Found" (Package doesn't exist)
 
@@ -247,12 +232,12 @@ No special configuration needed for Trusted Publishing - npm handles OIDC automa
 2. Check GitHub Actions permissions (`id-token: write`)
 3. Try re-configuring trusted publisher
 
-### Still seeing NPM_TOKEN errors?
+### Still seeing auth errors?
 
 **Solution:**
-1. Ensure NPM_TOKEN secret was deleted
-2. Check workflow doesn't reference `secrets.NPM_TOKEN`
-3. Verify workflow is updated to latest version
+1. Check the failing package's Trusted Publisher names `release.yml`, not another workflow file
+2. Check the publish job still has `id-token: write`
+3. `scripts/__tests__/release-oidc-only-lock.test.ts` fails if a token fallback is re-added
 
 ---
 
@@ -271,7 +256,7 @@ No special configuration needed for Trusted Publishing - npm handles OIDC automa
 | 1 | Package on npmjs.com | ✅ Done |
 | 2 | Configure Trusted Publisher | ⏳ Your action |
 | 3 | Permissions in workflow | ✅ Done |
-| 4 | Remove NPM_TOKEN secret | ⏳ Your action |
+| 4 | No npm token in CI | ✅ Done (#1213) |
 | 5 | Test release | ⏳ Your action |
 
 ---

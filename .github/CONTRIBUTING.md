@@ -15,7 +15,7 @@ Welcome! This document explains how to contribute and release packages for this 
 ### For Setting Up Authentication
 
 - **[TRUSTED_PUBLISHING_SETUP.md](./TRUSTED_PUBLISHING_SETUP.md)** - Secure npm publishing (recommended)
-- **[NPM_SETUP_QUICK_REFERENCE.md](./NPM_SETUP_QUICK_REFERENCE.md)** - NPM token setup (alternative)
+- **[NPM_SETUP_QUICK_REFERENCE.md](./NPM_SETUP_QUICK_REFERENCE.md)** - npm auth quick reference (OIDC only)
 
 ---
 
@@ -102,20 +102,14 @@ All optional. Sensible defaults provided.
 
 ## 🔐 Authentication Setup
 
-Choose one setup method:
+Every package publishes through npm Trusted Publishing (OIDC); there is no npm token (#1213).
 
-### Option 1: Trusted Publishing (Recommended)
+### Trusted Publishing
 
 - **Secure:** Temporary tokens, no storage
 - **Maintenance:** Zero (auto-renewed)
 - **Setup time:** 5 minutes
 - **See:** [TRUSTED_PUBLISHING_SETUP.md](./TRUSTED_PUBLISHING_SETUP.md)
-
-### Option 2: NPM Token
-
-- **Setup time:** 2 minutes
-- **Maintenance:** Annual rotation
-- **See:** [NPM_SETUP_QUICK_REFERENCE.md](./NPM_SETUP_QUICK_REFERENCE.md)
 
 ---
 
@@ -156,8 +150,8 @@ gh run rerun <run-id>
 .github/
 ├── README.md                           ← You are here
 ├── RELEASE_QUICK_START.md              ← Release guide
-├── TRUSTED_PUBLISHING_SETUP.md         ← Auth setup (recommended)
-├── NPM_SETUP_QUICK_REFERENCE.md        ← Auth setup (alternative)
+├── TRUSTED_PUBLISHING_SETUP.md         ← Auth setup
+├── NPM_SETUP_QUICK_REFERENCE.md        ← Auth quick reference
 ├── workflows/
 │   ├── ci-pr.yml                       ← Test/build on PR
 │   ├── lint-pr.yml                     ← Lint on PR
