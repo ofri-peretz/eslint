@@ -8,8 +8,12 @@
 // statically and that exceeds it: expiresIn as seconds, as an `ms` string
 // (a bare numeric string is milliseconds), or `exp` as now + a constant. A
 // lifetime from env, or an absolute exp, is not judged.
+// NestJS: `this.jwtService.sign(payload)` takes expiresIn from the package's
+// JwtModule registration, read from a *.module.ts or, since @nestjs/core
+// 12.5.1 (module metadata as the root module), from main.ts / bootstrap.ts.
+// Reported when the registration sets none; no registration found: silent.
 module require_expiration {
-  type Spelling = Default | Namespace | Require | Named | Renamed | RequireDestructured | Bracket | NoImport | JoseChain
+  type Spelling = Default | Namespace | Require | Named | Renamed | RequireDestructured | Bracket | NoImport | JoseChain | NestService
   type Lifetime =
     | NoOptions | EmptyOptions | OtherOptionOnly
     | ExpiresIn15m | ExpiresIn7d | ExpiresInSeconds3600 | ExpiresInArith1d | ExpiresInMsString
@@ -17,6 +21,7 @@ module require_expiration {
     | PayloadExp1h | PayloadExp30d | PayloadExpAbsolute
     | OptionsFromCall | OptionsFromParam
     | JoseNoExpiry | JoseInline1h | JoseSeparate1h
+    | NestModuleMissing | NestModuleSet | NestRootMissing | NestBootstrapMissing | NestRootSet | NestOtherFileMissing
 
   // Seconds of lifetime the file states; -1 when it states none to judge.
   pure def seconds(l: Lifetime): int = match l {
@@ -34,7 +39,8 @@ module require_expiration {
   }
 
   pure def missing(l: Lifetime): bool =
-    Set(NoOptions, EmptyOptions, OtherOptionOnly, JoseNoExpiry).contains(l)
+    Set(NoOptions, EmptyOptions, OtherOptionOnly, JoseNoExpiry,
+        NestModuleMissing, NestRootMissing, NestBootstrapMissing).contains(l)
 
   // maxSecs: 0 = option unset.
   pure def reports(sp: Spelling, l: Lifetime, maxSecs: int): bool =
@@ -46,8 +52,10 @@ module require_expiration {
   var verdict: bool
 
   action step = {
-    nondet sp = Set(Default, Namespace, Require, Named, Renamed, RequireDestructured, Bracket, NoImport, JoseChain).oneOf()
-    nondet l = (if (sp == JoseChain) Set(JoseNoExpiry, JoseInline1h, JoseSeparate1h) else Set(
+    nondet sp = Set(Default, Namespace, Require, Named, Renamed, RequireDestructured, Bracket, NoImport, JoseChain, NestService).oneOf()
+    nondet l = (if (sp == JoseChain) Set(JoseNoExpiry, JoseInline1h, JoseSeparate1h)
+      else if (sp == NestService) Set(NestModuleMissing, NestModuleSet, NestRootMissing, NestBootstrapMissing, NestRootSet, NestOtherFileMissing)
+      else Set(
       NoOptions, EmptyOptions, OtherOptionOnly,
       ExpiresIn15m, ExpiresIn7d, ExpiresInSeconds3600, ExpiresInArith1d, ExpiresInMsString,
       ExpiresInConst2h, ExpiresInEnv, ConstOptions15m, CastOptionsEnv, SpreadConst7d,

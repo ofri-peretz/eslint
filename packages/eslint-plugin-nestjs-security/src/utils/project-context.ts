@@ -311,7 +311,9 @@ function registerGlobalGuards(
 /**
  * Whether a `MulterModule.register()` in this file may bound upload size.
  *
- * `fileSize` anywhere in the call's arguments counts. So does a
+ * `fileSize` anywhere in the call's arguments counts, unless its whole value
+ * is `Infinity`, `undefined` or `null`: none of those is a limit. A compound
+ * value that merely mentions one (`Infinity === x ? 1048576 : x`) counts. So does a
  * `registerAsync` with no inline `useFactory`: its options come from a class
  * in another file, and assuming they are unlimited would be a guess.
  */
@@ -328,7 +330,12 @@ function registersUploadLimit(source: string): boolean {
     const args = source.slice(MULTER_MODULE_RE.lastIndex, end);
     // The key — bare, shorthand or quoted — not the word:
     // `destination: './fileSize'` sets no limit.
-    if (/\bfileSize(?:\s*[:,}]|['"]\s*:)/.test(args)) return true;
+    if (
+      /\bfileSize(?:\s*[,}]|['"]?\s*:(?![\s(]*(?:Infinity|undefined|null)(?:\s+as\s+[\w.]+)?[\s)]*(?:[,}]|$)))/.test(
+        args,
+      )
+    )
+      return true;
     if (call[1] !== undefined && !/\buseFactory\b/.test(args)) return true;
   }
   return false;

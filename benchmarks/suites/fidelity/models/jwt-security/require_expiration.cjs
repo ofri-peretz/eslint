@@ -46,18 +46,49 @@ const JOSE = {
   JoseSeparate1h: `const builder = new SignJWT(payload).setProtectedHeader({ alg: 'ES256' });\n  builder.setExpirationTime('1h');\n  return await builder.sign(key);`,
 };
 
+// NestJS: the service signs with no options; the registration is elsewhere.
+const NEST_SERVICE = `import { JwtService } from '@nestjs/jwt';
+export class AuthService {
+  constructor(private readonly jwtService: JwtService) {}
+  login(sub: string) { return this.jwtService.sign({ sub }); }
+}`;
+const MODULE = (opts) =>
+  `import { Module } from '@nestjs/common';\nimport { JwtModule } from '@nestjs/jwt';\n@Module({ imports: [JwtModule.register(${opts})] })\nexport class AuthModule {}`;
+const ROOT = (opts) =>
+  `import { NestFactory } from '@nestjs/core';\nimport { JwtModule } from '@nestjs/jwt';\nconst app = await NestFactory.create({ imports: [JwtModule.register(${opts})] });\nawait app.listen(3000);`;
+const NO_TTL = '{ secret: process.env.S }';
+const TTL = "{ secret: process.env.S, signOptions: { expiresIn: '15m' } }";
+// [file, source] holding the package's JwtModule registration.
+const NEST = {
+  NestModuleMissing: ['src/auth/auth.module.ts', MODULE(NO_TTL)],
+  NestModuleSet: ['src/auth/auth.module.ts', MODULE(TTL)],
+  NestRootMissing: ['src/main.ts', ROOT(NO_TTL)],
+  NestBootstrapMissing: ['src/bootstrap.ts', ROOT(NO_TTL)],
+  NestRootSet: ['src/main.ts', ROOT(TTL)],
+  // Not a module and not a bootstrap: never read, so nothing is known.
+  NestOtherFileMissing: ['src/domain.ts', ROOT(NO_TTL)],
+};
+
 const fn = (body) =>
   `export async function issue(payload: any, user: any, key: any, opts: any) {\n  ${body}\n}`;
 
 module.exports = {
   rule: 'require-expiration',
-  domain: 294, // (8 spellings x 18 lifetimes + jose x 3) x 2 maxExpirationSeconds
+  domain: 306, // (8 spellings x 18 lifetimes + jose x 3 + nest x 6) x 2 maxExpirationSeconds
   traces: 4000,
   key: (s) => `${tag(s.spelling)}|${tag(s.lifetime)}|max=${num(s.maxSecs)}`,
   config: (s) =>
     num(s.maxSecs) ? { maxExpirationSeconds: num(s.maxSecs) } : {},
+  filename: (s) =>
+    tag(s.spelling) === 'NestService' ? 'src/auth/auth.service.ts' : undefined,
+  files: (s) => {
+    if (tag(s.spelling) !== 'NestService') return undefined;
+    const [file, source] = NEST[tag(s.lifetime)];
+    return { 'package.json': '{"name":"fixture"}', [file]: source };
+  },
   code: (s) => {
     const sp = tag(s.spelling);
+    if (sp === 'NestService') return NEST_SERVICE;
     const l = tag(s.lifetime);
     if (sp === 'JoseChain')
       return ["import { SignJWT } from 'jose';", fn(JOSE[l])].join('\n');
