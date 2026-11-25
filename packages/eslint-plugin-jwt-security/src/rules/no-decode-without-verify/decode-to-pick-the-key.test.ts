@@ -281,6 +281,96 @@ const token = read();
 const claims = jwt.decode(token);
 jwt.verify(token, key, { algorithms: ['HS256'] });`,
       },
+      {
+        name: 'a lookup keyed by a claim stays exempt: getKey(claims.kid)',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, getKey(claims.kid), { algorithms: ['HS256'] });
+}`,
+      },
+      {
+        name: 'a keyed table read stays exempt',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, keys[claims.kid], { algorithms: ['HS256'] });
+}`,
+      },
+      {
+        name: 'an awaited fetch by issuer stays exempt',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, await fetchKey(claims.iss), { algorithms: ['HS256'] });
+}`,
+      },
+      {
+        name: 'a conversion of a lookup result stays exempt',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, String(await fetchKey(claims.iss)), { algorithms: ['HS256'] });
+}`,
+      },
+      {
+        name: 'a lookup result converted by .toString() stays exempt',
+        code: `${jsonwebtoken}
+async function check(token, kid) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, (await fetchKey(claims.iss)).toString(), { algorithms: ['HS256'] });
+}`,
+      },
+      {
+        name: 'a lookup result converted by .trim() stays exempt',
+        code: `${jsonwebtoken}
+async function check(token, kid) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, (await fetchKey(claims.iss)).trim(), { algorithms: ['HS256'] });
+}`,
+      },
+      {
+        name: 'a method lookup keyed by a claim stays exempt',
+        code: `${jsonwebtoken}
+async function check(token, kid) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, store.get(claims.kid), { algorithms: ['HS256'] });
+}`,
+      },
+      {
+        name: 'a non-Buffer from() keyed by a claim stays exempt',
+        code: `${jsonwebtoken}
+async function check(token, kid) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, keyring.from(claims.kid), { algorithms: ['HS256'] });
+}`,
+      },
+      {
+        name: 'a curried lookup keyed by claims stays exempt',
+        code: `${jsonwebtoken}
+async function check(token, kid) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, keyFor(claims.tenant)(claims.kid), { algorithms: ['HS256'] });
+}`,
+      },
+      {
+        name: 'a lookup result trimmed into a local stays exempt',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  const key = (await fetchKey(claims.iss)).trim();
+  jwt.verify(token, key, { algorithms: ['HS256'] });
+}`,
+      },
+      {
+        name: 'a lookup result stringified into a local stays exempt',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  const key = String(await fetchKey(claims.iss));
+  jwt.verify(token, key, { algorithms: ['HS256'] });
+}`,
+      },
     ],
     invalid: [
       {
@@ -775,6 +865,168 @@ jwt.verify(globalToken, key, { algorithms: ['HS256'] });`,
 const token = read();
 const claims = jwt.decode(token);
 if (strict) { jwt.verify(token, key, { algorithms: ['HS256'] }); }`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'FN: a claim converted by String() is still the key',
+        code: `${jsonwebtoken}
+function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, String(claims.secret), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'a claim converted by Buffer.from() is still the key',
+        code: `${jsonwebtoken}
+function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, Buffer.from(claims.secret, 'base64'), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'a claim in a template literal is still the key',
+        code: `${jsonwebtoken}
+function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, \`\${claims.secret}\`, { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'a claim converted by .trim() is still the key',
+        code: `${jsonwebtoken}
+function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, claims.secret.trim(), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'a claim converted by Number() is still the key',
+        code: `${jsonwebtoken}
+async function check(token, kid) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, Number(claims.secret), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'a claim converted by BigInt() is still the key',
+        code: `${jsonwebtoken}
+async function check(token, kid) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, BigInt(claims.secret), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'a claim converted by .toString() is still the key',
+        code: `${jsonwebtoken}
+async function check(token, kid) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, claims.secret.toString(), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'a claim converted by .trimStart() is still the key',
+        code: `${jsonwebtoken}
+async function check(token, kid) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, claims.secret.trimStart(), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'a claim converted by .trimEnd() is still the key',
+        code: `${jsonwebtoken}
+async function check(token, kid) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, claims.secret.trimEnd(), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'a claim converted by .toLowerCase() is still the key',
+        code: `${jsonwebtoken}
+async function check(token, kid) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, claims.secret.toLowerCase(), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'a claim converted by .toUpperCase() is still the key',
+        code: `${jsonwebtoken}
+async function check(token, kid) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, claims.secret.toUpperCase(), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'a claim converted by .normalize() is still the key',
+        code: `${jsonwebtoken}
+async function check(token, kid) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, claims.secret.normalize(), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'a claim converted by .valueOf() is still the key',
+        code: `${jsonwebtoken}
+async function check(token, kid) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, claims.secret.valueOf(), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'a claim table indexed by a local is not a lookup by the claim',
+        code: `${jsonwebtoken}
+async function check(token, kid) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, claims.keys[kid], { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'a claim trimmed into a local is still the key',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  const key = claims.secret.trim();
+  jwt.verify(token, key, { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found review on ofri-peretz/eslint#1738, issue #1755
+        name: 'a claim stringified into a local is still the key',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  const key = String(claims.secret);
+  jwt.verify(token, key, { algorithms: ['HS256'] });
+}`,
         errors: [{ messageId: 'decodeWithoutVerify' }],
       },
     ],

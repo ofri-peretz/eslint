@@ -464,6 +464,26 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
       return method !== null && BUFFER_CONVERSIONS.has(method);
     };
 
+    /**
+     * A value-preserving method keeps the claim too: `claims.secret.trim()`
+     * is still the claim. Closed list; an unknown method is a lookup.
+     */
+    const CONVERSION_METHODS = new Set([
+      'toString',
+      'trim',
+      'trimStart',
+      'trimEnd',
+      'toLowerCase',
+      'toUpperCase',
+      'normalize',
+      'valueOf',
+    ]);
+    const isConversionMethod = (member: TSESTree.Node): boolean =>
+      member.type === 'MemberExpression' &&
+      CONVERSION_METHODS.has(propertyName(member) ?? '') &&
+      member.parent?.type === 'CallExpression' &&
+      member.parent.callee === member;
+
     /** The options-object names that carry the verification key (NestJS `JwtService`). */
     const KEY_OPTIONS = ['secret', 'publicKey'];
 
@@ -580,8 +600,16 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
     ): boolean => {
       if (viaCall && insideKey(node, verify)) return true;
       const parent = node.parent!;
+      // `keys[claims.kid]`: the claim indexes a table, a lookup like a call.
+      if (parent.type === 'MemberExpression' && parent.property === node) {
+        return reachesKey(parent, verify, after, true);
+      }
       if (TRANSPARENT.has(parent.type)) {
         return reachesKey(parent, verify, after, viaCall);
+      }
+      // `claims.secret.trim()`: the member is the callee of a conversion.
+      if (isConversionMethod(node)) {
+        return reachesKey(node.parent!, verify, after, viaCall);
       }
       if (isConversion(parent, node)) {
         // `String(claims.secret)`, `Buffer.from(claims.secret)`: the same
