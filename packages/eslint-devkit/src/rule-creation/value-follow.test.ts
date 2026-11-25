@@ -301,6 +301,30 @@ describe('exportedValue', () => {
     expect(exportedValue(index, 'absent', parser)).toBeNull();
   });
 
+  it('lets an explicit export own its name, even with no value', () => {
+    const barrel = files({
+      'index.ts': [
+        "export * from './a';",
+        "export * from './b';",
+        "export * from './b';",
+        "export * as nsA from './a';",
+        "export * as gone from './missing';",
+        'export let unset;',
+      ].join('\n'),
+      'a.ts': 'export const unset = 1;\nexport const both = 1;',
+      'b.ts': 'export const both = 2;\nexport const onlyB = 3;',
+    });
+    const index = load(barrel, 'index.ts');
+    // `export let unset;` is the module's own `unset`, not a.ts's 1.
+    expect(exportedValue(index, 'unset', parser)).toBeNull();
+    // Two stars carrying `both` to different values: the name is ambiguous.
+    expect(exportedValue(index, 'both', parser)).toBeNull();
+    // The same star written twice is one value, not a conflict.
+    expect(text(exportedValue(index, 'onlyB', parser))).toBe('3');
+    expect(exportedValue(index, 'nsA', parser)?.node.type).toBe('Program');
+    expect(exportedValue(index, 'gone', parser)).toBeNull();
+  });
+
   it('stops a re-export chain at the depth bound', () => {
     const chain: Record<string, string> = { 'r0.ts': 'export const v = 1;' };
     for (let i = 1; i <= 12; i++)

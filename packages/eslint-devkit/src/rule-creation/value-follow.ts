@@ -387,7 +387,11 @@ export function exportedValue(
         const declarator = declaration.declarations.find(
           (d) => d.id.type === AST_NODE_TYPES.Identifier && d.id.name === name,
         );
-        if (declarator?.init) return valueAt(declarator.init, env);
+        // `export let token;` owns the name even with no initialiser: a star
+        // re-export of another `token` never shadows it.
+        if (declarator !== undefined) {
+          return declarator.init ? valueAt(declarator.init, env) : null;
+        }
       } else if (
         (declaration?.type === AST_NODE_TYPES.FunctionDeclaration ||
           declaration?.type === AST_NODE_TYPES.ClassDeclaration ||
@@ -417,6 +421,19 @@ export function exportedValue(
       }
       continue;
     }
+    // `export * as name from './x'` names the namespace of `./x` explicitly.
+    if (
+      statement.type === AST_NODE_TYPES.ExportAllDeclaration &&
+      statement.exported !== null
+    ) {
+      if (moduleExportName(statement.exported) !== name) continue;
+      const target = resolveRelative(
+        module.file,
+        String(statement.source.value),
+      );
+      const next = target === null ? null : loadModule(target, parser);
+      return next === null ? null : valueAt(next.ast, moduleEnv(next, parser));
+    }
     // CommonJS: `module.exports = { … }` / `module.exports.name = …` / `exports.name = …`
     if (
       statement.type === AST_NODE_TYPES.ExpressionStatement &&
@@ -444,6 +461,7 @@ export function exportedValue(
   // `default`. A name declared here wins over one a star re-export carries,
   // so these are read only after every explicit export missed.
   if (name === 'default') return null;
+  let starred: Value | null = null;
   for (const statement of module.ast.body) {
     if (
       statement.type !== AST_NODE_TYPES.ExportAllDeclaration ||
@@ -454,9 +472,13 @@ export function exportedValue(
     const next = target === null ? null : loadModule(target, parser);
     const found =
       next === null ? null : exportedValue(next, name, parser, depth + 1);
-    if (found !== null) return found;
+    if (found === null) continue;
+    // Two star re-exports carrying the same name to different values make it
+    // ambiguous, and the module does not export it at all.
+    if (starred !== null && starred.node !== found.node) return null;
+    starred = found;
   }
-  return null;
+  return starred;
 }
 
 /**
