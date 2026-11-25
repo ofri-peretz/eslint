@@ -177,7 +177,10 @@ rule disabled, which costs every finding above.
   "iterates `Object.keys`" as safe without asking _keys of what_ is wrong half
   the time — and this spec said exactly that until it was measured.
 
-- **E4** a key from a frozen/`as const` lookup table
+- **E4** a key from a frozen/`as const` lookup table, including one slot of a
+  const list of string tuples, `for (const [lo, hi] of PAIRS)` (2026-11-25).
+  The proof holds for every position the key is used in: a write, a `delete`
+  and an invoked read alike.
 - **E5** an enum/union-typed key in TS (`k: keyof T`, `k: 'a' | 'b'`)
 - **E6** a module-scope constant (`const FIELD = process.env.FIELD` at boot)
 - **E7** **an object literal built in this file** — `const req = { params: {…} }`
@@ -211,7 +214,9 @@ i) => { dst[i] = v })`, and `.map` / `.filter` / `.find` / `.findLast` /
   Accepted evidence is an array literal, a `T[]` / `readonly T[]` / `[A, B]` /
   `Array<T>` annotation the file states, a `const` initialized to any of those,
   or `Array.from` / `Array.of` / `.split` / `.slice` / `.concat` / `.map` /
-  `.filter` / `.flat` / `.flatMap` / `.toSorted` / `.toReversed`.
+  `.filter` / `.flat` / `.flatMap` / `.toSorted` / `.toReversed`, or
+  `Object.keys` / `.values` / `.entries` / `.getOwnPropertyNames` /
+  `.getOwnPropertySymbols` (added 2026-11-25, NestJS multer.utils.ts:236).
 
   **Residual, deliberately:** a receiver whose Array-ness the file never states,
   or states somewhere the resolver does not reach — a bare untyped parameter
@@ -234,7 +239,8 @@ i) => { dst[i] = v })`, and `.map` / `.filter` / `.find` / `.findLast` /
 - **G1** target is `Object.create(null)` or `{ __proto__: null }` — of the TARGET,
   whatever spelling reaches it: inline, bound to a name, held as a property of a
   holder object, or returned by `Object.assign(<prototypeless>, …)`, which returns
-  its first argument and never invokes `SetPrototypeOf` (`safe/16`)
+  its first argument and never invokes `SetPrototypeOf` (`safe/16`). A `delete`
+  on that target is covered too (2026-11-25).
 - **G2** target is a `Map`/`Set`/`WeakMap` — `.set()` cannot pollute
 - **G3** target is frozen (`Object.freeze`)
 - **G4** `structuredClone` instead of a hand merge

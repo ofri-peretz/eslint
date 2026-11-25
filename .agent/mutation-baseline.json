@@ -1155,6 +1155,13 @@
     },
     "secure-coding": {
       "rules": {
+        "detect-object-injection": {
+          "score": 92.5,
+          "killed": 2508,
+          "survived": 203,
+          "noCoverage": 0,
+          "timeout": 15
+        },
         "no-fail-open-auth": {
           "score": 83.1,
           "killed": 273,
@@ -1236,7 +1243,6 @@
       "pending": [
         "__tests__",
         "detect-non-literal-regexp",
-        "detect-object-injection",
         "detect-weak-password-validation",
         "no-bidi-characters",
         "no-directive-injection",
