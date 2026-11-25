@@ -5,15 +5,15 @@
       "rules": 46,
       "description": "ESLint browser security and XSS rules — detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps",
       "category": "security",
-      "version": "3.1.3",
+      "version": "3.1.5",
       "published": true
     },
     {
       "name": "eslint-plugin-node-security",
-      "rules": 43,
+      "rules": 44,
       "description": "ESLint Node security rules for Node.js — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
-      "version": "6.1.2",
+      "version": "6.1.5",
       "published": true
     },
     {
@@ -21,7 +21,7 @@
       "rules": 35,
       "description": "ESLint security rules for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "6.4.4",
+      "version": "6.4.10",
       "published": true
     },
     {
@@ -37,7 +37,7 @@
       "rules": 16,
       "description": "ESLint MongoDB security rules for MongoDB and Mongoose — detects NoSQL operator injection, unsafe queries and regex, hardcoded connection strings, and missing TLS",
       "category": "security",
-      "version": "10.1.1",
+      "version": "10.1.2",
       "published": true
     },
     {
@@ -157,7 +157,7 @@
       "rules": 28,
       "description": "ESLint Express security rules — detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production",
       "category": "framework",
-      "version": "4.3.2",
+      "version": "4.3.3",
       "published": true
     },
     {
@@ -181,7 +181,7 @@
       "rules": 58,
       "description": "ESLint import rules — eslint-plugin-import replacement for ESLint 10 (and 8, 9): same import/* rule names and settings (node, typescript and custom-alias resolvers), passes 95% of its own test cases",
       "category": "architecture",
-      "version": "4.1.7",
+      "version": "4.1.10",
       "published": true
     },
     {
@@ -189,7 +189,7 @@
       "rules": 20,
       "description": "ESLint conventions rules for team code — enforces filename case, magic-number bans, commented-out code, expiring TODOs, and deprecated-API usage",
       "category": "quality",
-      "version": "7.0.4",
+      "version": "7.2.1",
       "published": true
     },
     {
@@ -197,7 +197,7 @@
       "rules": 12,
       "description": "ESLint maintainability rules — limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors",
       "category": "quality",
-      "version": "4.0.6",
+      "version": "4.0.7",
       "published": true
     },
     {
@@ -205,7 +205,7 @@
       "rules": 9,
       "description": "ESLint reliability rules for runtime safety — enforces error handling, network timeouts, null checks, and safe type narrowing",
       "category": "quality",
-      "version": "5.0.6",
+      "version": "5.0.8",
       "published": true
     },
     {
@@ -221,7 +221,7 @@
       "rules": 6,
       "description": "ESLint production readiness rules — bans debug code and console logging in production, verbose error messages, and process.exit calls",
       "category": "quality",
-      "version": "5.0.7",
+      "version": "5.0.8",
       "published": true
     },
     {
@@ -242,10 +242,10 @@
     },
     {
       "name": "eslint-plugin-react-features",
-      "rules": 65,
+      "rules": 68,
       "description": "ESLint React hooks and JSX rules — prop-types, JSX correctness, render performance, and class-to-hooks migration for modern React codebases",
       "category": "react",
-      "version": "2.3.1",
+      "version": "2.4.1",
       "published": true
     },
     {
@@ -253,12 +253,12 @@
       "rules": 37,
       "description": "ESLint React a11y rules for React accessibility — WCAG 2.1 rules for ARIA, alt text, keyboard interaction, and focus management, with auto-fixes",
       "category": "react",
-      "version": "3.0.6",
+      "version": "3.0.9",
       "published": true
     }
   ],
-  "totalRules": 508,
+  "totalRules": 512,
   "totalPlugins": 31,
   "allPluginsCount": 32,
-  "generatedAt": "2026-11-23"
+  "generatedAt": "2026-11-24"
 }

@@ -5,6 +5,42 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.11
+
+### Patch Changes
+
+- **🐛 Fix** — no-unresolved skips type-only imports and re-exports, as eslint-plugin-import does
+
+  `import type { X } from 'pkg'` and `export type { X } from 'pkg'` are erased, so a package that is not installed is not a resolution failure. eslint-plugin-import returns before resolving when the declaration's `importKind` or `exportKind` is `type` (no-unresolved.js:33, v2.32.0); import-next only allowed this for `@types/*`. An inline `import { type X }` is a value declaration upstream and is still resolved. 72 of 75 extra findings on workadventure were `import type` lines (workadventure/workadventure).
+
+## 4.1.10
+
+### Patch Changes
+
+- **🐛 Fix** — AGENTS.md lists the rules in no preset by name on one line (README.md describes each), so the file an agent loads stays inside its guidance budget.
+
+## 4.1.9
+
+### Patch Changes
+
+- **🐛 Fix** — Fix three false positives from the issue backlog.
+
+  - `no-hardcoded-credentials`: an ambiguous "common password" keyword match
+    (e.g. the string `'password'`) now needs the enclosing slot's own category
+    to actually say "password" (or an unclassified-but-credential-ish name),
+    not merely to end in some unrelated credential word — a route-name list
+    like `SENSITIVE_ROUTE_TOKENS` no longer reports the word `'password'` as a
+    credential (#1557).
+  - `no-missing-null-checks`: a `const` already narrowed truthy by a ternary
+    stays narrowed inside a nested callback declared in the narrowed arm — the
+    binding can never be reassigned before the callback runs. A `let` or a
+    parameter gives no such guarantee and still reports (#1564).
+  - `no-extraneous-dependencies`: a tsconfig `@/` path alias
+    (`"paths": { "@/*": ["./src/*"] }`, the create-next-app / shadcn
+    convention) is never a scoped package — npm scopes need at least one
+    character after `@` — so it is no longer reported as missing when an
+    unmodelled resolver is configured (#1551).
+
 ## 4.1.8
 
 ### Patch Changes

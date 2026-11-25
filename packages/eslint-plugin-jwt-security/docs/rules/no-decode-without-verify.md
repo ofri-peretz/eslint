@@ -75,6 +75,11 @@ const decoded = jwt.decode(token, { complete: true });
 const key = await client.getSigningKey(decoded.header.kid);
 jwt.verify(token, key.getPublicKey(), { algorithms: ['RS256'] });
 
+// Decoding to find whose token it is, then verifying it with that user's key
+const { sub } = jwt.decode(token);
+const user = await users.find(sub);
+jwt.verify(token, user.resetSecret, { algorithms: ['HS256'] });
+
 // Not JWT decodes: a TextDecoder, jose's base64url codec
 const decoder = new TextDecoder();
 decoder.decode(bytes);
@@ -86,6 +91,33 @@ decodeJwt(tokens.id_token).sub;
 const response = await axios.post('/oauth/token', form);
 decodeJwt(response.data.access_token).exp;
 ```
+
+A decode followed by a pinned, unconditional verify of the same token is
+accepted only while the claims are used to **pick the key** of that verify.
+Any other use between the decode and the verify is reported, because the
+verify cannot undo it. Reads after the verify are fine.
+
+```javascript
+// ❌ reported: the grant runs before the signature is checked
+const claims = jwt.decode(token);
+await grantRole(claims.sub, claims.role);
+jwt.verify(token, key, { algorithms: ['HS256'] });
+
+// ❌ reported: a branch on a claim, or a write of one, before the verify
+const claims = jwt.decode(token);
+if (claims.admin) elevate();
+req.user = claims;
+jwt.verify(token, key, { algorithms: ['HS256'] });
+
+// ❌ reported: the claim is the key, so the attacker picks it
+const claims = jwt.decode(token);
+jwt.verify(token, claims.secret, { algorithms: ['HS256'] });
+```
+
+The analysis follows the claims inside one function, through member reads,
+`await`, template literals, object literals, lookup call arguments and local
+bindings. It cannot see a lookup's side effects, so a `findById(claims.sub)`
+that also writes is a lookup to it. A flow it cannot place is reported.
 
 A token is exempt as a **back-channel** value only when it structurally
 comes from an HTTP response this code requested: the body of a `fetch()`
@@ -102,6 +134,11 @@ export async function POST(request) {
   return decodeJwt(data.id_token).sub;
 }
 ```
+
+A decode is also exempt when the same function goes on to verify the **same
+token binding**, unconditionally (not in an `if`, a `catch`, a callback or a
+nested function), with `algorithms` pinned to string literals. Without the
+pinned list, the token's own header would choose the algorithm.
 
 `header.kid` is exempt by default: a forged kid only selects a key the
 signature then fails against. `header.alg` and `header.jku` are not — choosing

@@ -29,6 +29,61 @@ describe('no-missing-aria-labels', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - elements with ARIA labels', noMissingAriaLabels, {
       valid: [
+        // An intrinsic <img>/<area> with a non-empty alt is the button's name.
+        {
+          name: "an img with alt is the button's name",
+          code: '<button><img alt="Save" /></button>',
+        },
+        {
+          name: 'an img with alt nested in a span names the button',
+          code: '<button><span><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'the string alt="false" is still a name',
+          code: '<button><img alt="false" /></button>',
+        },
+        {
+          name: 'a visible styled wrapper still passes its img name through',
+          code: '<button><span style={{ display: \'block\' }}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a hidden={false} wrapper is visible',
+          code: '<button><span hidden={false}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a non-object style does not hide the wrapper',
+          code: '<button><span style={styles}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a computed style key is not read as hiding',
+          code: '<button><span style={{ [k]: "none" }}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a spread style does not hide the wrapper',
+          code: '<button><span style={{ ...s }}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a dynamic style value is not read as hiding',
+          code: '<button><span style={{ display }}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a string style value on another property is visible',
+          code: '<button><span style={{ color: "none" }}><img alt="Save" /></span></button>',
+        },
+        {
+          name: 'a string literal alt expression names the button',
+          code: '<button><img alt={"Save"} /></button>',
+        },
+        {
+          name: 'an area with alt names the button',
+          code: '<button><area alt="Save" /></button>',
+        },
+        // A dynamic alt counts as a name (the file cannot prove it empty),
+        // matching givesValue() and control-has-associated-label.
+        {
+          name: 'a dynamic alt counts as a name',
+          code: '<button><img alt={label} /></button>',
+        },
         // Button with aria-label
         {
           name: 'an aria-label is present',
@@ -87,7 +142,108 @@ describe('no-missing-aria-labels', () => {
         },
         // Expression containers with identifier/string/number are also text content.
         {
+          name: 'an identifier child is the visible text',
           code: '<button>{label}</button>',
+        },
+        {
+          /* @found readest/readest 2026-11-24 */ name: 'FP: an i18n call result is the visible text',
+          code: "<button>{_('Open')}</button>",
+        },
+        {
+          /* @found readest/readest 2026-11-24 */ name: 'FP: a translation call inside a child element is the visible text',
+          code: "<button><Icon /><div>{t('save')}</div></button>",
+        },
+        {
+          /* @found readest/readest 2026-11-24 */ name: 'FP: a nullish fallback to a string is the visible text',
+          code: "<a>{label ?? 'Back'}</a>",
+          options: [{ requireLabels: ['a'] }],
+        },
+        {
+          /* @found readest/readest 2026-11-24 */ name: 'FP: a template literal with an expression is the visible text',
+          code: '<button>{`${count} items`}</button>',
+        },
+        {
+          name: 'a member read is the visible text',
+          code: '<button>{props.title}</button>',
+        },
+        {
+          name: 'a guard with a text result is the visible text',
+          code: '<button>{open && "Close"}</button>',
+        },
+        {
+          name: 'a ternary with one text arm is the visible text',
+          code: '<button>{open ? "Close" : null}</button>',
+        },
+        {
+          name: 'a type assertion around a call is the visible text',
+          code: '<button>{t("save") as string}</button>',
+        },
+        {
+          name: 'a nullish fallback after undefined is the visible text',
+          code: '<button>{undefined ?? "Back"}</button>',
+        },
+        {
+          name: 'a negative number renders',
+          code: '<button>{-1}</button>',
+        },
+        {
+          name: 'typeof renders a string',
+          code: '<button>{typeof x}</button>',
+        },
+        {
+          name: 'a null guard falls through ?? to the text',
+          code: '<button>{null ?? "Back"}</button>',
+        },
+        {
+          name: 'a known non-null left of ?? is the text',
+          code: '<button>{"x" ?? "Save"}</button>',
+        },
+        {
+          name: 'a true guard reaches the right of &&',
+          code: '<button>{true && "Save"}</button>',
+        },
+        {
+          name: 'an empty string falls through || to the text',
+          code: '<button>{"" || "Save"}</button>',
+        },
+        {
+          name: 'a known truthy left of || is the text',
+          code: '<button>{"x" || ""}</button>',
+        },
+        {
+          name: 'a zero guard renders 0',
+          code: '<button>{0 && "x"}</button>',
+        },
+        {
+          name: 'void 0 falls through ?? to the text',
+          code: '<button>{void 0 ?? "Back"}</button>',
+        },
+        {
+          name: 'a static template falls through || to the text',
+          code: '<button>{`` || "Save"}</button>',
+        },
+        {
+          name: 'an unknown member guard still reaches the text',
+          code: '<button>{props.ready && "Save"}</button>',
+        },
+        {
+          name: 'an unknown negated guard still reaches the text',
+          code: '<button>{!open && "Save"}</button>',
+        },
+        {
+          name: 'an unknown negated left of || falls through to the text',
+          code: '<button>{!open || "Save"}</button>',
+        },
+        {
+          name: 'a dynamic template is text even before a fallback',
+          code: '<button>{`${a}` || "Save"}</button>',
+        },
+        // #1563: a ternary between two string literals is text either branch
+        // resolves to, so the button's accessible name is text regardless of
+        // which arm renders.
+        {
+          name: 'a ternary between two string literals is text content',
+          code: '<button>{on ? "Turn off" : "Turn on"}</button>',
         },
       ],
       invalid: [],
@@ -101,6 +257,72 @@ describe('no-missing-aria-labels', () => {
       {
         valid: [],
         invalid: [
+          // An img only names its parent through a non-empty, visible alt.
+          {
+            name: 'an empty alt gives no name',
+            code: '<button><img alt="" /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an img without alt gives no name',
+            code: '<button><img /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an aria-hidden img gives no name',
+            code: '<button><img alt="Save" aria-hidden="true" /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an img inside a hidden wrapper gives no name',
+            code: '<button><span aria-hidden="true"><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an img inside a display:none wrapper gives no name',
+            code: '<button><span style={{ display: \'none\' }}><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an img inside a visibility:hidden wrapper gives no name',
+            code: '<button><span style={{ visibility: \'hidden\' }}><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an img inside a hidden-attribute wrapper gives no name',
+            code: '<button><span hidden><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a boolean alt={false} is not rendered, so it gives no name',
+            code: '<button><img alt={false} /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a boolean alt={true} is not rendered, so it gives no name',
+            code: '<button><img alt={true} /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a hidden={true} wrapper gives no name',
+            code: '<button><span hidden={true}><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a quoted display key still hides the wrapper',
+            code: '<button><span style={{ "display": "none" }}><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a computed string display key still hides the wrapper',
+            code: '<button><span style={{ ["display"]: "none" }}><img alt="Save" /></span></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a custom Img component is not proven to name the button',
+            code: '<button><Img alt="Save" /></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
           // An empty aria-label yields no accessible name (accname 1.2)
           {
             name: 'empty aria-label is not a name',
@@ -136,6 +358,93 @@ describe('no-missing-aria-labels', () => {
           },
           {
             code: '<textarea></textarea>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an empty string expression renders nothing',
+            code: "<button>{''}</button>",
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a null expression renders nothing',
+            code: '<button>{null}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an undefined expression renders nothing',
+            code: '<button>{undefined}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a false expression renders nothing',
+            code: '<button>{false}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a void expression renders nothing',
+            code: '<button>{void 0}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a guard whose result is an icon is not text',
+            code: '<button>{open && <Icon />}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an empty template literal renders nothing',
+            code: '<button>{``}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'an empty button has no name',
+            code: '<button></button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a comment-only expression renders nothing',
+            code: '<button>{/* label goes here */}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a fallback chain of empty values renders nothing',
+            code: "<button>{null || ''}</button>",
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a negation is a boolean and renders nothing',
+            code: '<button>{!open}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'delete is a boolean and renders nothing',
+            code: '<button>{delete o.k}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a false guard renders false, not the text',
+            code: '<button>{false && "Save"}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a true left of || renders true, not the text',
+            code: '<button>{true || "Save"}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'false is not nullish, so ?? renders false',
+            code: '<button>{false ?? "Save"}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          {
+            name: 'a null guard renders nothing',
+            code: '<button>{null && label}</button>',
+            errors: [{ messageId: 'missingAriaLabel' }],
+          },
+          // A ternary between two blank strings resolves to text on neither
+          // branch — only a non-whitespace string literal counts as a name.
+          {
+            name: 'a ternary between two blank string literals is not a name',
+            code: '<button>{on ? "" : " "}</button>',
             errors: [{ messageId: 'missingAriaLabel' }],
           },
         ],

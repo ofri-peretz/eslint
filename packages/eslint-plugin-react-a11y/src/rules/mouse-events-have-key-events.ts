@@ -16,7 +16,18 @@ import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingOnFocus' | 'missingOnBlur';
 
-type RuleOptions = [];
+type Options = {
+  /** Handlers that must be accompanied by `onFocus`. Default `['onMouseOver']`. */
+  hoverInHandlers?: string[];
+  /** Handlers that must be accompanied by `onBlur`. Default `['onMouseOut']`. */
+  hoverOutHandlers?: string[];
+};
+
+type RuleOptions = [Options?];
+
+// jsx-a11y's defaults (rules/mouse-events-have-key-events.js, v6.10.2).
+const DEFAULT_HOVER_IN_HANDLERS = ['onMouseOver'];
+const DEFAULT_HOVER_OUT_HANDLERS = ['onMouseOut'];
 
 export const mouseEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
   name: 'mouse-events-have-key-events',
@@ -37,7 +48,7 @@ export const mouseEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'Missing Keyboard Handler',
         description:
-          'onMouseOver must be accompanied by onFocus for keyboard accessibility',
+          '{{handler}} must be accompanied by onFocus for keyboard accessibility',
         severity: 'MEDIUM',
         fix: 'Add onFocus handler',
         documentationLink:
@@ -47,57 +58,67 @@ export const mouseEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'Missing Keyboard Handler',
         description:
-          'onMouseOut must be accompanied by onBlur for keyboard accessibility',
+          '{{handler}} must be accompanied by onBlur for keyboard accessibility',
         severity: 'MEDIUM',
         fix: 'Add onBlur handler',
         documentationLink:
           'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/mouse-events-have-key-events.md',
       }),
     },
-    schema: [],
+    // Shape of upstream's schema (rules/mouse-events-have-key-events.js, v6.10.2).
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          hoverInHandlers: { type: 'array', items: { type: 'string' } },
+          hoverOutHandlers: { type: 'array', items: { type: 'string' } },
+        },
+      },
+    ],
   },
-  defaultOptions: [],
-  createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+  defaultOptions: [{}],
+  createOnce(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    currentOptions,
+  ) {
+    let hoverIn: string[];
+    let hoverOut: string[];
+
     return {
+      before() {
+        const [options = {} as Options] = currentOptions();
+        ({
+          hoverInHandlers: hoverIn = DEFAULT_HOVER_IN_HANDLERS,
+          hoverOutHandlers: hoverOut = DEFAULT_HOVER_OUT_HANDLERS,
+        } = options);
+      },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
-        const attributes = node.attributes.filter(
-          (
-            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
-          ): attr is TSESTree.JSXAttribute =>
-            attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier',
+        const names = new Set(
+          node.attributes.flatMap((attr) =>
+            attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier'
+              ? [attr.name.name]
+              : [],
+          ),
         );
+        // Like upstream, only the first configured handler present is named.
+        const hoverInHandler = hoverIn.find((name) => names.has(name));
+        const hoverOutHandler = hoverOut.find((name) => names.has(name));
+        const hasFocus = names.has('onFocus');
+        const hasBlur = names.has('onBlur');
 
-        const hasMouseOver = attributes.some(
-          (attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute =>
-            attr.name?.name === 'onMouseOver' &&
-            attr.name?.type === 'JSXIdentifier',
-        );
-        const hasMouseOut = attributes.some(
-          (attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute =>
-            attr.name?.name === 'onMouseOut' &&
-            attr.name?.type === 'JSXIdentifier',
-        );
-        const hasFocus = attributes.some(
-          (attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute =>
-            attr.name?.name === 'onFocus' &&
-            attr.name?.type === 'JSXIdentifier',
-        );
-        const hasBlur = attributes.some(
-          (attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute =>
-            attr.name?.name === 'onBlur' && attr.name?.type === 'JSXIdentifier',
-        );
-
-        if (hasMouseOver && !hasFocus) {
+        if (hoverInHandler !== undefined && !hasFocus) {
           context.report({
             node,
             messageId: 'missingOnFocus',
+            data: { handler: hoverInHandler },
           });
         }
 
-        if (hasMouseOut && !hasBlur) {
+        if (hoverOutHandler !== undefined && !hasBlur) {
           context.report({
             node,
             messageId: 'missingOnBlur',
+            data: { handler: hoverOutHandler },
           });
         }
       },

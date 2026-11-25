@@ -5,6 +5,106 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.4.12
+
+### Patch Changes
+
+- **🧪 Tests** — no-hardcoded-credentials locks that a migration-shaped name in a secret slot still reports
+
+  Adds a boundary case (`const secret = 'AddMfaColumnsToUsers1784073600000'` reports) and documents the leading-zero floor in `isTimestampedName`. No behaviour change.
+
+## 6.4.11
+
+### Patch Changes
+
+- **🐛 Fix** — no-hardcoded-credentials stops exempting a DI-token-shaped value held in a password slot
+
+  `isInjectionTokenName`'s `SCREAMING_SNAKE(qualifier)` shape exemption used to apply regardless of
+  the slot it was assigned to, so `const password = 'BULLMQ_CONFIG(default)';` was not reported: the
+  same call-shaped string that correctly clears a `TOKEN`-named slot also cleared a `password`-named
+  one. Nothing stores a real dependency-injection token in a slot named `password`, so the exemption
+  now checks the slot's own inferred category and no longer applies there — a DI-token-shaped value
+  in any other slot (`token`, `apikey`, `database`, `other`) keeps the exemption exactly as before
+  (#1686).
+
+- **🐛 Fix** — no-hardcoded-credentials no longer reports migration class names as secret keys
+
+  A name made of words plus an epoch timestamp, such as `AddMfaColumnsToUsers1784073600000`, passed every random-key shape test and was reported at CVSS 9.8.
+
+## 6.4.10
+
+### Patch Changes
+
+- **🐛 Fix** — no-graphql-injection accepts `gql` documents composed from other `gql` documents
+
+  `gql`query { ...Asset } ${ASSET_FRAGMENT}`` no longer reports when the interpolation is a `gql`/`graphql`
+tagged template, written in place or bound to a single-assignment `const`. That is the Apollo/graphql-tag
+composition idiom, and it was 192 of 254 findings in vendure-ecommerce/vendure. A `gql` tag now makes its
+template a document even with no static text, so `gql`${input}`` is checked. Imported fragments still report,
+  whatever they are named, because an import cannot be resolved within the file; so does any user value
+  interpolated into a query.
+
+## 6.4.9
+
+### Patch Changes
+
+- **🐛 Fix** — no-insecure-comparison checks value provenance before exempting a re-encoding or store re-read
+
+  An original written through an alias, a buffer changed later in a loop body, a store swapped through a
+  property between two reads, and a guard whose condition is reassigned after the choice no longer earn
+  the exemption.
+
+- **🐛 Fix** — stop flagging safe comparisons and messages found in nestjs/authentication
+
+  Each exemption is narrow, and a lookalike that is a real bug still reports.
+
+  - `no-insecure-comparison`: record identifiers such as `token.userId` are judged by the field name
+    (new `recordMetadataTails` option), a `Buffer.from(x, enc).toString(enc)` round trip over an
+    unchanged `x` is a canonical-form check, and the same field from two reads of one store call is a
+    concurrency check.
+  - `no-sensitive-data-exposure`: a message quoting an option with a `true`, `false`, `null` or
+    `undefined` setting, when that is the message's only label-and-value pair.
+
+## 6.4.8
+
+### Patch Changes
+
+- **🐛 Fix** — Found linting open-source Node apps: fewer false positives in `no-hardcoded-credentials` (i18n keys, single foreign words, type tags, masked values, `tests.js` modules), `no-xpath-injection` (own `evaluate` method, log prefixes, usage strings), `no-sensitive-data-exposure` (a fact about a secret), `no-weak-password-recovery` (React components, log prose) and `no-privilege-escalation` (a role comparison guarding the write).
+
+## 6.4.7
+
+### Patch Changes
+
+- **🐛 Fix** — Fix false positives found linting popular Node.js and React packages.
+
+  - `no-unsafe-regex-construction`: `new RegExp(source, caseSensitive ? undefined : "i")` is not "dynamic flags"; `undefined` is a closed leaf like a string literal. A parameter shadowing `undefined` and any open leaf still report.
+  - `no-improper-sanitization`: an escape helper that replaces `&`, `<`, `>` and then, in a later reachable statement of the same block, replaces `"` with a quote entity on the same variable (resolved by scope, not spelling) is complete. A chain with no such statement, a shadowing or different variable, a step after a `return`, a step after the value was already used, and a chain that lacks the ampersand step still report.
+  - `no-xxe-injection`: a call to a parse method that a class or prototype of this file implements, on a receiver that is an instance of it (`this`, a `var _this = this` alias, or a `new Local()` binding), is delegation inside the parser library and is not reported. A prototype method that is only an alias of an external parser, a parameter or imported receiver, and an unrelated external parser that happens to share the method name still report.
+
+- **🐛 Fix** — Fix three false positives found linting popular Express/NestJS packages.
+
+  - `no-unlimited-resource-allocation`: a zlib decompression stream that is handed, directly or through a local factory, to a consumer that also receives a `limit` / `maxSize` option is bounded where it is read and no longer reported. A stream with no limited consumer still reports.
+  - `no-xxe-injection`: `@microsoft/tsdoc` is added to `entityIncapableModules`; `TSDocParser#parseString` parses comment text, not XML. Parsers of unknown origin with the same method name still report.
+  - `no-hardcoded-credentials`: a dependency-injection token name written as `SCREAMING_SNAKE(word)` (`'BULLMQ_CONFIG(default)'`) in a `*_TOKEN` slot is not a secret. Random values in the same slot still report.
+
+- **🐛 Fix** — Fix three false positives from the issue backlog.
+
+  - `no-hardcoded-credentials`: an ambiguous "common password" keyword match
+    (e.g. the string `'password'`) now needs the enclosing slot's own category
+    to actually say "password" (or an unclassified-but-credential-ish name),
+    not merely to end in some unrelated credential word — a route-name list
+    like `SENSITIVE_ROUTE_TOKENS` no longer reports the word `'password'` as a
+    credential (#1557).
+  - `no-missing-null-checks`: a `const` already narrowed truthy by a ternary
+    stays narrowed inside a nested callback declared in the narrowed arm — the
+    binding can never be reassigned before the callback runs. A `let` or a
+    parameter gives no such guarantee and still reports (#1564).
+  - `no-extraneous-dependencies`: a tsconfig `@/` path alias
+    (`"paths": { "@/*": ["./src/*"] }`, the create-next-app / shadcn
+    convention) is never a scoped package — npm scopes need at least one
+    character after `@` — so it is no longer reported as missing when an
+    unmodelled resolver is configured (#1551).
+
 ## 6.4.6
 
 ### Patch Changes

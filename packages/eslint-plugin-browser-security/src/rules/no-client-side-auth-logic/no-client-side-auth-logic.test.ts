@@ -37,7 +37,7 @@ ruleTester.run('no-client-side-auth-logic', noClientSideAuthLogic, {
     {
       code: 'if (ionFormField.secret === true) { Object.assign(uiSchema, getPasswordUiSchema(settings)) }',
     },
-    { code: 'if (field.secret === false) { renderPlain() }' },
+    { code: 'if (field.secret === false) { renderPlain() }', name: 'a boolean flag on a field makes no auth decision' },
     // Presence tests, same category.
     { code: 'if (creds.password === null) { promptForPassword() }' },
     { code: 'if (creds.token === undefined) { fetchToken() }' },

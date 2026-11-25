@@ -5,6 +5,42 @@ All notable changes to `oxlint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.4.12
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.12`
+
+## 6.4.11
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.11`
+
+## 6.4.10
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.10`
+
+## 6.4.9
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.9`
+
+## 6.4.8
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.8`
+
+## 6.4.7
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.4.7`
+
 ## 6.4.6
 
 ### Patch Changes

@@ -66,6 +66,11 @@ ruleTester.run('a DI token name is not a secret', noHardcodedCredentials, {
       code: "const password = 'aaAA@123';",
       errors: 1,
     },
+    {
+      name: 'a DI-token-shaped value in a password slot is still a credential (#1686)',
+      code: "const password = 'BULLMQ_CONFIG(default)';",
+      errors: 1,
+    },
   ],
 });
 

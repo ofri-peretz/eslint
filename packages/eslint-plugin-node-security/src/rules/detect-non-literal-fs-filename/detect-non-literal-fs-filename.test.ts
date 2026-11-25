@@ -511,6 +511,7 @@ describe('detect-non-literal-fs-filename', () => {
       {
         valid: [
           {
+            name: 'a literal path is accepted when allowLiterals is on',
             code: "fs.readFile('../../etc/passwd');",
             options: [{ allowLiterals: true }],
           },

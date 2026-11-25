@@ -202,19 +202,7 @@ Everything in `recommended` plus 29 more (some shared rules run at a different s
 
 ### Rules in no preset
 
-Enable these by name (`'import-next/<rule>': 'error'`):
-
-- `no-webpack-loader-syntax`: Forbid webpack loader syntax in imports.
-- `no-default-export`: Prevents default exports.
-- `no-named-export`: Prevents named exports.
-- `prefer-default-export`: Prefer a default export if module exports a single name.
-- `order`: Enforce a convention in module import order, with eslint-plugin-import's options and defaults.
-- `dynamic-import-chunkname`: Enforce a leading comment with the webpackChunkName for dynamic imports.
-- `enforce-node-protocol-usage`: Enforce either using, or omitting, the `node:` protocol when importing Node.js builtin modules.
-- `enforce-team-boundaries`: Prevent unauthorized cross-team imports in large codebases.
-- `no-legacy-imports`: Detect imports from deprecated internal paths and suggest alternatives.
-- `require-import-approval`: Enforce explicit approval for high-risk package imports.
-- `prefer-modern-api`: Suggest modern replacements for deprecated or outdated libraries.
+Enable these by name (`'import-next/<rule>': 'error'`); README.md describes each: `no-webpack-loader-syntax`, `no-default-export`, `no-named-export`, `prefer-default-export`, `order`, `dynamic-import-chunkname`, `enforce-node-protocol-usage`, `enforce-team-boundaries`, `no-legacy-imports`, `require-import-approval`, `prefer-modern-api`.
 
 ## More
 

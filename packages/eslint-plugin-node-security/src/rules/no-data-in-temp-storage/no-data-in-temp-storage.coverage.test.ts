@@ -27,6 +27,7 @@ describe('no-data-in-temp-storage coverage gaps', () => {
       // ignoreFiles pattern matches the filename → whole rule disabled,
       // even though the code contains a temp-path literal declaration.
       {
+        name: 'ignoreFiles matching the filename disables the whole rule, even over a literal /tmp path',
         code: "const p = '/tmp/cache';",
         options: [{ ignoreFiles: ['generated'] }],
         filename: '/proj/generated.ts',

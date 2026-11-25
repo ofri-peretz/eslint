@@ -285,6 +285,72 @@ function isPronounceable(token: string): boolean {
 }
 
 /**
+ * Type names a schema or DTO writes as the VALUE of a field to describe it:
+ * `enableAuth: 'boolean?'` declares an optional boolean flag, and the slot name
+ * is what opened the credential gate.
+ *
+ * @protocol-constant These are the names of the ECMAScript and TypeScript
+ * built-in types themselves, a closed language surface rather than a vocabulary.
+ */
+const TYPE_TAG_NAMES: ReadonlySet<string> = new Set([
+  'string',
+  'number',
+  'boolean',
+  'bigint',
+  'object',
+  'array',
+  'date',
+]);
+
+/** A type tag, optionally marked optional: `boolean`, `boolean?`. */
+function isTypeTag(value: string): boolean {
+  const bare = value.endsWith('?') ? value.slice(0, -1) : value;
+  return TYPE_TAG_NAMES.has(bare);
+}
+
+/**
+ * A namespaced translation key, `apostrophe:enterPassword`: a lowercase
+ * namespace, one colon, and a camelCase key. The camelCase boundary is the
+ * evidence; `admin:hunter2` and `user:secret` are credential pairs and have none.
+ */
+function isNamespacedKey(value: string): boolean {
+  const match = /^([a-z][a-z0-9-]*):([a-z][a-z0-9]*[A-Z][A-Za-z0-9]*)$/.exec(
+    value,
+  );
+  return match !== null && isNaturalWordString(match[2] as string);
+}
+
+/**
+ * A single word of another language: letters only, at most a leading capital,
+ * at least one letter outside ASCII (`Contraseña`, `Lösenord`). A translated
+ * label for the slot, never a generated secret, which mixes classes and digits.
+ */
+function isForeignWord(value: string): boolean {
+  return /^\p{Lu}?\p{Ll}+$/u.test(value) && /\P{ASCII}/u.test(value);
+}
+
+/**
+ * Bullet glyphs a UI uses to MASK a stored secret (`••••••••7f2a`). A run of
+ * them is the display of a credential, never the credential.
+ *
+ * @protocol-constant U+2022 and U+25CF are two Unicode code points, characters
+ * rather than words, so there is no vocabulary here for a project to tune.
+ */
+const MASK_GLYPHS: readonly string[] = ['•', '●'];
+
+function isMaskedDisplay(value: string): boolean {
+  return MASK_GLYPHS.some((glyph) => value.includes(glyph.repeat(4)));
+}
+
+/**
+ * A module whose own basename is `tests` (`plugins/x/tests.js`): the suite
+ * entry point several frameworks use instead of a `*.test.js` suffix.
+ */
+function isTestsModule(filename: string): boolean {
+  return /(^|[\\/])tests\.(?:[cm]?[jt]s)$/.test(filename);
+}
+
+/**
  * True when the string is made purely of dictionary-ish words joined by word
  * separators or camelCase — i.e. an identifier, an i18n key, or an error
  * message constant. No digits, no symbols, every ≥3-character token
@@ -307,6 +373,34 @@ function isPronounceable(token: string): boolean {
  * allowed but kept sparse, and every alphabetic token must still read as a
  * word — which is what rejects the random blob above (`qbp` has no vowel).
  */
+/**
+ * A migration class name: words, then the epoch timestamp the generator
+ * appended (`AddMfaColumnsToUsers1784073600000`). TypeORM and MikroORM write
+ * 13 digits (milliseconds); some generators write 10 (seconds).
+ *
+ * ToolJet lists about sixty of these as plain strings to order its upgrades,
+ * and each one passed every shape test for a random key: mixed case, digits,
+ * no ascending run, past the 32-character bar for context-free reporting. All
+ * were reported at CWE-798 / CVSS 9.8.
+ *
+ * The timestamp must fall between 2000 and 2100, and everything before it
+ * must read as words. A key with digits at the end has digits elsewhere too,
+ * or a prefix that does not read as words.
+ */
+const EPOCH_2000_S = 946_684_800;
+const EPOCH_2100_S = 4_102_444_800;
+
+function isTimestampedName(value: string): boolean {
+  const match = /^([A-Za-z]+)(\d{13}|\d{10})$/.exec(value);
+  if (!match) return false;
+  const [, name, stamp] = match;
+  const seconds = stamp.length === 13 ? Number(stamp) / 1000 : Number(stamp);
+  // The floor matters only for a stamp with leading zeros (`0938475610`):
+  // the smallest 10-digit number without one is already September 2001.
+  if (seconds < EPOCH_2000_S || seconds > EPOCH_2100_S) return false;
+  return isNaturalWordString(name);
+}
+
 export function isNaturalWordString(raw: string): boolean {
   // One trailing colon is how a key prefix is written (`huly-table-metadata:`,
   // a clipboard marker an adopter had to disable). It is a namespace, not a
@@ -398,6 +492,7 @@ export function looksRandom(value: string): boolean {
   // scored as a random blob and was reported at CVSS 9.8: 18 of this rule's 21
   // corpus findings, all one field name.
   if (isNaturalWordString(value)) return false;
+  if (isTimestampedName(value)) return false;
   return shannonEntropy(value) >= 3.5;
 }
 
@@ -481,8 +576,12 @@ export function isStyleToken(value: string): boolean {
  * written as a function call, and the qualifier test (a natural word, so
  * `default`, `primary`, `reports`) keeps `STRIPE_KEY(Xk9mP2vQ8zL4nR7w)` out.
  *
- * Only the shape is read. The slot name is not consulted, so the same string
- * in a `password` slot is also not a secret.
+ * Only the shape is read, not the slot name — a DI token is written the same
+ * way wherever it is stored. The one exception is a slot whose OWN inferred
+ * category is `password`: nothing stores a real DI token there, so the shape
+ * match is far more likely to be a badly generated password that happens to
+ * look like a call (#1686). `isSecretShaped`'s caller passes that category
+ * through for exactly this check.
  */
 export function isInjectionTokenName(value: string): boolean {
   const match = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\(([A-Za-z][A-Za-z.-]*)\)$/.exec(
@@ -587,7 +686,11 @@ function echoesItsOwnSlotName(value: string, slotName: string): boolean {
   return fold(value) === fold(slotName);
 }
 
-export function isSecretShaped(value: string, minLength: number): boolean {
+export function isSecretShaped(
+  value: string,
+  minLength: number,
+  category?: 'password' | 'token' | 'database' | 'apikey' | 'other',
+): boolean {
   if (value.length < minLength) return false;
   // Sentences and phrases are messages, never credentials.
   if (/\s/.test(value)) return false;
@@ -610,9 +713,12 @@ export function isSecretShaped(value: string, minLength: number): boolean {
   // CSS is written to be read; see isStyleToken.
   if (isStyleToken(value)) return false;
   // A DI token name is a lookup key written to be read; see isInjectionTokenName.
-  if (isInjectionTokenName(value)) return false;
+  // Not when the slot's own category is `password` — see that function's note.
+  if (category !== 'password' && isInjectionTokenName(value)) return false;
   // Pure word strings are identifiers / i18n keys / message constants.
   if (isNaturalWordString(value)) return false;
+  if (isNamespacedKey(value) || isForeignWord(value)) return false;
+  if (isTypeTag(value) || isMaskedDisplay(value)) return false;
   // A credential mixes at least two character classes, or — for single-charset
   // secrets like a 21-character lowercase blob — is long and high-entropy.
   if (classCount(charClasses(value)) >= 2) return true;
@@ -1762,12 +1868,27 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // FPs before the gate landed).
       let finalIsCredential = isCredential;
       let finalType = type;
-      if (
-        isCredential &&
-        confidence === 'ambiguous' &&
-        !isCredentialContext(value, parent)
-      ) {
-        finalIsCredential = false;
+      if (isCredential && confidence === 'ambiguous') {
+        const inContext = isCredentialContext(value, parent);
+        // A "Common password" match is ambiguous about the STRING, not the
+        // slot: `password` is a weak password, but it is also the keyword a
+        // route-name list uses to label the login endpoint. The generic
+        // secret-shaped-blob ambiguous match has no such second life, so any
+        // credential-named slot is still enough for it — but a common
+        // password word needs the slot's OWN category to actually say
+        // "password" (or an unclassified-but-credential-ish name like
+        // `credentials`/`auth`), not merely to end in some other credential
+        // word like `tokens` (#1557: `SENSITIVE_ROUTE_TOKENS = [...,
+        // 'password']` is a route-name list, not a password store).
+        const categoryMismatch =
+          inContext &&
+          type === 'Common password' &&
+          !['password', 'other'].includes(
+            inferCredentialTypeFromContext(parent!),
+          );
+        if (!inContext || categoryMismatch) {
+          finalIsCredential = false;
+        }
       }
 
       // An enum member named after itself is a code, not a credential. Gated
@@ -1818,11 +1939,16 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         !isPlaceholder &&
         !echoesSlot &&
         !compiledIgnorePatterns.some((pattern) => pattern.test(value)) &&
-        isSecretShaped(value, detectionOptions.minLength) &&
-        isCredentialContext(value, parent)
-      ) {
+        isCredentialContext(value, parent) &&
         // isCredentialContext(value, parent) just returned true, which
-        // requires a truthy parent.
+        // requires a truthy parent. Computed before isSecretShaped so the
+        // slot's own category can veto the DI-token exemption (#1686).
+        isSecretShaped(
+          value,
+          detectionOptions.minLength,
+          inferCredentialTypeFromContext(parent!),
+        )
+      ) {
         const ctxType = inferCredentialTypeFromContext(parent!);
         const optionAllows =
           (ctxType === 'password' && detectionOptions.detectPasswords) ||
@@ -1914,7 +2040,8 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         ]);
 
         const filename = context.filename;
-        isTestFile = allowInTests && isTestFilePath(filename);
+        isTestFile =
+          allowInTests && (isTestFilePath(filename) || isTestsModule(filename));
 
         // Compile ignore patterns to regex
         // Guarded: a user pattern reaches `new RegExp` here. Measured before this

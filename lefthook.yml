@@ -1,13 +1,20 @@
 # Lefthook — git hooks manager
 # Three-tier validation: pre-commit (fast, staged files), pre-push (full local CI), commit-msg.
 # Docs: https://github.com/evilmartians/lefthook
+#
+# The commitlint, hook:staged (oxlint) and hook:verify (typecheck) stations come from the hookset
+# presets pulled below; `hookset check` in CI fails if a step here repeats one of them.
+remotes:
+  - git_url: https://github.com/ofri-peretz/burgee
+    ref: hookset@0.3.0
+    configs:
+      - packages/hookset/presets/lefthook/commit-msg.yml
+      - packages/hookset/presets/lefthook/pre-commit.yml
+      - packages/hookset/presets/lefthook/pre-push.yml
 
 pre-commit:
   parallel: true
   commands:
-    oxlint:
-      glob: 'packages/**/*.{ts,tsx,js,mjs}'
-      run: npm run --silent oxlint
     markdown:
       glob: '**/*.md'
       run: npx --no markdownlint-cli2 {staged_files}
@@ -142,18 +149,6 @@ pre-commit:
 pre-push:
   parallel: true
   commands:
-    typecheck:
-      # Whole-graph TS7 (tsgo) typecheck of the plugin graph + @interlace/ui.
-      # One tsgo --build over tsconfig.solution.json; see .agent/TS7_MIGRATION_PLAN.md.
-      #
-      # perl alarm is a portable timeout(1) — macOS ships none. Exit 142 means
-      # the watchdog fired, i.e. the gate wedged rather than merely ran long.
-      #
-      # glob: a push with no TypeScript in it cannot break the typecheck, so it
-      # does not pay for one. Same idea as pre-commit's globs, applied to the
-      # files being PUSHED.
-      glob: '**/*.{ts,tsx,mts,cts}'
-      run: perl -e 'alarm 300; exec @ARGV' -- npm run --silent typecheck
     # build and test in ONE turbo invocation, deliberately.
     #
     # They used to be two commands, and because this hook is `parallel: true`
@@ -272,12 +267,23 @@ pre-push:
       # see scripts/normalize-changelogs.ts for the failure this locks out.
       glob: '{packages/*/CHANGELOG.md,apps/*/CHANGELOG.md}'
       run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent changelog:check
+    truepass-diff:
+      # truepass diff: an assertion moved to a weaker matcher, or a snapshot
+      # changed with no `Snapshot: <why>` line, in the commits since
+      # origin/main. A deliberate weakening is accepted by an
+      # `Assertion: <why>` line in the commit message. The lint half of
+      # truepass runs in CI as `npm run lint:truepass`.
+      run: perl -e 'alarm 120; exec @ARGV' -- npx truepass diff --base origin/main
     shim-drift:
       # Shims are generated from rule sources and the manifest.
       glob: '{packages/eslint-plugin-*/src/**,tools/oxlint-plugins/**,.agent/plugin-rule-manifest.json}'
       run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent oxlint:shims:check
 
+# provedone: a commit message must carry a `Verified-by:` receipt. Local until the hookset preset
+# takes this station over at hookset@0.4.0; delete this block then (`hookset check` flags the
+# duplicate). Merges in the remote commit-msg preset, which runs commitlint.
 commit-msg:
   commands:
-    commitlint:
-      run: npx --no -- commitlint --edit {1}
+    provedone:
+      run: npm run --silent hook:provedone -- {1}
+      fail_text: "Add a trailer: 'Verified-by: <command> -> exit 0' or 'Verified-by: none (<reason>)'"

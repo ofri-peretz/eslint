@@ -10,7 +10,7 @@
  * `error` by decision once it runs clean on `main`.
  *
  * `--max-warnings` in the `lint:guidance` script is the ratchet on the
- * first-run backlog (2026-11-23: 10 findings); it may only go down. Per-file
+ * first-run backlog (2026-11-23: 10 findings; 0 since 2026-11-24); it may only go down. Per-file
  * budgets live in .guidance-budget.json.
  */
 import markdown from '@eslint/markdown';

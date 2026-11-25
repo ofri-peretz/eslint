@@ -96,6 +96,20 @@ const STREAM_CLASSES: ReadonlySet<string> = new Set([
   'Duplex',
 ]);
 
+/**
+ * `node:stream` classes whose `fromWeb(webStream)` builds a node stream:
+ * `Readable` and `Writable` have their own, and `Transform` and `PassThrough`
+ * inherit `Duplex.fromWeb`, so `PassThrough.fromWeb(pair)` reaches the same
+ * constructor.
+ */
+const STREAM_CLASSES_WITH_FROM_WEB: ReadonlySet<string> = new Set([
+  'Readable',
+  'Writable',
+  'Duplex',
+  'Transform',
+  'PassThrough',
+]);
+
 /** Methods that register an event listener. */
 const LISTENER_METHODS: ReadonlySet<string> = new Set([
   'on',
@@ -120,6 +134,39 @@ export function constructsStream(node: TSESTree.Node): boolean {
   if (node.type !== AST_NODE_TYPES.CallExpression) return false;
   const name = calleeMethodName(node.callee);
   return name !== undefined && STREAM_CONSTRUCTORS.has(name);
+}
+
+/**
+ * Is this call's value returned to a caller that can listen on it? A function
+ * passed as an argument is called by the callee, which may drop the result
+ * (`[src].forEach(s => s.pipe(dest))`), so a callback does not count.
+ */
+function returnsToCaller(node: TSESTree.CallExpression): boolean {
+  const parent = node.parent;
+  let fn: TSESTree.Node | undefined;
+  if (parent?.type === AST_NODE_TYPES.ReturnStatement) {
+    fn = parent.parent;
+    while (
+      fn &&
+      fn.type !== AST_NODE_TYPES.FunctionDeclaration &&
+      fn.type !== AST_NODE_TYPES.FunctionExpression &&
+      fn.type !== AST_NODE_TYPES.ArrowFunctionExpression
+    ) {
+      fn = fn.parent;
+    }
+  } else if (
+    parent?.type === AST_NODE_TYPES.ArrowFunctionExpression &&
+    parent.body === node
+  ) {
+    fn = parent;
+  }
+  if (!fn) return false;
+  const holder = fn.parent;
+  return !(
+    (holder?.type === AST_NODE_TYPES.CallExpression ||
+      holder?.type === AST_NODE_TYPES.NewExpression) &&
+    holder.arguments.includes(fn as TSESTree.CallExpressionArgument)
+  );
 }
 
 export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
@@ -221,6 +268,22 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
      */
     function constructsStreamHere(node: TSESTree.Node): boolean {
       if (constructsStream(node)) return true;
+      // `Readable.fromWeb(body)` wraps a web stream in a node stream that
+      // emits 'error' like any other. Without this the SOURCE of
+      // `Readable.fromWeb(x).pipe(dest)` was invisible and only `dest` was
+      // judged, so the report landed on the wrong stream.
+      if (node.type === AST_NODE_TYPES.CallExpression) {
+        const binding = resolveModuleBinding(
+          node.callee,
+          context.sourceCode.getScope(node),
+        );
+        return (
+          binding?.module === 'stream' &&
+          binding.path.length === 2 &&
+          STREAM_CLASSES_WITH_FROM_WEB.has(binding.path[0] as string) &&
+          binding.path[1] === 'fromWeb'
+        );
+      }
       if (node.type !== AST_NODE_TYPES.NewExpression) return false;
       const binding = resolveModuleBinding(
         node.callee,
@@ -379,8 +442,14 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
           const destinationArg = node.arguments[0];
           // A spread destination (`src.pipe(...dests)`) is neither a call
           // nor an identifier, so unhandledStream already says null.
+          // `return src.pipe(dest)` hands `dest` to the caller: `.pipe()`
+          // returns its destination, and the caller is where the listener goes.
+          // NestJS's adapters build a checking Transform and return the pipe
+          // into it (`platform-express/adapters/express-adapter.ts:829`); the
+          // caller attaches the error handler. The SOURCE is not handed back,
+          // so it is still judged here.
           const destination =
-            destinationArg === undefined
+            destinationArg === undefined || returnsToCaller(node)
               ? null
               : unhandledStream(destinationArg);
           const offender = source ?? destination;

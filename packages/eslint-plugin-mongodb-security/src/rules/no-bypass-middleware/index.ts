@@ -19,7 +19,10 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
-import { fileUsesMongo } from '../../utils/mongo-evidence';
+import {
+  fileUsesMongoose,
+  isNativeCollectionHandle,
+} from '../../utils/mongo-evidence';
 
 type MessageIds = 'bypassMiddleware';
 export interface Options {
@@ -79,13 +82,13 @@ export const noBypassMiddleware = createRule<RuleOptions, MessageIds>({
 
     return {
       before() {
-        // Every rule here is MongoDB-specific, and none of them could ask the
-        // file-level question: over the corpus, 47% of this plugin's findings were
-        // in files with no Mongo in them. `receiver.ts` discriminates by receiver
-        // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
-        // well as in a Mongoose one. Registering no visitors is both the gate and
-        // the cheap path.
-        if (!fileUsesMongo(context.sourceCode.ast)) return false;
+        // Middleware is a Mongoose feature. The file-level question this rule
+        // has to ask is "is Mongoose in play", not "is MongoDB": a file that
+        // only drives the native `mongodb` package has no `pre('updateOne')`
+        // hook to bypass, and `db.collection('apps').updateOne(...)` in such a
+        // file was 301 findings on one app that wraps the driver.
+        // Registering no visitors is both the gate and the cheap path.
+        if (!fileUsesMongoose(context.sourceCode.ast)) return false;
 
         const [options = {}] = context.options;
         const { allowInTests = true } = options as Options;
@@ -115,6 +118,10 @@ export const noBypassMiddleware = createRule<RuleOptions, MessageIds>({
           BYPASS_METHODS.has(methodName) &&
           mongo.isModelReceiver(node)
         ) {
+          // `connection.collection('x').updateOne()` hands back the driver's
+          // own collection, even in a file that also uses Mongoose models:
+          // there is no middleware on that object to bypass.
+          if (isNativeCollectionHandle(node.callee.object)) return;
           context.report({
             node,
             messageId: 'bypassMiddleware',

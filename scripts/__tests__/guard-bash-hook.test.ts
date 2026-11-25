@@ -14,7 +14,9 @@
  * `--no-verify` must pass, or the hook blocks every commit that documents it.
  */
 
-import { describe, it, expect } from 'vitest';
+import { afterAll, describe, it, expect } from 'vitest';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -22,9 +24,14 @@ import { pathToFileURL } from 'node:url';
 const REPO_ROOT = resolve(__dirname, '../..');
 const HOOK = join(REPO_ROOT, '.claude/hooks/guard-bash.mjs');
 
-function decision(command: string): string | null {
+// The content cases run with the timeout a hooked `git commit`/`git push` needs, so only the
+// command text decides them; the timeout rule has its own cases (`CASES.hooked`) below.
+function decision(
+  command: string,
+  bash: Record<string, unknown> = { timeout: 600_000 },
+): string | null {
   const r = spawnSync(process.execPath, [HOOK], {
-    input: JSON.stringify({ tool_input: { command } }),
+    input: JSON.stringify({ tool_input: { command, ...bash } }),
     encoding: 'utf8',
   });
   expect(r.status).toBe(0);
@@ -83,7 +90,12 @@ const CASES = JSON.parse(
     ],
     { encoding: 'utf8' },
   ).stdout,
-) as { deny: string[]; allow: string[] };
+) as {
+  deny: string[];
+  allow: string[];
+  ask: string[];
+  hooked: [string, Record<string, unknown>, boolean][];
+};
 
 describe('guard-bash hook: its own self-test cases', () => {
   it.each(CASES.deny)('denies %j', (command) => {
@@ -91,5 +103,86 @@ describe('guard-bash hook: its own self-test cases', () => {
   });
   it.each(CASES.allow)('allows %j', (command) => {
     expect(decision(command)).toBeNull();
+  });
+  it.each(CASES.ask)('asks a person before %j', (command) => {
+    expect(decision(command)).toBe('ask');
+  });
+  it.each(CASES.hooked)(
+    'a hooked git call %j with %j is denied: %s',
+    (command, bash, denied) => {
+      expect(decision(command, bash)).toBe(denied ? 'deny' : null);
+    },
+  );
+});
+
+// .claude/hookset.json adds phrases a person approves and globs no edit may touch.
+describe('guard-bash hook: the repo config', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'guard-bash-'));
+  mkdirSync(join(dir, '.claude'));
+  writeFileSync(
+    join(dir, '.claude/hookset.json'),
+    JSON.stringify({ ask: ['vercel deploy'], frozen: ['docs/decisions/**'] }),
+  );
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  function verdict(toolInput: Record<string, string>): string | null {
+    const r = spawnSync(process.execPath, [HOOK], {
+      input: JSON.stringify({ tool_input: toolInput }),
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDE_PROJECT_DIR: dir },
+    });
+    expect(r.status).toBe(0);
+    if (!r.stdout.trim()) return null;
+    return (
+      JSON.parse(r.stdout) as {
+        hookSpecificOutput: { permissionDecision: string };
+      }
+    ).hookSpecificOutput.permissionDecision;
+  }
+
+  it('asks before a phrase the config adds', () => {
+    expect(verdict({ command: 'npx vercel deploy --prod' })).toBe('ask');
+  });
+  it('denies an edit to a frozen path, given absolute or relative', () => {
+    expect(verdict({ file_path: join(dir, 'docs/decisions/D-1.md') })).toBe(
+      'deny',
+    );
+    expect(verdict({ file_path: 'docs/decisions/sub/D-2.md' })).toBe('deny');
+  });
+  it('denies a frozen edit reached through dot segments, absolute or relative', () => {
+    // Template strings, not join(): join would normalize the dots before the hook sees them.
+    expect(verdict({ file_path: `${dir}/docs/../docs/decisions/D-1.md` })).toBe(
+      'deny',
+    );
+    expect(verdict({ file_path: './guide/../docs/decisions/D-1.md' })).toBe(
+      'deny',
+    );
+  });
+  it('has no opinion on an edit outside the frozen globs', () => {
+    expect(verdict({ file_path: join(dir, 'docs/guide.md') })).toBeNull();
+  });
+  it('denies a frozen edit when Windows passes both paths with backslashes', () => {
+    // A backslash in a directory name stands in for a Windows path on POSIX; Windows reads it as two folders.
+    const win = join(dir, 'win\\proj');
+    mkdirSync(join(win, '.claude'), { recursive: true });
+    writeFileSync(
+      join(win, '.claude/hookset.json'),
+      JSON.stringify({ frozen: ['docs/decisions/**'] }),
+    );
+    const r = spawnSync(process.execPath, [HOOK], {
+      input: JSON.stringify({
+        tool_input: { file_path: `${win}\\docs\\decisions\\D-1.md` },
+      }),
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDE_PROJECT_DIR: win },
+    });
+    expect(r.status).toBe(0);
+    expect(
+      (
+        JSON.parse(r.stdout) as {
+          hookSpecificOutput: { permissionDecision: string };
+        }
+      ).hookSpecificOutput.permissionDecision,
+    ).toBe('deny');
   });
 });

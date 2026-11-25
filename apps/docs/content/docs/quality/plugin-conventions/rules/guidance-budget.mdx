@@ -20,12 +20,16 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 hand migration that moves their rules into hooks and lint rules regrows unless something holds the
 size. This rule is that something.
 
-| File                                  | Measure                        | Default budget |
-| :------------------------------------ | :----------------------------- | -------------: |
-| `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` | bytes                          |           4096 |
-| `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` | lines                          |            200 |
-| `SKILL.md`, `.claude/agents/*.md`     | body lines (after frontmatter) |            500 |
-| `SKILL.md`                            | `description:` characters      |           1024 |
+| File                                                          | Measure                        | Default budget |
+| :------------------------------------------------------------ | :----------------------------- | -------------: |
+| `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`                         | bytes                          |           4096 |
+| `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`                         | lines                          |            200 |
+| `SKILL.md`, `.claude/agents/*.md`, `.claude/commands/**/*.md` | body lines (after frontmatter) |            500 |
+| `SKILL.md`, `.claude/agents/*.md`, `.claude/commands/**/*.md` | `description:` characters      |           1024 |
+
+A command's description is listed in every session beside the skills', so it is held to the same
+budget. A plugin's `agents/*.md` and `commands/*.md` count when the folder sits beside
+`.claude-plugin/plugin.json`.
 
 This is a Markdown rule: it runs on [`@eslint/markdown`](https://github.com/eslint/markdown) and is
 enabled by the `guidance` preset.

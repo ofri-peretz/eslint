@@ -43,7 +43,9 @@ The rule reports a `.pipe()` whose source or destination is a stream it can **pr
 1. **Constructed inline** — `fs.createReadStream(p).pipe(res)`. The value has no name, so no `'error'` listener can ever have been attached to it. This is a property of the expression, not a heuristic.
 2. **Named but never handled** — a name bound to a stream constructor that never appears with `.on('error')`, `.once('error')`, or `.addListener('error')` anywhere in the file.
 
-A stream constructor is a factory call (`createReadStream`, `createWriteStream`, the `zlib` `create*` family) or `new` on a `node:stream` class — `PassThrough`, `Transform`, `Readable`, `Writable`, `Duplex` — resolved to the module, so a local class that shares the name is not one.
+A stream constructor is a factory call (`createReadStream`, `createWriteStream`, the `zlib` `create*` family), `new` on a `node:stream` class — `PassThrough`, `Transform`, `Readable`, `Writable`, `Duplex` — or `Readable.fromWeb()`, `Writable.fromWeb()` and `Duplex.fromWeb()`, resolved to the module, so a local class that shares the name is not one. For `Readable.fromWeb(body).pipe(dest)` the report lands on the source, which is the stream that emits.
+
+A `ClientRequest` or `ChildProcess` that is not piped is the business of [`require-emitter-error-handler`](./require-emitter-error-handler).
 
 A named stream handed to any call other than `.pipe()` — `attachStandardHandlers(s)`, `pipeline(s, res)` — is not reported: the callee may attach the listener, and unproven is not unhandled.
 
@@ -121,8 +123,23 @@ async function downloadSafely(req, res) {
 | Uncaught Exception      | 248 | A04:2021 | 7.5 High | Process exit — remote denial of service |
 | Improper Error Handling | 391 | A04:2021 | 5.3 Med  | Partial writes, truncated responses     |
 
+## Not a finding
+
+`.pipe()` returns its destination. When a function returns that value, the destination is the
+caller's to listen to, and the caller attaches the error handler:
+
+```ts
+function check(stream: Readable) {
+  const checked = new Transform({ transform: verifyChunk });
+  return stream.pipe(checked); // the caller handles 'error'
+}
+```
+
+A source the function creates itself is not handed back, so it still reports.
+
 ## Related Rules
 
+- [`require-emitter-error-handler`](./require-emitter-error-handler) — The same crash from `http.request` and `child_process.spawn`, including a request used as a pipe destination
 - [`no-unbounded-decompression`](./no-unbounded-decompression) — Detect decompression with no output limit
 - [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename) — Detect attacker-steerable filesystem paths
 

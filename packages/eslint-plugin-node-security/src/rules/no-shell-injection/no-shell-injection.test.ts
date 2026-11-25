@@ -71,6 +71,7 @@ describe('no-shell-injection', () => {
         },
         // execFile routes via PATH-safe mechanism
         {
+          name: 'execFile with a literal binary and an argument array has no shell',
           code: "import { exec, execSync, spawn, spawnSync, execFile, execFileSync } from 'node:child_process';\nexecFile('/usr/bin/git', ['clone', userRepo]);",
         },
         // exec with plain identifier — indirect; data-flow out of scope

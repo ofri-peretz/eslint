@@ -145,10 +145,10 @@ export const requireValidationPipeWhitelist = createRule<
         owasp: 'A03:2021',
         cvss: 7.5,
         description:
-          'ValidationPipe without whitelist: true validates the DTO but keeps properties the DTO never declared, so extra fields in the request body reach your service layer',
+          'ValidationPipe without whitelist: true validates the DTO but keeps properties that carry no validation decorator, so extra fields in the request body reach your service layer',
         severity: 'HIGH',
         compliance: ['SOC2'],
-        fix: 'new ValidationPipe({ whitelist: true }) — add forbidNonWhitelisted: true to reject rather than strip',
+        fix: 'new ValidationPipe({ whitelist: true }) — first decorate every DTO field you accept (@IsString(), @IsOptional() plus a value check, @Allow()), since whitelist also strips declared but undecorated fields; if the pipe sets groups, each decorator needs a matching group or always: true; add forbidNonWhitelisted: true to reject rather than strip',
         documentationLink:
           'https://docs.nestjs.com/techniques/validation#stripping-properties',
       }),

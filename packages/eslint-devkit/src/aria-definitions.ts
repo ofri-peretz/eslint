@@ -915,7 +915,12 @@ export const ROLE_SUPPORTED_ARIA_PROPS: Record<string, Set<string>> = {
     'aria-valuetext',
   ]),
   switch: new Set(['aria-checked']),
-  tab: new Set(['aria-selected']),
+  tab: new Set([
+    'aria-selected',
+    'aria-expanded',
+    'aria-posinset',
+    'aria-setsize',
+  ]),
   table: new Set(['aria-expanded', 'aria-colcount', 'aria-rowcount']),
   tablist: new Set([
     'aria-expanded',

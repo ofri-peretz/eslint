@@ -81,6 +81,7 @@ import { preferTagOverRole } from './rules/prefer-tag-over-role';
 // Scope rule
 import { scope } from './rules/scope';
 
+
 /**
  * Collection of all accessibility ESLint rules
  */
@@ -162,10 +163,19 @@ withCanonicalDocsUrls('plugin-react-a11y', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-react-a11y',
-    version: '3.0.6',
+    version: '3.1.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
+
+/**
+ * Same parser setting as eslint-plugin-jsx-a11y's flat presets
+ * (`languageOptions.parserOptions.ecmaFeatures.jsx`), so a plain `.js` file
+ * containing JSX parses under any preset.
+ */
+const jsxLanguageOptions = {
+  parserOptions: { ecmaFeatures: { jsx: true } },
+} satisfies TSESLint.FlatConfig.LanguageOptions;
 
 /**
  * Preset configurations for accessibility rules
@@ -179,6 +189,8 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
    * and friends.
    */
   flagship: {
+    name: 'react-a11y/flagship',
+    languageOptions: jsxLanguageOptions,
     plugins: {
       'react-a11y': plugin,
     },
@@ -195,6 +207,8 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
    * - WCAG Level AA/AAA as warnings
    */
   recommended: {
+    name: 'react-a11y/recommended',
+    languageOptions: jsxLanguageOptions,
     plugins: {
       'react-a11y': plugin,
     },
@@ -252,6 +266,8 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
    * All accessibility rules set to 'error' for maximum WCAG compliance
    */
   strict: {
+    name: 'react-a11y/strict',
+    languageOptions: jsxLanguageOptions,
     plugins: {
       'react-a11y': plugin,
     },
@@ -266,6 +282,8 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
    * Only rules required for WCAG 2.1 Level A compliance
    */
   'wcag-a': {
+    name: 'react-a11y/wcag-a',
+    languageOptions: jsxLanguageOptions,
     plugins: {
       'react-a11y': plugin,
     },
@@ -310,6 +328,8 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
    * Includes Level A + additional rules for Level AA compliance
    */
   'wcag-aa': {
+    name: 'react-a11y/wcag-aa',
+    languageOptions: jsxLanguageOptions,
     plugins: {
       'react-a11y': plugin,
     },
@@ -354,6 +374,17 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       'react-a11y/mouse-events-have-key-events': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
+};
+
+/**
+ * Flat-config aliases, the spelling eslint-plugin-jsx-a11y exports
+ * (`jsxA11y.flatConfigs.recommended`). The same objects as
+ * `configs.recommended` / `configs.strict`: they are keyed `react-a11y`, not
+ * `jsx-a11y`, and carry this plugin's rule set and severities.
+ */
+export const flatConfigs: Record<'recommended' | 'strict', TSESLint.FlatConfig.Config> = {
+  recommended: configs['recommended'],
+  strict: configs['strict'],
 };
 
 /**

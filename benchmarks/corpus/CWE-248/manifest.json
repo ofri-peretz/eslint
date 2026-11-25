@@ -1,17 +1,49 @@
 {
   "cwe": "CWE-248",
-  "name": "Uncaught Exception (Unhandled Stream Error)",
+  "name": "Uncaught Exception (Unhandled Stream or Emitter Error)",
   "owasp": "A04:2021",
   "severity": "MEDIUM",
   "expectedPlugins": ["eslint-plugin-node-security"],
   "fixtures": {
     "vulnerable": [
-      { "file": "pipe-no-error-listener.js", "description": "fs.createReadStream(p).pipe(res) with no 'error' listener" },
-      { "file": "multipart-pipe-no-handler.js", "description": "busboy file stream piped without an error handler" }
+      {
+        "file": "pipe-no-error-listener.js",
+        "description": "fs.createReadStream(p).pipe(res) with no 'error' listener"
+      },
+      {
+        "file": "multipart-pipe-no-handler.js",
+        "description": "busboy file stream piped without an error handler"
+      },
+      {
+        "file": "request-pipe-no-error-listener.js",
+        "description": "http.request piped into with no 'error' listener (parse-server createFile)"
+      },
+      {
+        "file": "spawn-no-error-listener.js",
+        "description": "child_process.spawn with a close listener and no 'error' listener (Eleventy spawnAsync)"
+      }
     ],
     "safe": [
-      { "file": "pipe-with-error-listener.js", "description": ".on('error', handler) attached before piping" },
-      { "file": "pipeline-promises.js", "description": "pipeline() from stream/promises centralizes error handling" }
+      {
+        "file": "pipe-with-error-listener.js",
+        "description": ".on('error', handler) attached before piping"
+      },
+      {
+        "file": "pipeline-promises.js",
+        "description": "pipeline() from stream/promises centralizes error handling"
+      },
+      {
+        "file": "request-with-error-listener.js",
+        "description": "http.request with req.on('error', reject)"
+      },
+      {
+        "file": "spawn-with-error-listener.js",
+        "description": "child_process.spawn with child.on('error', reject)"
+      },
+      {
+        "file": "exec-never-throws-unhandled.js",
+        "description": "exec and execFile listen for 'error' inside Node, so they cannot crash"
+      }
     ]
   }
 }

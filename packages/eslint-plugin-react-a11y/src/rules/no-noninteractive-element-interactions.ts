@@ -24,6 +24,11 @@ type MessageIds = 'noInteraction';
 
 type Options = {
   handlers?: string[];
+  /**
+   * Besides `handlers`, any key is an element name mapped to the
+   * handlers allowed on it: `{ img: ['onError', 'onLoad'] }`.
+   */
+  [element: string]: string[] | undefined;
 };
 
 type RuleOptions = [Options?];
@@ -153,13 +158,15 @@ export const noNoninteractiveElementInteractions = createRule<
           'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-noninteractive-element-interactions.md',
       }),
     },
+    // Shape of upstream's schema (rules/no-noninteractive-element-interactions.js,
+    // v6.10.2): `handlers` plus free element keys (`alert`, `body`, `img`, ...),
+    // so no `additionalProperties: false`. Each element key is read.
     schema: [
       {
         type: 'object',
         properties: {
           handlers: { type: 'array', items: { type: 'string' } },
         },
-        additionalProperties: false,
       },
     ],
   },
@@ -169,11 +176,18 @@ export const noNoninteractiveElementInteractions = createRule<
     currentOptions,
   ) {
     let handlers: string[];
+    let allowedByElement: Map<string, string[]>;
 
     return {
       before() {
         const [options = {} as Options] = currentOptions();
-        ({ handlers = INTERACTIVE_HANDLERS } = options ?? {});
+        const { handlers: configured, ...perElement } = options ?? {};
+        handlers = configured ?? INTERACTIVE_HANDLERS;
+        allowedByElement = new Map(
+          Object.entries(perElement).filter(
+            (entry): entry is [string, string[]] => Array.isArray(entry[1]),
+          ),
+        );
       },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;
@@ -197,13 +211,16 @@ export const noNoninteractiveElementInteractions = createRule<
           if (v === DYNAMIC || (typeof v === 'string' && v !== 'false')) return;
         }
 
+        // `{ img: ['onError'] }` exempts those handlers on that element.
+        const allowed = allowedByElement.get(element) ?? [];
         const hasInteractiveHandler = node.attributes.some(
           (
             attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
           ): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
-            handlers.includes(attr.name.name),
+            handlers.includes(attr.name.name) &&
+            !allowed.includes(attr.name.name),
         );
 
         if (!hasInteractiveHandler) return;

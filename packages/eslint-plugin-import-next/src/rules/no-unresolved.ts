@@ -274,6 +274,24 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // eslint-plugin-import skips a type-only declaration before resolving
+      // anything (`no-unresolved.js:33`, v2.32.0): `import type` and
+      // `export type … from` are erased, so a module that exists only at
+      // type-check time (not installed here, or declarations-only) is not a
+      // runtime resolution failure. It reads the DECLARATION's kind: an inline
+      // `import { type X }` is `importKind: 'value'` and is still resolved, as
+      // is `import()` and `require()`, which have no declaration kind.
+      const declaration = node.parent as {
+        importKind?: string;
+        exportKind?: string;
+      };
+      if (
+        declaration.importKind === 'type' ||
+        declaration.exportKind === 'type'
+      ) {
+        return;
+      }
+
       const filePath = context.filename;
       const found = resolveWithSettings(
         importPath,
@@ -284,19 +302,12 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
       // A `@types/*` package holds declarations only: Node cannot load it,
       // and TypeScript refuses a value import of it by that name (TS6137,
       // "import 'x' instead of '@types/x'"). Finding its `.d.ts` is not
-      // resolving it. `import type` / `export type` are erased, and allowed.
-      // A `require('@types/x')` is a runtime load of a `.d.ts`, which fails
-      // the same way, so it is unresolved too.
-      const declaration = node.parent as {
-        importKind?: string;
-        exportKind?: string;
-      };
+      // resolving it. A `require('@types/x')` is a runtime load of a `.d.ts`,
+      // which fails the same way, so it is unresolved too.
       const resolved =
         found !== null &&
         importPath.startsWith('@types/') &&
-        /\.d\.[cm]?ts$/.test(found) &&
-        declaration.importKind !== 'type' &&
-        declaration.exportKind !== 'type'
+        /\.d\.[cm]?ts$/.test(found)
           ? null
           : found;
 

@@ -27,13 +27,16 @@ describe('no-env-injection', () => {
       // a lookup in a closed allowlist, so it can only ever be one of the
       // strings written in the source. This is the accepted fix, and a
       // "the key is not a literal" check would have reported it.
-      `const ALLOWED = { locale: 'APP_LOCALE', theme: 'APP_THEME' };
+      {
+        name: 'a key read through a closed allowlist lookup can only ever be one of the literal strings written in the source — the accepted fix for CWE-099/env-allowlisted-key',
+        code: `const ALLOWED = { locale: 'APP_LOCALE', theme: 'APP_THEME' };
        function setConfig(req, res) {
          const target = ALLOWED[req.body.setting];
          if (!target) return res.status(400).end();
          process.env[target] = String(req.body.value);
          res.status(204).end();
        }`,
+      },
       // Constant keys, in both spellings.
       {
         name: 'assigning a literal to a fixed env var name is not reported',
@@ -188,6 +191,7 @@ describe('no-env-injection', () => {
       },
       // The direct spelling, with no binding in between.
       {
+        name: 'a key read from req.body is attacker-controlled',
         code: `function h(req) { process.env[req.body.key] = req.body.value; }`,
         errors: [{ messageId: 'envKeyInjection' }],
       },

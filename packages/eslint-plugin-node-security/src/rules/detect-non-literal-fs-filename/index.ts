@@ -427,7 +427,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-non-literal-fs-filename.md',
       description:
-        'Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system',
+        "Detects a variable in an fs call's filename, which may let an attacker reach any file",
       cwe: 'CWE-22',
       confidence: 'medium',
     },

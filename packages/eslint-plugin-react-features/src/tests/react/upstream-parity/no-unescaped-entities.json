@@ -122,6 +122,60 @@
           "jsx": true
         }
       }
+    },
+    {
+      "kind": "invalid",
+      "n": 0,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <div>'</div>;\n          }\n        });\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 2,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <div>'</div>;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 12,
+      "code": "\n        <script>window.foo = \"bar\"</script>\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 2
+    },
+    {
+      "kind": "invalid",
+      "n": 14,
+      "code": "\n        <script>window.foo = \"bar\"</script>\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 2
     }
   ]
 }

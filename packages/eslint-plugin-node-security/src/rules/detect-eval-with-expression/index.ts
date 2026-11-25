@@ -209,6 +209,25 @@ function isGlobalObjectProbe(
 }
 
 /**
+ * `new Function('s', 'return import(s)')` — the standard way to keep a
+ * TypeScript or bundler build from rewriting `import()` into `require()` when
+ * loading an ESM-only package from CommonJS. The body is fixed, its one
+ * parameter is the specifier, and the only thing it does is what `import(s)`
+ * written directly does, which this rule does not report. Exactly one
+ * parameter, and a body that is `return import(<that parameter>)`.
+ */
+const DYNAMIC_IMPORT_BODY =
+  /^\s*return\s+import\(\s*([A-Za-z_$][\w$]*)\s*\)\s*;?\s*$/;
+function isDynamicImportWrapper(
+  args: readonly TSESTree.CallExpressionArgument[],
+): boolean {
+  if (args.length !== 2) return false;
+  const parameter = staticString(args[0]);
+  const body = staticString(args[1])?.match(DYNAMIC_IMPORT_BODY);
+  return parameter !== null && body != null && body[1] === parameter.trim();
+}
+
+/**
  * Generate refactoring steps based on pattern.
  * Module-scope so it is directly unit-testable (Layer-2).
  */
@@ -278,7 +297,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-eval-with-expression.md',
       description:
-        'Detects strings turned into running code — eval(variable), the Function constructor, and the vm / vm2 sinks that are mistaken for sandboxes',
+        'Detects strings turned into running code: eval(variable), the Function constructor, and vm / vm2 sinks mistaken for sandboxes',
       cwe: 'CWE-95',
       cvss: 9.8,
       confidence: 'high',
@@ -575,6 +594,12 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
           return;
         }
 
+        // `Function('s', 'return import(s)')` is `import(s)` spelled so a build
+        // leaves it alone; see DYNAMIC_IMPORT_BODY.
+        if (evalName === 'Function' && isDynamicImportWrapper(node.arguments)) {
+          return;
+        }
+
         // Skip a program the author wrote out when literals are allowed —
         // including one hop of single-write constant, the same reading the vm
         // sinks use.
@@ -639,6 +664,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         node.callee.name === 'Function' &&
         isGlobalBinding(node.callee) &&
         !isGlobalObjectProbe(node.arguments) &&
+        !isDynamicImportWrapper(node.arguments) &&
         // `new Function('price', 'total = price * 2')` is an eval-like sink
         // whose parameters and body the author wrote out: with literals
         // allowed, it is as exempt as `eval('…')`.

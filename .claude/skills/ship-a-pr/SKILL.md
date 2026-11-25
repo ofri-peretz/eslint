@@ -18,11 +18,8 @@ Prefixes the linter accepts: `feat/ fix/ chore/ ci/ docs/ refactor/`.
 
 ## 2. Commit
 
-Subject `<type>(<scope>): <subject>`; scope required, one of
-`packages apps tools ci deps release docs workspace`. Body via HEREDOC, Claude co-author trailer.
-
-Commit runs lefthook and takes time. A commitlint rejection is a **message** problem — fix the
-subject, don't touch the source.
+commitlint checks the subject and names the valid scopes when it rejects one; a rejection is a
+**message** problem, never a source one. Body via HEREDOC, Claude co-author trailer.
 
 ## 3. Push and open the PR
 
@@ -62,15 +59,8 @@ review                 — the automated reviewer (claude-code-review.yml)
 ### After the merge
 
 `Quality (Full)` also runs on **push to `main`**, and a failure there opens a tracking issue
-titled `main is red — the full quality gate failed after a merge`. That trigger is the
-difference between "broken for one merge" and "broken until Sunday": the heavy gate is PR-scoped
-for cost, so before it existed a merge could land broken and sit red until the weekly cron.
-
-It is not theoretical. PR #745 landed having edited two rule `.md` sources without re-running the
-generator, failed `rule-docs-sync-drift` on main's tip, and was found four days later by
-accident — after every branch cut in between had inherited it.
-
-If you see that issue, the merge that caused it is the head of `main`.
+titled `main is red — the full quality gate failed after a merge` (the heavy gate is otherwise
+PR-scoped, so a broken merge would sit red until the weekly cron). If you see that issue, the merge that caused it is the head of `main`.
 
 ## 5. Confirm the deploy actually landed
 
