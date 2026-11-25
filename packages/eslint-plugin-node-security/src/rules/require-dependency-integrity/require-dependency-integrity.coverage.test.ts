@@ -25,7 +25,10 @@ describe('require-dependency-integrity coverage gaps', () => {
   ruleTester.run('require-dependency-integrity', requireDependencyIntegrity, {
     valid: [
       // Plain string literal, no script/link markup → outer check false
-      { code: "const s = 'hello world';" },
+      {
+        name: "a plain string literal with no <script>/<link> markup makes the outer tag-detection check false",
+        code: "const s = 'hello world';",
+      },
       // Plain template literal, no markup → template outer check false
       { code: 'const t = `hello world`;' },
       // Template script tag from a NON-CDN source → CDN check false

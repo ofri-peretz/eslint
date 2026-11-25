@@ -101,6 +101,7 @@ describe('detect-eval-with-expression', () => {
             errors: [{ messageId: 'strategyRefactor' }],
           },
           {
+            name: 'eval() guarded by an if-block is still reported — the rule does not require eval to run unconditionally',
             code: `
             if (condition) {
               eval(code);

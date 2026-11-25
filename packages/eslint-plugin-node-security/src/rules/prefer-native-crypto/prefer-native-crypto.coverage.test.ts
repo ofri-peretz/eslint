@@ -28,7 +28,10 @@ describe('prefer-native-crypto coverage gaps', () => {
   ruleTester.run('prefer-native-crypto', preferNativeCrypto, {
     valid: [
       // CallExpression that is not require() → member guard falls through
-      { code: 'loadCrypto("crypto-js");' },
+      {
+        name: "a loadCrypto(\"crypto-js\") call is not a require(), so the require-callee guard falls through regardless of the string argument",
+        code: 'loadCrypto("crypto-js");',
+      },
       // require() of a non-crypto lib → THIRD_PARTY_CRYPTO_LIBS miss
       {
         name: 'require of a non-crypto library is not reported',

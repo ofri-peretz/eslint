@@ -25,6 +25,7 @@ describe('no-weak-cipher-algorithm coverage gaps', () => {
     valid: [
       // allowInTests + test filename → listener bails out on weak cipher
       {
+        name: 'allowInTests plus a *.test.ts filename bails out even for an explicit weak DES cipher',
         code: 'crypto.createCipheriv("des-cbc", key, iv);',
         options: [{ allowInTests: true }],
         filename: 'cipher.test.ts',
