@@ -1,6 +1,6 @@
 ---
 name: ship-a-pr
-description: The PR flow for this repo — branch, commit convention, CI gate, merge, and the post-merge auto-deploy verification. Use when opening, checking or merging a PR here, or when confirming a deploy reached production.
+description: Use when opening, checking or merging a PR here, or confirming its deploy reached production.
 ---
 
 # Shipping a change
