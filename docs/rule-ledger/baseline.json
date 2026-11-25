@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-24",
+  "generated": "2026-11-25",
   "rules": {
     "secure-coding/detect-non-literal-regexp": [
       "duplicate-coverage"
@@ -187,6 +187,7 @@
     "node-security/require-dependency-integrity": [
       "unconfigurable-vocabulary"
     ],
+    "node-security/require-emitter-error-handler": [],
     "node-security/require-secure-credential-storage": [
       "duplicate-coverage",
       "unconfigurable-vocabulary"

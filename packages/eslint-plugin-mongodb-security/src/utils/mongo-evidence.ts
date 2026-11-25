@@ -545,6 +545,33 @@ function collectionHandleNames(ast: TSESTree.Program): ReadonlySet<string> {
   return names;
 }
 
+const handleNamesCache = new WeakMap<TSESTree.Program, ReadonlySet<string>>();
+
+/**
+ * Whether a query receiver is the native driver's collection, written inline
+ * (`db.collection('users').find(q)`) **or** through a variable this file bound
+ * to one (`const users = db.collection('users'); users.find(q)`).
+ *
+ * {@link isNativeCollectionHandle} sees only the inline form. The bound form is
+ * how migrations and DAO modules use the driver, and since the gate learned to
+ * accept it (`collectionHandleNames`), `require-lean-queries` reported `.lean()`
+ * on it: a Mongoose-only modifier whose suggestion produces code that throws.
+ * ILB-Corpus-Truth run 45474907652 measured five such findings in the-mirror's
+ * migrate-mongo scripts.
+ */
+export function isNativeCollectionReceiver(
+  node: TSESTree.Node,
+  ast: TSESTree.Program,
+): boolean {
+  if (isNativeCollectionHandle(node)) return true;
+  let handles = handleNamesCache.get(ast);
+  if (handles === undefined) {
+    handles = collectionHandleNames(ast);
+    handleNamesCache.set(ast, handles);
+  }
+  return isRootedAtBoundHandle(node, handles);
+}
+
 const cache = new WeakMap<TSESTree.Program, boolean>();
 
 /**

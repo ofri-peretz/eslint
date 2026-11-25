@@ -21,7 +21,7 @@
  */
 import { isGeneratedFile } from './generated-file';
 import { isMinifiedFile } from './minified-file';
-import type { TSESLint } from '@typescript-eslint/utils';
+import type { TSESLint } from '../types/estree/utils/index';
 
 // The `TSESLint` import above is type-only — it is erased at compile time and
 // never appears in the emitted JS. That is the whole point: the types stay,
@@ -275,8 +275,11 @@ const TEST_DIR_SEGMENTS = new Set([
 // are stand-ins. cds-snc/canadalogin-user-selfservice-webapp reported five
 // hardcoded credentials, every one of them a `password: "TestPassword123!"` on
 // a story for a user called John Doe.
+// The `<kind>-spec` / `<kind>-test` infix generalises `e2e-spec`: nestjs/observe
+// names its integration suite `*.int-spec.ts`, and missing it made
+// `nestjs-security/require-guards` report 189 times on test controllers there.
 const TEST_BASENAME =
-  /\.(test|spec|fixture|mock|e2e-spec|stories|story)\.[cm]?[jt]sx?$/;
+  /\.(?:(?:[a-z0-9]+[-_])?(?:test|spec)|fixture|mock|stories|story)\.[cm]?[jt]sx?$/;
 
 /**
  * A directory whose name ENDS in `-test`/`-tests`/`-spec`/`-specs`.

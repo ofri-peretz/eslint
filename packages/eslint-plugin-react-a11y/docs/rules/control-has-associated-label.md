@@ -66,6 +66,14 @@ This rule helps ensure WCAG 1.3.1 compliance by enforcing: Require labels on for
 }
 ```
 
+### Options
+
+| Option | Type | Status |
+| :-- | :-- | :-- |
+| `labelAttributes`, `controlComponents`, `ignoreElements`, `ignoreRoles` | `string[]` | Honoured. |
+| `depth` | integer, 0 and above | Honoured. Values above 25 are clamped to 25, as in eslint-plugin-jsx-a11y; the default is 25 here. |
+| `includeRoles` | `string[]` | Accepted, not read. It is in eslint-plugin-jsx-a11y's own presets, which declare no such key in the rule schema and read it nowhere in 6.10.2, so it changes no result there either. |
+
 ## WCAG 2.1 Compliance
 
 This rule helps satisfy:

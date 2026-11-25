@@ -28,6 +28,41 @@ describe('require-stream-error-handler fidelity', () => {
   ruleTester.run('stream classes and helpers', requireStreamErrorHandler, {
     valid: [
       {
+        name: 'a Readable.fromWeb source with an error listener is fine',
+        code: `import { Readable } from 'node:stream';
+export function save(body: any, res: any) { const r = Readable.fromWeb(body); r.on('error', () => res.end()); r.pipe(res); }`,
+      },
+      {
+        name: 'a Readable.fromWeb from a package that is not node:stream is not a node stream',
+        code: `import { Readable } from 'readable-stream-lookalike';
+export function save(body: any, res: any) { Readable.fromWeb(body).pipe(res); }`,
+      },
+      {
+        name: 'an inherited fromWeb with an error listener on the stream is fine',
+        code: `import { PassThrough } from 'node:stream';
+export function save(body: any, res: any) { const s = PassThrough.fromWeb(body); s.on('error', () => res.end()); s.pipe(res); }`,
+      },
+      {
+        name: 'fromWeb on a local class that shares the name is not a node stream',
+        code: `class PassThrough { static fromWeb(body: any) { return body; } }
+export function save(body: any, res: any) { PassThrough.fromWeb(body).pipe(res); }`,
+      },
+      {
+        name: 'Readable.from is not Readable.fromWeb and is left alone',
+        code: `import { Readable } from 'node:stream';
+export function save(items: any, res: any) { Readable.from(items).pipe(res); }`,
+      },
+      {
+        name: 'a call through Readable.fromWeb.call is not followed',
+        code: `import { Readable } from 'node:stream';
+export function save(body: any, res: any) { Readable.fromWeb.call(null, body).pipe(res); }`,
+      },
+      {
+        name: 'a local Readable class with a fromWeb method is not a node stream',
+        code: `const Readable = { fromWeb(x: unknown) { return x; } };
+export function save(body: any, res: any) { Readable.fromWeb(body).pipe(res); }`,
+      },
+      {
         name: 'a named PassThrough with an error listener is fine',
         code: `${STREAM}
 export function send(res: any) { const stream = new PassThrough(); stream.on('error', () => res.end()); stream.pipe(res); }`,
@@ -45,6 +80,50 @@ export function send(res: any) { new PassThrough().pipe(res); }`,
       },
     ],
     invalid: [
+      {
+        // @found Quint fidelity model (require_stream_error_handler.qnt)
+        name: 'FN: PassThrough inherits Duplex.fromWeb, so its stream is a node stream with no listener',
+        code: `import { PassThrough } from 'node:stream';
+export function save(body: any, res: any) { PassThrough.fromWeb(body).pipe(res); }`,
+        errors: [{ messageId: 'unhandledStreamError', line: 2, column: 45 }],
+      },
+      {
+        // @found Quint fidelity model (require_stream_error_handler.qnt)
+        name: 'FN: Transform inherits Duplex.fromWeb too',
+        code: `import { Transform } from 'node:stream';
+export function save(body: any, res: any) { Transform.fromWeb(body).pipe(res); }`,
+        errors: [{ messageId: 'unhandledStreamError', line: 2, column: 45 }],
+      },
+      {
+        // @source mockoon/mockoon update download, Readable.fromWeb(...).pipe(ws)
+        // @found real-source scan
+        name: 'FN: Readable.fromWeb source is reported, not the destination',
+        code: `import { Readable } from 'node:stream';
+import fs from 'node:fs';
+export function save(body: any, p: string) { Readable.fromWeb(body).pipe(fs.createWriteStream(p)); }`,
+        errors: [{ messageId: 'unhandledStreamError', line: 3, column: 46 }],
+      },
+      {
+        // @found real-source scan
+        name: 'FN: a Readable.fromWeb source is reported when the destination is a bare name',
+        code: `import { Readable } from 'node:stream';
+export function save(body: any, res: any) { Readable.fromWeb(body).pipe(res); }`,
+        errors: [{ messageId: 'unhandledStreamError', line: 2, column: 45 }],
+      },
+      {
+        // @found real-source scan
+        name: 'FN: a Writable.fromWeb destination is reported',
+        code: `import { Writable } from 'node:stream';
+export function save(src: any, web: any) { src.pipe(Writable.fromWeb(web)); }`,
+        errors: [{ messageId: 'unhandledStreamError' }],
+      },
+      {
+        // @found real-source scan
+        name: 'FN: a Duplex.fromWeb from a namespace import is reported',
+        code: `import * as stream from 'node:stream';
+export function save(web: any, res: any) { stream.Duplex.fromWeb(web).pipe(res); }`,
+        errors: [{ messageId: 'unhandledStreamError' }],
+      },
       {
         name: 'an inline PassThrough source is reported',
         code: `${STREAM}

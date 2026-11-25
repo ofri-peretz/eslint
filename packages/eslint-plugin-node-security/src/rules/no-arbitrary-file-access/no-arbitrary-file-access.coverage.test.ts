@@ -37,7 +37,10 @@ describe('no-arbitrary-file-access coverage gaps', () => {
         code: "const fs = require('fs'); function f(m, req) { return fs[m](req.query.p); }",
       },
       // Declarator without initializer → tracking guard returns early
-      { code: "let pending;\nfs.readFileSync('/etc/hosts');" },
+      {
+        name: "a declarator with no initializer (let pending;) exercises the tracking guard's early return, and the literal '/etc/hosts' path is not tainted either way",
+        code: "let pending;\nfs.readFileSync('/etc/hosts');",
+      },
       // The guards below are separator-anchored (`base + path.sep`): a bare
       // `startsWith(base)` is the prefix bug (`/safebad` passes `/safe`) and no
       // longer counts as a guard (PR #1126 review).

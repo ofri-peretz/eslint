@@ -1,6 +1,6 @@
 ---
 title: no-silent-errors
-description: "Report catch blocks that do nothing, so an error is never silently swallowed."
+description: 'Report catch blocks that do nothing, so an error is never silently swallowed.'
 tags: ['quality', 'reliability', 'error-handling']
 category: quality
 autofix: suggestions
@@ -9,6 +9,7 @@ autofix: suggestions
 > **Keywords:** no silent errors, empty catch, swallowed exception, error-handling, ESLint rule, SonarQube RSPEC-1186
 
 <!-- @rule-summary -->
+
 Report a `catch` block that does nothing. An empty handler swallows the error: nothing is logged, nothing is rethrown, and the failure vanishes.
 <!-- @/rule-summary -->
 
@@ -16,12 +17,12 @@ This rule is part of [`eslint-plugin-reliability`](https://www.npmjs.com/package
 
 ## Quick Summary
 
-| Aspect          | Details                              |
-| --------------- | ------------------------------------ |
-| **Severity**    | Error (code quality)                 |
-| **Auto-Fix**    | ❌ No                                |
-| **Category**    | Error-handling                       |
-| **Suggestions** | ✅ Log, handle or rethrow the error  |
+| Aspect          | Details                             |
+| --------------- | ----------------------------------- |
+| **Severity**    | Error (code quality)                |
+| **Auto-Fix**    | ❌ No                               |
+| **Category**    | Error-handling                      |
+| **Suggestions** | ✅ Log, handle or rethrow the error |
 
 ## Rule Details
 
@@ -35,14 +36,14 @@ it, rethrows it, returns a fallback value, or records a flag for the caller.
 
 ## Configuration
 
-| Option             | Type      | Default | Description                                                                                       |
-| ------------------ | --------- | ------- | ------------------------------------------------------------------------------------------------- |
-| `allowWithComment` | `boolean` | `true`  | Accept an empty catch with an explanatory comment inside the block or within two lines above it   |
-| `ignoreInTests`    | `boolean` | `true`  | Skip `*.test.*` / `*.spec.*` files                                                                |
+| Option             | Type      | Default | Description                                                                                     |
+| ------------------ | --------- | ------- | ----------------------------------------------------------------------------------------------- |
+| `allowWithComment` | `boolean` | `true`  | Accept an empty catch with an explanatory comment inside the block or within two lines above it |
+| `ignoreInTests`    | `boolean` | `true`  | Skip `*.test.*` / `*.spec.*` files                                                              |
 
 With `allowWithComment` (on by default, as in ESLint core `no-empty`), a comment
-inside the block counts as an explanation when it is a sentence of three or more
-words that gives a reason (`// Files referenced by HTML may not exist yet.`), and
+inside the block counts as an explanation when it is two or more words that give
+a reason (`// pre-init — skip`, `// Files referenced by HTML may not exist yet.`), and
 so does one after the closing brace on the same line. Placeholders such as
 `// Empty` or `/* handle later */` do not. A comment also counts, inside the block
 or within two lines above it, when it uses one of these words: `intentional`, `expected`, `ignore`, `silent`, `noop` / `no-op`,
@@ -61,9 +62,7 @@ try {
 
 try {
   await flush();
-} catch {
-  ;
-}
+} catch {}
 ```
 
 ### ✅ Correct

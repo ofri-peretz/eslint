@@ -116,6 +116,7 @@ import-next	no-internal-modules	unaware
 import-next	no-named-default	unaware	
 import-next	no-import-module-exports	unaware	
 import-next	first	unaware	
+import-next	imports-first	unaware	
 import-next	extensions	unaware	
 import-next	default	optional	  hasParserServices,
 import-next	enforce-dependency-direction	unaware	
@@ -465,6 +466,7 @@ secure-coding	no-log-injection	unaware
 secure-coding	no-homoglyph-identifiers	unaware	
 secure-coding	no-fail-open-auth	unaware	
 node-security	require-stream-error-handler	unaware	
+node-security	require-emitter-error-handler	unaware	
 node-security	no-env-injection	unaware	
 node-security	no-insecure-http-parser	unaware	
 node-security	no-unbounded-decompression	unaware	

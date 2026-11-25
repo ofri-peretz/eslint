@@ -168,6 +168,21 @@ obj[method](userInput);
 
 **Mitigation**: Avoid dynamic method invocation.
 
+### A Limit the Consumer Does Not Enforce
+
+**Why**: A zlib decompression stream handed to a consumer that also receives a `limit` or
+`maxSize` option is not reported. The rule reads that the option is passed; it does not check
+that the consumer applies it. This is a heuristic, not a proof that the stream is bounded.
+
+```typescript
+// ❌ NOT DETECTED - the option is passed, but readAll never reads it
+const stream = zlib.createGunzip();
+req.pipe(stream);
+readAll(stream, { limit: '1mb' });
+```
+
+**Mitigation**: Make sure the consumer that reads the stream enforces the limit it is given.
+
 ## Further Reading
 
 - **[CWE-770](https://cwe.mitre.org/data/definitions/770.html)** - Allocation without limits

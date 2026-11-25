@@ -32,9 +32,14 @@ Not reported:
 `extensions` replaces the file extensions tried for an extensionless relative
 specifier (default `.ts`, `.tsx`, `.js`, `.jsx`, `.d.ts`, `.json`).
 
-Every spelling is checked: `import`, `import type`, side-effect imports,
+Every runtime spelling is checked: `import`, side-effect imports,
 `export { a } from`, `export * from`, `import('x')`, `require('x')` and TS
 `import x = require('x')`.
+
+Type-only declarations are skipped, as in eslint-plugin-import: `import type`
+and `export type … from` are erased, so a module that is not installed is not a
+runtime failure. The declaration's own kind decides: `import { type A }` is a
+value declaration and is still checked.
 
 ```ts
 // ❌ Incorrect

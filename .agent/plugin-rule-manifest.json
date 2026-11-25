@@ -802,6 +802,12 @@
       "detection": "structural-pattern",
       "confidence": "opt-in",
       "notes": "Source not found — manual review required"
+    },
+    "imports-first": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "deprecated": "DEPRECATED alias of first, kept because eslint-plugin-import 2.32.0 exports it; use import-next/first"
     }
   },
   "eslint-plugin-jwt-security": {
@@ -1504,6 +1510,11 @@
       "confidence": "opt-in"
     },
     "require-stream-error-handler": {
+      "environment": "node",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
+    "require-emitter-error-handler": {
       "environment": "node",
       "detection": "structural-pattern",
       "confidence": "enforcement"

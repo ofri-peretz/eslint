@@ -297,7 +297,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-eval-with-expression.md',
       description:
-        'Detects strings turned into running code — eval(variable), the Function constructor, and the vm / vm2 sinks that are mistaken for sandboxes',
+        'Detects strings turned into running code: eval(variable), the Function constructor, and vm / vm2 sinks mistaken for sandboxes',
       cwe: 'CWE-95',
       cvss: 9.8,
       confidence: 'high',

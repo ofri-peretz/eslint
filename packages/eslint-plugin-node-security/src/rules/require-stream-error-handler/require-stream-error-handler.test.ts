@@ -46,7 +46,9 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // benchmarks/corpus/CWE-248/safe/pipeline-promises.js — pipeline() destroys
     // every stream and rejects. This is the fix the rule recommends, so
     // reporting it would be reporting the mitigation.
-    `
+    {
+      name: 'await pipeline() wrapped in try/catch destroys every stream and rejects — the fix this rule recommends, so reporting it would report the mitigation (CWE-248/pipeline-promises)',
+      code: `
       async function download(req, res) {
         try {
           await pipeline(fs.createReadStream('./uploads/' + req.params.id), res);
@@ -55,6 +57,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
         }
       }
     `,
+    },
     // The listener may be registered after the pipe: the file is judged whole,
     // so statement order is not the criterion.
     {
@@ -70,7 +73,10 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
       name: 'a stream with a once error listener before pipe is not reported',
       code: "const s = fs.createReadStream(p); s.once('error', log); s.pipe(res);",
     },
-    "const s = fs.createReadStream(p); s.addListener('error', log); s.pipe(res);",
+    {
+      name: 'a stream with an addListener error listener before pipe is not reported',
+      code: "const s = fs.createReadStream(p); s.addListener('error', log); s.pipe(res);",
+    },
     // Test files are exempt by default.
     {
       name: 'a stream whose path is not request-derived',
@@ -90,6 +96,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // A non-test filename with the exemption turned off still needs a real
     // finding to report — the option does not report by itself.
     {
+      name: 'allowInTests false does not report a handled stream by itself',
       code: "const s = fs.createReadStream(p); s.on('error', log); s.pipe(res);",
       filename: '/proj/stream.spec.ts',
       options: [{ allowInTests: false }],
@@ -99,15 +106,24 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     "const s = createReadStream(p); s.on('error', log); s.pipe(res);",
     // A bare identifier with no visible binding: the handler may be attached in
     // another module. Unproven is not unhandled.
-    'incoming.pipe(outgoing);',
+    {
+      name: 'two bare names with no visible binding are not provably unhandled',
+      code: 'incoming.pipe(outgoing);',
+    },
     // A name bound to something that is not a stream constructor.
-    'const s = getStream(); s.pipe(res);',
+    {
+      name: 'a stream returned by an unknown factory is not provably a stream constructor',
+      code: 'const s = getStream(); s.pipe(res);',
+    },
     // A computed callee names no method statically, so it constructs nothing
     // this rule can identify.
     'const s = factories[kind](p); s.pipe(res);',
     // A property access is neither an inline construction nor a name this file
     // binds, so there is nothing to attribute a missing listener to.
-    'this.request.pipe(res);',
+    {
+      name: 'a stream read off a property is not constructed in this file',
+      code: 'this.request.pipe(res);',
+    },
     // Not a pipe at all.
     'fs.createReadStream(p).setEncoding("utf8");',
     // A computed or non-member callee is not `.pipe`.

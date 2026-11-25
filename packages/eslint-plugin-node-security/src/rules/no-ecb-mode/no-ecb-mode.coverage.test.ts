@@ -25,6 +25,7 @@ describe('no-ecb-mode coverage gaps', () => {
     valid: [
       // allowInTests: true + test filename → rule bails out even for ECB
       {
+        name: 'allowInTests plus a *.test.ts filename bails out even for an explicit ECB cipher',
         code: 'crypto.createCipheriv("aes-256-ecb", key, iv);',
         options: [{ allowInTests: true }],
         filename: 'cipher.test.ts',

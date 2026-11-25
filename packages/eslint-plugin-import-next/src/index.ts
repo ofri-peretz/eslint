@@ -71,6 +71,7 @@ import { enforceImportOrder } from './rules/enforce-import-order';
 import { order } from './rules/order';
 import { noUnassignedImport } from './rules/no-unassigned-import';
 import { first } from './rules/first';
+import { importsFirst } from './rules/imports-first';
 import { newlineAfterImport } from './rules/newline-after-import';
 import { noEmptyNamedBlocks } from './rules/no-empty-named-blocks';
 import { noNamedAsDefault } from './rules/no-named-as-default';
@@ -153,6 +154,8 @@ export const rules = {
   order: order,
   'no-unassigned-import': noUnassignedImport,
   first: first,
+  // eslint-plugin-import's deprecated alias of `first`; same behaviour, same options.
+  'imports-first': importsFirst,
   'newline-after-import': newlineAfterImport,
   'no-empty-named-blocks': noEmptyNamedBlocks,
   'no-named-as-default': noNamedAsDefault,
@@ -196,7 +199,7 @@ withCanonicalDocsUrls('plugin-import-next', rules);
 const base = {
   meta: {
     name: 'eslint-plugin-import-next',
-    version: '4.1.10',
+    version: '4.1.11',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

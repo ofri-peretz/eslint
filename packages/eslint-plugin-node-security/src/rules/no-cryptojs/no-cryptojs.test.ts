@@ -23,7 +23,10 @@ const ruleTester = new RuleTester({
 describe('no-cryptojs', () => {
   ruleTester.run('no-cryptojs', noCryptojs, {
     valid: [
-      'const x = 42;',
+      {
+        name: 'a file that imports no crypto-js at all names no package to report',
+        code: 'const x = 42;',
+      },
       'const flag = true;',
       // Valid: Native crypto
       { name: 'node:crypto', code: 'import crypto from "node:crypto";' },

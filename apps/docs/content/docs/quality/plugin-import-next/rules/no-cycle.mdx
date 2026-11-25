@@ -196,6 +196,21 @@ A config carried over from `import/no-cycle` loads, and each option means what i
 
 The linted file's own imports are read from the source being linted, not from disk, so an unsaved buffer or `--stdin` is checked as written.
 
+### eslint-plugin-import settings
+
+The graph is read the way eslint-plugin-import reads it:
+
+- `import/extensions` (and the extensions of `import/parsers`): a file whose extension is not listed is not a module, so a cycle through it (a `.svelte` component, say) is not reported. Set neither and every extension is read, which is a deliberate difference: upstream's default list is `.js .mjs .cjs`, and this rule is TypeScript-first.
+- `import/ignore`: a file whose path matches one of the regular expressions is not a module either.
+- An `import "x"` written inside a comment is not an edge.
+
+### Where it reports more or less than eslint-plugin-import
+
+Two differences are deliberate. Measured against 2.32.0 on workadventure, big-AGI and Babylon.js, they are the whole remaining gap.
+
+- **Every import that closes a cycle is reported.** Upstream keeps one set of already-walked modules for the whole file, so of two imports that reach the linted file through the same module it reports the first and stays silent on the second. Which one it names depends on source order.
+- **A plain `import { SomeInterface }` is not an edge.** TypeScript erases an import used only as a type, and this rule reads the target's exports to see it; upstream reports it. Under `verbatimModuleSyntax` the edge stays. This is the one place the rule reports _less_ than upstream.
+
 ## Implementation
 
 - [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-cycle.ts)

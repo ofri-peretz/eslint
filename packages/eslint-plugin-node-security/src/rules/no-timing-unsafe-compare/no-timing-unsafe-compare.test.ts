@@ -100,7 +100,10 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
         // An existence check is not a secret comparison — there is no
         // attacker-supplied operand, so there is nothing to time. Measured: the
         // rule fired on `if (firstKey !== undefined)` in a plain object walk.
-        `if (firstKey !== undefined) { use(firstKey); }`,
+        {
+          name: 'an existence check (firstKey !== undefined) has no attacker-supplied operand, so there is nothing to time — measured firing in a plain object walk',
+          code: `if (firstKey !== undefined) { use(firstKey); }`,
+        },
         {
           name: 'comparing a token against undefined is a presence check, not a secret comparison',
           code: `if (token === undefined) return;`,

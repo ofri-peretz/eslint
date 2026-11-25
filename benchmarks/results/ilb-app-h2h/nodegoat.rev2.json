@@ -9,6 +9,8 @@
     "platform": "darwin-arm64",
     "eslint": "10.13.0",
     "tsParser": "8.68.0",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
     "ourRepo": {
       "head": "a17ccfaa56335d886dd3952e3968b4e078e99a7a",
       "dirtyPackages": []

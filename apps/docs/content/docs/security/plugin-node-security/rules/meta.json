@@ -41,6 +41,7 @@
     "prefer-native-crypto",
     "require-aead-tag-verification",
     "require-dependency-integrity",
+    "require-emitter-error-handler",
     "require-secure-credential-storage",
     "require-secure-deletion",
     "require-storage-encryption",

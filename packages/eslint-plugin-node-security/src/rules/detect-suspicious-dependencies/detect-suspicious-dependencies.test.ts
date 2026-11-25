@@ -27,7 +27,10 @@ ruleTester.run('detect-suspicious-dependencies', detectSuspiciousDependencies, {
       name: 'recast is a real AST library, not a typosquat',
       code: "import recast from 'recast';",
     },
-    'const x = 42;',
+    {
+      name: 'a file with no import at all names no package, so there is nothing to typosquat',
+      code: 'const x = 42;',
+    },
     'const flag = true;',
     // Valid popular package names
     {

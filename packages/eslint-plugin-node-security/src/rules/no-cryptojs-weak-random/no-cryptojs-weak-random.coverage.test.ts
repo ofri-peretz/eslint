@@ -25,6 +25,7 @@ describe('no-cryptojs-weak-random coverage gaps', () => {
     valid: [
       // allowInTests + test filename → listener bails out on weak random
       {
+        name: 'allowInTests plus a *.test.ts filename makes the listener bail out on an otherwise-weak CryptoJS random call',
         code: 'CryptoJS.lib.WordArray.random(16);',
         options: [{ allowInTests: true }],
         filename: 'random.test.ts',

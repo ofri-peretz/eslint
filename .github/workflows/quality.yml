@@ -100,10 +100,17 @@ jobs:
           --filter='eslint-plugin-modernization...'
           --filter='eslint-plugin-modularity...'
           --filter='eslint-plugin-import-next...'
+          --filter='eslint-plugin-react-a11y...'
+          --filter='eslint-plugin-react-features...'
       - run: npm run lint:dogfood
       # The guidance preset over CLAUDE.md, AGENTS.md, skills and subagents, at
       # `warn`; `--max-warnings` in the script is the ratchet — it may only go down.
       - run: npm run lint:guidance
+      # truepass over every test file, through the root config (which imports
+      # react-a11y and react-features, built above). Its pre-existing findings
+      # are held in eslint-suppressions.json: a new one fails, a fixed one fails
+      # until pruned, so the counts only go down.
+      - run: npm run lint:truepass
 
   markdown:
     name: Markdown Lint

@@ -58,6 +58,7 @@ describe('eslint-plugin-node-security plugin interface', () => {
       'no-unbounded-decompression',
       'no-insecure-http-parser',
       'require-stream-error-handler',
+      'require-emitter-error-handler',
     ]);
   });
 

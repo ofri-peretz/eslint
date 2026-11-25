@@ -1,10 +1,10 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-11-24",
+  "generatedAt": "2026-11-25",
   "totalPlugins": 32,
-  "totalRules": 515,
-  "oxlintCompatible": 515,
+  "totalRules": 517,
+  "oxlintCompatible": 517,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -724,7 +724,7 @@
       "short": "import-next",
       "shim": "tools/oxlint-plugins/interlace-import-next.cjs",
       "subpath": "eslint-plugin-import-next/oxlint",
-      "ruleCount": 58,
+      "ruleCount": 59,
       "rules": [
         {
           "name": "consistent-type-specifier-style",
@@ -794,6 +794,12 @@
         },
         {
           "name": "group-exports",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "imports-first",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1765,7 +1771,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 43,
+      "ruleCount": 44,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1997,6 +2003,12 @@
         },
         {
           "name": "require-dependency-integrity",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-emitter-error-handler",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3523,6 +3535,7 @@
       "extensions",
       "first",
       "group-exports",
+      "imports-first",
       "max-dependencies",
       "named",
       "namespace",
@@ -3741,6 +3754,7 @@
       "prefer-native-crypto",
       "require-aead-tag-verification",
       "require-dependency-integrity",
+      "require-emitter-error-handler",
       "require-secure-credential-storage",
       "require-secure-deletion",
       "require-storage-encryption",

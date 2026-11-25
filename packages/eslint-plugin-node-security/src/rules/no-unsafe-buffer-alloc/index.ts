@@ -226,6 +226,19 @@ const COUNT_NAMES: ReadonlySet<string> = new Set([
   'bytelength',
 ]);
 
+/** Declared types whose `.byteLength` is the size of bytes already held. */
+const BYTE_TYPES: ReadonlySet<string> = new Set([
+  'Buffer',
+  'Uint8Array',
+  'ArrayBuffer',
+]);
+
+/** …and whose `.length` is: the byte types plus `string`. */
+const TEXT_OR_BYTE_TYPES: ReadonlySet<string> = new Set([
+  ...BYTE_TYPES,
+  AST_NODE_TYPES.TSStringKeyword,
+]);
+
 /** `Buffer.alloc` / `Buffer.allocUnsafe` / `Buffer.allocUnsafeSlow`. */
 const BUFFER_ALLOCATORS: ReadonlySet<string> = new Set([
   'alloc',
@@ -696,13 +709,16 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
           // looks exactly like a safe constant. Taking "any write" instead
           // would invert it, reporting a value that has since been overwritten
           // with a literal.
+          // The scope manager records references in source order, so the
+          // last write before the use is the last one the filter keeps.
           const variable = findVariable(sourceCode, node);
-          const lastWrite = (variable?.references ?? [])
+          if (variable === null) return false;
+          const lastWrite = variable.references
             .map((reference) => reference.writeExpr)
-            .filter((write): write is TSESTree.Node => write != null)
-            .filter((write) => write.range[1] <= node.range[0])
-            .sort((a, b) => a.range[1] - b.range[1])
-            .at(-1);
+            .findLast(
+              (write): write is TSESTree.Node =>
+                write != null && write.range[1] <= node.range[0],
+            );
           return lastWrite !== undefined && readsWire(lastWrite, seen);
         }
         case AST_NODE_TYPES.MemberExpression:
@@ -721,6 +737,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
           // parameter. The name arm stays for the wire-decoder vocabulary it
           // was actually built for.
           if (readsRequestShape(node, sourceCode)) return true;
+          if (isSizeOfBytesInMemory(node)) return false;
           return readsWire(node.object, seen);
         // `new URL(req.url, base)` is a request that has been through a
         // constructor; the searchParams read off it are still the peer's.
@@ -744,6 +761,49 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         default:
           return false;
       }
+    }
+
+    /**
+     * `.length` / `.byteLength` of a value DECLARED as bytes or text is the
+     * size of something already in memory, not a number the peer wrote.
+     *
+     * nestjs/mail's `toSmtpData(message: Buffer)` allocates
+     * `message.length * 2 + 5` for dot-stuffing: at most twice what already
+     * arrived, where the hazard here is a 12-byte length prefix that commits
+     * 229MB. The name `message` decided it. The declared type is required
+     * because an untyped `msg` may be `JSON.parse(data)`, and `msg.length` on
+     * that is whatever number the peer put in the field.
+     */
+    function isSizeOfBytesInMemory(node: TSESTree.MemberExpression): boolean {
+      const property = propertyName(node);
+      // `o.length` and `o['length']` are the same property. A string has a
+      // `length` and no `byteLength`.
+      const types =
+        property === 'length'
+          ? TEXT_OR_BYTE_TYPES
+          : property === 'byteLength'
+            ? BYTE_TYPES
+            : null;
+      if (types === null) return false;
+      const defs =
+        findVariable(sourceCode, node.object as TSESTree.Identifier)?.defs ??
+        [];
+      return (
+        defs.length > 0 &&
+        defs.every((def) => {
+          // A def's name is always the bound Identifier, destructured or not.
+          const annotation = (def.name as TSESTree.Identifier).typeAnnotation
+            ?.typeAnnotation;
+          return (
+            annotation !== undefined &&
+            types.has(
+              annotation.type === AST_NODE_TYPES.TSTypeReference
+                ? sourceCode.getText(annotation.typeName)
+                : annotation.type,
+            )
+          );
+        })
+      );
     }
 
     /** The nearest enclosing function node, or null at module scope. */
@@ -821,7 +881,11 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         current;
         child = current, current = current.parent
       ) {
-        if (current.type === AST_NODE_TYPES.IfStatement) {
+        // `n <= MAX ? Buffer.alloc(n) : null` is the same guard as an `if`.
+        if (
+          current.type === AST_NODE_TYPES.IfStatement ||
+          current.type === AST_NODE_TYPES.ConditionalExpression
+        ) {
           if (child === current.consequent && capsWhenTrue(current.test, name))
             return true;
           if (child === current.alternate && capsWhenFalse(current.test, name))
@@ -1422,11 +1486,11 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     ): boolean {
       const binding = resolveModuleBinding(callee, sourceCode.getScope(callee));
       if (binding === undefined) return false;
+      // `resolveModuleBinding` has already stripped `node:`.
       const full =
-        binding.module === 'fs/promises' ||
-        binding.module === 'node:fs/promises'
+        binding.module === 'fs/promises'
           ? ['promises', ...binding.path]
-          : binding.module === 'fs' || binding.module === 'node:fs'
+          : binding.module === 'fs'
             ? binding.path
             : null;
       return full !== null && full.join('.') === path.join('.');

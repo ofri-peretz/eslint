@@ -107,6 +107,7 @@ describe('no-unlimited-resource-allocation', () => {
           // `path.join` - exercises the `pathArg.callee.property.name === 'resolve'`
           // side of that binary-expr (only `'join'` was previously exercised).
           {
+            name: 'a read of a path resolved from __dirname and literals is not request-sized',
             code: `import path from 'path'; fs.readFileSync(path.resolve(__dirname, 'data', 'users.json'));`,
           },
           // Buffer.alloc with a spread element as its (only) argument -

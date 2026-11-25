@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-10-19T17:52:15.797Z",
+  "generatedAt": "2026-11-25T03:26:05.078Z",
   "oxc": {
-    "path": "../oos/oxc",
-    "commit": "c0423a1b9",
+    "path": ".bench-repos/oxc",
+    "commit": "738a5645",
     "namespaceCount": 16,
-    "totalRuleFiles": 867,
-    "uniqueSlugs": 804,
+    "totalRuleFiles": 881,
+    "uniqueSlugs": 812,
     "namespaces": [
       {
         "namespace": "eslint",
@@ -238,7 +238,7 @@
       },
       {
         "namespace": "jest",
-        "ruleCount": 60,
+        "ruleCount": 66,
         "rules": [
           "consistent-test-it",
           "expect-expect",
@@ -269,6 +269,12 @@
           "no-unneeded-async-expect-function",
           "no-untyped-mock-factory",
           "padding-around-after-all-blocks",
+          "padding-around-after-each-blocks",
+          "padding-around-all",
+          "padding-around-before-all-blocks",
+          "padding-around-before-each-blocks",
+          "padding-around-describe-blocks",
+          "padding-around-expect-groups",
           "padding-around-test-blocks",
           "prefer-called-with",
           "prefer-comparison-matcher",
@@ -580,7 +586,7 @@
       },
       {
         "namespace": "typescript",
-        "ruleCount": 111,
+        "ruleCount": 113,
         "rules": [
           "adjacent-overload-signatures",
           "array-type",
@@ -647,7 +653,9 @@
           "no-unsafe-argument",
           "no-unsafe-assignment",
           "no-unsafe-call",
+          "no-unsafe-class-instance-assignment",
           "no-unsafe-declaration-merging",
+          "no-unsafe-enum-assignment",
           "no-unsafe-enum-comparison",
           "no-unsafe-function-type",
           "no-unsafe-member-access",
@@ -840,7 +848,7 @@
       },
       {
         "namespace": "vitest",
-        "ruleCount": 73,
+        "ruleCount": 79,
         "rules": [
           "consistent-each-for",
           "consistent-test-filename",
@@ -872,6 +880,12 @@
           "no-test-return-statement",
           "no-unneeded-async-expect-function",
           "padding-around-after-all-blocks",
+          "padding-around-after-each-blocks",
+          "padding-around-all",
+          "padding-around-before-all-blocks",
+          "padding-around-before-each-blocks",
+          "padding-around-describe-blocks",
+          "padding-around-expect-groups",
           "padding-around-test-blocks",
           "prefer-called-exactly-once-with",
           "prefer-called-once",
@@ -974,11 +988,11 @@
   "ours": {
     "manifestPath": ".agent/oxlint-jsplugins-manifest.json",
     "pluginCount": 32,
-    "totalRules": 497,
-    "uniqueSlugs": 454
+    "totalRules": 516,
+    "uniqueSlugs": 473
   },
   "overlap": {
-    "slugCount": 120,
+    "slugCount": 125,
     "slugs": [
       "alt-text",
       "anchor-ambiguous-text",
@@ -1012,10 +1026,13 @@
       "jsx-handler-names",
       "jsx-key",
       "jsx-max-depth",
+      "jsx-no-comment-textnodes",
       "jsx-no-duplicate-props",
       "jsx-no-literals",
       "jsx-no-script-url",
       "jsx-no-target-blank",
+      "jsx-no-undef",
+      "jsx-pascal-case",
       "label-has-associated-control",
       "lang",
       "max-dependencies",
@@ -1083,6 +1100,7 @@
       "no-unknown-property",
       "no-unreadable-iife",
       "no-unsafe",
+      "no-webpack-loader-syntax",
       "prefer-at",
       "prefer-code-point",
       "prefer-default-export",
@@ -1097,6 +1115,7 @@
       "role-supports-aria-props",
       "scope",
       "state-in-constructor",
+      "style-prop-object",
       "tabindex-no-positive",
       "unambiguous",
       "void-dom-elements-no-children"
@@ -1154,6 +1173,7 @@
           "no-relative-parent-imports",
           "no-self-import",
           "no-unassigned-import",
+          "no-webpack-loader-syntax",
           "prefer-default-export",
           "prefer-node-protocol",
           "unambiguous"
@@ -1243,10 +1263,13 @@
           "jsx-handler-names",
           "jsx-key",
           "jsx-max-depth",
+          "jsx-no-comment-textnodes",
           "jsx-no-duplicate-props",
           "jsx-no-literals",
           "jsx-no-script-url",
           "jsx-no-target-blank",
+          "jsx-no-undef",
+          "jsx-pascal-case",
           "no-children-prop",
           "no-danger",
           "no-danger-with-children",
@@ -1272,6 +1295,7 @@
           "react-in-jsx-scope",
           "require-render-return",
           "state-in-constructor",
+          "style-prop-object",
           "void-dom-elements-no-children"
         ]
       },
@@ -1327,6 +1351,7 @@
           "no-relative-parent-imports",
           "no-self-import",
           "no-unassigned-import",
+          "no-webpack-loader-syntax",
           "prefer-default-export",
           "unambiguous"
         ]
@@ -1391,10 +1416,13 @@
           "jsx-handler-names",
           "jsx-key",
           "jsx-max-depth",
+          "jsx-no-comment-textnodes",
           "jsx-no-duplicate-props",
           "jsx-no-literals",
           "jsx-no-script-url",
           "jsx-no-target-blank",
+          "jsx-no-undef",
+          "jsx-pascal-case",
           "no-children-prop",
           "no-danger",
           "no-danger-with-children",
@@ -1418,6 +1446,7 @@
           "react-in-jsx-scope",
           "require-render-return",
           "state-in-constructor",
+          "style-prop-object",
           "void-dom-elements-no-children"
         ]
       },

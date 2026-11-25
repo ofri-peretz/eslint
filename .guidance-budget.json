@@ -1,4 +1,7 @@
 {
+  "packages/eslint-devkit/AGENTS.md": {
+    "bytes": 3423
+  },
   "packages/eslint-formatter/AGENTS.md": {
     "bytes": 6790
   },
@@ -7,6 +10,9 @@
   },
   "packages/eslint-plugin-browser-security/AGENTS.md": {
     "bytes": 9375
+  },
+  "packages/eslint-plugin-conventions/AGENTS.md": {
+    "bytes": 3693
   },
   "packages/eslint-plugin-drizzle-security/AGENTS.md": {
     "bytes": 4539
@@ -43,7 +49,7 @@
     "bytes": 5380
   },
   "packages/eslint-plugin-node-security/AGENTS.md": {
-    "bytes": 8162
+    "bytes": 8149
   },
   "packages/eslint-plugin-openai-security/AGENTS.md": {
     "bytes": 4174
@@ -66,6 +72,9 @@
   "packages/eslint-plugin-sequelize-security/AGENTS.md": {
     "bytes": 4662
   },
+  "packages/eslint-plugin-sqlite-security/AGENTS.md": {
+    "bytes": 3999
+  },
   "packages/eslint-plugin-supabase-security/AGENTS.md": {
     "bytes": 4357
   },
@@ -74,5 +83,8 @@
   },
   "packages/eslint-plugin-vercel-ai-security/AGENTS.md": {
     "bytes": 6384
+  },
+  "skills/security-linting/SKILL.md": {
+    "descriptionChars": 610
   }
 }
