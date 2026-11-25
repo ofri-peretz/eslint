@@ -135,13 +135,34 @@ function repo(): string {
 export const PR_LIST =
   'pulls?state=all&sort=created&direction=desc&per_page=100';
 
+/** Reads pages 1, 2, … until one comes back short. */
+export function readAllPages<T>(
+  fetchPage: (page: number) => T[],
+  perPage = 100,
+): T[] {
+  const rows: T[] = [];
+  for (let page = 1; ; page++) {
+    const batch = fetchPage(page);
+    rows.push(...batch);
+    if (batch.length < perPage) return rows;
+  }
+}
+
 function lastMergedPrs(r: string, n: number): number[] {
   // Bot PRs (release, data sync) are never reviewed.
-  const all = gh(`repos/${r}/${PR_LIST}`) as {
-    number: number;
-    merged_at: string | null;
-    user: { type: string };
-  }[];
+  const all = readAllPages(
+    (page) =>
+      JSON.parse(
+        execFileSync('gh', ['api', `repos/${r}/${PR_LIST}&page=${page}`], {
+          encoding: 'utf8',
+          maxBuffer: 64 * 1024 * 1024,
+        }),
+      ) as {
+        number: number;
+        merged_at: string | null;
+        user: { type: string };
+      }[],
+  );
   return latestMerged(
     all.map((p) => ({
       number: p.number,

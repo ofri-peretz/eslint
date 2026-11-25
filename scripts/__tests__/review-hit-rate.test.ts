@@ -18,6 +18,7 @@ import {
   isActedOn,
   latestMerged,
   PR_LIST,
+  readAllPages,
   resolvePath,
 } from '../review-hit-rate';
 
@@ -205,5 +206,44 @@ describe('PR_LIST', () => {
     const q = new URLSearchParams(PR_LIST.split('?')[1]);
     expect(q.get('state')).toBe('all');
     expect(q.get('sort')).toBe('created');
+  });
+});
+
+describe('paging while a PR is reopened between page reads', () => {
+  // Five PRs, newest created first; #3 merged last of all. Pages of 2.
+  type Row = {
+    number: number;
+    state: 'open' | 'closed';
+    mergedAt: string | null;
+  };
+  const start = (): Row[] => [
+    { number: 5, state: 'closed', mergedAt: '2026-11-25T10:00:00Z' },
+    { number: 4, state: 'closed', mergedAt: null },
+    { number: 3, state: 'closed', mergedAt: '2026-11-25T12:00:00Z' },
+    { number: 2, state: 'closed', mergedAt: '2026-11-25T09:00:00Z' },
+    { number: 1, state: 'closed', mergedAt: '2026-11-25T08:00:00Z' },
+  ];
+  // A live list: each page is cut from the rows as they are at the moment it is read.
+  // After page 1 is read, #4 (closed unmerged, already read) is reopened.
+  const read = (onlyClosed: boolean) => {
+    const rows = start();
+    return readAllPages((page) => {
+      const visible = rows.filter((r) => !onlyClosed || r.state === 'closed');
+      const batch = visible.slice((page - 1) * 2, page * 2);
+      if (page === 1) rows.find((r) => r.number === 4)!.state = 'open';
+      return batch.map((r) => ({
+        number: r.number,
+        mergedAt: r.mergedAt,
+        bot: false,
+      }));
+    }, 2);
+  };
+
+  it('state=closed skips the latest merge (#3 shifts onto page 1, already read)', () => {
+    expect(latestMerged(read(true), 1)).toEqual([5]);
+  });
+
+  it('state=all keeps it: a reopened PR stays listed, so no row shifts', () => {
+    expect(latestMerged(read(false), 1)).toEqual([3]);
   });
 });
