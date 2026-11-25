@@ -5,7 +5,7 @@
       "rules": 46,
       "description": "ESLint browser security and XSS rules — detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps",
       "category": "security",
-      "version": "3.1.7",
+      "version": "3.1.6",
       "published": true
     },
     {
@@ -13,7 +13,7 @@
       "rules": 45,
       "description": "ESLint Node security rules for Node.js — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
-      "version": "6.3.0",
+      "version": "6.2.1",
       "published": true
     },
     {
@@ -21,7 +21,7 @@
       "rules": 36,
       "description": "ESLint security rules for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "6.5.0",
+      "version": "6.4.13",
       "published": true
     },
     {
@@ -45,7 +45,7 @@
       "rules": 15,
       "description": "ESLint MCP security rules for the Model Context Protocol SDK — follows tool arguments into shells, file paths, URLs, SQL and eval; catches credential leaks, untrusted text in model-facing descriptions and prompts, unhardened HTTP transports, shared stateless servers, predictable session ids, untrusted stdio commands and schema/handler drift",
       "category": "security",
-      "version": "2.1.4",
+      "version": "2.1.3",
       "published": true
     },
     {
@@ -53,7 +53,7 @@
       "rules": 13,
       "description": "ESLint JWT security rules — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
       "category": "security",
-      "version": "4.0.7",
+      "version": "4.0.6",
       "published": true
     },
     {
@@ -157,7 +157,7 @@
       "rules": 28,
       "description": "ESLint Express security rules — detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production",
       "category": "framework",
-      "version": "4.4.1",
+      "version": "4.4.0",
       "published": true
     },
     {
@@ -173,7 +173,7 @@
       "rules": 11,
       "description": "ESLint NestJS security rules — detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields",
       "category": "framework",
-      "version": "4.3.0",
+      "version": "4.2.5",
       "published": true
     },
     {
@@ -205,7 +205,7 @@
       "rules": 10,
       "description": "ESLint reliability rules for runtime safety — enforces error handling, network timeouts, null checks, and safe type narrowing",
       "category": "quality",
-      "version": "5.1.0",
+      "version": "5.0.9",
       "published": true
     },
     {
