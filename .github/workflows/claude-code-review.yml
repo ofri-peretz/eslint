@@ -152,7 +152,7 @@ jobs:
           fetch-depth: 0
 
       # triggerlist needs Node 22.13+.
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         if: steps.token.outputs.present == 'true'
         with:
           node-version-file: .nvmrc
@@ -162,7 +162,7 @@ jobs:
       # The action drops CodeRabbit's comments from the prompt by default (eslint#1574).
       - name: Claude Code Review
         if: steps.token.outputs.present == 'true'
-        uses: ofri-peretz/burgee/.github/actions/triggerlist-review@hookset@1.1.1
+        uses: ofri-peretz/burgee/.github/actions/triggerlist-review@2a3051563249415273f27b9147cfea907c8045e1 # hookset@1.1.1
         with:
           claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           triggerlist: npx --yes triggerlist@0.3.0
