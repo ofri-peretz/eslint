@@ -5,6 +5,53 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.0
+
+### Minor Changes
+
+- **✨ Feature** — register `imports-first`, eslint-plugin-import's deprecated alias of `first`
+
+  eslint-plugin-import 2.32.0 still exports `imports-first`, deprecated, as `first` with a deprecated `meta`. A config or disable comment naming it (mozilla/web-ext's does) threw "Could not find rule" against this plugin. It is now registered the same way: `meta.deprecated: true`, `replacedBy: ['first']`, and `first`'s own `create` and schema, so it reports what `first` reports and takes the same options. No preset enables it.
+
+- **💥 Breaking** — `no-anonymous-default-export` reports what eslint-plugin-import reports at default options
+
+  With no options the rule used to report only anonymous functions and classes (#1574 added upstream's options but kept that default). Objects, arrays, literals, template literals and `new` expressions are now reported unless `allowObject`, `allowArray`, `allowLiteral` or `allowNew` allows them, and calls stay allowed, as in eslint-plugin-import 2.32.0 (`src/rules/no-anonymous-default-export.js`). On receptron/mulmoclaude @ 6b4f990 the rule goes from 0 to 9 reports, upstream's count. A config that sets those options is unaffected. To keep the old behavior, set all four to `true`.
+
+  ## Migration
+
+  A default export that is an object, array, literal, template literal or `new` expression now reports. Name it first, or allow the kind in the rule's options to keep the old behavior.
+
+  ```js
+  // Before: passed with no options. After: reported.
+  export default { retries: 3 };
+
+  // Fix: assign it to a name.
+  const config = { retries: 3 };
+  export default config;
+  ```
+
+  ```js
+  // Or keep the old behavior in eslint.config.js.
+  'import-next/no-anonymous-default-export': ['error', {
+    allowArray: true,
+    allowLiteral: true,
+    allowObject: true,
+    allowNew: true,
+  }],
+  ```
+
+### Patch Changes
+
+- **🐛 Fix** — `no-cycle` skips unlisted extensions, ignored paths and commented imports
+
+  A file whose extension is not in `import/extensions` (or an `import/parsers` list), or whose path matches `import/ignore`, is no module and no longer closes a cycle: workadventure's `.svelte` components made 10 of its 32 extra findings. An `import "x"` inside a comment is no longer an edge (Babylon.js: its 1 extra, a doc comment; big-AGI: 1 of its 7). With neither setting every extension is still read.
+
+  Two differences stay and are documented: every import that closes a cycle is reported, where upstream reports the first through a shared module; and a plain `import { Interface }` is not an edge, where upstream reports it (`no_cycle.qnt` encodes this).
+
+  `@interlace/eslint-devkit`: the import graph cache takes an `ignoreTarget` predicate that drops an edge to a file the caller does not treat as a module, and `getFileImports` blanks comments (`blankComments`, exported) before reading imports.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.2.0`
+
 ## 4.1.11
 
 ### Patch Changes

@@ -5,6 +5,16 @@ All notable changes to `oxlint-plugin-reliability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.0.9
+
+### Patch Changes
+
+- **🐛 Fix** — no-silent-errors accepts a two-word reason in an empty catch
+
+  With `allowWithComment`, a comment inside an empty catch counted as an explanation only when it matched one of the keywords or ran to three words of prose. `// pre-init — skip` was reported, because the dash is not a word, while a bare `// ignore` passed on the keyword list. Two words that do not open with a placeholder (`todo`, `handle`, `empty`, `nothing`, ...) now count. A single non-keyword word (`// skip`) and a placeholder (`/* handle later */`) still report. The same rule in `eslint-plugin-maintainability` gets the same change. Fixes #1554.
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-reliability@5.0.9`
+
 ## 5.0.8
 
 ### Patch Changes

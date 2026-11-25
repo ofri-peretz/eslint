@@ -5,6 +5,38 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.4.13
+
+### Patch Changes
+
+- **🧹 Chore** — raise `@eslint-community/regexpp` to `^4.12.3` in secure-coding, and write jsx-no-script-url's scheme check without raw control bytes
+
+  secure-coding now requires `@eslint-community/regexpp` `^4.12.3` (was `^4.10.0`). react-features' `jsx-no-script-url` skips leading code units at or below U+0020 and drops tab, LF and CR in code instead of a regex with raw C0 bytes in its source, so oxlint's `no-control-regex` passes. It reports the same values as before.
+
+- **🧹 Chore** — published type declarations no longer import `@typescript-eslint/utils`
+
+  The `TSESTree`, `TSESLint`, `ParserServices` and `JSONSchema4` types now come from declarations devkit ships itself, generated from the same typescript-eslint version. The types are structurally identical, and no runtime code changed.
+
+- **🐛 Fix** — detect-non-literal-regexp accepts an escaped value inside a written pattern
+
+  nestjs/config builds ``new RegExp(`\$\{${name}`)`` from a `name` escaped with the canonical `.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')`. The escape was only recognised when it was the whole pattern. A template or `+` whose every dynamic part is static or escaped is now neutralised; one raw part still reports.
+
+- **🐛 Fix** — no-sensitive-data-exposure does not treat a fencing or cancellation token as a credential
+
+  nestjs/locks logs `lock.fencingToken`, the increasing number a lock service hands each new holder. The word `token` alone decided it. `fencingToken`, `fencing_token` and `cancellationToken` no longer report; `fencingTokenSecret` and any other token still do.
+
+- **🐛 Fix** — no-insecure-comparison skips a secret against its own transform and a guarded store re-read
+
+  `secret.trim() !== secret` (nestjs/webhooks) compares one secret with itself, so there is nothing to time. A member call on the other operand with literal arguments only is skipped. Separately, `if (!record) return false` between two reads of the same store (nestjs/authentication MFA) counted as the record escaping; a `!`, `typeof` or comparison only tests it. `fallback || record` still counts as an escape.
+
+- **🐛 Fix** — no-improper-sanitization stops reporting literal-only markup and `body`/`input` names
+
+  `el.innerHTML = '<a>' + '<b>'` was reported once per literal, because the exemption for developer-typed text covered a call argument but not the right side of an `innerHTML` / `outerHTML` assignment. Concatenations of literals, template literals whose substitutions are themselves literal-only, and `const` bindings that resolve through scope to such text are now treated as the static markup they are. On PrivateBin's `js/test` that removes 115 of 154 reports. A `let`, a parameter or a `const` bound to a call still counts as a runtime value.
+
+  The `innerHTML` / `outerHTML` assignment check also decided "user input" by whether the right-hand text contained `body`, `query`, `input` or `req.`, so `el.innerHTML = bodyTemplate` reported. It now reads provenance from the syntax: a member chain rooted at `req` / `request`, `location.hash|search|href`, or the `.value` of a DOM lookup (`getElementById`, `querySelector(All)`, `getElementsBy…`). Text inside string literals no longer counts, and a variable named `userInput` is still not reported, as before.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.2.0`
+
 ## 6.4.12
 
 ### Patch Changes

@@ -5,6 +5,16 @@ All notable changes to `oxlint-plugin-browser-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.6
+
+### Patch Changes
+
+- **🐛 Fix** — stop reporting JSON Schema `$schema` and `$id` identifiers
+
+  `no-http-urls` no longer reports the values of `$schema` and `$id` properties: they identify a schema dialect or document, are compared as strings and never fetched. Only those two keys are exempt; `$ref`, `schemaUrl` and every other key still report.
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-browser-security@3.1.6`
+
 ## 3.1.5
 
 ### Patch Changes

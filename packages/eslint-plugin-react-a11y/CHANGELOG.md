@@ -5,6 +5,20 @@ All notable changes to `eslint-plugin-react-a11y` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.1
+
+### Patch Changes
+
+- **🐛 Fix** — a `<label htmlFor>` under the same fragment names the control
+
+  `control-has-associated-label` and `no-missing-aria-labels` looked for a matching `<label htmlFor>` only under the nearest JSX element root, so `<><label htmlFor="x">Name</label><input id="x" /></>` reported the input as unlabelled. A fragment now counts as the tree root too. A label with a different `htmlFor`, or with no content, still reports.
+
+- **🐛 Fix** — scope skips custom components, as jsx-a11y does
+
+  `scope` reported every JSX tag that was not `th`, so `<TableCell component="th" scope="row">` in a MUI app was a false positive (three of three hits on binwiederhier/ntfy). It now checks DOM elements only, as eslint-plugin-jsx-a11y 6.10.2 does (`scope.js:40-44`). A component counts only when `settings['jsx-a11y'].components` or `polymorphicPropName` / `polymorphicAllowList` map it to an element: `<Foo scope>` with `Foo: 'div'` still reports, `<TableHeader scope>` with `TableHeader: 'th'` does not.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.2.0`
+
 ## 3.1.0
 
 ### Minor Changes

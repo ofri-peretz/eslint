@@ -5,6 +5,21 @@ All notable changes to `eslint-plugin-reliability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.0.9
+
+### Patch Changes
+
+- **🐛 Fix** — no-silent-errors accepts a two-word reason in an empty catch
+
+  With `allowWithComment`, a comment inside an empty catch counted as an explanation only when it matched one of the keywords or ran to three words of prose. `// pre-init — skip` was reported, because the dash is not a word, while a bare `// ignore` passed on the keyword list. Two words that do not open with a placeholder (`todo`, `handle`, `empty`, `nothing`, ...) now count. A single non-keyword word (`// skip`) and a placeholder (`/* handle later */`) still report. The same rule in `eslint-plugin-maintainability` gets the same change. Fixes #1554.
+
+- **🐛 Fix** — `no-unhandled-promise` no longer reports a call to an in-file `async` function whose whole body is a `try`/`catch` that cannot rethrow
+
+  Such a promise cannot reject, so `sendEmail(...)` (found in parse-server's `UserController.js`) is not a floating rejection. A `try`/`finally` with no `catch`, a rethrowing `catch` and code before the `try` are still reported.
+
+- **📚 Docs** — rule descriptions no longer end mid-sentence (no-unhandled-promise, require-max-steps)
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.2.0`
+
 ## 5.0.8
 
 ### Patch Changes

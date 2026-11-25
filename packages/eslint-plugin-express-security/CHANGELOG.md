@@ -5,6 +5,37 @@ All notable changes to `eslint-plugin-express-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.4.0
+
+### Minor Changes
+
+- **✨ Feature** — `require-express-body-parser-limits` now treats any explicit `limit` as a deliberate choice and reports only a body parser (`json`, `urlencoded`, `raw`, `text`) that sets **no** `limit`. This is a policy change, not a fix: before, the rule did the opposite. An explicit limit above `maxLimit` (5 MB by default) reported, and a parser with no limit did not.
+
+  - The message id changes from `excessiveLimit` to `missingLimit`, and the rule is scored 5.3 (MEDIUM), matching its label.
+  - `maxLimit` and `excessiveLimits` are still accepted so existing configs keep loading, and are ignored.
+  - Options the rule cannot read (`express.json(opts)`, a spread, a computed key) abstain.
+  - The fidelity model for this rule is updated to the new spec in the same change.
+
+### Patch Changes
+
+- **🧹 Chore** — published type declarations no longer import `@typescript-eslint/utils`
+
+  The `TSESTree`, `TSESLint`, `ParserServices` and `JSONSchema4` types now come from declarations devkit ships itself, generated from the same typescript-eslint version. The types are structurally identical, and no runtime code changed.
+
+- **🐛 Fix** — a Fastify, Koa or Hono file is no longer read as Express
+
+  Every rule in the plugin runs only in a file `fileUsesExpress` accepts. Besides an `express` import, it accepts route
+  shape: a `(req, res, next)` middleware, a `(req, res)` handler registered against a literal path, or an exported
+  `(req, res)` handler. That shape is how a route module that receives `app` from its caller looks, and it is also how a
+  Fastify plugin looks: `app.post('/', schema, async (req, res) => …)` inside a `FastifyPluginAsyncZod`. Nine of
+  activepieces' Fastify controllers were reported 25 times by `no-missing-csrf-protection` and once by
+  `no-missing-security-headers`.
+
+  Route shape no longer counts as evidence in a file that imports Fastify (`fastify`, `fastify-*`, `@fastify/*`), Koa
+  (`koa`, `koa-*`, `@koa/*`), Hono, hapi, h3 or Elysia. An explicit `express` import still counts in such a file.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.2.0`
+
 ## 4.3.3
 
 ### Patch Changes
