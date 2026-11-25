@@ -86,7 +86,7 @@
     "express-security/no-user-controlled-render-locals": 73,
     "express-security/require-case-insensitive-path-guard": 48,
     "express-security/require-csrf-protection": 64,
-    "express-security/require-express-body-parser-limits": 43,
+    "express-security/require-express-body-parser-limits": 41,
     "express-security/require-helmet": 36,
     "express-security/require-query-type-guard": 64,
     "express-security/require-rate-limiting": 34,
