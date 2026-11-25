@@ -13,7 +13,14 @@
         "suites/**/*.mjs",
         "score.ts",
         "vitest.config.mts",
-        "package.json"
+        "package.json",
+        // Locks here also read the plugins' test files and sources (the
+        // sealed-vs-open lock regenerates RULE_CASES.json from every
+        // packages/*/src test). Without these the task cache-hit on a PR that
+        // added an untagged FN case, and main went red with a green gate.
+        "$TURBO_ROOT$/packages/*/src/**",
+        "$TURBO_ROOT$/scripts/rule-case-ledger.ts",
+        "$TURBO_ROOT$/eslint.real-source.config.mjs"
       ],
       "outputs": []
     }
