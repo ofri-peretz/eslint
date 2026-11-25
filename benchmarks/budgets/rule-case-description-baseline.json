@@ -257,7 +257,7 @@
     "node-security/require-secure-credential-storage": 90,
     "node-security/require-secure-deletion": 48,
     "node-security/require-storage-encryption": 24,
-    "node-security/require-stream-error-handler": 15,
+    "node-security/require-stream-error-handler": 14,
     "openai-security/no-browser-api-key-exposure": 14,
     "operability/no-console-log": 48,
     "operability/no-debug-code-in-production": 10,
