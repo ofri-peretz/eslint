@@ -46,7 +46,9 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // benchmarks/corpus/CWE-248/safe/pipeline-promises.js — pipeline() destroys
     // every stream and rejects. This is the fix the rule recommends, so
     // reporting it would be reporting the mitigation.
-    `
+    {
+      name: 'a stream handed to pipeline() is destroyed and rejected by it',
+      code: `
       async function download(req, res) {
         try {
           await pipeline(fs.createReadStream('./uploads/' + req.params.id), res);
@@ -55,6 +57,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
         }
       }
     `,
+    },
     // The listener may be registered after the pipe: the file is judged whole,
     // so statement order is not the criterion.
     {
