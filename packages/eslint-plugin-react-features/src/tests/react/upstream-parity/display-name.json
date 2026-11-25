@@ -1643,6 +1643,225 @@
           "jsx": true
         }
       }
+    },
+    {
+      "kind": "invalid",
+      "n": 42,
+      "code": "\n        import React from 'react'\n\n        const ComponentWithMemo = React.memo(({ world }) => {\n          return <div>Hello {world}</div>\n        })\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 44,
+      "code": "\n        import React from 'react'\n\n        const ComponentWithMemo = React.memo(({ world }) => {\n          return <div>Hello {world}</div>\n        })\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 45,
+      "code": "\n        import React from 'react'\n\n        const ComponentWithMemo = React.memo(function() {\n          return <div>Hello {world}</div>\n        })\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 47,
+      "code": "\n        import React from 'react'\n\n        const ComponentWithMemo = React.memo(function() {\n          return <div>Hello {world}</div>\n        })\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 48,
+      "code": "\n        import React from 'react'\n\n        const ForwardRefComponentLike = React.forwardRef(({ world }, ref) => {\n          return <div ref={ref}>Hello {world}</div>\n        })\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 50,
+      "code": "\n        import React from 'react'\n\n        const ForwardRefComponentLike = React.forwardRef(({ world }, ref) => {\n          return <div ref={ref}>Hello {world}</div>\n        })\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 51,
+      "code": "\n        import React from 'react'\n\n        const ForwardRefComponentLike = React.forwardRef(function({ world }, ref) {\n          return <div ref={ref}>Hello {world}</div>\n        })\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 53,
+      "code": "\n        import React from 'react'\n\n        const ForwardRefComponentLike = React.forwardRef(function({ world }, ref) {\n          return <div ref={ref}>Hello {world}</div>\n        })\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 54,
+      "code": "\n        import React from 'react'\n\n        const MemoizedForwardRefComponentLike = React.memo(\n          React.forwardRef(({ world }, ref) => {\n            return <div ref={ref}>Hello {world}</div>\n          })\n        )\n      \n// features: [], parser: default, settings: {\"react\":{\"version\":\"15.6.0\"}}",
+      "settings": {
+        "react": {
+          "version": "15.6.0"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 56,
+      "code": "\n        import React from 'react'\n\n        const MemoizedForwardRefComponentLike = React.memo(\n          React.forwardRef(({ world }, ref) => {\n            return <div ref={ref}>Hello {world}</div>\n          })\n        )\n      \n// features: [], parser: @typescript-eslint/parser, settings: {\"react\":{\"version\":\"15.6.0\"}}",
+      "settings": {
+        "react": {
+          "version": "15.6.0"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 57,
+      "code": "\n        import React from 'react'\n\n        const MemoizedForwardRefComponentLike = React.memo(\n          React.forwardRef(function({ world }, ref) {\n            return <div ref={ref}>Hello {world}</div>\n          })\n        )\n      \n// features: [], parser: default, settings: {\"react\":{\"version\":\"0.14.2\"}}",
+      "settings": {
+        "react": {
+          "version": "0.14.2"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 59,
+      "code": "\n        import React from 'react'\n\n        const MemoizedForwardRefComponentLike = React.memo(\n          React.forwardRef(function({ world }, ref) {\n            return <div ref={ref}>Hello {world}</div>\n          })\n        )\n      \n// features: [], parser: @typescript-eslint/parser, settings: {\"react\":{\"version\":\"0.14.2\"}}",
+      "settings": {
+        "react": {
+          "version": "0.14.2"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 60,
+      "code": "\n        import React from 'react'\n\n        const MemoizedForwardRefComponentLike = React.memo(\n          React.forwardRef(function ComponentLike({ world }, ref) {\n            return <div ref={ref}>Hello {world}</div>\n          })\n        )\n      \n// features: [], parser: default, settings: {\"react\":{\"version\":\"15.0.1\"}}",
+      "settings": {
+        "react": {
+          "version": "15.0.1"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 62,
+      "code": "\n        import React from 'react'\n\n        const MemoizedForwardRefComponentLike = React.memo(\n          React.forwardRef(function ComponentLike({ world }, ref) {\n            return <div ref={ref}>Hello {world}</div>\n          })\n        )\n      \n// features: [], parser: @typescript-eslint/parser, settings: {\"react\":{\"version\":\"15.0.1\"}}",
+      "settings": {
+        "react": {
+          "version": "15.0.1"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
     }
   ]
 }

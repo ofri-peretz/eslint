@@ -71,21 +71,72 @@ describe('display-name', () => {
         {
           code: `class Profile extends React.PureComponent { render() { return <div>A</div>; } }`,
         },
-        // The binding names the component through the wrapper.
-        { code: `const Row = memo(() => <div>Hello</div>);` },
-        { code: `const Row = React.memo(() => <div>Hello</div>);` },
-        { code: `const Row = forwardRef((props, ref) => <div ref={ref} />);` },
         {
-          code: `const Row = React.forwardRef((props, ref) => <div ref={ref} />);`,
+          name: 'a class component handed to a wrapper takes the name of the binding',
+          code: `const Row = memo(class extends Component { render() { return <div>A</div>; } });`,
         },
-        // Nested wrappers still resolve to the outer binding.
         {
+          name: 'a wrapped class component bound through a type assertion',
+          code: `const Row = memo(class extends Component { render() { return <div>A</div>; } }) as any;`,
+        },
+        {
+          name: 'an anonymous class assigned to a member is named by its position',
+          code: `Table.Row = class extends Component { render() { return <div>A</div>; } };`,
+        },
+        {
+          name: 'an anonymous class held by an object property is named by its position',
+          code: `const parts = { Row: class extends Component { render() { return <div>A</div>; } } };`,
+        },
+        {
+          name: 'an anonymous class held by a static class property is named by its position',
+          code: `class Table { static Row = class extends Component { render() { return <div>A</div>; } }; }`,
+        },
+        {
+          name: 'FP: a default-exported factory is not a component, and the forwardRef it builds is named',
+          // @found react-bootstrap/react-bootstrap 2026-11-24 (src/divWithClassName.tsx: one extra report, on the factory)
+          code: `import * as React from 'react';
+export default (className: string) => {
+  const Div = React.forwardRef<HTMLDivElement, any>((p, ref) => <div {...p} ref={ref} className={className} />);
+  Div.displayName = 'Div';
+  return Div;
+};`,
+        },
+        // A wrapper holding a named function takes its name from that function.
+        {
+          name: 'memo around a named function expression',
+          code: `const Row = memo(function Row() { return <div>Hello</div>; });`,
+        },
+        {
+          name: 'forwardRef around a named function expression',
+          code: `const Row = React.forwardRef(function Row(props, ref) { return <div ref={ref} />; });`,
+        },
+        // The binding does not name an arrow handed to a wrapper: `Row.name` is
+        // the wrapper's, and DevTools shows the component as `Anonymous`. An
+        // explicit displayName is the name, and it names the component wherever
+        // the wrapper is bound.
+        {
+          name: 'displayName set on the bound memo',
+          code: `const Row = memo(() => <div>Hello</div>); Row.displayName = 'Row';`,
+        },
+        {
+          name: 'displayName set on a forwardRef bound with a type assertion',
+          code: `const Row = React.forwardRef((props, ref) => <main />) as SomeComponent; Row.displayName = 'Row';`,
+        },
+        {
+          name: 'displayName set on the wrapper held by an object property',
+          code: `const parts = { Row: memo(() => <div>Hello</div>) }; parts.Row.displayName = 'Row';`,
+        },
+        // Nested wrappers are one component, and from React 16.12 the nested
+        // forwardRef is named through the outer memo (upstream display-name
+        // tests, "Nested React.forwardRef should be accepted").
+        {
+          name: 'memo around forwardRef on a current React',
           code: `const Row = memo(forwardRef((props, ref) => <div ref={ref} />));`,
         },
-        // Assignment and property positions carry a name too.
-        { code: `Table.Row = memo(() => <div>Hello</div>);` },
-        { code: `const parts = { Row: memo(() => <div>Hello</div>) };` },
-        { code: `class Table { static Row = memo(() => <div>Hello</div>); }` },
+        {
+          name: 'memo around forwardRef, unbound, on a current React',
+          code: `export default memo(forwardRef((props, ref) => <div ref={ref} />));`,
+        },
         {
           code: `const Row = class extends Component { render() { return <div>A</div>; } };`,
         },
@@ -134,51 +185,127 @@ describe('display-name', () => {
    * eslint-plugin-react 7.37.5 reports `React.memo(...)` / `React.forwardRef(...)`
    * with the wrapper call as the node (tests/lib/rules/display-name.js, the
    * "Card" case: `line: 9, column: 18` is the `React.memo` call, not the arrow
-   * inside it).
+   * inside it), and reports it whether or not the call is bound to a variable:
+   * the arrow handed to the wrapper has no name of its own.
    */
   describe('wrapper calls are reported on the call', () => {
-    ruleTester.run('wrapper call location', displayName, {
-      valid: [
-        {
-          name: 'FP: a default-exported factory is not a component, and the forwardRef it builds is named',
-          // @found react-bootstrap/react-bootstrap 2026-11-24 (src/divWithClassName.tsx: one extra report, on the factory)
-          code: `import * as React from 'react';
-export default (className: string) => {
-  const Div = React.forwardRef<HTMLDivElement, any>((p, ref) => <div {...p} ref={ref} className={className} />);
-  Div.displayName = 'Div';
-  return Div;
-};`,
-        },
-      ],
+    ruleTester.run('wrapper calls', displayName, {
+      valid: [],
       invalid: [
         {
-          name: 'an inline memo reports the memo call, not the arrow inside it',
-          code: `render(React.memo(() => <div>Hello</div>));`,
+          // upstream display-name.js, invalid: "const ComponentWithMemo = React.memo(({ world }) => {"
+          name: 'a bound memo around an arrow reports the memo call',
+          code: `import React from 'react'
+const ComponentWithMemo = React.memo(({ world }) => {
+  return <div>Hello {world}</div>
+})`,
           errors: [
             {
               messageId: 'displayName',
-              line: 1,
-              column: 8,
-              endLine: 1,
-              endColumn: 42,
+              line: 2,
+              column: 27,
+              endLine: 4,
+              endColumn: 3,
             },
           ],
         },
         {
-          name: 'an inline forwardRef reports the forwardRef call',
-          code: `render(React.forwardRef((props, ref) => <div ref={ref} />));`,
+          // upstream display-name.js, invalid: "const ComponentWithMemo = React.memo(function() {"
+          name: 'a bound memo around an anonymous function expression',
+          code: `const Row = React.memo(function() { return <div>Hello</div>; });`,
           errors: [
             {
               messageId: 'displayName',
               line: 1,
-              column: 8,
+              column: 13,
               endLine: 1,
-              endColumn: 59,
+              endColumn: 64,
             },
           ],
         },
         {
-          name: 'a forwardRef built by the default-exported factory reports the call, not the factory',
+          // upstream display-name.js, invalid: "const ForwardRefComponentLike = React.forwardRef(({ world }, ref) => {"
+          name: 'a bound forwardRef around an arrow reports the forwardRef call',
+          code: `const Row = React.forwardRef(({ world }, ref) => { return <div ref={ref}>Hello {world}</div>; });`,
+          errors: [
+            {
+              messageId: 'displayName',
+              line: 1,
+              column: 13,
+              endLine: 1,
+              endColumn: 97,
+            },
+          ],
+        },
+        {
+          name: 'a memo whose arrow returns null',
+          code: `const Row = React.memo(() => null);`,
+          errors: [
+            {
+              messageId: 'displayName',
+              line: 1,
+              column: 13,
+              endLine: 1,
+              endColumn: 35,
+            },
+          ],
+        },
+        {
+          name: 'a memo bound to an object property',
+          code: `import { memo } from 'react';
+const parts = { Row: memo(() => <div>Hello</div>) };`,
+          errors: [
+            {
+              messageId: 'displayName',
+              line: 2,
+              column: 22,
+              endLine: 2,
+              endColumn: 50,
+            },
+          ],
+        },
+        {
+          name: 'a memo assigned to a member',
+          code: `import { memo } from 'react';
+Table.Row = memo(() => <div>Hello</div>);`,
+          errors: [
+            {
+              messageId: 'displayName',
+              line: 2,
+              column: 13,
+              endLine: 2,
+              endColumn: 41,
+            },
+          ],
+        },
+        {
+          name: 'a memo held by a static class property',
+          code: `class Table { static Row = memo(() => <div>Hello</div>); }`,
+          errors: [
+            {
+              messageId: 'displayName',
+              line: 1,
+              column: 28,
+              endLine: 1,
+              endColumn: 56,
+            },
+          ],
+        },
+        {
+          name: 'a bound memo around an arrow that returns a number',
+          code: `const Row = memo(() => 42);`,
+          errors: [
+            {
+              messageId: 'displayName',
+              line: 1,
+              column: 13,
+              endLine: 1,
+              endColumn: 27,
+            },
+          ],
+        },
+        {
+          name: 'a forwardRef built inside the default-exported factory reports the call, not the factory',
           // @found react-bootstrap/react-bootstrap 2026-11-24 (src/divWithClassName.tsx)
           code: `import * as React from 'react';
 export default (className: string) =>
@@ -196,8 +323,8 @@ export default (className: string) =>
           ],
         },
         {
-          // upstream display-name.js, invalid: the Card case, `line: 9, column: 18` is the memo call
-          name: 'a memo returned from an IIFE reports at the memo call',
+          // upstream display-name.js, invalid: "export default class extends React.PureComponent" with the Card IIFE
+          name: 'a memo returned from an IIFE reports at the memo call (line 9, column 18 upstream)',
           code: `export default class extends React.PureComponent {
   render() {
     return <Card />;
@@ -221,17 +348,97 @@ const Card = (() => {
           ],
         },
         {
-          name: 'a nested wrapper chain is one component, reported on the outermost call',
-          code: `render(memo(forwardRef((p, ref) => <div ref={ref} />)));`,
+          name: 'a factory returning forwardRef is not itself a component',
+          code: `import React from 'react';
+function make() { return React.forwardRef((p, ref) => <div ref={ref} />); }`,
+          errors: [{ messageId: 'displayName', line: 2, column: 26 }],
+        },
+        {
+          // upstream display-name.js, invalid, settings.react.version 15.6.0
+          name: 'memo around forwardRef on React 15.6',
+          code: `const Row = React.memo(
+  React.forwardRef(({ world }, ref) => {
+    return <div ref={ref}>Hello {world}</div>
+  })
+)`,
+          settings: { react: { version: '15.6.0' } },
           errors: [
             {
               messageId: 'displayName',
               line: 1,
-              column: 8,
-              endLine: 1,
-              endColumn: 55,
+              column: 13,
+              endLine: 5,
+              endColumn: 2,
             },
           ],
+        },
+        {
+          // upstream display-name.js, invalid, settings.react.version 0.14.2
+          name: 'memo around forwardRef on React 0.14.2',
+          code: `const Row = React.memo(
+  React.forwardRef(function({ world }, ref) {
+    return <div ref={ref}>Hello {world}</div>
+  })
+)`,
+          settings: { react: { version: '0.14.2' } },
+          errors: [{ messageId: 'displayName', line: 1, column: 13 }],
+        },
+        {
+          // upstream display-name.js, invalid, settings.react.version 15.0.1:
+          // "ComponentWithMemoAndForwardRef gets shown as Memo(Anonymous)"
+          name: 'memo around a named forwardRef function on React 15.0.1',
+          code: `const Row = React.memo(
+  React.forwardRef(function ComponentLike({ world }, ref) {
+    return <div ref={ref}>Hello {world}</div>
+  })
+)`,
+          settings: { react: { version: '15.0.1' } },
+          errors: [{ messageId: 'displayName', line: 1, column: 13 }],
+        },
+        {
+          name: 'memo around forwardRef on a React in the 16.12 range reports nothing; one below does',
+          code: `export default memo(forwardRef((p, ref) => <div ref={ref} />));`,
+          settings: { react: { version: '16.11.0' } },
+          errors: [{ messageId: 'displayName', line: 1, column: 16 }],
+        },
+      ],
+    });
+    ruleTester.run('nested wrappers on a supporting React', displayName, {
+      valid: [
+        {
+          name: 'React 15.7 names the nested forwardRef',
+          code: `export default memo(forwardRef((p, ref) => <div ref={ref} />));`,
+          settings: { react: { version: '15.7.0' } },
+        },
+        {
+          name: 'React 16.12 names the nested forwardRef',
+          code: `export default memo(forwardRef((p, ref) => <div ref={ref} />));`,
+          settings: { react: { version: '16.12.0' } },
+        },
+        {
+          name: 'React 0.14.10 names the nested forwardRef',
+          code: `export default memo(forwardRef((p, ref) => <div ref={ref} />));`,
+          settings: { react: { version: '0.14.10' } },
+        },
+      ],
+      invalid: [
+        {
+          name: 'React 16.0 does not',
+          code: `export default memo(forwardRef((p, ref) => <div ref={ref} />));`,
+          settings: { react: { version: '16.0.0' } },
+          errors: [{ messageId: 'displayName' }],
+        },
+        {
+          name: 'React 15.6 does not',
+          code: `export default memo(forwardRef((p, ref) => <div ref={ref} />));`,
+          settings: { react: { version: '15.6.9' } },
+          errors: [{ messageId: 'displayName' }],
+        },
+        {
+          name: 'React 0.14.9 does not',
+          code: `export default memo(forwardRef((p, ref) => <div ref={ref} />));`,
+          settings: { react: { version: '0.14.9' } },
+          errors: [{ messageId: 'displayName' }],
         },
       ],
     });
@@ -244,9 +451,11 @@ const Card = (() => {
         { code: `export default () => 'hello';` },
         { code: `export default function() { return 42; }` },
         { code: `export default { key: 'value' };` },
-        { code: `render(memo(() => 42));` },
         // A wrapper call whose argument is not a function at all.
-        { code: `render(memo(Existing));` },
+        {
+          name: 'memo around an existing component',
+          code: `render(memo(Existing));`,
+        },
         { code: `render(memo());` },
         // Not a React wrapper.
         { code: `render(compute(() => <div>Hello</div>));` },
@@ -268,7 +477,10 @@ const Card = (() => {
           code: `export default class extends Component { static displayName = 'Row'; render() { return <div>A</div>; } }`,
         },
         // A named function expression keeps its own name.
-        { code: `render(memo(function Row() { return <div>Hello</div>; }));` },
+        {
+          name: 'memo around a named function expression, passed inline',
+          code: `render(memo(function Row() { return <div>Hello</div>; }));`,
+        },
         { code: `export default function Row() { return <div>Hello</div>; }` },
         { code: `` },
       ],
