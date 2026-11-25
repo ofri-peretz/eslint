@@ -100,12 +100,12 @@ Every possible failure scenario is named, documented, and mapped to the code tha
 | R13 | [Network Failure](#r13-network-failure)                     | ⚠️ May need R03      | **Mitigated** |
 | R14 | [Workflow Timeout](#r14-workflow-timeout)                   | ⚠️ May need R03      | **Mitigated** |
 | R15 | [Manual Cancellation](#r15-manual-cancellation)             | ⚠️ May need R03      | **Mitigated** |
-| R16 | [First Release](#r16-first-release)                         | ✅ Auto-detect       | None          |
+| R16 | [First Release](#r16-first-release)                         | ⚠️ Manual name claim | Low           |
 | R17 | [Workflow Expression Limit](#r17-workflow-expression-limit) | ✅ Mitigated         | None          |
 | R18 | [Package.json Invalid](#r18-packagejson-invalid)            | ✅ Fail fast         | None          |
 | R19 | [Git Rebase Conflict](#r19-git-rebase-conflict)             | ✅ Auto-abort        | Low           |
-| R20 | [Token Expiration](#r20-token-expiration)                   | ✅ Weekly monitoring | Low           |
-| R21 | [OIDC Fallback](#r21-oidc-fallback)                         | ✅ Auto-fallback     | None          |
+| R20 | [Token Expiration](#r20-token-expiration)                   | ✅ No token exists   | None          |
+| R21 | [OIDC Fallback](#r21-oidc-fallback)                         | ❌ No fallback       | Low           |
 | R22 | [Rate Limiting](#r22-rate-limiting)                         | ✅ Actionable error  | Low           |
 | R23 | [GitHub Release](#r23-github-release)                       | ✅ Auto-create       | None          |
 
@@ -368,7 +368,7 @@ done
 | Aspect             | Value                                            |
 | ------------------ | ------------------------------------------------ |
 | **Detection**      | `npm whoami` fails or publish returns 401/403    |
-| **Resolution**     | Configure Trusted Publishers OR update NPM_TOKEN |
+| **Resolution**     | Configure the package's Trusted Publisher        |
 | **Blocks Others?** | ⚠️ Yes - ALL packages                            |
 
 See [NPM Authentication Guide](./NPM_AUTHENTICATION.md) for fix instructions.
@@ -416,41 +416,24 @@ See [NPM Authentication Guide](./NPM_AUTHENTICATION.md) for fix instructions.
 **Category:** New Package  
 **When:** Package doesn't exist on npm yet
 
-| Aspect         | Value                                      |
-| -------------- | ------------------------------------------ |
-| **Detection**  | `npm view <pkg>` returns 404               |
-| **Resolution** | Auto-detect and use `--first-release` flag |
-| **Next Step**  | Configure Trusted Publishers after success |
-
-**Outcome:** ✅ Auto-handled (requires valid NPM_TOKEN)
+| Aspect         | Value                                                        |
+| -------------- | ------------------------------------------------------------ |
+| **Detection**  | `npm view <pkg>` returns 404 in `release.yml`'s detect step  |
+| **Resolution** | Claim the name by hand, configure its Trusted Publisher      |
+| **Outcome**    | ❌ Publish refused (E404 PUT) until the name is claimed      |
 
 **Why First Releases Are Different:**
-OIDC Trusted Publishers **cannot** create new packages on npm. The package must exist before OIDC can be used.
+OIDC Trusted Publishers **cannot** create new packages on npm. The package must exist before a Trusted Publisher can be
+configured for it, and there is no npm token in CI to publish it any other way (#1213).
 
-**How the Pipeline Handles It:**
+**Before the first release of a new package:**
 
-```bash
-# The pipeline automatically:
-1. Detects first release (npm view returns 404)
-2. Validates NPM_TOKEN is available and valid
-3. Uses direct `npm publish` with token auth (not OIDC)
-4. Provides guidance to configure Trusted Publishers after success
-```
+1. Publish an empty `0.0.0-stage` by hand to claim the name.
+2. On [npmjs.com](https://npmjs.com) → Package → Settings → Trusted Publisher, add GitHub Actions:
+   `ofri-peretz/eslint`, workflow `release.yml`.
+3. Let `release.yml` publish the first real version.
 
-**Requirements for Success:**
-
-- `NPM_TOKEN` secret must be set in GitHub repo settings
-- Token must be an "Automation" type token with publish permissions
-- Token must be valid (not expired)
-
-**Post-Success Configuration:**
-
-After first release succeeds, configure Trusted Publishers for future releases:
-
-1. Go to [npmjs.com](https://npmjs.com) → Package → Settings → Publishing access
-2. Add GitHub Actions: `ofri-peretz/eslint`, workflow: `release.yml`
-
-See [NPM Authentication Guide](./NPM_AUTHENTICATION.md#first-release-flow) for setup.
+See [Trusted Publishing setup](../TRUSTED_PUBLISHING_SETUP.md#new-package-names).
 
 ---
 
@@ -553,52 +536,26 @@ fi
 ### R20: Token Expiration
 
 **Category:** Monitoring  
-**When:** NPM_TOKEN expires (90-day max for Granular Access Tokens)
+**When:** never: there is no long-lived npm token
 
-| Aspect         | Value                                              |
-| -------------- | -------------------------------------------------- |
-| **Detection**  | Weekly `npm-token-health.yml` workflow             |
-| **Prevention** | Automated GitHub Issue created 7+ days before fail |
-| **Outcome**    | ⚠️ Warning (action required before next release)   |
-
-```yaml
-# .github/workflows/npm-token-health.yml
-on:
-  schedule:
-    - cron: '0 9 * * 1' # Every Monday 9am UTC
-```
-
-**Features:**
-
-- Validates NPM_TOKEN with `npm whoami`
-- Creates GitHub Issue if token is invalid/missing
-- Provides step-by-step resolution instructions
+Every package publishes through Trusted Publishing, which mints a short-lived token per job, so nothing can expire
+between releases. The `NPM_TOKEN` first-release fallback and the weekly `npm-token-health.yml` check that watched it
+were removed in #1213.
 
 ---
 
 ### R21: OIDC Fallback
 
 **Category:** Authentication  
-**When:** OIDC/Trusted Publishers not configured for existing package
+**When:** a package's Trusted Publisher is missing or misconfigured
 
-| Aspect         | Value                                        |
-| -------------- | -------------------------------------------- |
-| **Detection**  | OIDC publish returns 401 Unauthorized        |
-| **Resolution** | Automatic fallback to NPM_TOKEN if available |
-| **Outcome**    | ✅ Released (with warning to configure OIDC) |
+| Aspect         | Value                                                        |
+| -------------- | ------------------------------------------------------------ |
+| **Detection**  | Publish returns `E404 PUT` / 401 for that package only       |
+| **Resolution** | Configure the Trusted Publisher, then re-run the release     |
+| **Outcome**    | ❌ That package fails; siblings still publish (`fail-fast: false`) |
 
-```bash
-# Fallback logic
-if [ "$PUBLISH_FAILED" = "true" ] && echo "$PUBLISH_OUTPUT" | grep -qiE "401"; then
-  echo "⚠️ OIDC failed, falling back to NPM_TOKEN..."
-  if [ -n "${NPM_TOKEN:-}" ]; then
-    # Use direct npm publish with token
-    ...
-  fi
-fi
-```
-
-**Use Case:** When you forget to configure Trusted Publishers after first release.
+There is no token fallback. `release-liveness.yml` reports the package as behind npm until it is published.
 
 ---
 
@@ -675,12 +632,11 @@ gh release create "$RELEASE_TAG" \
 | 401/403 auth error                               | R12      | See [NPM Auth Guide](./NPM_AUTHENTICATION.md)  |
 | NPM publish failed (network)                     | R13      | Re-run workflow                                |
 | Workflow timed out/cancelled                     | R14-R15  | Re-run workflow                                |
-| "First release detected"                         | R16      | Automatic, then configure Trusted Publishers   |
+| "not on npm yet"                                 | R16      | Claim the name, configure Trusted Publisher    |
 | "Exceeded max expression length 21000"           | R17      | Already mitigated (external script)            |
 | "package.json not found"                         | R18      | Create package.json in package directory       |
 | "Git rebase conflict"                            | R19      | Pull locally, resolve conflicts, re-run        |
-| GitHub Issue: "NPM_TOKEN Expired"                | R20      | Generate new token, update secret              |
-| "OIDC failed, falling back to NPM_TOKEN"         | R21      | Automatic (configure OIDC for future)          |
+| `E404 PUT` on one package                        | R21      | Configure its Trusted Publisher, re-run        |
 | "NPM Rate Limited"                               | R22      | Wait 15-60 minutes, re-run                     |
 
 ---
@@ -695,10 +651,10 @@ gh release create "$RELEASE_TAG" \
 | No conventional commits     | Fallback to patch        | R06      |
 | Concurrent releases         | Queue, don't cancel      | R08      |
 | Dependency failed           | Skip dependents          | R09      |
-| Auth token expired          | Fail fast + monitoring   | R12, R20 |
+| Auth token expired          | No long-lived token      | R12, R20 |
 | Package.json missing        | Fail fast with guidance  | R18      |
 | Rebase conflicts            | Auto-abort, clean state  | R19      |
-| OIDC not configured         | Fallback to NPM_TOKEN    | R21      |
+| OIDC not configured         | Fail that package only   | R21      |
 | npm rate limiting           | Actionable error         | R22      |
 
 **Key Guarantee:** Any failure that creates partial state (R03, R13, R14, R15) is automatically handled on re-run.
