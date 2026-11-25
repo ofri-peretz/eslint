@@ -1,18 +1,18 @@
 {
   "schema": "ilb-headline/v1",
-  "generatedAt": "2026-11-06T17:05:23.641Z",
+  "generatedAt": "2026-11-25T03:53:32.716Z",
   "repo": "nestjs",
   "glob": "packages/**/*.{js,jsx,ts,tsx,mjs,cjs}",
   "repeat": 5,
   "versions": {
     "eslint": "v9.39.4",
     "oxlint": "1.63.0",
-    "node": "v24.22.2"
+    "node": "v24.22.3"
   },
   "fileSet": {
-    "ours": 1068,
-    "competitor": 1068,
-    "oxlint": 1068,
+    "ours": 1101,
+    "competitor": 1101,
+    "oxlint": 1101,
     "eslintParity": true,
     "oxlintParity": true,
     "comparable": true
@@ -21,121 +21,121 @@
     "ours": {
       "cold": {
         "ok": true,
-        "warmupMs": 1305.6035430000002,
-        "median": 1268.1268719999998,
-        "min": 1256.5417589999997,
-        "max": 1314.4944400000004,
+        "warmupMs": 1585.564004,
+        "median": 1532.7103110000007,
+        "min": 1492.9613669999999,
+        "max": 1553.480039,
         "samples": [
-          1258.0440519999997, 1256.5417589999997, 1314.4944400000004,
-          1271.712923, 1268.1268719999998
+          1553.480039, 1532.7103110000007, 1545.1130060000005,
+          1520.8478729999997, 1492.9613669999999
         ],
         "exitCode": 1,
-        "filesProcessed": 1068,
+        "filesProcessed": 1101,
         "findings": 19
       },
       "warm": {
         "ok": true,
-        "warmupMs": 465.1272170000011,
-        "median": 467.3123860000014,
-        "min": 464.51802099999986,
-        "max": 474.877456000002,
+        "warmupMs": 541.7711799999997,
+        "median": 560.0627170000007,
+        "min": 556.7965970000005,
+        "max": 563.2276989999955,
         "samples": [
-          474.877456000002, 468.5944240000026, 464.51802099999986,
-          467.3123860000014, 467.1706970000014
+          563.2276989999955, 558.0802389999953, 560.0627170000007,
+          556.7965970000005, 561.4834200000041
         ],
         "exitCode": 1,
-        "filesProcessed": 1068,
+        "filesProcessed": 1101,
         "findings": 19
       }
     },
     "oursOxlint": {
       "cold": {
         "ok": true,
-        "warmupMs": 375.2755410000009,
-        "median": 370.2181130000008,
-        "min": 365.31636400000025,
-        "max": 387.7605359999998,
+        "warmupMs": 471.93420200000037,
+        "median": 482.97533399999884,
+        "min": 474.94083299999875,
+        "max": 495.9066359999997,
         "samples": [
-          367.8944709999996, 382.4776860000002, 370.2181130000008,
-          387.7605359999998, 365.31636400000025
+          492.2379610000007, 475.5443159999995, 474.94083299999875,
+          495.9066359999997, 482.97533399999884
         ],
         "exitCode": 0,
-        "filesProcessed": 1068,
-        "findings": 551
+        "filesProcessed": 1101,
+        "findings": 603
       },
       "warm": {
         "ok": true,
-        "warmupMs": 379.7378400000016,
-        "median": 375.71871100000135,
-        "min": 369.40370600000097,
-        "max": 392.7883959999999,
+        "warmupMs": 511.85751999999775,
+        "median": 509.1150819999966,
+        "min": 495.8281960000022,
+        "max": 516.2798570000014,
         "samples": [
-          369.40370600000097, 392.7883959999999, 388.24202400000286,
-          375.46929400000226, 375.71871100000135
+          509.1150819999966, 516.2798570000014, 513.3173360000001,
+          506.6319069999954, 495.8281960000022
         ],
         "exitCode": 0,
-        "filesProcessed": 1068,
-        "findings": 551
+        "filesProcessed": 1101,
+        "findings": 603
       }
     },
     "competitor": {
       "cold": {
         "ok": true,
-        "warmupMs": 2366.8857210000006,
-        "median": 2160.9848089999996,
-        "min": 2117.687478,
-        "max": 2200.564299999998,
+        "warmupMs": 2733.373593999999,
+        "median": 2491.394196000001,
+        "min": 2429.508547999998,
+        "max": 2503.7032919999983,
         "samples": [
-          2160.9848089999996, 2117.687478, 2163.517089000001, 2145.228984000001,
-          2200.564299999998
+          2491.394196000001, 2497.660520999998, 2503.7032919999983,
+          2441.233715999999, 2429.508547999998
         ],
         "exitCode": 1,
-        "filesProcessed": 1068,
+        "filesProcessed": 1101,
         "findings": 2
       },
       "warm": {
         "ok": true,
-        "warmupMs": 566.8819799999983,
-        "median": 579.4923920000001,
-        "min": 567.8065879999995,
-        "max": 582.1213449999996,
+        "warmupMs": 707.9953239999959,
+        "median": 695.6930260000008,
+        "min": 674.8095810000013,
+        "max": 720.7436570000064,
         "samples": [
-          574.4787419999993, 567.8065879999995, 581.0367469999983,
-          579.4923920000001, 582.1213449999996
+          674.8095810000013, 703.125678999997, 720.7436570000064,
+          690.0111280000056, 695.6930260000008
         ],
         "exitCode": 1,
-        "filesProcessed": 1068,
+        "filesProcessed": 1101,
         "findings": 2
       }
     },
     "oxlintNative": {
       "cold": {
         "ok": true,
-        "warmupMs": 172.5937440000016,
-        "median": 178.44272700000147,
-        "min": 174.28698599999916,
-        "max": 181.61665100000027,
+        "warmupMs": 261.761008999998,
+        "median": 250.09486800000013,
+        "min": 241.98723400000017,
+        "max": 263.5459150000024,
         "samples": [
-          175.52314800000022, 174.28698599999916, 180.42201199999909,
-          181.61665100000027, 178.44272700000147
+          263.5459150000024, 241.98723400000017, 250.09486800000013,
+          253.89752399999998, 249.12479900000108
         ],
         "exitCode": 1,
-        "filesProcessed": 1068,
-        "findings": 1056
+        "filesProcessed": 1101,
+        "findings": 1182
       },
       "warm": {
         "ok": true,
-        "warmupMs": 186.7546779999975,
-        "median": 173.79060400000162,
-        "min": 165.5245419999992,
-        "max": 184.54802499999641,
+        "warmupMs": 252.66257599999517,
+        "median": 250.2830660000036,
+        "min": 242.47035800000594,
+        "max": 255.69370000000345,
         "samples": [
-          180.0395969999954, 165.5245419999992, 168.96807299999637,
-          184.54802499999641, 173.79060400000162
+          255.69370000000345, 255.03774300000077, 250.2830660000036,
+          248.36243000000104, 242.47035800000594
         ],
         "exitCode": 1,
-        "filesProcessed": 1068,
-        "findings": 1056
+        "filesProcessed": 1101,
+        "findings": 1182
       }
     }
   },
@@ -152,7 +152,7 @@
         "plugin": "node-security",
         "npm": "eslint-plugin-node-security",
         "side": "ours",
-        "total": 43,
+        "total": 44,
         "enabled": 31
       },
       {
@@ -166,7 +166,7 @@
         "plugin": "import-next",
         "npm": "eslint-plugin-import-next",
         "side": "ours",
-        "total": 56,
+        "total": 58,
         "enabled": 13
       },
       {
@@ -214,16 +214,16 @@
     "no-secrets": {
       "cold": {
         "ok": true,
-        "warmupMs": 702.6762519999975,
-        "median": 690.6053379999939,
-        "min": 669.6942449999988,
-        "max": 725.3113439999943,
+        "warmupMs": 834.4196119999979,
+        "median": 864.5936849999998,
+        "min": 823.2452499999999,
+        "max": 934.125135000002,
         "samples": [
-          709.9141999999993, 725.3113439999943, 690.6053379999939,
-          669.6942449999988, 682.1211739999999
+          823.2452499999999, 862.3907770000005, 864.5936849999998,
+          934.125135000002, 867.8692759999976
         ],
         "exitCode": 1,
-        "filesProcessed": 1068,
+        "filesProcessed": 1101,
         "findings": 2
       },
       "npm": "eslint-plugin-no-secrets"
@@ -231,16 +231,16 @@
     "security": {
       "cold": {
         "ok": true,
-        "warmupMs": 676.9718619999985,
-        "median": 687.3061929999967,
-        "min": 679.2239379999955,
-        "max": 705.6877969999987,
+        "warmupMs": 825.5864280000023,
+        "median": 816.5984830000016,
+        "min": 802.2781630000027,
+        "max": 821.0415740000026,
         "samples": [
-          705.6877969999987, 679.2239379999955, 687.3061929999967,
-          693.4110880000007, 679.335039000005
+          816.5984830000016, 821.0415740000026, 802.2781630000027,
+          813.3873840000015, 820.9617369999978
         ],
         "exitCode": 1,
-        "filesProcessed": 1068,
+        "filesProcessed": 1101,
         "findings": 0
       },
       "npm": "eslint-plugin-security"
@@ -248,16 +248,16 @@
     "no-unsanitized": {
       "cold": {
         "ok": true,
-        "warmupMs": 640.5019810000013,
-        "median": 630.9452670000028,
-        "min": 622.631223000004,
-        "max": 648.2324050000025,
+        "warmupMs": 767.0836419999978,
+        "median": 770.2312569999995,
+        "min": 757.2864740000005,
+        "max": 784.703671999996,
         "samples": [
-          631.012456000004, 622.631223000004, 630.260890000005,
-          648.2324050000025, 630.9452670000028
+          781.1310510000039, 758.5700470000011, 770.2312569999995,
+          757.2864740000005, 784.703671999996
         ],
         "exitCode": 1,
-        "filesProcessed": 1068,
+        "filesProcessed": 1101,
         "findings": 0
       },
       "npm": "eslint-plugin-no-unsanitized"
@@ -265,16 +265,16 @@
     "regexp": {
       "cold": {
         "ok": true,
-        "warmupMs": 819.0027919999993,
-        "median": 797.6553810000041,
-        "min": 790.0842839999968,
-        "max": 804.0338950000005,
+        "warmupMs": 963.4558220000035,
+        "median": 966.8762589999969,
+        "min": 961.7490249999973,
+        "max": 986.6022430000012,
         "samples": [
-          790.0842839999968, 803.2958109999963, 795.6212970000051,
-          797.6553810000041, 804.0338950000005
+          986.6022430000012, 969.2478269999992, 966.8762589999969,
+          961.7490249999973, 963.306018000003
         ],
         "exitCode": 1,
-        "filesProcessed": 1068,
+        "filesProcessed": 1101,
         "findings": 0
       },
       "npm": "eslint-plugin-regexp"
@@ -282,16 +282,16 @@
     "import": {
       "cold": {
         "ok": true,
-        "warmupMs": 1894.076771,
-        "median": 1894.4562740000038,
-        "min": 1874.0248619999984,
-        "max": 1940.3100129999948,
+        "warmupMs": 2238.5768490000046,
+        "median": 2236.110965,
+        "min": 2183.2313260000083,
+        "max": 2595.1858030000003,
         "samples": [
-          1874.0248619999984, 1884.2009580000013, 1894.4562740000038,
-          1902.1985980000027, 1940.3100129999948
+          2231.3845690000016, 2239.7489339999884, 2595.1858030000003,
+          2183.2313260000083, 2236.110965
         ],
         "exitCode": 1,
-        "filesProcessed": 1068,
+        "filesProcessed": 1101,
         "findings": 0
       },
       "npm": "eslint-plugin-import"
@@ -562,7 +562,7 @@
           "secure-coding/no-hardcoded-session-tokens"
         ],
         "ruleCount": 2,
-        "ms": 689.5467099999951,
+        "ms": 799.2045599999983,
         "findings": 0,
         "ok": true
       },
@@ -573,7 +573,7 @@
           "eslint-plugin-sonarjs:no-hardcoded-secrets"
         ],
         "ruleCount": 3,
-        "ms": 1215.513242000001,
+        "ms": 1349.6598310000118,
         "findings": 2,
         "ok": true
       }
@@ -587,7 +587,7 @@
           "node-security/no-shell-injection"
         ],
         "ruleCount": 2,
-        "ms": 680.3058639999945,
+        "ms": 807.586851,
         "findings": 0,
         "ok": true
       },
@@ -598,7 +598,7 @@
           "eslint-plugin-sonarjs:os-command"
         ],
         "ruleCount": 3,
-        "ms": 927.0596170000063,
+        "ms": 1085.4724940000015,
         "findings": 0,
         "ok": true
       }
@@ -613,7 +613,7 @@
           "browser-security/no-eval"
         ],
         "ruleCount": 3,
-        "ms": 699.9850270000024,
+        "ms": 821.4830389999988,
         "findings": 0,
         "ok": true
       },
@@ -625,7 +625,7 @@
           "eslint-plugin-sonarjs:code-eval"
         ],
         "ruleCount": 4,
-        "ms": 940.6060859999998,
+        "ms": 1084.0923509999993,
         "findings": 0,
         "ok": true
       }
@@ -640,7 +640,7 @@
           "secure-coding/no-ldap-injection"
         ],
         "ruleCount": 2,
-        "ms": 707.3801370000001,
+        "ms": 850.5558829999936,
         "findings": 0,
         "ok": true
       },
@@ -651,7 +651,7 @@
           "eslint-plugin-sonarjs:sql-queries"
         ],
         "ruleCount": 3,
-        "ms": 922.0275190000102,
+        "ms": 1098.5212049999973,
         "findings": 0,
         "ok": true
       }
@@ -667,14 +667,14 @@
           "node-security/no-zip-slip"
         ],
         "ruleCount": 3,
-        "ms": 706.5617820000043,
+        "ms": 833.3855919999914,
         "findings": 0,
         "ok": true
       },
       "theirs": {
         "rules": ["eslint-plugin-security:detect-non-literal-fs-filename"],
         "ruleCount": 1,
-        "ms": 664.3368630000041,
+        "ms": 788.1535510000103,
         "findings": 0,
         "ok": true
       }
@@ -686,7 +686,7 @@
       "ours": {
         "rules": ["secure-coding/detect-object-injection"],
         "ruleCount": 1,
-        "ms": 688.3360229999962,
+        "ms": 803.0947440000018,
         "findings": 0,
         "ok": true
       },
@@ -696,7 +696,7 @@
           "eslint-plugin-sonarjs:no-angular-bypass-sanitization"
         ],
         "ruleCount": 2,
-        "ms": 907.1864130000031,
+        "ms": 1074.6950630000065,
         "findings": 0,
         "ok": true
       }
@@ -712,7 +712,7 @@
           "browser-security/no-filereader-innerhtml"
         ],
         "ruleCount": 3,
-        "ms": 699.5072720000026,
+        "ms": 814.1475539999956,
         "findings": 0,
         "ok": true
       },
@@ -724,7 +724,7 @@
           "@microsoft/eslint-plugin-sdl:no-document-write"
         ],
         "ruleCount": 4,
-        "ms": 1024.9496860000072,
+        "ms": 1130.5956260000094,
         "findings": 0,
         "ok": true
       }
@@ -739,14 +739,14 @@
           "browser-security/no-postmessage-innerhtml"
         ],
         "ruleCount": 3,
-        "ms": 689.9709109999967,
+        "ms": 837.1147139999957,
         "findings": 0,
         "ok": true
       },
       "theirs": {
         "rules": ["@microsoft/eslint-plugin-sdl:no-postmessage-star-origin"],
         "ruleCount": 1,
-        "ms": 858.499404000002,
+        "ms": 1004.5137110000069,
         "findings": 0,
         "ok": true
       }
@@ -761,7 +761,7 @@
           "browser-security/no-jwt-in-storage"
         ],
         "ruleCount": 3,
-        "ms": 664.9398619999993,
+        "ms": 790.2747489999892,
         "findings": 0,
         "ok": true
       },
@@ -773,7 +773,7 @@
           "eslint-plugin-security-node:detect-security-missconfiguration-cookie"
         ],
         "ruleCount": 4,
-        "ms": 1066.2206989999977,
+        "ms": 1239.0354169999919,
         "findings": 0,
         "ok": true
       }
@@ -790,7 +790,7 @@
           "browser-security/no-clickjacking"
         ],
         "ruleCount": 4,
-        "ms": 704.4159220000001,
+        "ms": 824.0266419999971,
         "findings": 0,
         "ok": true
       },
@@ -800,8 +800,8 @@
           "@microsoft/eslint-plugin-sdl:no-insecure-url"
         ],
         "ruleCount": 2,
-        "ms": 1070.5077420000016,
-        "findings": 13,
+        "ms": 1232.088929999998,
+        "findings": 14,
         "ok": true
       }
     },
@@ -818,7 +818,7 @@
           "node-security/no-static-iv"
         ],
         "ruleCount": 6,
-        "ms": 705.1251760000014,
+        "ms": 829.3366210000095,
         "findings": 0,
         "ok": true
       },
@@ -829,7 +829,7 @@
           "eslint-plugin-sonarjs:encryption-secure-mode"
         ],
         "ruleCount": 3,
-        "ms": 928.2156530000066,
+        "ms": 1059.5994500000088,
         "findings": 0,
         "ok": true
       }
@@ -843,7 +843,7 @@
           "node-security/no-cryptojs-weak-random"
         ],
         "ruleCount": 2,
-        "ms": 684.6628720000008,
+        "ms": 799.9886850000039,
         "findings": 0,
         "ok": true
       },
@@ -855,7 +855,7 @@
           "@microsoft/eslint-plugin-sdl:no-insecure-random"
         ],
         "ruleCount": 4,
-        "ms": 1103.631963000007,
+        "ms": 1247.713585999998,
         "findings": 0,
         "ok": true
       }
@@ -869,7 +869,7 @@
           "secure-coding/no-insecure-comparison"
         ],
         "ruleCount": 2,
-        "ms": 707.728741999992,
+        "ms": 818.6086379999906,
         "findings": 0,
         "ok": true
       },
@@ -879,7 +879,7 @@
           "eslint-plugin-security-node:detect-possible-timing-attacks"
         ],
         "ruleCount": 2,
-        "ms": 665.130072999993,
+        "ms": 778.9122530000022,
         "findings": 0,
         "ok": true
       }
@@ -893,7 +893,7 @@
           "node-security/no-insecure-rsa-padding"
         ],
         "ruleCount": 2,
-        "ms": 667.612918999992,
+        "ms": 793.9758819999988,
         "findings": 0,
         "ok": true
       },
@@ -905,7 +905,7 @@
           "eslint-plugin-sonarjs:weak-ssl"
         ],
         "ruleCount": 4,
-        "ms": 940.0185920000076,
+        "ms": 1088.76793300001,
         "findings": 0,
         "ok": true
       }
@@ -921,7 +921,7 @@
           "secure-coding/no-unsafe-regex-construction"
         ],
         "ruleCount": 3,
-        "ms": 704.3108080000093,
+        "ms": 822.1918279999954,
         "findings": 0,
         "ok": true
       },
@@ -933,7 +933,7 @@
           "eslint-plugin-regexp:no-super-linear-backtracking"
         ],
         "ruleCount": 4,
-        "ms": 969.3814899999998,
+        "ms": 1122.7021890000033,
         "findings": 0,
         "ok": true
       }
@@ -945,14 +945,14 @@
       "ours": {
         "rules": ["import-next/no-cycle"],
         "ruleCount": 1,
-        "ms": 833.4172560000006,
+        "ms": 949.3824919999897,
         "findings": 19,
         "ok": true
       },
       "theirs": {
         "rules": ["eslint-plugin-import:no-cycle"],
         "ruleCount": 1,
-        "ms": 1925.8909069999936,
+        "ms": 2202.1483750000043,
         "findings": 0,
         "ok": true
       }
@@ -963,7 +963,7 @@
       "ours": {
         "rules": ["import-next/no-unresolved", "import-next/named"],
         "ruleCount": 2,
-        "ms": 698.9191530000098,
+        "ms": 829.8431740000087,
         "findings": 0,
         "ok": true
       },
@@ -973,8 +973,8 @@
           "eslint-plugin-import:named"
         ],
         "ruleCount": 2,
-        "ms": 1153.384064999991,
-        "findings": 554,
+        "ms": 1307.8083269999916,
+        "findings": 374,
         "ok": true
       }
     },
@@ -989,7 +989,7 @@
           "node-security/lock-file"
         ],
         "ruleCount": 3,
-        "ms": 699.3502880000015,
+        "ms": 839.0911760000017,
         "findings": 0,
         "ok": true
       },
