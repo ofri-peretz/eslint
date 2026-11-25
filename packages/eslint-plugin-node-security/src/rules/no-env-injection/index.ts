@@ -107,7 +107,7 @@ export const noEnvInjection = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-env-injection.md',
       description:
-        'Disallow writing process.env under a key the caller controls, which can overwrite PATH, NODE_OPTIONS or LD_PRELOAD (CWE-99)',
+        'Disallow writing process.env under a caller-controlled key, which can overwrite PATH, NODE_OPTIONS or LD_PRELOAD (CWE-99)',
       cwe: 'CWE-99',
       cvss: 8.8,
       confidence: 'high',

@@ -43,6 +43,8 @@ export interface PluginFacts {
   rules: Record<string, string>;
   /** config key the preset registers the plugin under, e.g. `secure-coding` */
   pluginKey: string;
+  /** presets that lint with a Markdown language (`markdown/gfm`) */
+  markdownPresets?: string[];
 }
 
 type RawEntry = unknown;
@@ -54,6 +56,25 @@ export function normalizeSeverity(v: RawEntry): Severity | 'off' {
   return 'off';
 }
 
+/** Install and config lines for a preset that lints Markdown. */
+function markdownSetup(f: PluginFacts, preset: string): string[] {
+  return [
+    'This preset lints Markdown, so it needs `@eslint/markdown` registered as the `markdown` plugin beside it:',
+    '',
+    '```bash',
+    'npm install --save-dev @eslint/markdown',
+    '```',
+    '',
+    '```js',
+    "import markdown from '@eslint/markdown';",
+    `import ${camel(f.name)} from '${f.name}';`,
+    '',
+    `export default [{ plugins: { markdown } }, ${camel(f.name)}.configs.${preset}];`,
+    '```',
+    '',
+  ];
+}
+
 /** Facts from a loaded plugin module and its package.json. */
 export function factsFrom(
   pkg: Record<string, any>,
@@ -63,6 +84,7 @@ export function factsFrom(
     mod.configs ?? mod.default?.configs ?? {};
   const rules: Record<string, any> = mod.rules ?? mod.default?.rules ?? {};
   const presets: PluginFacts['presets'] = {};
+  const markdownPresets: string[] = [];
   let pluginKey = '';
   for (const [name, cfg] of Object.entries(configs)) {
     const entries: Record<string, Severity> = {};
@@ -72,6 +94,8 @@ export function factsFrom(
       entries[id.slice(id.indexOf('/') + 1)] = sev;
     }
     presets[name] = entries;
+    if (String(cfg?.language ?? '').startsWith('markdown/'))
+      markdownPresets.push(name);
     if (!pluginKey) pluginKey = Object.keys(cfg?.plugins ?? {})[0] ?? '';
   }
   const bare = String(pkg.name).replace(/^eslint-plugin-/, '');
@@ -95,6 +119,7 @@ export function factsFrom(
         ]),
     ),
     pluginKey: pluginKey || bare,
+    ...(markdownPresets.length && { markdownPresets }),
   };
 }
 
@@ -208,6 +233,7 @@ export async function renderAgentsMd(
     for (const r of shown)
       out.push(`- \`${r}\` (${p[r]}): ${cap(f.rules[r] || 'no description')}`);
     out.push('');
+    if (f.markdownPresets?.includes(n)) out.push(...markdownSetup(f, n));
   }
 
   const unlisted = Object.keys(f.rules).filter(
@@ -217,11 +243,9 @@ export async function renderAgentsMd(
     out.push(
       '### Rules in no preset',
       '',
-      `Enable these by name (\`'${f.pluginKey}/<rule>': 'error'\`):`,
-      '',
-      ...unlisted.map(
-        (r) => `- \`${r}\`: ${cap(f.rules[r] || 'no description')}`,
-      ),
+      // Names only: an agent enabling one reads its README entry anyway, and a description per
+      // rule here grew every plugin's AGENTS.md past its guidance budget (2026-11-24).
+      `Enable these by name (\`'${f.pluginKey}/<rule>': 'error'\`); README.md describes each: ${unlisted.map((r) => `\`${r}\``).join(', ')}.`,
       '',
     );
 

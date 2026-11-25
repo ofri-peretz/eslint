@@ -412,13 +412,17 @@ describe('no-typos: computed keys and literal member access', () => {
 
 describe('no-unknown-property: namespaced attributes', () => {
   ruleTester.run('no-unknown-property', noUnknownProperty, {
-    valid: [
+    valid: [],
+    invalid: [
       {
-        name: 'JSXNamespacedName attribute is skipped (L125 false arm)',
+        // React warns "Invalid DOM property `xlink:href`. Did you mean
+        // `xlinkHref`?"; eslint-plugin-react 7.37.5 reports it too (its
+        // no-unknown-property invalid case `<use xlink:href="#a" />`).
+        name: 'xlink:href is reported with the camelCase form (behaviour change)',
         code: '<svg xlink:href="#a" />;',
+        errors: [{ messageId: 'invalidNamespacedProp' }],
       },
     ],
-    invalid: [],
   });
 });
 

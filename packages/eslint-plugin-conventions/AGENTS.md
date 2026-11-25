@@ -30,6 +30,7 @@ Each preset is one flat config object: put it in the array as an element, do not
 | Preset        | Rules | Errors | Warnings |
 | ------------- | ----- | ------ | -------- |
 | `recommended` | 6     | 3      | 3        |
+| `guidance`    | 5     | 0      | 5        |
 
 ### `recommended`
 
@@ -42,19 +43,32 @@ Each preset is one flat config object: put it in the array as an element, do not
 - `no-raw-cross-property-href` (error): Forbid hand-written cross-property hrefs; use buildUtmHref() from lib/utm.ts.
 - `analytics-event-naming` (error): Analytics event names (track/capture) must follow ANALYTICS_PHILOSOPHY.md principle 4: lowercase snake_case, category:object_action, fixed verb list.
 
+### `guidance`
+
+5 rules:
+
+- `guidance-budget` (warn): Keep always-loaded agent guidance (CLAUDE.md, AGENTS.md) and skills inside a ratcheted size budget.
+- `enforced-rule-in-prose` (warn): Report never/always lines in agent guidance that a tool could enforce, unlinked to the tool that does.
+- `procedure-in-memory` (warn): Disallow long numbered procedures in always-loaded agent guidance; move them to a skill.
+- `subagent-declares-model` (warn): Require every .claude/agents/*.md subagent to declare a model and a tool allowlist in its frontmatter.
+- `no-duplicated-guidance` (warn): Disallow the same guidance line in two always-loaded agent files (CLAUDE.md, AGENTS.md, GEMINI.md) of one repo.
+
+This preset lints Markdown, so it needs `@eslint/markdown` registered as the `markdown` plugin beside it:
+
+```bash
+npm install --save-dev @eslint/markdown
+```
+
+```js
+import markdown from '@eslint/markdown';
+import conventions from 'eslint-plugin-conventions';
+
+export default [{ plugins: { markdown } }, conventions.configs.guidance];
+```
+
 ### Rules in no preset
 
-Enable these by name (`'conventions/<rule>': 'error'`):
-
-- `prefer-code-point`: Prefer codePointAt over charCodeAt for proper Unicode character handling.
-- `prefer-dom-node-text-content`: Prefer textContent over innerText for better performance and reliability.
-- `no-console-spaces`: Prevent leading/trailing space between console.log parameters.
-- `prefer-dependency-version-strategy`: Enforce consistent version strategy (caret, tilde, exact, etc.) for package.json dependencies.
-- `filename-case`: Enforce filename case conventions for consistency.
-- `consistent-existence-index-check`: Enforce consistent style for checking object property existence.
-- `no-json-schema-tags`: Disallow JSON Schema keywords used as JSDoc tags (e.g. @minimum, @maximum).
-- `require-data-testid`: Require stable `data-testid` attributes on interactive elements and custom components for testability.
-- `no-magic-numbers`: Disallow magic numbers (numeric literals without a named constant).
+Enable these by name (`'conventions/<rule>': 'error'`); README.md describes each: `prefer-code-point`, `prefer-dom-node-text-content`, `no-console-spaces`, `prefer-dependency-version-strategy`, `filename-case`, `consistent-existence-index-check`, `no-json-schema-tags`, `require-data-testid`, `no-magic-numbers`.
 
 ## More
 

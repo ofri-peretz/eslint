@@ -65,7 +65,10 @@ describe('no-xxe-injection', () => {
           code: `const data = JSON.parse(fs.readFileSync(file, 'utf-8'));`,
         },
         `const cfg = JSON.parse(req.body);`,
-        `const when = Date.parse(input);`,
+        {
+          name: 'Date.parse is not an XML parser',
+          code: `const when = Date.parse(input);`,
+        },
         `const parts = path.parse(userPath);`,
         {
           code: `const q = url.parse(req.url);`,
@@ -138,7 +141,10 @@ describe('no-xxe-injection', () => {
         {
           code: "const xhr = new XMLHttpRequest(); xhr.open('POST', '/api/avatar'); xhr.send(payload);",
         },
-        { code: "new ActiveXObject('Microsoft.XMLDOM');" },
+        {
+          name: 'constructing an ActiveX XML object parses nothing by itself',
+          code: "new ActiveXObject('Microsoft.XMLDOM');",
+        },
 
         // ---- parsers that cannot resolve an external entity ---------------
         // XXE is a file read. Probed 2026-08-24 with a document declaring

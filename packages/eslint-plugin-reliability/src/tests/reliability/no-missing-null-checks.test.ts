@@ -688,11 +688,30 @@ describe('no-missing-null-checks', () => {
     });
 
     ruleTester.run('ternary guard variants', noMissingNullChecks, {
-      valid: [],
+      valid: [
+        // A `const` the ternary already narrowed stays narrowed inside a
+        // nested callback in the same arm — TypeScript 5.4+ keeps exactly
+        // this narrowing across closures, since the binding can never be
+        // reassigned (#1564).
+        {
+          name: 'const narrowed by a ternary is still narrowed inside a nested callback (#1564)',
+          code: 'function g(room, SCENE) { const take = room.path.map((id) => SCENE[id]).find((s) => s && s.type === "takeaway"); return take ? [...room.phones.values()].map((x) => x.answers[take.id]) : []; }',
+          filename: 'src/utils.ts',
+        },
+      ],
       invalid: [
         // Ternary test unrelated to the dereferenced object
         {
           code: 'let obj; const x = cond ? obj.prop : fallback;',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        // A `let` gives no such guarantee: it can be reassigned between the
+        // ternary's evaluation and the callback actually running, so it must
+        // keep reporting — the fix for #1564 is scoped to `const` only.
+        {
+          name: 'a `let` narrowed by a ternary is NOT narrowed inside a nested callback',
+          code: 'function g(list) { let hit = list.find((s) => s.ok); return hit ? list.map((x) => x.answers[hit.id]) : []; }',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },
@@ -992,6 +1011,63 @@ describe('no-missing-null-checks', () => {
         object: { type: 'Identifier', name: 'obj' },
       } as unknown as TSESTree.MemberExpression;
       expect(hasNullCheck(node, sourceCodeStub)).toBe(true);
+    });
+  });
+
+  describe('Layer 2: isConstBinding defensive branches', () => {
+    // `x.id` as the (implicit-return) body of `(x) => x.id` — a function
+    // boundary one step up from the access, the shape the ternary-guard walk
+    // needs to even ask whether `x`'s binding is a `const` (#1564). None of
+    // these three scope shapes is reachable through the parser: a real
+    // reference always resolves to a variable with exactly one `Variable`
+    // def, so each is exercised directly here instead.
+    function memberInsideArrow(): TSESTree.MemberExpression {
+      const member = {
+        type: 'MemberExpression',
+        optional: false,
+        object: { type: 'Identifier', name: 'x' },
+        property: { type: 'Identifier', name: 'id' },
+      } as unknown as TSESTree.MemberExpression;
+      const arrow = { type: 'ArrowFunctionExpression', body: member };
+      (
+        member as TSESTree.Node & { parent?: TSESTree.Node }
+      ).parent = arrow as unknown as TSESTree.Node;
+      return member;
+    }
+
+    it('does not treat an unresolved identifier as a const binding', () => {
+      const stub = {
+        getText: () => '',
+        getScope: () => ({ variables: [], upper: null }),
+      } as unknown as TSESLint.SourceCode;
+      expect(hasNullCheck(memberInsideArrow(), stub)).toBe(false);
+    });
+
+    it('does not treat a binding with more than one def as const', () => {
+      const stub = {
+        getText: () => '',
+        getScope: () => ({
+          variables: [
+            {
+              name: 'x',
+              defs: [{ type: 'Variable' }, { type: 'Variable' }],
+            },
+          ],
+          upper: null,
+        }),
+      } as unknown as TSESLint.SourceCode;
+      expect(hasNullCheck(memberInsideArrow(), stub)).toBe(false);
+    });
+
+    it('does not treat a non-Variable def (e.g. a parameter) as const', () => {
+      const stub = {
+        getText: () => '',
+        getScope: () => ({
+          variables: [{ name: 'x', defs: [{ type: 'Parameter' }] }],
+          upper: null,
+        }),
+      } as unknown as TSESLint.SourceCode;
+      expect(hasNullCheck(memberInsideArrow(), stub)).toBe(false);
     });
   });
 

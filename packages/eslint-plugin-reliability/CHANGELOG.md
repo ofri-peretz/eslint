@@ -5,6 +5,52 @@ All notable changes to `eslint-plugin-reliability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.0.8
+
+### Patch Changes
+
+- **🐛 Fix** — AGENTS.md lists the rules in no preset by name on one line (README.md describes each), so the file an agent loads stays inside its guidance budget.
+
+## 5.0.7
+
+### Patch Changes
+
+- **🐛 Fix** — Fix three false positives from the issue backlog.
+
+  - `no-hardcoded-credentials`: an ambiguous "common password" keyword match
+    (e.g. the string `'password'`) now needs the enclosing slot's own category
+    to actually say "password" (or an unclassified-but-credential-ish name),
+    not merely to end in some unrelated credential word — a route-name list
+    like `SENSITIVE_ROUTE_TOKENS` no longer reports the word `'password'` as a
+    credential (#1557).
+  - `no-missing-null-checks`: a `const` already narrowed truthy by a ternary
+    stays narrowed inside a nested callback declared in the narrowed arm — the
+    binding can never be reassigned before the callback runs. A `let` or a
+    parameter gives no such guarantee and still reports (#1564).
+  - `no-extraneous-dependencies`: a tsconfig `@/` path alias
+    (`"paths": { "@/*": ["./src/*"] }`, the create-next-app / shadcn
+    convention) is never a scoped package — npm scopes need at least one
+    character after `@` — so it is no longer reported as missing when an
+    unmodelled resolver is configured (#1551).
+
+## 5.0.6
+
+### Patch Changes
+
+- **🐛 Fix** — stop reporting re-thrown errors, destructured await loops and test-file fetches
+
+  `no-missing-error-context` accepts `throw res.error` / `throw this.reason`. `no-await-in-loop` follows a destructured awaited result into the loop exit (`const { done } = await reader.read(); if (done) break`). `require-network-timeout` skips `*.test.*` / `*.spec.*` files.
+
+## 5.0.5
+
+### Patch Changes
+
+- **🐛 Fix** — stop reporting guards the rule could not read, found by linting the source of Vite, NestJS, ESLint, Fastify, Express and Hono
+
+  `no-missing-null-checks` now understands a `while` / `for` test as a guard on its body, a truthy guard over a computed link (`if (m) { m[1] }`), `!x || x.y`, `x == null || x.y`, `Boolean(x) && x.y`, `x != null && x.y` (or `!== null` together with `!== undefined`), a guard in any conjunct of a left-nested `&&`, and a guard branch that ends in a call to a function declared `never` in the same file (or `process.exit()`). A binding filled by a closure declared after its reader no longer counts as never written, a destructured element no longer inherits its container's evidence, and `q.pop()` / `q.shift()` directly behind a `q.length` loop or `if` test is no longer a nullable read (not across a repeating loop, a second removal, or a write to the array). On ESLint's own `lib/` this takes 62 findings to 16; the 16 left are unguarded `exec` / `match` / `find` results. Lookalikes (a read after the loop, `do … while`, `x || x.y`, a second `pop()` in one iteration, a closure over a binding nothing writes) still report.
+
+  `no-silent-errors` now defaults `allowWithComment` to `true`, as ESLint core `no-empty` does: a catch whose block holds a reason in prose (three or more words, not a placeholder), or that carries one after its closing brace on the same line, is documented, not silent. A bare `catch {}`, `// Empty` and `/* handle later */` still report. Set `allowWithComment: false` to restore the old behaviour.
+
 ## 5.0.4
 
 ### Patch Changes

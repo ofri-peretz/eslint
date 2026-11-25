@@ -37,6 +37,7 @@ import {
   getCreateClassPragma,
   getPragma,
   reactVersionAtLeast,
+  reactVersionBelow,
 } from '../../utils/react-settings';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
@@ -126,9 +127,9 @@ export const displayName = createRule<RuleOptions, MessageIds>({
     };
     const scopeOf = (node: TSESTree.Node): Scope =>
       context.sourceCode.getScope(node);
-    /** Does this subtree render: JSX, or React's `createElement`? */
-    const renders = (node: TSESTree.Node): boolean =>
-      containsRender(node, scopeOf);
+    /** Does this function's own body render, not a component declared inside it? */
+    const rendersOwn = (node: TSESTree.Node): boolean =>
+      containsRender(node, scopeOf, false);
 
     /** `createReactClass({...})` / `React.createClass({...})`, by name as the settings spell it. */
     const isCreateClassCall = (node: TSESTree.CallExpression): boolean => {
@@ -139,6 +140,19 @@ export const displayName = createRule<RuleOptions, MessageIds>({
             callee.object.type === AST_NODE_TYPES.Identifier &&
             callee.object.name === pragma &&
             propertyName(callee) === createClass;
+    };
+
+    /** Does the `createReactClass` spec in this call name itself with `displayName`? */
+    const hasDisplayNameKey = (node: TSESTree.CallExpression): boolean => {
+      const spec = node.arguments[0];
+      return (
+        spec?.type === AST_NODE_TYPES.ObjectExpression &&
+        spec.properties.some(
+          (p) =>
+            p.type === AST_NODE_TYPES.Property &&
+            objectKeyName(p) === 'displayName',
+        )
+      );
     };
 
     const isCreateContext = (node: TSESTree.Node): boolean =>
@@ -165,8 +179,25 @@ export const displayName = createRule<RuleOptions, MessageIds>({
         reported = new WeakSet();
       },
 
-      /** `X.displayName = …` names `X`; `X = createContext()` needs it. */
+      /**
+       * `module.exports = () => <div />` and `module.exports =
+       * createReactClass({...})`: the export carries no name, and `exports`
+       * is a property, which names nothing.
+       */
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        if (isModuleExports(node.left)) {
+          const value = node.right;
+          // Queued, not reported: a later `module.exports.displayName = …` names it.
+          if (isFunctionNode(value) && !value.id && rendersOwn(value.body)) {
+            unnamed.push({ node: value, ref: 'module.exports' });
+          } else if (
+            value.type === AST_NODE_TYPES.CallExpression &&
+            isCreateClassCall(value) &&
+            !hasDisplayNameKey(value)
+          ) {
+            unnamed.push({ node: value, ref: 'module.exports' });
+          }
+        }
         if (
           node.left.type === AST_NODE_TYPES.MemberExpression &&
           propertyName(node.left) === 'displayName'
@@ -213,41 +244,33 @@ export const displayName = createRule<RuleOptions, MessageIds>({
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
         const declaration = node.declaration;
         if (!isFunctionNode(declaration) || declaration.id) return;
-        if (renders(declaration.body)) report(declaration);
+        if (rendersOwn(declaration.body)) report(declaration);
       },
 
       /**
-       * `memo(() => <div />)` with nowhere to take a name from. When the call
-       * is assigned — `const Row = memo(() => <div />)` — React reads the name
-       * off the binding, so nothing is reported.
+       * `memo(() => <div />)` / `forwardRef(...)`: the component is the call,
+       * and eslint-plugin-react reports the call, bound or not. The arrow
+       * handed to the wrapper has no name of its own (`Row.name` is the
+       * wrapper's), so only a named function expression, or an explicit
+       * `displayName`, names it. A `forwardRef` inside a `memo` is one
+       * component, and from React 16.12 (15.7, 0.14.10) React names it.
        */
       CallExpression(node: TSESTree.CallExpression) {
         if (ignoreTranspilerName && isCreateClassCall(node)) {
-          const spec = node.arguments[0];
-          const named =
-            spec?.type === AST_NODE_TYPES.ObjectExpression &&
-            spec.properties.some(
-              (p) =>
-                p.type === AST_NODE_TYPES.Property &&
-                objectKeyName(p) === 'displayName',
-            );
-          if (!named) needsExplicitName(node);
+          if (!hasDisplayNameKey(node)) needsExplicitName(node);
           return;
         }
-        if (
-          !isReactWrapperCall(node, scopeOf) ||
-          hasInferableName(node, scopeOf)
-        )
-          return;
+        if (!isReactWrapperCall(node, scopeOf)) return;
+        // One component per chain, judged where the chain meets its function.
         const inner = node.arguments[0];
-        if (
-          inner &&
-          isFunctionNode(inner) &&
-          !inner.id &&
-          renders(inner.body)
-        ) {
-          report(inner);
+        if (!inner || !isFunctionNode(inner)) return;
+        const outer = outermostWrapper(node, scopeOf);
+        if (outer !== node) {
+          if (namesNestedWrapper(context)) return;
+        } else if (inner.id && !ignoreTranspilerName) {
+          return;
         }
+        unnamed.push({ node: outer, ref: referenceText(inner, scopeOf) });
       },
 
       /**
@@ -279,8 +302,23 @@ export const displayName = createRule<RuleOptions, MessageIds>({
       'FunctionDeclaration, FunctionExpression, ArrowFunctionExpression'(
         node: FunctionNode,
       ) {
+        // A component made inside another function and handed straight back
+        // (`const renderer = (a) => (item) => <li />`) has no binding of its
+        // own to take a name from.
+        if (
+          node.type !== AST_NODE_TYPES.FunctionDeclaration &&
+          !node.id &&
+          isReturned(node) &&
+          returnsJsx(node)
+        ) {
+          report(node);
+          return;
+        }
         if (!ignoreTranspilerName) return;
         const parent = node.parent;
+        // The wrapper call is the component, and its own handler queues it.
+        if (isReactWrapperCall(parent, scopeOf) && parent.arguments[0] === node)
+          return;
         const method =
           parent.type === AST_NODE_TYPES.Property &&
           parent.value === node &&
@@ -315,7 +353,7 @@ function referenceText(
   // Every step either climbs or returns; the walk ends at a non-name ancestor.
   for (;;) {
     const parent = current.parent as TSESTree.Node;
-    if (isReactWrapperCall(parent, scopeOf)) {
+    if (isReactWrapperCall(parent, scopeOf) || isTypeWrapper(parent)) {
       current = parent;
     } else if (
       parent.type === AST_NODE_TYPES.VariableDeclarator &&
@@ -348,11 +386,12 @@ function hasInferableName(
   node: TSESTree.Node,
   scopeOf: (node: TSESTree.Node) => Scope,
 ): boolean {
-  let current: TSESTree.Node | undefined = node.parent;
-  while (current && isReactWrapperCall(current, scopeOf)) {
-    current = current.parent;
+  // A component node always has a parent; the walk stops at a non-wrapper.
+  let current = node.parent as TSESTree.Node;
+  while (isReactWrapperCall(current, scopeOf) || isTypeWrapper(current)) {
+    current = current.parent as TSESTree.Node;
   }
-  switch (current?.type) {
+  switch (current.type) {
     case AST_NODE_TYPES.VariableDeclarator:
       return current.id.type === AST_NODE_TYPES.Identifier;
     // `Table.Row = memo(...)`, `{ Row: memo(...) }`, `static Row = memo(...)`
@@ -378,6 +417,67 @@ function isReactWrapperCall(
   return (
     isReactApi(node.callee, scope, 'memo') ||
     isReactApi(node.callee, scope, 'forwardRef')
+  );
+}
+
+/** The call at the top of a `memo(forwardRef(...))` chain: the one component the chain makes. */
+function outermostWrapper(
+  node: TSESTree.CallExpression,
+  scopeOf: (node: TSESTree.Node) => Scope,
+): TSESTree.CallExpression {
+  let top = node;
+  while (isReactWrapperCall(top.parent, scopeOf)) top = top.parent;
+  return top;
+}
+
+/**
+ * Does this React version name a `forwardRef` held by a `memo`? The range is
+ * eslint-plugin-react's: `^0.14.10 || ^15.7.0 || >= 16.12.0`.
+ */
+function namesNestedWrapper(
+  context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+): boolean {
+  return (
+    reactVersionAtLeast(context, '16.12.0') ||
+    (reactVersionAtLeast(context, '15.7.0') &&
+      reactVersionBelow(context, '16.0.0')) ||
+    (reactVersionAtLeast(context, '0.14.10') &&
+      reactVersionBelow(context, '0.15.0'))
+  );
+}
+
+/** `x as T`, `x satisfies T`, `x!`, `<T>x`: type syntax that changes nothing at runtime. */
+function isTypeWrapper(node: TSESTree.Node): boolean {
+  return (
+    node.type === AST_NODE_TYPES.TSAsExpression ||
+    node.type === AST_NODE_TYPES.TSSatisfiesExpression ||
+    node.type === AST_NODE_TYPES.TSNonNullExpression ||
+    node.type === AST_NODE_TYPES.TSTypeAssertion
+  );
+}
+
+/** `module.exports`, the assignment target of a CommonJS default export. */
+function isModuleExports(node: TSESTree.Node): boolean {
+  return (
+    node.type === AST_NODE_TYPES.MemberExpression &&
+    node.object.type === AST_NODE_TYPES.Identifier &&
+    node.object.name === 'module' &&
+    propertyName(node) === 'exports'
+  );
+}
+
+/** Is this function what an enclosing function returns (`return () => …` or `a => b => …`)? */
+function isReturned(node: FunctionNode): boolean {
+  // `return (() => <div />) as FC` is the same return
+  let current: TSESTree.Node = node;
+  while (isTypeWrapper(current.parent as TSESTree.Node)) {
+    current = current.parent as TSESTree.Node;
+  }
+  const parent = current.parent as TSESTree.Node;
+  return (
+    parent.type === AST_NODE_TYPES.ReturnStatement ||
+    (parent.type === AST_NODE_TYPES.ArrowFunctionExpression &&
+      parent.body === current)
   );
 }
 
@@ -416,6 +516,7 @@ function hasDisplayNameProperty(
 function containsRender(
   node: TSESTree.Node,
   scopeOf: (node: TSESTree.Node) => Scope,
+  nested: boolean,
 ): boolean {
   if (
     node.type === AST_NODE_TYPES.JSXElement ||
@@ -424,6 +525,16 @@ function containsRender(
       isReactApi(node.callee, scopeOf(node), 'createElement'))
   ) {
     return true;
+  }
+
+  // A component declared inside is not what this body renders
+  if (
+    !nested &&
+    (isFunctionNode(node) ||
+      node.type === AST_NODE_TYPES.ClassDeclaration ||
+      node.type === AST_NODE_TYPES.ClassExpression)
+  ) {
+    return false;
   }
 
   for (const key in node) {
@@ -437,11 +548,12 @@ function containsRender(
       for (const item of child) {
         // Array holes are null, and `range` is a pair of numbers.
         if (item && typeof item === 'object' && 'type' in item) {
-          if (containsRender(item as TSESTree.Node, scopeOf)) return true;
+          if (containsRender(item as TSESTree.Node, scopeOf, nested))
+            return true;
         }
       }
     } else if ('type' in child) {
-      if (containsRender(child as TSESTree.Node, scopeOf)) return true;
+      if (containsRender(child as TSESTree.Node, scopeOf, nested)) return true;
     }
   }
 

@@ -83,6 +83,8 @@ none, and reads one more shape as carrying one:
   `export default router`, plus `res.render` / `res.sendFile` in the same file) is read as having the session that
   the mounting module configures. A router that renders nothing is the shape of a JSON API and is not.
 
+A mounted wrapper that hands the request to a CSRF module it imported counts as app-wide protection: `app.use((req, res, next) => csrf(req, res, next))`, where `csrf` is an `import` or `require` of a module whose path contains `csrf` or `csurf` and the call passes the wrapper's own `next` on.
+
 ## Examples
 
 ### ❌ Incorrect

@@ -5,6 +5,50 @@ All notable changes to `eslint-plugin-conventions` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 7.3.0
+
+### Minor Changes
+
+- **✨ Feature** — The `guidance` preset now lints slash commands (`.claude/commands/**/*.md`, and a plugin's `commands/*.md` beside `.claude-plugin/plugin.json`). A command's description is listed in every session beside the skills', so `guidance-budget` holds its description and body to the skill budgets, and `enforced-rule-in-prose` reads its prose.
+
+## 7.2.1
+
+### Patch Changes
+
+- **🐛 Fix** — AGENTS.md lists the rules in no preset by name on one line (README.md describes each), so the file an agent loads stays inside its guidance budget.
+- **🐛 Fix** — `subagent-declares-model` accepts a subagent that denies the built-in tools that write (`disallowedTools: Edit, Write, Bash`) in place of a `tools` allowlist, for subagents whose MCP tools are not known in advance.
+
+## 7.2.0
+
+### Minor Changes
+
+- **✨ Feature** — The guidance rules read a Claude Code plugin's subagents (`agents/*.md` beside `.claude-plugin/plugin.json`) as subagents, and the `guidance` preset lints `**/agents/*.md` for them. Before this, `subagent-declares-model` never saw a plugin's agents.
+
+### Patch Changes
+
+- **🐛 Fix** — The README says the `guidance` preset needs ESLint 9 or later: it runs on the `markdown/gfm` language, and ESLint 8 has no language plugins.
+- **🐛 Fix** — no-commented-code false positive on a label-like prose prefix
+
+  `Word:` followed by a run of bare words and a parenthetical aside (e.g.
+  `Always: scoped log statement (function-specific log group)`) read as
+  commented-out code.
+
+## 7.1.0
+
+### Minor Changes
+
+- **✨ Feature** — `guidance` preset — lint CLAUDE.md, AGENTS.md, skills and subagents for where each rule lives
+
+  Five Markdown rules over agent guidance files, run on `@eslint/markdown` and enabled by the new
+  `guidance` preset at `warn`: `guidance-budget` (bytes and lines per always-loaded file, lines and
+  description length per skill, with a per-repo ratchet that may only go down),
+  `enforced-rule-in-prose` (a `never` / `always` line naming something a tool could check, with no
+  link to the rule, hook or lock test that enforces it — or with one, so the line is removable),
+  `procedure-in-memory` (a long numbered procedure in a file read on every session),
+  `subagent-declares-model` (`model:` and `tools:` in every `.claude/agents/*.md`) and
+  `no-duplicated-guidance` (the same line in two always-loaded files). The `recommended` preset is
+  unchanged.
+
 ## 7.0.4
 
 ### Patch Changes

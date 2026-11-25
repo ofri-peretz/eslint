@@ -6,6 +6,7 @@
     "checked-requires-onchange-or-readonly",
     "default-props-match-prop-types",
     "display-name",
+    "forbid-foreign-prop-types",
     "hooks-exhaustive-deps",
     "jsx-handler-names",
     "jsx-key",
@@ -17,6 +18,7 @@
     "jsx-no-script-url",
     "jsx-no-target-blank",
     "jsx-no-undef",
+    "jsx-pascal-case",
     "jsx-uses-react",
     "jsx-uses-vars",
     "no-access-state-in-setstate",
@@ -67,6 +69,7 @@
     "sort-comp",
     "state-in-constructor",
     "static-property-placement",
+    "style-prop-object",
     "void-dom-elements-no-children"
   ]
 }

@@ -42,6 +42,17 @@ describe('no-hardcoded-credentials', () => {
           name: 'an assignment target keyed at runtime names no credential slot',
           code: 'function set(k, v) { obj[k] = "SuperSecretPhrase!!"; }',
         },
+        // #1557: a "Common password" keyword match is ambiguous about the
+        // STRING ('password' labels a login route as often as it labels a
+        // secret), so it needs the slot's OWN category to say "password",
+        // not merely to end in some unrelated credential word. Here the
+        // slot ends in `tokens` (a route-name list), which opens the
+        // generic credential-context gate but infers category 'token', not
+        // 'password' — a mismatch, so this must not report.
+        {
+          name: 'a common-password word inside a route-name list named *_TOKENS is not a credential',
+          code: "const SENSITIVE_ROUTE_TOKENS = ['login', 'signup', 'password', 'reset'];",
+        },
         // Both of these were real findings against the pinned corpus, at CVSS 9.8
         // each, and the corpus scan could not report them because its own error
         // handling had been swallowing every result. Neither value is a secret.
@@ -82,16 +93,20 @@ describe('no-hardcoded-credentials', () => {
         },
         // Short strings (below minLength)
         {
+          name: 'a short value under a neutral name is not a credential',
           code: 'const key = "short";',
         },
         {
-          code: 'const pass = "1234567";', // 7 chars, below default minLength of 8
+          name: 'a 7-character value is below the default minLength of 8',
+          code: 'const pass = "1234567";',
         },
         // Non-credential strings
         {
+          name: 'plain prose in a string is not a credential',
           code: 'const message = "Hello, world!";',
         },
         {
+          name: 'a URL is not a secret',
           code: 'const url = "https://example.com/api";',
         },
         // Ignored patterns
@@ -423,6 +438,7 @@ describe('no-hardcoded-credentials', () => {
       valid: [],
       invalid: [
         {
+          name: "TP: a common password in a slot whose own category is 'password' still reports",
           code: 'const password = "password123";',
           errors: [
             {
@@ -1166,7 +1182,10 @@ describe('no-hardcoded-credentials', () => {
       noHardcodedCredentials,
       {
         valid: [
-          { code: 'let secretValue; secretValue = "SuperSecretPhrase!!";' },
+          {
+            name: 'a name that does not end in a credential word is not a credential slot',
+            code: 'let secretValue; secretValue = "SuperSecretPhrase!!";',
+          },
         ],
         invalid: [],
       },
@@ -1229,7 +1248,10 @@ describe('no-hardcoded-credentials', () => {
         valid: [
           // isLabelContext: Property with an Identifier key that's directly
           // in LABEL_CONTEXT_NAMES ('type').
-          { code: 'const config = { type: "password" };' },
+          {
+            name: 'a type label spelled password is a label, not a credential',
+            code: 'const config = { type: "password" };',
+          },
           // isLabelContext: Property key isn't label-typed, but the
           // enclosing object's own variable is 'labels' — the Property
           // fallback recursion (walks Property -> ObjectExpression ->
@@ -1244,7 +1266,10 @@ describe('no-hardcoded-credentials', () => {
           },
           // isCredentialContext: AssignmentExpression to a MemberExpression
           // property whose name doesn't match any credential suffix.
-          { code: 'this.randomThing = "just a plain long value";' },
+          {
+            name: 'a member named without a credential word is not a credential slot',
+            code: 'this.randomThing = "just a plain long value";',
+          },
           // isCredentialContext: AssignmentExpression to a bare Identifier
           // whose name doesn't match any credential suffix.
           { code: 'let randomVar; randomVar = "just a plain long value";' },
@@ -1322,7 +1347,10 @@ describe('no-hardcoded-credentials', () => {
           code: `throw new Error({ errors: { password: 'incorrectPassword' } });`,
         },
         { code: `const errors = { password: 'incorrectPassword' };` },
-        { code: `const e = { token: 'notFoundToken' };` },
+        {
+          name: 'a camelCase message constant under a token key',
+          code: `const e = { token: 'notFoundToken' };`,
+        },
         { code: `const e = { secret: 'missingSecret' };` },
         // Identifier-shaped constants (the vercel/ai FP class), now excluded
         // by shape even inside a credential-named slot.

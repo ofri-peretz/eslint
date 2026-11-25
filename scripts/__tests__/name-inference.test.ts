@@ -7,6 +7,8 @@
  * a gate that misses the nested-binding form is a gate that reports success
  * having checked nothing.
  */
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   checkNameInference,
@@ -158,5 +160,35 @@ describe('checkNameInference', () => {
     expect(report.violations).toEqual([]);
     expect(report.staleRegistry).toHaveLength(1);
     expect(report.staleRegistry[0]).toContain('delete the entry');
+  });
+});
+
+describe('the jsx-pascal-case registration', () => {
+  // The rule tells an intrinsic element from a component by /^[a-z]/ on the tag
+  // name: the JSX spec, as in eslint-plugin-react. That is a registered site.
+  // Dropping the REGISTERED entry fails the first test; making the rule stop
+  // using the test (the entry goes stale) fails the second.
+  const file =
+    'eslint-plugin-react-features/src/rules/react/jsx-pascal-case.ts';
+  const source = fs.readFileSync(
+    path.join(__dirname, '../../packages', file),
+    'utf8',
+  );
+
+  it('is read by the gate as a name-substring site', () => {
+    expect(findNameSubstringSites(source).length).toBeGreaterThan(0);
+  });
+
+  it('is registered: with the default registry the file is not a violation', () => {
+    const report = checkNameInference([{ file, source }]);
+    expect(report.violations).toEqual([]);
+    expect(
+      report.staleRegistry.filter((entry) => entry.startsWith(file)),
+    ).toEqual([]);
+  });
+
+  it('fails when the registration is removed', () => {
+    const report = checkNameInference([{ file, source }], []);
+    expect(report.violations.map((v) => v.file)).toEqual([file]);
   });
 });

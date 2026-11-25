@@ -37,9 +37,11 @@ describe('no-unknown-property', () => {
           code: '<input type="text" value="test" />',
         },
         {
+          name: 'className and id are known properties of a div',
           code: '<div className="container" id="main" />',
         },
         {
+          name: 'src and alt are known properties of an img',
           code: '<img src="image.jpg" alt="description" />',
         },
         {
@@ -501,5 +503,32 @@ describe('no-unknown-property', () => {
         },
       ],
     });
+  });
+});
+
+describe('no-unknown-property: namespaced SVG attributes', () => {
+  ruleTester.run('namespaced SVG attributes', noUnknownProperty, {
+    valid: [
+      {
+        name: 'xlinkHref is the camelCase form React accepts',
+        code: '<use xlinkHref="#icon" />',
+      },
+      {
+        name: 'an unrelated namespaced name passes through',
+        code: '<svg xmlns:foo="urn:x" />',
+      },
+    ],
+    invalid: [
+      {
+        name: 'xlink:href suggests xlinkHref',
+        code: '<use xlink:href="#icon" />',
+        errors: [{ messageId: 'invalidNamespacedProp' }],
+      },
+      {
+        name: 'xml:lang suggests xmlLang',
+        code: '<svg xml:lang="en" />',
+        errors: [{ messageId: 'invalidNamespacedProp' }],
+      },
+    ],
   });
 });

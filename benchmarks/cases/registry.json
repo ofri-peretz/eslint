@@ -5130,6 +5130,285 @@
         }
       ],
       "peers": []
+    },
+    {
+      "id": "ILB-0177",
+      "added": "2026-11-23",
+      "title": "A CLAUDE.md past its line budget",
+      "rationale": "Every line of an always-loaded memory file is paid for on every session. 201 lines is one past the default budget of 200, so the file has grown past what was agreed and nothing else would say so.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "Line 0\nLine 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10\nLine 11\nLine 12\nLine 13\nLine 14\nLine 15\nLine 16\nLine 17\nLine 18\nLine 19\nLine 20\nLine 21\nLine 22\nLine 23\nLine 24\nLine 25\nLine 26\nLine 27\nLine 28\nLine 29\nLine 30\nLine 31\nLine 32\nLine 33\nLine 34\nLine 35\nLine 36\nLine 37\nLine 38\nLine 39\nLine 40\nLine 41\nLine 42\nLine 43\nLine 44\nLine 45\nLine 46\nLine 47\nLine 48\nLine 49\nLine 50\nLine 51\nLine 52\nLine 53\nLine 54\nLine 55\nLine 56\nLine 57\nLine 58\nLine 59\nLine 60\nLine 61\nLine 62\nLine 63\nLine 64\nLine 65\nLine 66\nLine 67\nLine 68\nLine 69\nLine 70\nLine 71\nLine 72\nLine 73\nLine 74\nLine 75\nLine 76\nLine 77\nLine 78\nLine 79\nLine 80\nLine 81\nLine 82\nLine 83\nLine 84\nLine 85\nLine 86\nLine 87\nLine 88\nLine 89\nLine 90\nLine 91\nLine 92\nLine 93\nLine 94\nLine 95\nLine 96\nLine 97\nLine 98\nLine 99\nLine 100\nLine 101\nLine 102\nLine 103\nLine 104\nLine 105\nLine 106\nLine 107\nLine 108\nLine 109\nLine 110\nLine 111\nLine 112\nLine 113\nLine 114\nLine 115\nLine 116\nLine 117\nLine 118\nLine 119\nLine 120\nLine 121\nLine 122\nLine 123\nLine 124\nLine 125\nLine 126\nLine 127\nLine 128\nLine 129\nLine 130\nLine 131\nLine 132\nLine 133\nLine 134\nLine 135\nLine 136\nLine 137\nLine 138\nLine 139\nLine 140\nLine 141\nLine 142\nLine 143\nLine 144\nLine 145\nLine 146\nLine 147\nLine 148\nLine 149\nLine 150\nLine 151\nLine 152\nLine 153\nLine 154\nLine 155\nLine 156\nLine 157\nLine 158\nLine 159\nLine 160\nLine 161\nLine 162\nLine 163\nLine 164\nLine 165\nLine 166\nLine 167\nLine 168\nLine 169\nLine 170\nLine 171\nLine 172\nLine 173\nLine 174\nLine 175\nLine 176\nLine 177\nLine 178\nLine 179\nLine 180\nLine 181\nLine 182\nLine 183\nLine 184\nLine 185\nLine 186\nLine 187\nLine 188\nLine 189\nLine 190\nLine 191\nLine 192\nLine 193\nLine 194\nLine 195\nLine 196\nLine 197\nLine 198\nLine 199\nLine 200\n",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "conventions/guidance-budget",
+          "expect": "report",
+          "filename": "CLAUDE.md",
+          "evidence": "packages/eslint-plugin-conventions/src/tests/guidance/guidance-budget.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0178",
+      "added": "2026-11-23",
+      "title": "A rule a tool can enforce, written as prose in a skill",
+      "rationale": "\"do not rebase\" is a rule a hook or lint check can hold. Written as a sentence it is a suggestion the model may skip, and it costs context in every session that loads the skill.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "Merge with `git merge origin/main`; do not rebase.\n",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "conventions/enforced-rule-in-prose",
+          "expect": "report",
+          "filename": ".claude/skills/x/SKILL.md",
+          "evidence": "packages/eslint-plugin-conventions/src/tests/guidance/enforced-rule-in-prose.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0179",
+      "added": "2026-11-23",
+      "title": "A seven-step procedure in always-loaded memory",
+      "rationale": "A numbered procedure is loaded into every session but used in one kind of task. It belongs in a skill, which loads only when its trigger matches.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "Release:\n\n1. Step 1\n2. Step 2\n3. Step 3\n4. Step 4\n5. Step 5\n6. Step 6\n7. Step 7\n",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "conventions/procedure-in-memory",
+          "expect": "report",
+          "filename": "CLAUDE.md",
+          "evidence": "packages/eslint-plugin-conventions/src/tests/guidance/procedure-in-memory.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0180",
+      "added": "2026-11-23",
+      "title": "The same guidance line in AGENTS.md and GEMINI.md",
+      "rationale": "Files in one directory chain load together, so a line in two of them is paid for twice, and the copies drift when one is edited. The case is a GEMINI.md beside the fixture AGENTS.md under benchmarks/cases/fixtures/guidance, copying its one rule line.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "- **Run the full test suite** before you ask anyone to review the branch.\n",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "conventions/no-duplicated-guidance",
+          "expect": "report",
+          "filename": "benchmarks/cases/fixtures/guidance/GEMINI.md",
+          "evidence": "packages/eslint-plugin-conventions/src/tests/guidance/no-duplicated-guidance.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0181",
+      "added": "2026-11-23",
+      "title": "A subagent with no model declared",
+      "rationale": "A subagent with no `model` inherits the caller's, so a review or search agent silently runs on the most expensive model. The declaration is the cost decision.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "Review the diff.\n",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "conventions/subagent-declares-model",
+          "expect": "report",
+          "filename": ".claude/agents/reviewer.md",
+          "evidence": "packages/eslint-plugin-conventions/src/tests/guidance/subagent-declares-model.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0182",
+      "added": "2026-11-24",
+      "title": "A style prop written as a CSS string",
+      "rationale": "`style=\"color: red\"` is HTML. React throws at render time, because its `style` prop takes an object of CSS properties. The mistake is common when markup is pasted into JSX.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "<div style=\"color: red\" />",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "react-features/style-prop-object",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-react-features/src/tests/react/style-prop-object.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0183",
+      "added": "2026-11-24",
+      "title": "A component named with an underscore",
+      "rationale": "`<My_component />` is a component reference that is not PascalCase. The naming convention is what tells readers, and tools, a tag is a component, and it is what `eslint-config-react-app` enforces.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "<My_component />",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "react-features/jsx-pascal-case",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-react-features/src/tests/react/jsx-pascal-case.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0184",
+      "added": "2026-11-24",
+      "title": "Reading another component's propTypes",
+      "rationale": "Production builds strip `propTypes`, so `Foo.propTypes` is `undefined` there and anything built from it breaks only in production.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const shape = Foo.propTypes;",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "react-features/forbid-foreign-prop-types",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-react-features/src/tests/react/forbid-foreign-prop-types.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0185",
+      "added": "2026-11-24",
+      "title": "A proxied upload request with no error listener",
+      "rationale": "`http.request` returns a ClientRequest. A refused connection emits 'error'; with no listener Node throws it from the event loop, so the try/catch around the await never sees it and the process exits. Found in parse-server's GraphQL createFile, 2026-11-24.",
+      "cwe": "CWE-248",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": ["https://nodejs.org/api/events.html#error-events"],
+      "occurrences": [
+        {
+          "repo": "parse-community/parse-server"
+        }
+      ],
+      "code": "import http from 'http';\nexport function handleUpload(stream, url) {\n  return new Promise((resolve) => {\n    const req = http.request(url, { method: 'POST' }, resolve);\n    stream.pipe(req);\n  });\n}",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/require-emitter-error-handler",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-node-security/src/rules/require-emitter-error-handler/require-emitter-error-handler.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0186",
+      "added": "2026-11-24",
+      "title": "A spawned process with no error listener",
+      "rationale": "`spawn` emits 'error' when the binary is missing or the cwd is bad. A close listener does not handle it, and a surrounding try/catch cannot catch an event. Found in Eleventy's spawnAsync, 2026-11-24: a machine without git kills the build.",
+      "cwe": "CWE-248",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": ["https://nodejs.org/api/events.html#error-events"],
+      "occurrences": [
+        {
+          "repo": "11ty/eleventy"
+        }
+      ],
+      "code": "import { spawn } from 'node:child_process';\nexport function run(command, args) {\n  return new Promise((resolve, reject) => {\n    const child = spawn(command, args);\n    child.on('close', (code) => (code ? reject(code) : resolve()));\n  });\n}",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/require-emitter-error-handler",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-node-security/src/rules/require-emitter-error-handler/require-emitter-error-handler.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0187",
+      "added": "2026-11-24",
+      "title": "exec with no error listener",
+      "rationale": "NOT a defect. Node attaches its own 'error' listener inside exec and execFile, with or without a callback, so a missing binary or bad cwd cannot crash the process. Checked on Node 24. A rule that reported it would claim a crash that cannot happen.",
+      "cwe": "CWE-248",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        "https://nodejs.org/api/child_process.html#child_processexeccommand-options-callback"
+      ],
+      "occurrences": [],
+      "code": "import { exec } from 'node:child_process';\nexec('git log');",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/require-emitter-error-handler",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-node-security/src/rules/require-emitter-error-handler/require-emitter-error-handler.test.ts"
+        }
+      ],
+      "peers": []
     }
   ]
 }

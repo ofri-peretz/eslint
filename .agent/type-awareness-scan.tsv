@@ -365,6 +365,9 @@ react-features	jsx-no-comment-textnodes	unaware
 react-features	jsx-no-undef	unaware	
 react-features	jsx-uses-react	unaware	
 react-features	jsx-uses-vars	unaware	
+react-features	style-prop-object	unaware	
+react-features	jsx-pascal-case	unaware	
+react-features	forbid-foreign-prop-types	unaware	
 reliability	no-unhandled-promise	unaware	
 reliability	no-silent-errors	unaware	
 reliability	error-message	unaware	
@@ -462,6 +465,7 @@ secure-coding	no-log-injection	unaware
 secure-coding	no-homoglyph-identifiers	unaware	
 secure-coding	no-fail-open-auth	unaware	
 node-security	require-stream-error-handler	unaware	
+node-security	require-emitter-error-handler	unaware	
 node-security	no-env-injection	unaware	
 node-security	no-insecure-http-parser	unaware	
 node-security	no-unbounded-decompression	unaware	
@@ -509,3 +513,8 @@ cli-floor	require-command-description	unaware
 cli-floor	require-command-example	unaware	
 secure-coding	no-invisible-characters	unaware	
 secure-coding	no-disabled-template-escaping	unaware	
+conventions	enforced-rule-in-prose	unaware	
+conventions	guidance-budget	unaware	
+conventions	no-duplicated-guidance	unaware	
+conventions	procedure-in-memory	unaware	
+conventions	subagent-declares-model	unaware	

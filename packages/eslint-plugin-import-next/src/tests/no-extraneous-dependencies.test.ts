@@ -153,6 +153,22 @@ ruleTester.run('no-extraneous-dependencies', noExtraneousDependencies, {
         code: `import { isMainThread } from 'worker_threads';`,
         options: [{ packageJson: mockPackageJson }]
     },
+    // `@/` is the create-next-app / shadcn tsconfig `paths` alias convention
+    // (`"paths": { "@/*": ["./src/*"] }`), not a scoped package: a real scoped
+    // name needs at least one character between `@` and `/`. Splitting on `/`
+    // alone derived the "package" `@/lib`, which is not a valid npm name
+    // either, so it could never match a declared dependency (#1551). An
+    // unmodelled resolver (settings naming one this plugin does not know, as
+    // `fumadocs-mdx:collections` above) is what surfaced it: with one
+    // configured, `notAPackageToDeclare` assumes an unresolved specifier
+    // might still be a real package rather than treating "none of ours
+    // resolves it" as "it resolves to nothing".
+    {
+        name: 'a tsconfig `@/` path alias is not a scoped package name',
+        code: `import { cn } from '@/lib/utils';`,
+        options: [{ packageJson: mockPackageJson }],
+        settings: { 'import/resolver': { webpack: {} } },
+    },
     // A `<scheme>:` specifier is not a package path. Splitting it on `/` alone
     // derived the "package name" `fumadocs-mdx:collections`, which npm's own
     // grammar forbids (`:` is not in [a-z0-9-._~]), so it could never match a

@@ -51,6 +51,19 @@ export interface Options {
 
   /** Custom components checked as `<input type="image">`. */
   inputImage?: string[];
+
+  /**
+   * jsx-a11y's spelling of `inputImage`: custom components checked as
+   * `<input type="image">`. Merged with `inputImage` when both are set.
+   */
+  'input[type="image"]'?: string[];
+
+  /**
+   * The element kinds to check, any of `img`, `object`, `area` and
+   * `input[type="image"]`. Default: all four, as in jsx-a11y; a kind left out
+   * is not checked, nor are the custom components listed for it.
+   */
+  elements?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -164,10 +177,15 @@ export const altText = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://www.w3.org/WAI/WCAG21/Techniques/html/H36',
       }),
     },
+    // Shape of upstream's schema (rules/alt-text.js, v6.10.2) added to ours:
+    // `elements` and the `input[type="image"]` key, no `additionalProperties:
+    // false`. Both new keys are read.
     schema: [
       {
         type: 'object',
         properties: {
+          elements: { type: 'array', items: { type: 'string' } },
+          'input[type="image"]': { type: 'array', items: { type: 'string' } },
           allowAriaLabel: { type: 'boolean', default: false },
           allowAriaLabelledby: { type: 'boolean', default: false },
           img: { type: 'array', items: { type: 'string' }, default: [] },
@@ -175,7 +193,6 @@ export const altText = createRule<RuleOptions, MessageIds>({
           area: { type: 'array', items: { type: 'string' }, default: [] },
           inputImage: { type: 'array', items: { type: 'string' }, default: [] },
         },
-        additionalProperties: false,
       },
     ],
   },
@@ -196,11 +213,20 @@ export const altText = createRule<RuleOptions, MessageIds>({
     let objectComponents: string[];
     let areaComponents: string[];
     let inputImageComponents: string[];
+    let checkedKinds: ReadonlySet<Kind>;
     let importedImageComponents: Set<string>;
     const IMAGE_MODULE =
       /^(next\/image|next\/legacy\/image|next\/future\/image)$/;
 
     type Kind = 'img' | 'object' | 'area' | 'inputImage';
+
+    /** jsx-a11y's `elements` names, by the kind each one switches on. */
+    const KIND_BY_ELEMENT: Readonly<Record<string, Kind>> = {
+      img: 'img',
+      object: 'object',
+      area: 'area',
+      'input[type="image"]': 'inputImage',
+    };
 
     const collectImageImports = (program: TSESTree.Program): void => {
       for (const statement of program.body) {
@@ -235,8 +261,10 @@ export const altText = createRule<RuleOptions, MessageIds>({
       }
       if (name === 'object' || objectComponents.includes(name)) return 'object';
       if (name === 'area' || areaComponents.includes(name)) return 'area';
-      // <input type="image"> needs the type attribute check
-      if (name === 'input' || inputImageComponents.includes(name)) {
+      // A custom component listed for `input[type="image"]` is one, as in
+      // jsx-a11y; a plain <input> is one only with type="image".
+      if (inputImageComponents.includes(name)) return 'inputImage';
+      if (name === 'input') {
         const typeAttr = getAttr(node, 'type');
         const typeVal = typeAttr ? getStringValue(typeAttr) : null;
         if (typeVal === 'image') return 'inputImage';
@@ -413,8 +441,17 @@ export const altText = createRule<RuleOptions, MessageIds>({
           img: imgComponents = [],
           object: objectComponents = [],
           area: areaComponents = [],
-          inputImage: inputImageComponents = [],
         } = options);
+        inputImageComponents = [
+          ...(options.inputImage ?? []),
+          ...(options['input[type="image"]'] ?? []),
+        ];
+        const { elements } = options;
+        checkedKinds = new Set(
+          elements === undefined
+            ? Object.values(KIND_BY_ELEMENT)
+            : elements.flatMap((element) => KIND_BY_ELEMENT[element] ?? []),
+        );
 
         /**
          * Map a JSX element name to a logical kind based on its tag and the
@@ -439,7 +476,7 @@ export const altText = createRule<RuleOptions, MessageIds>({
       },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         const kind = classify(node);
-        if (!kind) return;
+        if (!kind || !checkedKinds.has(kind)) return;
         switch (kind) {
           case 'img':
             return checkImg(node);

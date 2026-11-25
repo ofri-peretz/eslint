@@ -41,11 +41,7 @@ Each preset is one flat config object: put it in the array as an element, do not
 
 ### Rules in no preset
 
-Enable these by name (`'operability/<rule>': 'error'`):
-
-- `no-process-exit`: Prevent usage of process.exit() which can terminate the process unexpectedly.
-- `require-code-minification`: Require minification configuration.
-- `require-data-minimization`: Identify excessive data collection patterns.
+Enable these by name (`'operability/<rule>': 'error'`); README.md describes each: `no-process-exit`, `require-code-minification`, `require-data-minimization`.
 
 ## More
 

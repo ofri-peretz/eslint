@@ -188,6 +188,7 @@ describe('no-env-injection', () => {
       },
       // The direct spelling, with no binding in between.
       {
+        name: 'a key read from req.body is attacker-controlled',
         code: `function h(req) { process.env[req.body.key] = req.body.value; }`,
         errors: [{ messageId: 'envKeyInjection' }],
       },

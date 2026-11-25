@@ -38,6 +38,7 @@ describe('alt-text', () => {
           code: '<img src="photo.jpg" alt="A beautiful sunset" />',
         },
         {
+          name: 'a descriptive alt on a logo image',
           code: '<img src="logo.png" alt="Company logo" />',
         },
         // Image with empty alt (decorative)
@@ -552,5 +553,92 @@ describe('alt-text', () => {
 
       ],
     });
+  });
+});
+
+/**
+ * `elements` and the `input[type="image"]` key, cases ported from upstream's
+ * `__tests__/src/rules/alt-text-test.js` at v6.10.2 (its `array` options object
+ * and the `Object` / `Area` / `InputImage` cases that use it). Upstream cases
+ * with `alt` written as a bare attribute (`<Image alt />`) are not ported: this
+ * rule reads a bare `alt` as an empty, decorative one.
+ */
+const UPSTREAM_ARRAY_OPTIONS = {
+  img: ['Thumbnail', 'Image'],
+  object: ['Object'],
+  area: ['Area'],
+  'input[type="image"]': ['InputImage'],
+};
+
+describe('alt-text custom components, upstream option names', () => {
+  ruleTester.run('upstream array options', altText, {
+    valid: [
+      { name: 'a listed img component with alt', code: '<Thumbnail alt="foo" />;', options: [UPSTREAM_ARRAY_OPTIONS] },
+      { name: 'an unlisted component is not checked', code: '<Card />;', options: [UPSTREAM_ARRAY_OPTIONS] },
+      { name: 'a listed object component with aria-label', code: '<Object aria-label="foo" />', options: [UPSTREAM_ARRAY_OPTIONS] },
+      { name: 'a listed object component with text', code: '<Object>Foo</Object>', options: [UPSTREAM_ARRAY_OPTIONS] },
+      { name: 'a listed object component with title', code: '<Object title="An object" />', options: [UPSTREAM_ARRAY_OPTIONS] },
+      { name: 'a listed area component with aria-labelledby', code: '<Area aria-labelledby="id1" />', options: [UPSTREAM_ARRAY_OPTIONS] },
+      { name: 'a listed area component with empty alt', code: '<Area alt="" />', options: [UPSTREAM_ARRAY_OPTIONS] },
+      { name: 'a listed input-image component with aria-label', code: '<InputImage aria-label="foo" />', options: [UPSTREAM_ARRAY_OPTIONS] },
+      { name: 'a listed input-image component with empty alt', code: '<InputImage alt="" />', options: [UPSTREAM_ARRAY_OPTIONS] },
+      { name: 'a listed input-image component with a dynamic alt', code: '<InputImage alt={altText} />', options: [UPSTREAM_ARRAY_OPTIONS] },
+    ],
+    invalid: [
+      { name: 'a listed img component without alt', code: '<Image />;', options: [UPSTREAM_ARRAY_OPTIONS], errors: 1 },
+      { name: 'a listed object component without a text alternative', code: '<Object />', options: [UPSTREAM_ARRAY_OPTIONS], errors: [{ messageId: 'objectMissingAlternative' }] },
+      { name: 'a listed area component without alt', code: '<Area />', options: [UPSTREAM_ARRAY_OPTIONS], errors: [{ messageId: 'areaMissingAlternative' }] },
+      { name: 'a listed area component whose alt is undefined', code: '<Area alt={undefined} />', options: [UPSTREAM_ARRAY_OPTIONS], errors: [{ messageId: 'areaMissingAlternative' }] },
+      { name: 'a listed area component with a spread and no alt', code: '<Area {...this.props} />', options: [UPSTREAM_ARRAY_OPTIONS], errors: [{ messageId: 'areaMissingAlternative' }] },
+      { name: 'a listed input-image component without type or alt', code: '<InputImage />', options: [UPSTREAM_ARRAY_OPTIONS], errors: [{ messageId: 'inputImageMissingAlternative' }] },
+      { name: 'a listed input-image component whose alt is undefined', code: '<InputImage alt={undefined} />', options: [UPSTREAM_ARRAY_OPTIONS], errors: [{ messageId: 'inputImageMissingAlternative' }] },
+      { name: 'a listed input-image component with text children only', code: '<InputImage>Foo</InputImage>', options: [UPSTREAM_ARRAY_OPTIONS], errors: [{ messageId: 'inputImageMissingAlternative' }] },
+      { name: 'the ours-named inputImage list still works', code: '<ImageButton />', options: [{ inputImage: ['ImageButton'] }], errors: [{ messageId: 'inputImageMissingAlternative' }] },
+      { name: 'both input-image lists are merged', code: '<><A /><B /></>', options: [{ inputImage: ['A'], 'input[type="image"]': ['B'] }], errors: [{ messageId: 'inputImageMissingAlternative' }, { messageId: 'inputImageMissingAlternative' }] },
+    ],
+  });
+});
+
+/**
+ * `elements` limits which kinds are checked. Every upstream element name has a
+ * pair of cases: reported when listed, silent when another one is listed.
+ */
+const KINDS = [
+  { element: 'img', code: '<img />', errors: 1 },
+  { element: 'object', code: '<object />', errors: [{ messageId: 'objectMissingAlternative' }] },
+  { element: 'area', code: '<area />', errors: [{ messageId: 'areaMissingAlternative' }] },
+  { element: 'input[type="image"]', code: '<input type="image" />', errors: [{ messageId: 'inputImageMissingAlternative' }] },
+] as const;
+
+describe('alt-text elements option', () => {
+  ruleTester.run('elements', altText, {
+    valid: KINDS.map(({ element, code }) => ({
+      name: `${element} is not checked when only another element is listed`,
+      code,
+      options: [{ elements: KINDS.filter((k) => k.element !== element).map((k) => k.element) }],
+    })).concat([
+      { name: 'an empty elements list checks nothing', code: '<img />', options: [{ elements: [] }] },
+      { name: 'an unknown element name switches nothing on', code: '<img />', options: [{ elements: ['video'] }] },
+      { name: 'a custom component of an unlisted kind is not checked', code: '<Thumbnail />', options: [{ elements: ['object'], img: ['Thumbnail'] } as never] },
+    ]),
+    invalid: [
+      ...KINDS.map(({ element, code, errors }) => ({
+        name: `${element} is checked when it is the only element listed`,
+        code,
+        options: [{ elements: [element] }],
+        errors,
+      })),
+      ...KINDS.map(({ element, code, errors }) => ({
+        name: `${element} is checked by default`,
+        code,
+        errors,
+      })),
+      {
+        name: 'a custom component of a listed kind is checked',
+        code: '<Thumbnail />',
+        options: [{ elements: ['img'], img: ['Thumbnail'] }],
+        errors: 1,
+      },
+    ],
   });
 });

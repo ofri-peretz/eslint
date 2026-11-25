@@ -88,6 +88,14 @@ const INTERPOLATION = '\u0001';
  * concatenation's right-hand side — which is why that path must keep using
  * the plain word match.
  */
+/**
+ * @protocol-constant The four ECMAScript keywords a configuration value is
+ * written with when it is not data: two booleans, `null` and `undefined`. They
+ * are the language's, not a vocabulary a codebase could spell differently, and
+ * none of them can be a credential.
+ */
+const OPTION_KEYWORDS = new Set(['true', 'false', 'null', 'undefined']);
+
 function literalCarriesSecret(text: string, patterns: string[]): boolean {
   const normalized = text.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
   return patterns.some((pattern) => {
@@ -145,12 +153,31 @@ function literalCarriesSecret(text: string, patterns: string[]): boolean {
     // `resumption token: ${eventId}` an event id. Whether a runtime value is a
     // secret is the value path's question (`namedValueExposure`), answered from
     // its name; the label in front of it is prose.
+    //
+    // And the value is not a boolean or null keyword. nestjs/authentication
+    // lib/jwt/jws.util.ts:209 tells the developer how to opt in:
+    // "… set `allowShortSecret: true` next to the key". That is an option name
+    // and its setting, quoted in prose; `true` is never anyone's credential.
+    // Only when that setting is the line's one label-and-value pair: in
+    // `password: hunter2 debug: true` the keyword belongs to `debug`, and the
+    // password before it is still on the line. The keywords are lowercase in
+    // the language, so `password: NULL` is a value, not a keyword.
+    const trailingValue = new RegExp(
+      `[:=]\\s*([^\\s${INTERPOLATION}]+)\\s*$`,
+    ).exec(text);
+    const pairCount = text.match(/[:=][ \t]*[^\s:=]/g)?.length ?? 0;
     return (
       new RegExp(
         `\\b${flexPattern}\\b[ _-]{0,2}(?:[a-z0-9]{1,12}[ _-]{0,2})?[:=][ \\t]*[^\\s${INTERPOLATION}]`,
         'i',
       ).test(normalized) &&
-      new RegExp(`[:=]\\s*[^\\s${INTERPOLATION}]+\\s*$`).test(text)
+      trailingValue !== null &&
+      !(
+        pairCount === 1 &&
+        OPTION_KEYWORDS.has(
+          trailingValue[1].replace(/^[`'"]+|[`'".,;)]+$/g, ''),
+        )
+      )
     );
   });
 }
@@ -226,6 +253,7 @@ function memberCarriesSecret(
   node: TSESTree.MemberExpression,
   patterns: string[],
   descriptors: ReadonlySet<string>,
+  skipReceiverName = false,
 ): string | null {
   const prop = node.property;
   // `node.computed` is the whole distinction. In `user.password` the property
@@ -259,6 +287,10 @@ function memberCarriesSecret(
     (VALUE_FREE_PROPERTIES.has(propName) || DIAGNOSTIC_ACCESSORS.has(propName))
   )
     return null;
+  // The receiver's name is the fallback for a key nobody can see. When the
+  // file's own object literal DECLARES the key, the author named the field and
+  // the receiver's name no longer speaks for it.
+  if (skipReceiverName) return null;
   return node.object.type === AST_NODE_TYPES.Identifier
     ? identifierNamesSecret(node.object.name, patterns, descriptors)
     : null;
@@ -284,6 +316,24 @@ const VALUE_FREE_PROPERTIES = new Set([
   'size',
   'byteLength',
   'byteOffset',
+]);
+
+/**
+ * Operators whose result is a boolean about two operands, never one of them.
+ *
+ * @protocol-constant ECMA-262's relational and equality operators.
+ */
+const COMPARISON_OPERATORS: ReadonlySet<string> = new Set([
+  '===',
+  '!==',
+  '==',
+  '!=',
+  '<',
+  '<=',
+  '>',
+  '>=',
+  'in',
+  'instanceof',
 ]);
 
 /**
@@ -601,7 +651,8 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
             isStaticExpression({
               node: property.value,
               scope: context.sourceCode.getScope(arg),
-            })
+            }) ||
+            isNonReplayableValue(property.value)
           ) {
             continue;
           }
@@ -635,6 +686,48 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
       }
 
       return namedValueExposure(arg);
+    }
+
+    /**
+     * Is this value one that cannot be replayed as the secret its key names?
+     *
+     * A key called `hasToken` or `passwordCount` names a secret and holds a fact
+     * ABOUT it: `Boolean(dto.token)`, `!!secret`, `secrets.length`,
+     * `actor === target`. The expression's own shape decides, never the key, and
+     * an identifier is read through its single initializer (`const required =
+     * actor.id === input.userId`).
+     */
+    function isNonReplayableValue(
+      node: TSESTree.Node,
+      seen: Set<TSESTree.Node> = new Set(),
+    ): boolean {
+      const value = unwrapTypeSyntax(node) as TSESTree.Node;
+      if (seen.has(value)) return false;
+      seen.add(value);
+      switch (value.type) {
+        case AST_NODE_TYPES.ChainExpression:
+          return isNonReplayableValue(value.expression, seen);
+        case AST_NODE_TYPES.UnaryExpression:
+          return value.operator === '!';
+        case AST_NODE_TYPES.BinaryExpression:
+          return COMPARISON_OPERATORS.has(value.operator);
+        case AST_NODE_TYPES.MemberExpression: {
+          const prop = propertyName(value);
+          return prop !== null && VALUE_FREE_PROPERTIES.has(prop);
+        }
+        case AST_NODE_TYPES.CallExpression:
+          return (
+            value.callee.type === AST_NODE_TYPES.Identifier &&
+            value.callee.name === 'Boolean' &&
+            !isShadowed('Boolean', value)
+          );
+        case AST_NODE_TYPES.Identifier: {
+          const init = resolveBindingInit(value);
+          return init ? isNonReplayableValue(init, seen) : false;
+        }
+        default:
+          return false;
+      }
     }
 
     /** Does anything in scope declare this name, rather than it being the global? */
@@ -681,7 +774,13 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
           sensitivePatterns,
           descriptors,
         );
-        if (pattern) return { node: value, pattern };
+        if (pattern) {
+          // `token` in a DI container is a reference to a class: its name, a
+          // `Symbol`, an `InjectionToken`. The binding's initializer says so.
+          const held = resolveBindingInit(value);
+          if (held && holdsAReference(held)) return null;
+          return { node: value, pattern };
+        }
         const init = resolveBindingInit(value);
         const viaBinding = init ? namedValueExposure(init, seen) : null;
         // Report at the identifier the author wrote, with the pattern the
@@ -689,10 +788,12 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
         return viaBinding ? { node: value, pattern: viaBinding.pattern } : null;
       }
       if (value.type === AST_NODE_TYPES.MemberExpression) {
+        const declared = receiverDeclaresKey(value);
         const pattern = memberCarriesSecret(
           value,
           sensitivePatterns,
           descriptors,
+          declared,
         );
         if (pattern) return { node: value, pattern };
         // `const error = { message: accessToken }; log(`${error.message}`)` —
@@ -703,6 +804,181 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
         return viaLiteral ? { node: value, pattern: viaLiteral.pattern } : null;
       }
       return null;
+    }
+
+    /**
+     * Is this initializer a REFERENCE (a class's name, a `Symbol`, a DI
+     * `InjectionToken`) rather than a string somebody could replay?
+     *
+     * `Function.prototype.name` is platform-defined text, `Symbol()` has no
+     * string form to leak, and a `typeof x === 'function' ? x.name : x` ternary
+     * is the idiom that turns "a class or its name" into the name (nest
+     * `debug-repl-fn.ts`). Anything else keeps judging the binding by its name.
+     */
+    function holdsAReference(init: TSESTree.Node): boolean {
+      const node = unwrapTypeSyntax(init) as TSESTree.Node;
+      if (node.type === AST_NODE_TYPES.MemberExpression) {
+        // `credential.name` where `credential` is an object literal written in
+        // this file is whatever the literal says it is, not a class name.
+        if (
+          node.object.type === AST_NODE_TYPES.Identifier &&
+          resolveBindingInit(node.object)?.type ===
+            AST_NODE_TYPES.ObjectExpression
+        ) {
+          return false;
+        }
+        return propertyName(node) === 'name';
+      }
+      if (node.type === AST_NODE_TYPES.NewExpression) {
+        // A constructor this file defines itself is not the DI API, whatever it
+        // is called: it can keep and print what it is given.
+        const local =
+          node.callee.type === AST_NODE_TYPES.Identifier
+            ? findBinding(node.callee)
+            : null;
+        return (
+          node.callee.type === AST_NODE_TYPES.Identifier &&
+          node.callee.name === 'InjectionToken' &&
+          !local?.defs.some((def) => def.type !== 'ImportBinding')
+        );
+      }
+      if (node.type === AST_NODE_TYPES.CallExpression) {
+        const callee = node.callee;
+        // `String(Symbol(secret))` prints the description, so only a fixed label
+        // keeps the symbol an identity rather than a carrier.
+        const fixedLabel = node.arguments.every(
+          (argument) => staticString(argument) !== null,
+        );
+        return (
+          fixedLabel &&
+          ((callee.type === AST_NODE_TYPES.Identifier &&
+            callee.name === 'Symbol' &&
+            !isShadowed('Symbol', node)) ||
+            (callee.type === AST_NODE_TYPES.MemberExpression &&
+              callee.object.type === AST_NODE_TYPES.Identifier &&
+              callee.object.name === 'Symbol' &&
+              propertyName(callee) === 'for' &&
+              !isShadowed('Symbol', node)))
+        );
+      }
+      if (node.type === AST_NODE_TYPES.ConditionalExpression) {
+        // `typeof v === 'function' ? v.name : v`: one arm reads the name of the
+        // very value the test says is a function, the other passes it through.
+        const test = node.test;
+        if (
+          test.type !== AST_NODE_TYPES.BinaryExpression ||
+          (test.operator !== '===' && test.operator !== '==') ||
+          test.left.type !== AST_NODE_TYPES.UnaryExpression ||
+          test.left.operator !== 'typeof' ||
+          test.left.argument.type !== AST_NODE_TYPES.Identifier ||
+          staticString(test.right) !== 'function'
+        ) {
+          return false;
+        }
+        const subject = test.left.argument.name;
+        // The other arm hands the value through unchanged, so a subject that is
+        // itself named like a credential may be one.
+        if (identifierNamesSecret(subject, sensitivePatterns, descriptors)) {
+          return false;
+        }
+        const named = node.consequent;
+        const passed = node.alternate;
+        return (
+          named.type === AST_NODE_TYPES.MemberExpression &&
+          propertyName(named) === 'name' &&
+          named.object.type === AST_NODE_TYPES.Identifier &&
+          named.object.name === subject &&
+          passed.type === AST_NODE_TYPES.Identifier &&
+          passed.name === subject
+        );
+      }
+      return false;
+    }
+
+    /**
+     * Does a once-written object literal in this file declare the key this
+     * member reads, with nothing writing through the binding afterwards? Then
+     * the field's own name is the evidence, not the receiver's.
+     */
+    const declaringKeys = new Set<TSESTree.Node>();
+
+    /** A function this file defines: it can change an object it is handed. */
+    function isLocalFunction(callee: TSESTree.Node): boolean {
+      const definition =
+        callee.type === AST_NODE_TYPES.Identifier
+          ? findBinding(callee)?.defs[0]
+          : undefined;
+      if (definition?.type === 'FunctionName') return true;
+      const init =
+        definition?.type === 'Variable'
+          ? (definition.node as TSESTree.VariableDeclarator).init
+          : null;
+      return (
+        init?.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+        init?.type === AST_NODE_TYPES.FunctionExpression
+      );
+    }
+
+    function receiverDeclaresKey(member: TSESTree.MemberExpression): boolean {
+      if (member.object.type !== AST_NODE_TYPES.Identifier) return false;
+      const key = propertyName(member);
+      if (key === null) return false;
+      const init = resolveBindingInit(member.object);
+      if (init?.type !== AST_NODE_TYPES.ObjectExpression) return false;
+      // A spread may have overwritten the key; a computed key is unreadable.
+      if (
+        init.properties.some(
+          (property) =>
+            property.type !== AST_NODE_TYPES.Property || property.computed,
+        )
+      ) {
+        return false;
+      }
+      // The LAST definition of a key is the one the object holds.
+      const declared = [...init.properties]
+        .reverse()
+        .find(
+          (property) => objectKeyName(property as TSESTree.Property) === key,
+        ) as TSESTree.Property | undefined;
+      if (!declared) return false;
+      // The receiver's name is set aside only when what the key holds is not
+      // itself named like a secret: `{ value: accessToken }` read through
+      // `tokenBag.value` is still a token, whether or not the object is aliased
+      // or handed to other code.
+      // `var record = { value: record?.value }` reads itself: a value whose
+      // provenance is cyclic is not known to be safe, so decline the exemption
+      // instead of recursing.
+      if (declaringKeys.has(declared)) return false;
+      declaringKeys.add(declared);
+      try {
+        if (namedValueExposure(declared.value)) return false;
+      } finally {
+        declaringKeys.delete(declared);
+      }
+      const variable = findBinding(member.object) as TSESLint.Scope.Variable;
+      // Handing the object to other code is allowed (it is how it gets hashed
+      // or serialized); writing a property through the binding is not.
+      return variable.references.every((reference) => {
+        const parent = reference.identifier.parent as TSESTree.Node;
+        if (
+          parent.type !== AST_NODE_TYPES.MemberExpression ||
+          parent.object !== reference.identifier
+        ) {
+          // Handed to a function this file defines, whose body can write to it.
+          return !(
+            parent.type === AST_NODE_TYPES.CallExpression &&
+            isLocalFunction(parent.callee)
+          );
+        }
+        const use = parent.parent as TSESTree.Node;
+        return !(
+          (use.type === AST_NODE_TYPES.AssignmentExpression &&
+            use.left === parent) ||
+          use.type === AST_NODE_TYPES.UpdateExpression ||
+          (use.type === AST_NODE_TYPES.UnaryExpression &&
+            use.operator === 'delete')
+        );
+      });
     }
 
     /**

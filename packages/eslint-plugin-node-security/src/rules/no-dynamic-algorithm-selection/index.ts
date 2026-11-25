@@ -21,6 +21,8 @@
  *   crypto.createHash('sha256')         → silent (literal, checked separately)
  *   crypto.createHash(`sha256`)         → silent (static template)
  *   crypto.createHash(algo)             → silent when `algo` folds to a literal
+ *   crypto.createHash(hashOf(alg))      → silent when the local helper returns a
+ *                                         closed union of string literals
  *
  * ## Why folding, and not just "is it a literal at the call site"
  *
@@ -76,6 +78,220 @@ const CRYPTO_ALGORITHM_FUNCTIONS = new Set([
   'createDecipheriv',
 ]);
 
+/** A string literal type, or a union made only of them: a set the author wrote down. */
+function isClosedLiteralType(type: TSESTree.TypeNode | undefined): boolean {
+  if (!type) return false;
+  if (type.type === AST_NODE_TYPES.TSLiteralType) {
+    return (
+      type.literal.type === AST_NODE_TYPES.Literal &&
+      typeof type.literal.value === 'string'
+    );
+  }
+  return (
+    type.type === AST_NODE_TYPES.TSUnionType &&
+    type.types.every((member) => isClosedLiteralType(member))
+  );
+}
+
+/**
+ * A parameter declared with a closed literal type and never reassigned. The
+ * compiler holds every caller to that set; a caller that escapes it needs a cast
+ * of its own, which is where a finding belongs.
+ */
+function isClosedParameter(
+  sourceCode: Readonly<TSESLint.SourceCode>,
+  identifier: TSESTree.Identifier,
+): boolean {
+  let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(identifier);
+  while (scope) {
+    const variable = scope.set.get(identifier.name);
+    if (variable) {
+      if (variable.defs.length !== 1) return false;
+      const [def] = variable.defs;
+      return (
+        def.type === 'Parameter' &&
+        def.name.type === AST_NODE_TYPES.Identifier &&
+        isClosedLiteralType(def.name.typeAnnotation?.typeAnnotation) &&
+        variable.references.every((ref) => !ref.isWrite())
+      );
+    }
+    scope = scope.upper;
+  }
+  return false;
+}
+
+/**
+ * Can this expression only produce values computed from string literals and
+ * closed-typed parameters? `` `sha${alg.slice(2)}` `` over
+ * `alg: 'HS256' | 'HS512'` can; `req.query.algorithm` cannot.
+ */
+function derivesFromClosedValues(
+  sourceCode: Readonly<TSESLint.SourceCode>,
+  node: TSESTree.Node,
+): boolean {
+  switch (node.type) {
+    case AST_NODE_TYPES.Literal:
+      return typeof node.value === 'string' || typeof node.value === 'number';
+    case AST_NODE_TYPES.TemplateLiteral:
+      return node.expressions.every((expr) =>
+        derivesFromClosedValues(sourceCode, expr),
+      );
+    case AST_NODE_TYPES.Identifier:
+      return isClosedParameter(sourceCode, node);
+    case AST_NODE_TYPES.ConditionalExpression:
+      return (
+        derivesFromClosedValues(sourceCode, node.consequent) &&
+        derivesFromClosedValues(sourceCode, node.alternate)
+      );
+    case AST_NODE_TYPES.CallExpression:
+      // `alg.slice(2)`: a method of a closed value, with literal arguments.
+      return (
+        node.callee.type === AST_NODE_TYPES.MemberExpression &&
+        !node.callee.computed &&
+        derivesFromClosedValues(sourceCode, node.callee.object) &&
+        node.arguments.every(
+          (arg) =>
+            arg.type === AST_NODE_TYPES.Literal &&
+            derivesFromClosedValues(sourceCode, arg),
+        )
+      );
+    default:
+      return false;
+  }
+}
+
+/**
+ * `x satisfies 'sha256' | 'sha512'`, which the compiler checks, or
+ * `x as 'sha256' | 'sha512'` when `x` itself is built only from closed values.
+ * An `as` is erased at runtime, so on its own it proves nothing:
+ * `req.query.algorithm as 'sha256'` is still whatever the request sent.
+ */
+function isClosedLiteralCast(
+  sourceCode: Readonly<TSESLint.SourceCode>,
+  node: TSESTree.Node,
+): boolean {
+  if (node.type === AST_NODE_TYPES.TSSatisfiesExpression) {
+    // `satisfies` is checked, but against the type an inner `as` claims:
+    // `(req.query.alg as 'sha256') satisfies 'sha256'` is still the request.
+    return (
+      isClosedLiteralType(node.typeAnnotation) &&
+      !hasUncheckedAssertion(sourceCode, node.expression)
+    );
+  }
+  // `<'sha256'>x` is the same assertion as `x as 'sha256'`, spelled the old way.
+  return (
+    (node.type === AST_NODE_TYPES.TSAsExpression ||
+      node.type === AST_NODE_TYPES.TSTypeAssertion) &&
+    isClosedLiteralType(node.typeAnnotation) &&
+    derivesFromClosedValues(sourceCode, node.expression)
+  );
+}
+
+/**
+ * Does this subtree (outside nested functions) hold a type assertion the
+ * compiler takes on trust? `value as 'sha256'` and `<'sha256'>value` are erased
+ * at runtime, so a declared closed return type proves nothing once the body
+ * asserts its way there. `as const` and a cast of a closed value are fine.
+ */
+function hasUncheckedAssertion(
+  sourceCode: Readonly<TSESLint.SourceCode>,
+  node: TSESTree.Node,
+): boolean {
+  if (
+    node.type === AST_NODE_TYPES.TSAsExpression ||
+    node.type === AST_NODE_TYPES.TSTypeAssertion
+  ) {
+    const asConst = sourceCode.getText(node.typeAnnotation) === 'const';
+    if (!asConst && !derivesFromClosedValues(sourceCode, node.expression)) {
+      return true;
+    }
+  }
+  return sourceCode.visitorKeys[node.type].some((key) => {
+    const child = (node as unknown as Record<string, unknown>)[key];
+    const children = Array.isArray(child) ? child : [child];
+    return children.some(
+      (c: unknown) =>
+        typeof c === 'object' &&
+        c !== null &&
+        'type' in c &&
+        !isFunctionNode(c as TSESTree.Node) &&
+        hasUncheckedAssertion(sourceCode, c as TSESTree.Node),
+    );
+  });
+}
+
+function isFunctionNode(node: TSESTree.Node): boolean {
+  return (
+    node.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+    node.type === AST_NODE_TYPES.FunctionDeclaration ||
+    node.type === AST_NODE_TYPES.FunctionExpression
+  );
+}
+
+type FunctionNode =
+  | TSESTree.ArrowFunctionExpression
+  | TSESTree.FunctionDeclaration
+  | TSESTree.FunctionExpression;
+
+/**
+ * A function whose declared return type (checked by the compiler against every
+ * return), or whose expression body, is a closed literal set.
+ */
+function returnsClosedLiteral(
+  sourceCode: Readonly<TSESLint.SourceCode>,
+  fn: FunctionNode,
+): boolean {
+  if (isClosedLiteralType(fn.returnType?.typeAnnotation)) {
+    return !hasUncheckedAssertion(sourceCode, fn.body);
+  }
+  return (
+    fn.type === AST_NODE_TYPES.ArrowFunctionExpression &&
+    fn.expression &&
+    isClosedLiteralCast(sourceCode, fn.body)
+  );
+}
+
+/**
+ * The same-file function a call names, when the binding can never point anywhere else:
+ * a function declaration, or a `const` initialised with a function.
+ */
+function calledLocalFunction(
+  sourceCode: Readonly<TSESLint.SourceCode>,
+  call: TSESTree.CallExpression,
+): FunctionNode | null {
+  if (call.callee.type !== AST_NODE_TYPES.Identifier) return null;
+  const name = call.callee.name;
+  let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(call);
+  while (scope) {
+    const variable = scope.set.get(name);
+    if (variable) {
+      if (variable.defs.length !== 1) return null;
+      const [def] = variable.defs;
+      // `def.type` first: a parameter's definition also points at its
+      // enclosing function, and `pick` in `function build(pick)` is not `build`.
+      if (
+        def.type === 'FunctionName' &&
+        def.node.type === AST_NODE_TYPES.FunctionDeclaration
+      ) {
+        return def.node;
+      }
+      if (
+        def.type === 'Variable' &&
+        def.node.type === AST_NODE_TYPES.VariableDeclarator &&
+        def.parent?.type === AST_NODE_TYPES.VariableDeclaration &&
+        def.parent.kind === 'const' &&
+        (def.node.init?.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+          def.node.init?.type === AST_NODE_TYPES.FunctionExpression)
+      ) {
+        return def.node.init;
+      }
+      return null;
+    }
+    scope = scope.upper;
+  }
+  return null;
+}
+
 export const noDynamicAlgorithmSelection = createRule<[], MessageIds>({
   name: 'no-dynamic-algorithm-selection',
   meta: {
@@ -123,6 +339,14 @@ export const noDynamicAlgorithmSelection = createRule<[], MessageIds>({
       // The documented allowlist: a lookup into a const table of string
       // literals can only yield an algorithm the author wrote down.
       if (isClosedStringTableLookup(sourceCode, node)) return true;
+      // A union of string literals is the same allowlist written as a type:
+      // `name as 'sha256' | 'sha512'`, or a same-file helper whose return is
+      // one (nestjs/authentication's `hashOf(alg)`).
+      if (isClosedLiteralCast(sourceCode, node)) return true;
+      if (node.type === AST_NODE_TYPES.CallExpression) {
+        const fn = calledLocalFunction(sourceCode, node);
+        if (fn && returnsClosedLiteral(sourceCode, fn)) return true;
+      }
       return (
         node.type === AST_NODE_TYPES.Identifier &&
         parameterIsAlwaysDefault(sourceCode, node, isLiteralConstant)

@@ -93,6 +93,7 @@ The rule reports a call `<source>.<method>(...)`, dotted or subscripted (`consol
 | `autoDetectLogger` | `boolean`                                      | `true`        | Auto-detect logger import in file                                               |
 | `sourcePatterns`   | `string[]`                                     | `['console']` | Object names to match and replace (e.g., `['console', 'winston', 'oldLogger']`) |
 | `ignoreNonProductionPaths` | `boolean`                              | `true`        | Skip directories that never ship (`scripts/`, `tools/`, `env/`, `benchmarks/`, examples, demos, fixtures) and build-tool config |
+| `ignoreLoggerModules`      | `boolean`                              | `true`        | Skip the module that IS the logger: a file named `logger`, `logging`, `log`, `fooLogger` or `foo-logger` |
 | ~~`customLogger`~~ | `string`                                       | `'logger'`    | **Deprecated:** Use `loggerName` instead                                        |
 
 ### Strategy Comparison

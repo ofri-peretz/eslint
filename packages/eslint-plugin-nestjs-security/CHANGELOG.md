@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-nestjs-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.5
+
+### Patch Changes
+
+- **🐛 Fix** — require-validation-pipe-whitelist warns that whitelist strips undecorated DTO fields
+
+  `whitelist: true` keeps a property only when it carries a class-validator decorator, so a declared but undecorated field is removed too. The message and docs said only undeclared properties were stripped; following them as written would have broken three of the ten NestJS samples the rule flags. The fix text now says to decorate every accepted field first (`@IsString()`, `@IsOptional()`, `@Allow()`).
+
 ## 4.2.4
 
 ### Patch Changes

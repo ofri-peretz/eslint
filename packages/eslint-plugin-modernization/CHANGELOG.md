@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-modernization` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.6
+
+### Patch Changes
+
+- **🐛 Fix** — `prefer-event-target` skips ambient declarations and test files
+
+  A `.d.ts` file describes an upstream API that the author cannot change, and a spec file builds doubles of Node streams. Both are skipped, and a `import type` / inline `type` specifier of `EventEmitter` no longer counts. A runtime `new EventEmitter()` or `extends EventEmitter` in source still reports.
+
 ## 4.0.5
 
 ### Patch Changes

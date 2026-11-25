@@ -36,9 +36,11 @@ describe('no-sensitive-data-exposure', () => {
         },
         // Logger methods without sensitive data
         {
+          name: 'a logger call with a fixed message and no secret',
           code: `logger.info('Request received');`,
         },
         {
+          name: 'an error log with only static prose names no secret',
           code: `logger.error('Operation failed');`,
         },
         {
@@ -146,6 +148,7 @@ describe('no-sensitive-data-exposure', () => {
             errors: [{ messageId: 'sensitiveDataExposure' }],
           },
           {
+            name: 'an API key read by a quoted key and logged is exposed',
             code: `logger.info(config['apiKey']);`,
             errors: [{ messageId: 'sensitiveDataExposure' }],
           },
@@ -154,10 +157,12 @@ describe('no-sensitive-data-exposure', () => {
           // expression itself. (Named only by the label in front of it, as in
           // `token=${t}`, it is prose: a-label-is-not-a-value.test.ts.)
           {
+            name: 'an API key interpolated into a log line is exposed',
             code: 'console.log(`value is ${apiKey}`);',
             errors: [{ messageId: 'sensitiveDataExposure' }],
           },
           {
+            name: 'a password read off a user object and logged is exposed',
             code: 'console.log(`got ${user.password} back`);',
             errors: [{ messageId: 'sensitiveDataExposure' }],
           },

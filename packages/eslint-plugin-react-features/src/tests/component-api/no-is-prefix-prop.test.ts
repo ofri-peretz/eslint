@@ -37,7 +37,10 @@ describe('no-is-prefix-prop', () => {
         code: `interface Props { looped: boolean; }`,
       },
       // Non-boolean type — even with `is` prefix, not flagged
-      { code: `interface Props { isLooped: string; }` },
+      {
+        name: 'a non-boolean is-prefixed member of a Props interface',
+        code: `interface Props { isLooped: string; }`,
+      },
       {
         name: '`is` followed by a lowercase letter is a word, not a prefix',
         code: `interface Props { island: boolean; }`,
@@ -55,6 +58,32 @@ describe('no-is-prefix-prop', () => {
       {
         name: 'a boolean field of a non-Props-named type alias is not a component prop',
         code: `type FunnelStep = { id: string; isGoal?: boolean };`,
+      },
+      // Inline types: a component's props are a real prop type, any other function's
+      // parameter is not (#1556 must not drop the first, and must keep the second).
+      {
+        name: 'an inline boolean parameter of a lowercase helper that returns no JSX is not a prop',
+        code: `function describeFlag(opts: { isOn: boolean }) { return String(opts.isOn); }`,
+      },
+      {
+        name: 'an inline boolean parameter of a lowercase arrow helper is not a prop',
+        code: `const describeFlag = (opts: { isOn: boolean }) => String(opts.isOn);`,
+      },
+      {
+        name: 'an inline boolean in the second parameter of a component is not its props',
+        code: `export function Card(props: { id: string }, extra: { isOpen: boolean }) { return <div />; }`,
+      },
+      {
+        name: 'a generic argument that is not a component type is not a prop type',
+        code: `type Box = Array<{ isOpen: boolean }>;`,
+      },
+      {
+        name: 'an inline boolean parameter of a callback is not a prop',
+        code: `const labels = items.map((item: { isOn: boolean }) => String(item.isOn));`,
+      },
+      {
+        name: 'a generic call argument is not a props type',
+        code: `const [state] = useState<{ isOpen: boolean }>(init);`,
       },
     ],
     invalid: [
@@ -209,6 +238,126 @@ describe('no-is-prefix-prop', () => {
               {
                 messageId: 'renameSuggestion',
                 output: `interface Props { isDisabled: boolean; hidden: boolean; }`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'an inline boolean prop of a PascalCase function component',
+        code: `export function Card(props: { isOpen: boolean }) { return <div />; }`,
+        errors: [
+          {
+            messageId: 'isPrefix',
+            suggestions: [
+              {
+                messageId: 'renameSuggestion',
+                output: `export function Card(props: { open: boolean }) { return <div />; }`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'an inline boolean prop of a destructured function component',
+        code: `function Card({ isOpen }: { isOpen: boolean }) { return <div />; }`,
+        errors: [
+          {
+            messageId: 'isPrefix',
+            suggestions: [
+              {
+                messageId: 'renameSuggestion',
+                output: `function Card({ isOpen }: { open: boolean }) { return <div />; }`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'an inline boolean prop of a PascalCase arrow component',
+        code: `const Card = ({ isOpen }: { isOpen: boolean }) => <div />;`,
+        errors: [
+          {
+            messageId: 'isPrefix',
+            suggestions: [
+              {
+                messageId: 'renameSuggestion',
+                output: `const Card = ({ isOpen }: { open: boolean }) => <div />;`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'an inline boolean prop of a lowercase arrow that returns JSX',
+        code: `const card = (props: { isOpen: boolean }) => <div />;`,
+        errors: [
+          {
+            messageId: 'isPrefix',
+            suggestions: [
+              {
+                messageId: 'renameSuggestion',
+                output: `const card = (props: { open: boolean }) => <div />;`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'an inline boolean prop of a lowercase function declaration that returns JSX',
+        code: `function card(props: { isOpen: boolean }) { return <div />; }`,
+        errors: [
+          {
+            messageId: 'isPrefix',
+            suggestions: [
+              {
+                messageId: 'renameSuggestion',
+                output: `function card(props: { open: boolean }) { return <div />; }`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a boolean prop in the type argument of FC',
+        code: `const Card: FC<{ isOpen: boolean }> = () => null;`,
+        errors: [
+          {
+            messageId: 'isPrefix',
+            suggestions: [
+              {
+                messageId: 'renameSuggestion',
+                output: `const Card: FC<{ open: boolean }> = () => null;`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a boolean prop in the type argument of React.FC',
+        code: `const Card: React.FC<{ isOpen: boolean }> = () => null;`,
+        errors: [
+          {
+            messageId: 'isPrefix',
+            suggestions: [
+              {
+                messageId: 'renameSuggestion',
+                output: `const Card: React.FC<{ open: boolean }> = () => null;`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'an inline boolean prop of an anonymous default-exported component',
+        code: `export default function (props: { isOpen: boolean }) { return <div />; }`,
+        errors: [
+          {
+            messageId: 'isPrefix',
+            suggestions: [
+              {
+                messageId: 'renameSuggestion',
+                output: `export default function (props: { open: boolean }) { return <div />; }`,
               },
             ],
           },

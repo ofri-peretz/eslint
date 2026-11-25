@@ -67,17 +67,44 @@ describe('no-magic-numbers — the shapes real code produces', () => {
         name: 'FP: a coordinate pair — 39% of findings, the largest class',
         code: 'const points = [[-92.28090097254909, 7.105427357601002e-15], [-154.72, 19.19]];',
       },
-      { name: 'a colour matrix row', code: 'const filter = [0.213, 0.715, 0.072, 0, 0];' },
-      { name: 'a negated element still reads as data', code: 'const box = [-40.31, 79.15];' },
-      { name: 'a satisfies assertion is the same shape as an as-assertion', code: 'const MAX = 500 satisfies number;' },
-      { name: 'a negated literal reaches the const through the unary', code: 'const OFFSET = -12;' },
+      {
+        name: 'a colour matrix row',
+        code: 'const filter = [0.213, 0.715, 0.072, 0, 0];',
+      },
+      {
+        name: 'a negated element still reads as data',
+        code: 'const box = [-40.31, 79.15];',
+      },
+      {
+        name: 'a satisfies assertion is the same shape as an as-assertion',
+        code: 'const MAX = 500 satisfies number;',
+      },
+      {
+        name: 'a negated literal reaches the const through the unary',
+        code: 'const OFFSET = -12;',
+      },
       // An assertion nested INSIDE the arithmetic, rather than wrapping it.
-      { name: 'an assertion inside a named const computation', code: 'const GAP = (10 as number) / 2;' },
+      {
+        name: 'an assertion inside a named const computation',
+        code: 'const GAP = (10 as number) / 2;',
+      },
       // A negated element inside a NESTED array — the recursive arm.
-      { name: 'a nested coordinate list with negative values', code: 'const path = [[-1.5, 2], [3, -4.25]];' },
-      { name: 'the same list passed straight to a call', code: 'draw([[-1.5, 7.25], [3.5, -4.25]]);' },
-      { name: 'a flat list with a negative first element', code: 'draw([-1.5, 7.25, 3.5]);' },
-      { name: 'a negated operand inside a named const computation', code: 'const GAP = -10 / 4;' },
+      {
+        name: 'a nested coordinate list with negative values',
+        code: 'const path = [[-1.5, 2], [3, -4.25]];',
+      },
+      {
+        name: 'the same list passed straight to a call',
+        code: 'draw([[-1.5, 7.25], [3.5, -4.25]]);',
+      },
+      {
+        name: 'a flat list with a negative first element',
+        code: 'draw([-1.5, 7.25, 3.5]);',
+      },
+      {
+        name: 'a negated operand inside a named const computation',
+        code: 'const GAP = -10 / 4;',
+      },
     ],
     invalid: [
       {

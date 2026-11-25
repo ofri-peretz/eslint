@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** CWE-327, weak cryptography, algorithm downgrade, crypto.createHash, createHmac, createCipheriv, MD5, SHA1, RC4, Node.js security, ESLint rule, LLM-optimized
 
 <!-- @rule-summary -->
+
 Disallow dynamic algorithm names in Node.js crypto functions (CWE-327)
 <!-- @/rule-summary -->
 
@@ -76,6 +77,23 @@ function hash(value, tier) {
 The rule asks a narrow question: can the algorithm be steered to a value the author did
 not choose? A lookup into a `const` object literal whose values are all string literals
 cannot be — the closed set is visible at the call site and reviewable in the diff.
+
+A union of string literal types is the same allowlist written as a type, when the compiler
+holds the value to it. The rule accepts `name satisfies 'sha256' | 'sha512'`, and a call to a
+same-file helper (a function declaration or a `const`) whose declared return type is such a
+union, or whose arrow body casts a value built only from literals and parameters typed with
+such a union:
+
+```ts
+const hashOf = (alg: 'HS256' | 'HS512') =>
+  `sha${alg.slice(2)}` as 'sha256' | 'sha512';
+createHmac(hashOf(alg), key);
+```
+
+An `as` cast is erased at runtime, so `req.query.algorithm as 'sha256'` still reports. So do a
+cast to `string`, a union that admits `string`, and a helper that can be reassigned. The same
+holds wherever the cast hides: a `satisfies` wrapped around one, or a helper whose declared return
+type is reached through `value as 'sha256'` in its body.
 
 ## Legacy interoperability
 

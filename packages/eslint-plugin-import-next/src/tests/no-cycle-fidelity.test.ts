@@ -175,6 +175,16 @@ const cases: { valid: Case[]; invalid: (Case & { errors: unknown })[] } = {
       code: `namespace N {\n  export const v = 1;\n}\nimport x = N.v;\n${A_EXPORTS}`,
       filename: project('import-equals-entity', { 'b.ts': valueBack }),
     },
+    // A module re-exporting its own namespace as `default` is how a drop-in
+    // reproduces a package that ships `export * as default` (yoctocolors
+    // does). `resolved === normalizedFilename` already treats this edge as a
+    // self-import, same as a direct `import x from './a'` would be — there is
+    // only one module, so no initialisation-order hazard (#1549).
+    {
+      name: 'a module re-exporting its own namespace as default is not a cycle',
+      code: `export const red = (s: string): string => s;\nexport * as default from './a.js';\n`,
+      filename: project('self-reexport', {}),
+    },
   ],
   invalid: [
     {

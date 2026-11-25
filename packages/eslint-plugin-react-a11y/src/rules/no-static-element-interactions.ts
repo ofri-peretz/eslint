@@ -13,12 +13,17 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { findAttribute } from '../utils/jsx-static';
+import { DYNAMIC, attributeValue, findAttribute } from '../utils/jsx-static';
 
 type MessageIds = 'noStaticInteraction';
 
 type Options = {
   handlers?: string[];
+  /**
+   * Skip an element whose `role` is an expression the file cannot evaluate
+   * (`role={isLink ? 'link' : 'button'}`), as jsx-a11y does when this is `true`.
+   */
+  allowExpressionValues?: boolean;
 };
 
 type RuleOptions = [Options?];
@@ -75,13 +80,16 @@ export const noStaticElementInteractions = createRule<RuleOptions, MessageIds>({
           'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-static-element-interactions.md',
       }),
     },
+    // Shape of upstream's schema (rules/no-static-element-interactions.js,
+    // v6.10.2): an object with no `additionalProperties: false`, so the extra
+    // keys of a jsx-a11y config load. `allowExpressionValues` is read.
     schema: [
       {
         type: 'object',
         properties: {
           handlers: { type: 'array', items: { type: 'string' } },
+          allowExpressionValues: { type: 'boolean' },
         },
-        additionalProperties: false,
       },
     ],
   },
@@ -91,11 +99,13 @@ export const noStaticElementInteractions = createRule<RuleOptions, MessageIds>({
     currentOptions,
   ) {
     let handlers: string[];
+    let allowExpressionValues: boolean;
 
     return {
       before() {
         const [options = {} as Options] = currentOptions();
-        ({ handlers = INTERACTIVE_HANDLERS } = options ?? {});
+        ({ handlers = INTERACTIVE_HANDLERS, allowExpressionValues = false } =
+          options ?? {});
       },
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;
@@ -125,6 +135,15 @@ export const noStaticElementInteractions = createRule<RuleOptions, MessageIds>({
             attr.name.type === 'JSXIdentifier' &&
             attr.name.name === 'role',
         );
+
+        // A role the file cannot evaluate may be an interactive one.
+        if (
+          allowExpressionValues &&
+          roleAttr?.value?.type === 'JSXExpressionContainer' &&
+          attributeValue(roleAttr) === DYNAMIC
+        ) {
+          return;
+        }
 
         // presentation/none roles don't make an element interactive
         const roleValue =

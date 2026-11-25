@@ -93,9 +93,10 @@ export default class extends Component {
   }
 }
 
-// memo / forwardRef around an anonymous function, with no binding
+// memo / forwardRef around an anonymous function: reported on the call, bound or not
 export default memo(() => <div>Row</div>);
-export default memo(forwardRef((props, ref) => <input ref={ref} />));
+const Row = memo(() => <div>Row</div>);
+const Input = forwardRef((props, ref) => <input ref={ref} />);
 
 // Rendering through React.createElement counts the same as JSX
 export default (props) => React.createElement('div', null, props.label);
@@ -128,6 +129,12 @@ export default class extends Component {
 export default memo(function Row() {
   return <div>Row</div>;
 });
+
+const Cell = memo(() => <div>Cell</div>);
+Cell.displayName = 'Cell';
+
+// A forwardRef held by a memo is one component, named from React 16.12
+export default memo(forwardRef((props, ref) => <input ref={ref} />));
 ```
 
 React's `memo`, `forwardRef`, `createElement`, `Component` and `PureComponent` are
@@ -289,8 +296,14 @@ with a name is already named — there is nothing to fix and nothing to report.
 | `function Profile() { ... }` | Named by the function. |
 | `const Profile = () => ...` | Named by the binding. |
 | `class Profile extends Component { ... }` | Named by the class; `static displayName` is optional. |
-| `const Row = memo(() => <div />)` | The binding names the component through the wrapper. |
+| `const Row = memo(function Row() { ... })` | Named by the function expression. |
+| `const Row = memo(() => ...); Row.displayName = 'Row'` | Named by `displayName`. |
+
+A `memo` or `forwardRef` wrapper around an anonymous function is reported on the wrapper call, whether or not it is
+assigned to a variable, as eslint-plugin-react 7.37.5 does: the variable does not name the function inside the call, so
+DevTools shows `Anonymous`. `memo(forwardRef(...))` is one component and is not reported from React 16.12 (15.7,
+0.14.10), by `settings.react.version`.
 
 **If it fires**, React genuinely cannot name it: an anonymous `export default`, an
-anonymous class component, or `memo`/`forwardRef` with no binding to take a name from.
+anonymous class component, or `memo`/`forwardRef` around an anonymous function.
 Those render as `Anonymous` in DevTools and in every component stack trace.

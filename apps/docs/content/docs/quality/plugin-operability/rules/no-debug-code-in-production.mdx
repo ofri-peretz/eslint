@@ -38,6 +38,7 @@ Debug code left in production can expose sensitive information, internal system 
 | Option                     | Type      | Default | Description                                                                                                          |
 | -------------------------- | --------- | ------- | -------------------------------------------------------------------------------------------------------------------- |
 | `ignoreNonProductionPaths` | `boolean` | `true`  | Skip directories that never ship (`scripts/`, `tools/`, `env/`, `benchmarks/`, examples, demos, fixtures) and build-tool config |
+| `ignoreLoggerModules`      | `boolean` | `true`  | Skip the module that IS the logger: a file named `logger`, `logging`, `log`, `fooLogger` or `foo-logger` |
 
 ## Examples
 

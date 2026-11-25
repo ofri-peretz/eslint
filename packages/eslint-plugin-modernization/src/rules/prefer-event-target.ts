@@ -199,10 +199,20 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
         if (allowEventEmitter) {
           return false;
         }
+        // Not code that chooses an emitter: an ambient declaration describes
+        // an upstream API its author cannot migrate (`class FSWatcher extends
+        // EventEmitter` in a `.d.ts`), and a test file builds doubles for the
+        // code under test. Advising either is advice to the wrong person.
+        if (/\.d\.[cm]?ts$/.test(context.filename)) return false;
+        if (/\.(test|spec)\.[cm]?[jt]sx?$/.test(context.filename)) {
+          return false;
+        }
         return true;
       },
       // Check import declarations
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        // `import type` is erased: nothing reaches runtime to migrate.
+        if (node.importKind === 'type') return;
         if (
           node.source.value === 'node:events' ||
           node.source.value === 'events'
@@ -211,6 +221,7 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
           const eventEmitterImport = node.specifiers.find(
             (specifier: TSESTree.ImportClause) =>
               specifier.type === 'ImportSpecifier' &&
+              specifier.importKind !== 'type' &&
               specifier.imported.type === 'Identifier' &&
               specifier.imported.name === 'EventEmitter',
           );

@@ -5,6 +5,80 @@ All notable changes to `eslint-plugin-react-a11y` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.0
+
+### Minor Changes
+
+- **✨ Feature** — eslint-plugin-jsx-a11y's own preset options load, `flatConfigs`, README migration notes
+
+  The option objects in eslint-plugin-jsx-a11y 6.10.2's `recommended` and `strict` presets (`src/index.js`) used to
+  throw "Unexpected property" when enabled. They load now, under a `jsx-a11y` plugin key or this plugin's own.
+
+  Honoured, and tested with cases ported from upstream's test files:
+
+  - `alt-text`: `elements` (a kind left out is not checked) and the `input[type="image"]` key (merged with `inputImage`).
+    A component listed for `input[type="image"]` or `inputImage` is now checked whatever its `type`, as in jsx-a11y; it
+    used to need `type="image"`.
+  - `mouse-events-have-key-events`: `hoverInHandlers` and `hoverOutHandlers`.
+  - `no-static-element-interactions`: `allowExpressionValues`.
+  - `no-noninteractive-element-interactions`: element keys (`body`, `iframe`, `img`, ...) list handlers allowed on that
+    element. Role-named keys such as `alert` and `dialog` are accepted and, as upstream, match nothing.
+  - `control-has-associated-label`: `depth` accepts 0 and above, clamped to 25.
+
+  Accepted and not read: `control-has-associated-label` `includeRoles`. jsx-a11y 6.10.2 declares no such key in the
+  rule schema and reads it nowhere, so it changes no result there either.
+
+  Every preset now sets `languageOptions.parserOptions.ecmaFeatures.jsx` and a config `name`, and `flatConfigs.recommended`
+  and `flatConfigs.strict` are exported as aliases of `configs.recommended` and `configs.strict`.
+
+  README: `react-a11y/img-requires-alt` is `alt-text`, the stray CWE-252 cell on `alt-text` is gone, and a "Migrating from
+  eslint-plugin-jsx-a11y" section states what is and is not compatible. Still not done: `aria-proptypes`, the deprecated
+  `accessible-emoji`, `label-has-for` and `no-onchange`, and `settings['jsx-a11y']`.
+
+## 3.0.10
+
+### Patch Changes
+
+- **🐛 Fix** — `no-missing-aria-labels` accepts a button or link whose text is a JSX expression
+
+  `<button>{_('Open')}</button>`, `<button>{t('save')}</button>`, `<a>{label ?? 'Back'}</a>` and a template literal with
+  an expression are named by their children at runtime. Any expression child now counts as text, as in
+  eslint-plugin-jsx-a11y, except one proven to render nothing: `undefined`, `null`, `void 0`, a boolean, a blank string,
+  an element, or a conditional or logical expression of those. That was most of the 485 hits on readest/readest.
+  `role-supports-aria-props` accepts `aria-posinset`, `aria-setsize` and `aria-expanded` on role `tab` (aria-query).
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.1.2`
+
+## 3.0.9
+
+### Patch Changes
+
+- **🐛 Fix** — `no-missing-aria-labels`: no longer reports `<button><img alt="Save" /></button>`. An intrinsic `<img>` or `<area>` with a non-empty (or dynamic) `alt` names its parent, as `control-has-associated-label` already agreed. An empty or missing `alt`, `aria-hidden`, and a hidden wrapper still report.
+
+## 3.0.8
+
+### Patch Changes
+
+- **🐛 Fix** — an empty descendant and a ternary between text literals in accessible-name checks
+
+  - `control-has-associated-label` and `no-missing-aria-labels` no longer treat
+    an empty intrinsic descendant (`<label><span /></label>`) as label content —
+    a `<span>` with nothing inside gives a screen reader nothing to announce. A
+    custom component descendant still counts, since its render output isn't
+    visible here.
+  - `no-missing-aria-labels` now also recognizes a ternary between two
+    text-like expressions (`{on ? "Turn off" : "Turn on"}`) as text content,
+    closing a gap in the prior fix for text-like expression children.
+
+## 3.0.7
+
+### Patch Changes
+
+- **🐛 Fix** — Fix false positives found linting popular React packages.
+
+  - `no-missing-aria-labels`: an `aria-hidden="true"` control is not in the accessibility tree and needs no name; a `<button>` is named by text in a descendant element (`<button><span>Sign in</span></button>`), unless that element is `aria-hidden`; and a control whose `id` equals the `htmlFor` of a `<label>` with content in the same JSX tree is named, whether the value is a static string or the same template literal written twice. A label with no content, a different template, a label in a nested function, and a `<select>` with only options still report.
+  - `control-has-associated-label`: the same `id` / `htmlFor` naming is recognised.
+
 ## 3.0.6
 
 ### Patch Changes

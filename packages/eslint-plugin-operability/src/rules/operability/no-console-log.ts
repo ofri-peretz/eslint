@@ -23,7 +23,10 @@ import { normalizePath, getRelativePath } from '@interlace/eslint-devkit';
  * own true positives went silent when written with a string subscript — the
  * notation a bundler emits.
  */
-import { isNonProductionPath } from '../../lib/non-production-paths';
+import {
+  isLoggerModule,
+  isNonProductionPath,
+} from '../../lib/non-production-paths';
 import { isGlobalObject } from '../../lib/global-binding';
 
 /**
@@ -81,6 +84,13 @@ export interface Options {
    * `no-debug-code-in-production` was reporting under a different name.
    */
   ignoreNonProductionPaths?: boolean;
+
+  /**
+   * Skip the module that IS the logger (`logger.ts`, `hmrLogger.ts`, `log.ts`).
+   * It calls `console.log` because that is its job; telling it to "use a
+   * logger" points back at itself. Default: true.
+   */
+  ignoreLoggerModules?: boolean;
 
   /** Name of the logger to use (e.g., 'logger', 'winston'). Default: 'logger' */
   loggerName?: string;
@@ -179,6 +189,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
             description: 'Strategy for handling console.log',
           },
           ignoreNonProductionPaths: { type: 'boolean', default: true },
+          ignoreLoggerModules: { type: 'boolean', default: true },
           ignorePaths: {
             type: 'array',
             items: { type: 'string' },
@@ -238,6 +249,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
       strategy: 'remove',
       ignorePaths: [],
       ignoreNonProductionPaths: true,
+      ignoreLoggerModules: true,
       loggerName: 'logger',
       severityMap: { log: 'log' }, // Only flag console.log by default
       autoDetectLogger: true,
@@ -248,6 +260,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     let strategy: Strategy;
     let ignorePaths: string[];
     let ignoreNonProductionPaths: boolean;
+    let ignoreLoggerModules: boolean;
     let loggerName: string | undefined;
     let maxOccurrences: number | 'all' | undefined;
     let severityMap: SeverityMapping;
@@ -282,6 +295,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     const shouldIgnoreFile = (): boolean => {
       if (ignoreNonProductionPaths && isNonProductionPath(filename))
         return true;
+      if (ignoreLoggerModules && isLoggerModule(filename)) return true;
       if (ignorePaths.length === 0) return false;
 
       const normalizedPath = normalizePath(filename);
@@ -361,6 +375,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
           strategy = 'remove',
           ignorePaths = [],
           ignoreNonProductionPaths = true,
+          ignoreLoggerModules = true,
           loggerName,
           maxOccurrences,
           severityMap = {},

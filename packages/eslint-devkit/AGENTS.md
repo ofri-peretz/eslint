@@ -144,8 +144,7 @@ export const myRule = createRule({
 
 ## Best Practices
 
-1. **Use AST_NODE_TYPES**: Always use `AST_NODE_TYPES.Identifier` instead of string `'Identifier'`
-2. **Use formatLLMMessage**: All security messages should use the structured format
-3. **Check parser services**: Always check `hasParserServices()` before using type utilities
-4. **Single-pass traversal**: Rules should visit nodes once (O(n) complexity)
-5. **Export rule options types**: Export the Options interface for TypeScript users
+1. **Use formatLLMMessage**: All security messages should use the structured format
+2. **Type utilities need parser services**: `hasParserServices()` says whether the consumer's config provides them
+3. **Single-pass traversal**: Rules should visit nodes once (O(n) complexity)
+4. **Export rule options types**: Export the Options interface for TypeScript users

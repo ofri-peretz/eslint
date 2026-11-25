@@ -38,6 +38,7 @@ describe('no-unchecked-loop-condition', () => {
         },
         // Safe while loops with conditions
         {
+          name: 'a loop whose counter is capped by a literal attempt limit',
           code: 'while (condition && attempts < 3) { attemptOperation(); attempts++; }',
         },
         // Plain BinaryExpression while-test (not an Identifier, no user
@@ -45,6 +46,7 @@ describe('no-unchecked-loop-condition', () => {
         // check including the final state-dependent Identifier guard, whose
         // false branch (non-Identifier test) is exercised here.
         {
+          name: 'a loop condition over two plain names has no user input',
           code: 'while (a < b) { advance(); }',
         },
         // Identifier while-test whose name does not match any of the
