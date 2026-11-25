@@ -5,6 +5,18 @@ All notable changes to `@interlace/eslint-devkit` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.3.0
+
+### Minor Changes
+
+- **🐛 Fix** — resolve imports without `oxc-resolver` instead of throwing
+
+  `oxc-resolver` stays an optional peer and is used exactly as before when installed. When it cannot be loaded, `resolveModule` now falls back to a dependency-free resolver (tsconfig `baseUrl`/`paths` including relative `extends`; an `extends` that names an npm package is not followed, then `module.createRequire().resolve`, then a package.json `exports`/`module`/`main`/`types` read) instead of throwing `MissingResolverPeerError`. The fallback does not cover tsconfig `references`, `#imports` maps or Yarn PnP; those return `null` until `oxc-resolver` is installed. A package whose `package.json` does not parse also resolves to `null`. `MissingResolverPeerError` stays exported but is `@deprecated` and never thrown.
+
+### Patch Changes
+
+- **🐛 Fix** — a package whose `package.json` does not parse now resolves to `null` inside the oxc-free fallback resolver instead of throwing out of it. eslint-plugin-react-a11y only corrects a schema comment on its deprecated stubs.
+
 ## 2.2.0
 
 ### Minor Changes
