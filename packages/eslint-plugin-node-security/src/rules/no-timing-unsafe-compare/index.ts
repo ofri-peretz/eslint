@@ -251,12 +251,12 @@ function isServerAction(node: TSESTree.Node): boolean {
     return false;
   }
   if (node.body.type !== AST_NODE_TYPES.BlockStatement) return false;
-  for (const statement of node.body.body) {
-    if (statement.type !== AST_NODE_TYPES.ExpressionStatement) return false;
-    if (statement.directive === undefined) return false;
-    if (statement.directive === 'use server') return true;
-  }
-  return false;
+  // The parser sets `directive` only on prologue statements.
+  return node.body.body.some(
+    (statement) =>
+      statement.type === AST_NODE_TYPES.ExpressionStatement &&
+      statement.directive === 'use server',
+  );
 }
 
 /** Whether a JSX element or fragment appears anywhere under `root`. */

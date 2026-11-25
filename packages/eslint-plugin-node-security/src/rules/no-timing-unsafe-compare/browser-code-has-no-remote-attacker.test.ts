@@ -174,7 +174,7 @@ ruleTester.run(
       },
       {
         name: 'getServerSideProps exported by name is server code',
-        code: `${SOCKET_HANDLER}\nfunction getServerSideProps() { return { props: {} }; }\nexport { getServerSideProps };\nexport default function Page() { return <main />; }`,
+        code: `${SOCKET_HANDLER}\nfunction getServerSideProps() { return { props: {} }; }\nexport { Page as Screen, getServerSideProps };\nexport default function Page() { return <main />; }`,
         filename: 'pages/admin.tsx',
         errors: [{ messageId: 'timingUnsafeCompare' }],
       },
