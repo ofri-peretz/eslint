@@ -11,7 +11,7 @@ cases: []
 > Stage 1 artifact. Opened by the NestJS release watch on reading nest v12.5.0
 > and v11.2.10.
 
-**Status:** draft · **Opened:** 2026-11-13 · **Owner:** @ofri-peretz
+**Status:** approved · **Opened:** 2026-11-13 · **Owner:** @ofri-peretz
 
 ---
 
@@ -41,8 +41,11 @@ Read at the v12.5.0 tag:
   `InvalidEnhancerException` unless the value has a `canActivate` function.
 
 So on every NestJS before 12.5.0 and 11.2.10, the two shapes below start, serve
-requests, and enforce nothing. On the patched versions the application does not
-start. Either way the binding is a defect the source shows.
+requests, and enforce nothing. On the patched versions NestJS throws
+`InvalidEnhancerException`: at startup for a singleton guard, and on the first
+request it handles for a request-scoped handler or guard, so a request-scoped
+route still starts and fails per request. Either way the binding is a defect the
+source shows.
 
 The failing fixture, linted with `require-guards` from `origin/main`
 (`detectGlobalGuards: false`):

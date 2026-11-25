@@ -1,6 +1,6 @@
 # Design — Read a JwtModule registered in root-module metadata
 
-Intent: [`intent.md`](./intent.md). **Status:** draft.
+Intent: [`intent.md`](./intent.md). **Status:** shipped.
 
 ---
 

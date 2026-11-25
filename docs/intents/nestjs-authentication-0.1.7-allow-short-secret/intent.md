@@ -11,7 +11,7 @@ cases: []
 > Stage 1 artifact. Opened by the NestJS release watch on reading
 > `@nestjs/authentication` 0.1.7.
 
-**Status:** draft · **Opened:** 2026-11-22 · **Owner:** @ofri-peretz
+**Status:** approved · **Opened:** 2026-11-22 · **Owner:** @ofri-peretz
 
 ---
 

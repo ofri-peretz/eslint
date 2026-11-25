@@ -1,6 +1,6 @@
 # Design — Report the `allowShortSecret` opt-in of `@nestjs/authentication`
 
-Intent: [`intent.md`](./intent.md). **Status:** draft.
+Intent: [`intent.md`](./intent.md). **Status:** approved.
 
 ---
 

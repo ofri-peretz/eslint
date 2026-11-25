@@ -11,7 +11,7 @@ cases: []
 > Stage 1 artifact. Opened by the NestJS release watch on reading nest v12.5.0
 > and v11.2.10.
 
-**Status:** draft · **Opened:** 2026-11-13 · **Owner:** @ofri-peretz
+**Status:** approved · **Opened:** 2026-11-13 · **Owner:** @ofri-peretz
 
 ---
 
@@ -54,7 +54,11 @@ by the Nest CLI, `tsc` or SWC with decorator metadata on. The project scan
 - No new dependency; type-unaware.
 - A project the scan cannot classify is left alone. Reporting a correctly built
   project on every route would get the rule switched off.
-- `expectedType` on the pipe is a complete fix and must silence the report.
+- `expectedType` on a parameter's own pipe is a complete fix for that
+  parameter and must silence it. On the global pipe it is not a fix: NestJS
+  overrides every parameter's metatype with it, so other DTOs go unvalidated
+  or valid requests fail. Restoring metadata or a per-parameter
+  `expectedType` is the fix the report recommends.
 
 ## Success criteria
 

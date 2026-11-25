@@ -1,31 +1,41 @@
 # Design — a guard NestJS cannot run does not count as a guard
 
-Intent: [`intent.md`](./intent.md). **Status:** draft.
+Intent: [`intent.md`](./intent.md). **Status:** approved.
 
 ---
 
 ## Requirements
 
 - **R1** `@UseGuards(X)` where `X` is bound, in the linted file, to a function
-  declaration or a `function` expression is reported.
+  declaration or a `function` expression that every `return` shows returns a
+  guard class (`mixin(C)`, a class expression, or a local class) is reported.
+  A function that assigns `this.canActivate`, carries a `canActivate`
+  property, or returns anything the file cannot classify is accepted: NestJS
+  can run either shape.
 - **R2** `@UseGuards(X)` where `X` is bound, in the linted file, to a class with
-  no `extends` and no non-abstract member named `canActivate` is reported.
+  no `extends`, no non-abstract member named `canActivate`, and a constructor
+  that cannot install one is reported. A constructor that assigns to `this`
+  (`this.canActivate = …`, `this[k] = …`) or passes `this` to any call
+  (`Object.assign(this, …)`) makes the class unresolved, and it is accepted.
 - **R3** R1 and R2 hold when `X` is imported from a relative module that
   declares it, once open question 1 of the intent is settled.
 - **R4** A called factory (`RoleGuard('admin')`), `new X()`, a class that extends
   anything, and a binding with no visible declaration are accepted as today.
 - **R5** The message names `X`, says the handlers run without it on NestJS
-  before 12.5.0 / 11.2.10 and that later versions refuse to start, and gives the
-  fix for the shape found.
+  before 12.5.0 / 11.2.10 and that later versions throw
+  `InvalidEnhancerException` (at startup for a singleton route, on the first
+  request for a request-scoped one), and gives the fix for the shape found.
 
 ## Design
 
 `packages/eslint-plugin-nestjs-security/src/rules/require-guards/index.ts`.
 
 `guardNames()` maps each `@UseGuards` argument to a name with `expressionName`.
-Add a second pass over the same arguments that, for a bare identifier, looks the
-binding up in the module scope and classes it as `factory`, `noCanActivate` or
-`runnable`. A route whose every applied guard is unrunnable is treated as
+Add a second pass over the same arguments that, for a bare identifier, resolves
+the binding from the decorator's own lexical scope (`sourceCode.getScope` on the
+argument, walking `upper`), so a local guard that shadows a module-level one
+decides, and classes it as `factory`, `noCanActivate`, `runnable` or
+`unresolved`. A route whose every applied guard is unrunnable is treated as
 unguarded; each unrunnable binding is reported where it is applied.
 
 New reports:

@@ -315,7 +315,35 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
               checkLifetime(node, optionsLifetime(own));
               return;
             }
-            if (
+            /*
+             * `const jwt = new JwtService(options)` is not the injected
+             * service: its constructor keeps only the options it is given,
+             * so `JwtModule.register({ signOptions })` never reaches it. Its
+             * own `signOptions.expiresIn` (or options this file cannot see)
+             * is the only lifetime source; without one the token has no exp.
+             */
+            const receiver =
+              node.callee.type === AST_NODE_TYPES.MemberExpression &&
+              node.callee.object.type === AST_NODE_TYPES.Identifier
+                ? resolveObjectLiteral(node.callee.object)
+                : null;
+            if (receiver?.type === AST_NODE_TYPES.NewExpression) {
+              const ctor = resolveObject(receiver.arguments[0], sourceCode);
+              const signOptions =
+                ctor === null || ctor.opaque === true
+                  ? ctor
+                  : resolveObject(
+                      getOptionValue(ctor, 'signOptions'),
+                      sourceCode,
+                    );
+              if (signOptions?.opaque === true || own?.opaque === true) {
+                return;
+              }
+              if (signOptions !== null && hasOption(signOptions, 'expiresIn')) {
+                checkLifetime(node, optionsLifetime(signOptions));
+                return;
+              }
+            } else if (
               own?.opaque === true ||
               nestModuleExpiry(
                 context.filename,
@@ -358,6 +386,22 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
                   // Options object exists but lacks expiresIn — insert property
                   const openBrace = sourceCode.getFirstToken(optionsArg3)!;
                   return fixer.insertTextAfter(openBrace, " expiresIn: '1h',");
+                }
+                if (optionsArg3 !== undefined) {
+                  // A function there is jsonwebtoken's callback: the options
+                  // go before it. Anything else holds the options, which the
+                  // fix merges into; a fourth argument would be the callback
+                  // slot and set nothing.
+                  if (resolveObject(optionsArg3, sourceCode) === null) {
+                    return fixer.insertTextBefore(
+                      optionsArg3,
+                      "{ expiresIn: '1h' }, ",
+                    );
+                  }
+                  return fixer.replaceText(
+                    optionsArg3,
+                    `{ ...${sourceCode.getText(optionsArg3)}, expiresIn: '1h' }`,
+                  );
                 }
                 // No options arg — insert { expiresIn: '1h' } as third argument
                 const lastArg = node.arguments[node.arguments.length - 1];

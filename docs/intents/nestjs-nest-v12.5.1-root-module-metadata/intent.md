@@ -11,7 +11,7 @@ cases: []
 
 > Stage 1 artifact. Opened by the NestJS release watch on reading nest v12.5.1.
 
-**Status:** draft · **Opened:** 2026-11-17 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-11-17 · **Owner:** @ofri-peretz
 
 ---
 

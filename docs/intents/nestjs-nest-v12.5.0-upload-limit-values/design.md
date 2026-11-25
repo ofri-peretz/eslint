@@ -1,6 +1,6 @@
 # Design — Infinity, undefined and null are not upload limits
 
-Intent: [`intent.md`](./intent.md). **Status:** draft.
+Intent: [`intent.md`](./intent.md). **Status:** shipped.
 
 ---
 

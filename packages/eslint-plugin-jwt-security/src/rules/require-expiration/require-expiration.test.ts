@@ -1010,14 +1010,24 @@ ruleTester.run('require-expiration — mutation kills', requireExpiration, {
     {
       // A one-argument sign on a plain receiver is NestJS-shaped even when
       // `isNestJwtShape` says no: the module registration decides.
-      name: 'jwt.sign(payload) on a constructed JwtService defers to a module that sets expiresIn',
+      name: 'jwt.sign(payload) on an injected receiver defers to a module that sets expiresIn',
       filename: nestProject({
         'src/auth/auth.module.ts': MODULE(
           "{ secret: process.env.S, signOptions: { expiresIn: '15m' } }",
         ),
       }),
+      code: `export const token = (jwt) => jwt.sign({ sub: 1 });`,
+    },
+    {
+      name: 'a constructed JwtService whose own signOptions set expiresIn',
       code: `import { JwtService } from '@nestjs/jwt';
-const jwt = new JwtService();
+const jwt = new JwtService({ secret: 's', signOptions: { expiresIn: '15m' } });
+export const token = jwt.sign({ sub: 1 });`,
+    },
+    {
+      name: 'a constructed JwtService given options this file cannot see',
+      code: `import { JwtService } from '@nestjs/jwt';
+const jwt = new JwtService(loadOptions());
 export const token = jwt.sign({ sub: 1 });`,
     },
     {
@@ -1062,11 +1072,56 @@ export const token = jwt.sign({ sub: 1 }, 'k', opts);`,
               messageId: 'addExpiration',
               output: `import jwt from 'jsonwebtoken';
 const opts = { algorithm: 'HS256' };
-export const token = jwt.sign({ sub: 1 }, 'k', opts, { expiresIn: '1h' });`,
+export const token = jwt.sign({ sub: 1 }, 'k', { ...opts, expiresIn: '1h' });`,
             },
           ],
         },
       ],
+    },
+    {
+      name: 'a callback in the options slot gets the options inserted before it',
+      code: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub: 1 }, 'k', (err, token) => {});`,
+      errors: [
+        {
+          messageId: 'missingExpiration',
+          suggestions: [
+            {
+              messageId: 'addExpiration',
+              output: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub: 1 }, 'k', { expiresIn: '1h' }, (err, token) => {});`,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      // A constructed JwtService keeps only its constructor options: the
+      // module's signOptions never reach it.
+      name: 'jwt.sign(payload) on a constructed JwtService ignores the module expiresIn',
+      filename: nestProject({
+        'src/auth/auth.module.ts': MODULE(
+          "{ secret: process.env.S, signOptions: { expiresIn: '15m' } }",
+        ),
+      }),
+      code: `import { JwtService } from '@nestjs/jwt';
+const jwt = new JwtService();
+export const token = jwt.sign({ sub: 1 });`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+    {
+      name: 'a constructed JwtService whose options set no signOptions',
+      code: `import { JwtService } from '@nestjs/jwt';
+const jwt = new JwtService({ secret: 's' });
+export const token = jwt.sign({ sub: 1 });`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+    {
+      name: 'a constructed JwtService whose signOptions set no expiresIn',
+      code: `import { JwtService } from '@nestjs/jwt';
+const jwt = new JwtService({ secret: 's', signOptions: { algorithm: 'HS256' } });
+export const token = jwt.sign({ sub: 1 });`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
     },
   ],
 });

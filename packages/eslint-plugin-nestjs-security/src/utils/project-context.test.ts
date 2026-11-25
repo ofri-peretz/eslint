@@ -974,6 +974,23 @@ describe('scanProject — an upload limit set in MulterModule', () => {
     expect(
       scan('MulterModule.register({ limits: { fileSize: nullable } })'),
     ).toBe(true);
+    // A compound value only mentions the special value; it may be finite.
+    expect(
+      scan(
+        'MulterModule.register({ limits: { fileSize: (Infinity === configuredLimit ? 1048576 : configuredLimit) } })',
+      ),
+    ).toBe(true);
+    expect(
+      scan(
+        'MulterModule.register({ limits: { fileSize: undefined ?? 1024 } })',
+      ),
+    ).toBe(true);
+    expect(
+      scan('MulterModule.register({ limits: { fileSize: (Infinity) } })'),
+    ).toBe(false);
+    expect(
+      scan('MulterModule.register({ limits: { fileSize: null as any } })'),
+    ).toBe(false);
   });
 
   it('looks at every registration, not just the first', () => {

@@ -1,6 +1,6 @@
 # Design — a ValidationPipe with no parameter types validates nothing
 
-Intent: [`intent.md`](./intent.md). **Status:** draft.
+Intent: [`intent.md`](./intent.md). **Status:** approved.
 
 ---
 
@@ -18,14 +18,28 @@ Intent: [`intent.md`](./intent.md). **Status:** draft.
 Sketch only; the intent's open questions decide its shape.
 
 `scanProject()` in `packages/eslint-plugin-nestjs-security/src/utils/project-context.ts`
-reads the `tsconfig.json` beside `package.json` (and `tsconfig.build.json` when
-present) and sets `emitsDecoratorMetadata`. `no` only when the file is readable,
-has no `extends`, and sets the flag to `false` or leaves it out; anything else
-is `unknown`.
+first classifies the tool that runs the code, from `package.json` scripts and
+config files: `nest`/`tsc` (reads `tsconfig.json`, plus `tsconfig.build.json`
+when present), SWC (reads `.swcrc` `jsc.transform.decoratorMetadata`, which
+emits metadata whatever `tsconfig.json` says), `tsx`/esbuild (emit none
+whatever the flag says). It then sets `emitsDecoratorMetadata`: `no` only when
+the tool is classified and its own setting establishes no metadata (a readable
+`tsconfig.json` with no `extends` that leaves the flag off under `tsc`, any
+`tsx`/esbuild entry). Several tools, an unrecognised one, or an unreadable
+setting is `unknown`.
 
 New report, in `no-missing-validation-pipe`: `validationPipeWithoutMetadata`, on
 `app.useGlobalPipes(new ValidationPipe())` in the bootstrap file, or on the
 `APP_PIPE` provider. One report per registration, not per handler.
+
+Parameter-scoped validation (R4): a parameter decorated
+`@Body(new ValidationPipe({ expectedType: Dto }))` is validated after the global
+pipe, whatever the metadata. The rule reads each controller file it lints; the
+registration report stays, because the scan cannot see every handler at once,
+but each handler whose body/query/param arguments all carry such a pipe gets no
+per-handler finding, and the report's text names the per-parameter pipe as the
+fix. A project that validates every parameter that way silences the
+registration with `assumeDecoratorMetadata`; the docs say so.
 
 ```ts
 // tsconfig.json: { "compilerOptions": { "experimentalDecorators": true } }
@@ -34,8 +48,12 @@ app.useGlobalPipes(new ValidationPipe({ whitelist: true })); // reported
 
 Removed reports: none.
 
-Silencing: turn `emitDecoratorMetadata` on, give the pipe an `expectedType`, or
-a new boolean option `assumeDecoratorMetadata` for builds the scan cannot read.
+Silencing: turn decorator metadata on in the tool that runs the code, give each
+validated parameter its own `new ValidationPipe({ expectedType: Dto })`, or a
+new boolean option `assumeDecoratorMetadata` for builds the scan cannot read. An
+`expectedType` on the global pipe is not a fix: NestJS uses it as the metatype
+of every parameter, so every other DTO's constraints go unchecked or valid
+requests are rejected; it does not silence the report.
 
 Fidelity model: `no_missing_validation_pipe.qnt` gains a `Metadata` dimension
 (`On | Off | Extends | Unreadable`) crossed with the global-pipe registration.
