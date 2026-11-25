@@ -26,6 +26,9 @@ function callback(form, elem) {
       return `(item: any) => { return ${e}; }`;
     case 'FnExpr':
       return `function (item: any) { return ${e}; }`;
+    case 'Bound':
+      // The element is bound, not returned: the returned wrapper is keyed.
+      return `(item: any) => { const el = ${elem}; return <li key={item.id}>{el}</li>; }`;
     default:
       return `(item: any) => ${e}`;
   }
@@ -50,13 +53,17 @@ function iterate(iter, cb) {
 
 module.exports = {
   rule: 'jsx-key',
-  // Missing: 6 iterators x 4 forms x 7 elements; Unstable: 5 keys x 2 options.
-  domain: 6 * 4 * 7 + 5 * 2,
-  traces: 2500,
+  // Missing: 6 iterators x 5 forms x 7 elements x 2 options; Unstable: 5 keys x 2 options.
+  domain: 6 * 5 * 7 * 2 + 5 * 2,
+  traces: 6000,
   filename: FILE,
   key: keyOf('focus', 'iter', 'form', 'elem', 'keyExpr', 'opt'),
-  config: (s) =>
-    tag(s.opt) === 'Off' ? { warnUnstableKeys: false } : undefined,
+  config: (s) => {
+    const opt = tag(s.opt);
+    if (opt === 'CheckFragments') return { checkFragmentShorthand: true };
+    if (opt === 'WarnUnstable') return { warnUnstableKeys: true };
+    return undefined;
+  },
   code: (s) => {
     let list;
     if (tag(s.focus) === 'Missing') {
