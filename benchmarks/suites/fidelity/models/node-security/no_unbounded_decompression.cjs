@@ -65,4 +65,4 @@ const base = {
 };
 
 // Test-file dimension: x3 domain, see lib.cjs `withTestFile`.
-module.exports = withTestFile(base, { option: 'allowInTests', flip: true });
+module.exports = withTestFile(base, { option: 'allowInTests', flip: false });

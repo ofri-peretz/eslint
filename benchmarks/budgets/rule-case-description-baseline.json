@@ -245,7 +245,7 @@
     "node-security/no-static-iv": 70,
     "node-security/no-timing-unsafe-compare": 174,
     "node-security/no-toctou-vulnerability": 83,
-    "node-security/no-unbounded-decompression": 45,
+    "node-security/no-unbounded-decompression": 43,
     "node-security/no-unsafe-buffer-alloc": 135,
     "node-security/no-unsafe-dynamic-require": 63,
     "node-security/no-weak-cipher-algorithm": 20,

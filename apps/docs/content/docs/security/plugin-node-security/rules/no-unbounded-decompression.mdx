@@ -86,13 +86,13 @@ const plain = zlib.gunzipSync(uploadedBuffer, { maxOutputLength: MAX_OUTPUT });
 
 | Option         | Type      | Default | Description                                 |
 | -------------- | --------- | ------- | ------------------------------------------- |
-| `allowInTests` | `boolean` | `false` | Allow unbounded decompression in test files |
+| `allowInTests` | `boolean` | `true`  | Allow unbounded decompression in test files |
 
 ```javascript
 {
   rules: {
     'node-security/no-unbounded-decompression': ['error', {
-      allowInTests: false
+      allowInTests: false // lint test files too
     }]
   }
 }
@@ -141,4 +141,4 @@ zlib.gunzip(reqBody, opts, cb);
 
 | Option         | Type      | Default | Description                                 |
 | -------------- | --------- | ------- | ------------------------------------------- |
-| `allowInTests` | `boolean` | `false` | Allow unbounded decompression in test files |
+| `allowInTests` | `boolean` | `true`  | Allow unbounded decompression in test files |
