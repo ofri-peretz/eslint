@@ -96,6 +96,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // A non-test filename with the exemption turned off still needs a real
     // finding to report — the option does not report by itself.
     {
+      name: 'allowInTests false does not report a handled stream by itself',
       code: "const s = fs.createReadStream(p); s.on('error', log); s.pipe(res);",
       filename: '/proj/stream.spec.ts',
       options: [{ allowInTests: false }],
