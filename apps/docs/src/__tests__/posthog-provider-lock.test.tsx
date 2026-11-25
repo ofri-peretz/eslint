@@ -132,6 +132,22 @@ describe('PostHog: Init contract (ANALYTICS_PHILOSOPHY.md)', () => {
     expect(initSrc).not.toMatch(/^\s*cookieless_mode:/m);
     expect(initSrc).not.toMatch(/^\s*persistence:\s*'memory',/m);
   });
+  it('replay runs on the bundled recorder, never the blockable CDN script', () => {
+    // posthog-js fetches `/ingest/static/posthog-recorder.js` unless the
+    // recorder is already on the page, and EasyPrivacy and AdGuard block that
+    // file name on every host. Most interacting docs sessions lost their
+    // replay to it, which left Replay Vision blind to the readers it watches.
+    expect(initSrc).toMatch(/import\('posthog-js\/dist\/posthog-recorder'\)/);
+    // Replay must start off and be switched on only after the chunk loads.
+    // Starting it on at init lets the SDK fire the blocked fetch first.
+    expect(initSrc).toMatch(/^\s*disable_session_recording:\s*true,/m);
+    expect(initSrc).toMatch(
+      /\.then\(\(\) => posthog\.set_config\(\{ disable_session_recording: false \}\)\)/,
+    );
+    expect(initSrc).toMatch(
+      /if \(!disableReplay\) enableReplayWithBundledRecorder\(\);/,
+    );
+  });
   it('vercel.app aliases are not counted as site traffic', () => {
     expect(initSrc).toMatch(
       /if \(isVercelAlias\(\) && !isSyntheticCheck\(\)\) return false;/,

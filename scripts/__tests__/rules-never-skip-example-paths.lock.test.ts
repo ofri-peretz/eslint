@@ -21,6 +21,23 @@ const ROOT = path.resolve(__dirname, '../..');
 const SEGMENT =
   /(?:^|[/\\])(?:examples?|fixtures?|__fixtures__)[/\\]|[/\\](?:examples?|fixtures?|__fixtures__)(?:$|[/\\])/i;
 
+/**
+ * The text to read as a path. A regex literal drops its `/` delimiters and
+ * flags, unescapes `\/`, reads `[/]` as a slash, and treats `^` as a path
+ * boundary. A regex segment then needs a slash after it (REGEX_SEGMENT), so
+ * `/example/` and `/^example/i` are words and `/^fixtures\//` is a path.
+ */
+function pathText(node: ts.Node & { text: string }): string {
+  if (!ts.isRegularExpressionLiteral(node)) return node.text;
+  const body = node.text.slice(1, node.text.lastIndexOf('/'));
+  return body
+    .replace(/\\\//g, '/')
+    .replace(/\[\/\]/g, '/')
+    .replace(/\^/g, '/');
+}
+
+const REGEX_SEGMENT = /(?:^|\/)(?:examples?|fixtures?|__fixtures__)\//i;
+
 /** Literals in `source` that name an examples or fixtures path segment. */
 export function examplePathLiterals(
   source: string,
@@ -33,7 +50,10 @@ export function examplePathLiterals(
       ts.isStringLiteralLike(node) ||
       ts.isRegularExpressionLiteral(node) ||
       ts.isTemplateLiteralToken(node);
-    if (literal && SEGMENT.test(node.text)) {
+    const pattern = ts.isRegularExpressionLiteral(node)
+      ? REGEX_SEGMENT
+      : SEGMENT;
+    if (literal && pattern.test(pathText(node))) {
       const line = sf.getLineAndCharacterOfPosition(node.getStart()).line + 1;
       hits.push(`${file}:${line} ${node.getText()}`);
     }
@@ -77,6 +97,14 @@ describe('the scanner', () => {
     expect(examplePathLiterals('const p = `src/examples/${x}`;')).toHaveLength(
       1,
     );
+  });
+
+  it('reads an anchored regex as a path and a bare-word regex as a word', () => {
+    expect(
+      examplePathLiterals(`if (/^fixtures\\//.test(filename)) return;`),
+    ).toHaveLength(1);
+    expect(examplePathLiterals(`const word = /example/;`)).toEqual([]);
+    expect(examplePathLiterals(`const weak = /^example/i;`)).toEqual([]);
   });
 
   it('ignores comments and bare words', () => {
