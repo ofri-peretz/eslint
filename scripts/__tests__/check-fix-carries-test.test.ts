@@ -34,6 +34,15 @@ describe('judgeFix', () => {
     }
   });
 
+  it('does not count a .d.ts declaration as code', () => {
+    expect(
+      judgeFix('fix(a): y', [
+        'packages/a/types/index.d.ts',
+        'packages/a/src/x.d.mts',
+      ]).ok,
+    ).toBe(true);
+  });
+
   it('passes a fix that changes no code: docs, workflows, lockfiles', () => {
     expect(
       judgeFix('fix(deps): bump', [

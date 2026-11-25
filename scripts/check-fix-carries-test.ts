@@ -7,7 +7,7 @@
  * It cannot tell whether the test fails when the fix is reverted; `check:lock-proofs` and the
  * triggerlist `lock-still-bites` review own that question.
  *
- * Code is any .js/.ts family file that is not a test. Docs, workflows, configs and lockfiles are
+ * Code is any .js/.ts family file that is not a test or a .d.ts declaration. Docs, workflows, configs and lockfiles are
  * not code, so `fix(deps)` bumps and CI-only fixes pass.
  *
  *   PR_TITLE='fix(x): y' npx tsx scripts/check-fix-carries-test.ts [--base origin/main]
@@ -16,7 +16,7 @@ import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 const FIX_TITLE = /^fix(?:\([^)]*\))?!?:/u;
-const CODE = /\.[cm]?[jt]sx?$/u;
+const CODE = /(?<!\.d)\.[cm]?[jt]sx?$/u;
 const TEST = /(?:\.|-)(?:test|spec)\.[cm]?[jt]sx?$|(?:^|\/)__tests__\//u;
 
 export interface FixVerdict {
