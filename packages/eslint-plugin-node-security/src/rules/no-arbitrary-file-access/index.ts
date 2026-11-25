@@ -20,6 +20,7 @@ import {
   createRule,
   formatLLMMessage,
   isModuleBinding,
+  isSeparatorAnchored,
   MessageIcons,
   objectKeyName,
   propertyName,
@@ -28,7 +29,6 @@ import {
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { findVariable } from '../../utils/provenance';
-import { isSeparatorAnchored } from '../../utils/separator-anchored';
 import { undeclaredFsBinding } from '../../utils/module-binding';
 
 /**
