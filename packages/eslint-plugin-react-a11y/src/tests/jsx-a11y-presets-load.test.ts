@@ -267,11 +267,11 @@ const strictRules = {
 /**
  * Rules in both upstream presets that this plugin does not register, so an entry
  * naming them cannot load. The test below pins the list so the gap is stated
- * rather than discovered. `aria-proptypes` is a live upstream rule (phase 2);
- * `label-has-for` is deprecated upstream and set to `off` there, and gets a
- * no-op stub in a follow-up.
+ * rather than discovered. `aria-proptypes` is a live upstream rule (phase 2).
+ * `label-has-for` is deprecated upstream and set to `off` there; it is now a
+ * registered no-op stub (see deprecated-stubs.test.ts), so its entry loads.
  */
-const NOT_IMPLEMENTED = ['jsx-a11y/aria-proptypes', 'jsx-a11y/label-has-for'];
+const NOT_IMPLEMENTED = ['jsx-a11y/aria-proptypes'];
 
 type Preset = Record<string, unknown>;
 
