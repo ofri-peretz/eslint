@@ -103,6 +103,7 @@ describe('no-unencrypted-transmission', () => {
       valid: [],
       invalid: [
         {
+          name: 'http:// opted back in through insecureProtocols reports a host-bearing URL',
           code: 'const url = "http://api.example.com";',
           options: [{ insecureProtocols: ['http://'] }],
           errors: [
@@ -560,3 +561,103 @@ describe('no-unencrypted-transmission', () => {
     },
   );
 });
+
+ruleTester.run(
+  'no-unencrypted-transmission (URI-scheme prefix tables)',
+  noUnencryptedTransmission,
+  {
+    valid: [
+      {
+        // @source tauri-apps/plugins-workspace plugins/nfc/guest-js/index.ts:299,300,305 at 0472f4aa0eef
+        // @found real-source scan
+        name: 'FP: the NFC URI-record prefix table holds scheme prefixes, never connected to',
+        code: "const protocols = ['', 'http://www.', 'https://www.', 'http://', 'https://', 'tel:', 'mailto:', 'ftp://anonymous:anonymous@', 'ftp://ftp.', 'ftps://', 'sftp://', 'ftp://'];",
+      },
+      {
+        name: 'userinfo with no host after it is still a prefix',
+        code: "const p = ['ftp://anonymous:anonymous@', 'ftp://'];",
+      },
+      {
+        name: 'bare schemes of non-web protocols are a table too',
+        code: "const p = ['tcp://', 'redis://', 'mysql://'];",
+      },
+    ],
+    invalid: [
+      {
+        name: 'one real host among the prefixes disqualifies the whole array',
+        code: "const p = ['tel:', 'mailto:', 'ftp://files.acmecorp.io/pub'];",
+        errors: [
+          {
+            messageId: 'unencryptedTransmission',
+            suggestions: [
+              {
+                messageId: 'useHttps',
+                output: `const p = ['tel:', 'mailto:', "ftps://files.acmecorp.io/pub"];`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a user:password@host connection string is a destination, not a prefix',
+        code: "const p = ['tel:', 'ftp://user:pw@files.acmecorp.io'];",
+        errors: [
+          {
+            messageId: 'unencryptedTransmission',
+            suggestions: [
+              {
+                messageId: 'useHttps',
+                output: `const p = ['tel:', "ftps://user:pw@files.acmecorp.io"];`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a single-element array is not a table',
+        code: "const p = ['ftp://files.acmecorp.io'];",
+        errors: [
+          {
+            messageId: 'unencryptedTransmission',
+            suggestions: [
+              {
+                messageId: 'useHttps',
+                output: `const p = ["ftps://files.acmecorp.io"];`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a non-literal element means the array is not provably a prefix table',
+        code: "const p = ['tel:', host, 'ftp://files.acmecorp.io'];",
+        errors: [
+          {
+            messageId: 'unencryptedTransmission',
+            suggestions: [
+              {
+                messageId: 'useHttps',
+                output: `const p = ['tel:', host, "ftps://files.acmecorp.io"];`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a connection string outside an array is reported as before',
+        code: "const url = 'mongodb://db.acmecorp.io/app';",
+        errors: [
+          {
+            messageId: 'unencryptedTransmission',
+            suggestions: [
+              {
+                messageId: 'useHttps',
+                output: `const url = "mongodb+srv://db.acmecorp.io/app";`,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+);

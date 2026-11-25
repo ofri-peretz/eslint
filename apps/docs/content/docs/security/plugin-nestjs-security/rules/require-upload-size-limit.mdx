@@ -19,14 +19,15 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 Flags `FileInterceptor`, `FilesInterceptor`, `FileFieldsInterceptor` and
 `AnyFilesInterceptor` from `@nestjs/platform-express` when their options set no
-`limits.fileSize`.
+`limits.fileSize`, or set it to `Infinity`.
 
 ## Rule Details
 
 multer only enforces a limit that is present in `limits`, and `fileSize`
-defaults to `Infinity`. NestJS fills in defaults for two field-_name_ limits
-(`applyDefaultLimits`, `platform-express/multer/multer.utils.ts`, v12.4.1) and
-nothing for the size of a file. So this route stores however many bytes the
+defaults to `Infinity`. NestJS fills in defaults for the field-_name_ limits and
+the number of parts (`applyDefaultLimits`,
+`platform-express/multer/multer/multer.utils.ts`, v12.5.0) and nothing for the
+size of a file. So this route stores however many bytes the
 client sends, in memory, because memory is the default storage:
 
 ```ts
@@ -57,6 +58,26 @@ A pipe runs after the interceptor, and the interceptor is what reads the request
 body. By the time the validator rejects a 4 GB upload, multer has received and
 stored all 4 GB. The validator checks the result; it does not bound the upload.
 Keep it for the error message, and set `limits.fileSize` for the bound.
+
+### `Infinity`, `undefined` and `null` are not limits
+
+```ts
+// Reported: Infinity lifts the limit, including one MulterModule.register() set.
+@UseInterceptors(FileInterceptor('file', { limits: { fileSize: Infinity } }))
+
+// Reported unless a module sets the limit: undefined and null set nothing.
+@UseInterceptors(FileInterceptor('file', { limits: { fileSize: undefined } }))
+```
+
+Since NestJS 12.5.0 and 11.2.10, a route option or limit that is `undefined` or
+`null` is left out of the merge with the module's options (`mergeMulterOptions`,
+same file), so the module's value stays; `Infinity` is how a route lifts a
+limit. Before those versions `undefined` on the route also removed the module's
+limit. The rule reads the current behaviour: `undefined` and `null` are treated
+as absent, and `Infinity` is reported whatever the module sets.
+
+A route that must accept a file of any size is rare enough to say so where it
+happens: `// eslint-disable-next-line nestjs-security/require-upload-size-limit`.
 
 ## ❌ Incorrect
 
@@ -121,6 +142,8 @@ registration sets `limits.fileSize`, or uses `registerAsync` with a
 
 ## Known False Negatives
 
+- `Infinity` under another spelling (`Number.POSITIVE_INFINITY`, `1 / 0`, a
+  constant) reads as a limit.
 - The module scan is per project, not per module. In a project where one module
   sets `limits.fileSize` and another registers nothing, the second module's
   interceptors are not reported.

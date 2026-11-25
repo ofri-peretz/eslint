@@ -5,6 +5,23 @@ All notable changes to `oxlint-plugin-jwt-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.6
+
+### Patch Changes
+
+- **🐛 Fix** — no-decode-without-verify treats a table indexed by a claim (`keys[claims.kid]`) as a key lookup
+- **🐛 Fix** — no-decode-without-verify reports a claim converted before it becomes the key
+
+  The decode-then-verify exemption let a decoded claim reach the verify's key through any call, because a call there is normally a per-user key lookup (`getKey(claims.kid)`). `String(claims.secret)`, `Number(...)`, `BigInt(...)` and `Buffer.from(...)` / `Buffer.alloc(...)` hand back the claim itself, so `jwt.verify(token, String(claims.secret), ...)` was accepted while `jwt.verify(token, claims.secret, ...)` reported. These conversions now carry the claim through unchanged and the call reports. A lookup whose result is converted (`String(getKey(claims.kid))`) is still accepted.
+
+- **🐛 Fix** — no-decode-without-verify reports claims used before the verify
+
+  The decode-then-verify exemption accepted `jwt.decode(token)` whenever a later, unconditional, pinned `jwt.verify` of the same token followed, even when the decoded claims had already been used. `const claims = jwt.decode(token); await grantRole(claims.sub, claims.role); jwt.verify(token, key, { algorithms: ['HS256'] });` was accepted, although the grant runs before the signature check and a failing verify does not undo it.
+
+  Between the decode and the verify, a value derived from the claims is now allowed only when it flows into the key of that same verify (the second argument, or `secret` / `publicKey` in an options object) after a lookup call: the per-user-secret lookup. A claim that is itself the key (`jwt.verify(token, claims.secret, ...)`) reports, because the attacker then picks the key their forgery is checked against. A call argument that is not such a lookup, a branch condition, a write to `req.user` or a module variable, and a return now report. A flow the rule cannot follow reports too. Reads after the verify are unaffected.
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-jwt-security@4.0.6`
+
 ## 4.0.5
 
 ### Patch Changes

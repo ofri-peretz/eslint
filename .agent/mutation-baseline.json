@@ -68,9 +68,9 @@
           "timeout": 0
         },
         "require-expiration": {
-          "score": 91.7,
-          "killed": 143,
-          "survived": 13,
+          "score": 100,
+          "killed": 153,
+          "survived": 0,
           "noCoverage": 0,
           "timeout": 1
         },
@@ -604,11 +604,11 @@
           "timeout": 5
         },
         "no-zip-slip": {
-          "score": 96.8,
-          "killed": 513,
-          "survived": 17,
+          "score": 97.3,
+          "killed": 587,
+          "survived": 16,
           "noCoverage": 0,
-          "timeout": 2
+          "timeout": 3
         },
         "prefer-native-crypto": {
           "score": 96.3,
@@ -660,11 +660,11 @@
           "timeout": 0
         },
         "require-stream-error-handler": {
-          "score": 96,
-          "killed": 196,
-          "survived": 7,
+          "score": 96.3,
+          "killed": 285,
+          "survived": 10,
           "noCoverage": 1,
-          "timeout": 1
+          "timeout": 3
         },
         "utils/const-value": {
           "score": 91.5,
@@ -1158,6 +1158,13 @@
     },
     "secure-coding": {
       "rules": {
+        "detect-object-injection": {
+          "score": 92.5,
+          "killed": 2508,
+          "survived": 203,
+          "noCoverage": 0,
+          "timeout": 15
+        },
         "no-fail-open-auth": {
           "score": 83.1,
           "killed": 273,
@@ -1239,7 +1246,6 @@
       "pending": [
         "__tests__",
         "detect-non-literal-regexp",
-        "detect-object-injection",
         "detect-weak-password-validation",
         "no-bidi-characters",
         "no-directive-injection",
@@ -1334,7 +1340,7 @@
         },
         "require-upload-size-limit": {
           "score": 100,
-          "killed": 128,
+          "killed": 161,
           "survived": 0,
           "noCoverage": 0,
           "timeout": 0

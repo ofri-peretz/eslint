@@ -5,6 +5,43 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.2.1
+
+### Patch Changes
+
+- **🐛 Fix** — no-unbounded-decompression accepts a payload an AEAD decipher authenticated
+
+  nestjs/workflows inflates a payload only after `Buffer.concat([decipher.update(…), decipher.final()])` on an `aes-256-gcm` decipher with `setAuthTag`. `final()` throws unless the tag verifies, so a bomb needs the key. The whole chain is required: a node:crypto `createDecipheriv` with a literal GCM/CCM/OCB/ChaCha20-Poly1305 algorithm, `setAuthTag`, `final()` on the same decipher, and every write of the payload binding.
+
+- **🐛 Fix** — no-unsafe-buffer-alloc accepts a ternary cap on a wire size
+
+  `n <= MAX ? Buffer.alloc(n) : null` caps the size exactly as `if (n <= MAX) return Buffer.alloc(n)` does, and only the `if` spelling was recognised. The arm a ternary's test caps no longer reports `unboundedAllocation`; the other arm still does.
+
+- **🐛 Fix** — no-unsafe-buffer-alloc reads `.length` of a declared Buffer or string as a size in memory
+
+  nestjs/mail allocates `message.length * 2 + 5` for dot-stuffing a `message: Buffer`. That is at most twice what is already held, not a length prefix the peer wrote, but the name `message` decided it. The declared type (`Buffer`, `Uint8Array`, `ArrayBuffer`, `string`) is the evidence: an untyped or `any` value may be parsed JSON whose `length` field is any number, and still reports.
+
+- **🐛 Fix** — skip test and spec files by default
+
+  `no-unbounded-decompression` now skips test and spec files by default, matching `no-math-random-crypto`, `no-toctou-vulnerability` and `require-stream-error-handler`: its `allowInTests` option defaults to `true`, and `allowInTests: false` restores linting them.
+
+- **🐛 Fix** — no-shell-injection lets a number-typed part into a command
+
+  `execSync('taskkill /pid ' + pid + ' /T /F')` with `pid: number` (nestjs/nest-cli tree-kill.ts) has no injectable part: a number interpolates as digits. A part declared `: number`, coerced with `Number()`/`parseInt()`/`parseFloat()`, a unary expression, or a binary expression other than `+` (all numbers or booleans) no longer reports. A `number | string` union, an unannotated parameter, or a local function named `Number` still does.
+
+- **🐛 Fix** — `require-storage-encryption` no longer reads written CONTENT as a credential name
+
+  `namesACredential` matched a credential word anywhere in a string or template literal's text, including the
+  _content_ being written to disk rather than a key or path naming it. A test stub that writes a fake CLI's JSON
+  output — `writeFileSync(bin, \`#!/bin/sh\nprintf '{"usage":{"input_tokens":10}}'\n\`)` — contains "token"
+  incidentally, inside prose that is printed, not stored, and was reported as an unencrypted credential write
+  (CWE-312).
+
+  Fixed by requiring a NAME to be a single token: no identifier, key or path segment contains whitespace, so a
+  multi-word or multi-line string is evidence of what is printed, never of what is stored.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.2.0`
+
 ## 6.2.0
 
 ### Minor Changes

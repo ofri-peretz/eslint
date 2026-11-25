@@ -40,8 +40,8 @@ describe('no-zip-slip coverage gaps', () => {
       },
       // path.basename() sanitization wrapping the join
       { code: 'const p = path.basename(path.join(dest, entry.name));' },
-      // startsWith validation in the enclosing if-test
       {
+        name: 'a startsWith check in the enclosing if guards the join',
         code: 'if (full.startsWith(dest)) { fs.writeFileSync(path.join(dest, entry.name)); }',
       },
       // Negated startsWith validation in the enclosing if-test

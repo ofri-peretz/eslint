@@ -5,6 +5,16 @@ All notable changes to `oxlint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.2.1
+
+### Patch Changes
+
+- **🐛 Fix** — skip test and spec files by default
+
+  `no-unbounded-decompression` now skips test and spec files by default, matching `no-math-random-crypto`, `no-toctou-vulnerability` and `require-stream-error-handler`: its `allowInTests` option defaults to `true`, and `allowInTests: false` restores linting them.
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-node-security@6.2.1`
+
 ## 6.2.0
 
 ### Minor Changes

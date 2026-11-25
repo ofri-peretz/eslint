@@ -268,6 +268,25 @@ app[method]('/admin', handler);
 swaggerUi.register('/api-docs', app);
 ```
 
+## Health probes
+
+`/health` itself is still reported: a health route that returns memory, configuration or
+dependency detail is a disclosure. A path segment spelled as a **probe** is the load-balancer
+contract and is excused: `health-check`, `healthcheck`, `health_check`, `healthz`
+(case-insensitive). The segment is removed before matching, so `/health-check/debug` still
+reaches `/debug`.
+
+The spelling is excused only when nothing shows the handler reporting on the host:
+
+- an **inline handler that reads the global `process`** (`res.json(process.env)`,
+  `process.memoryUsage()`; a configured global counts, a local declaration that shadows it does not),
+  **a binding of the `process` module** (`import runtime from 'node:process'`) or **a binding of the `os` module**
+  is an information endpoint whatever the path is called, and still reports;
+- a handler this file cannot read (an imported router mounted at `/health-check`) is excused by the
+  spelling alone, which is the limit of what is provable here;
+- an `endpoints` list you configure is matched against the route as written, so
+  `endpoints: ['/healthz']` reports `/healthz`.
+
 ## Further Reading
 
 - **[CWE-489: Active Debug Code](https://cwe.mitre.org/data/definitions/489.html)**

@@ -90,7 +90,10 @@ describe('detect-object-injection', () => {
         // 'constructor', so these cannot pollute a prototype whatever the
         // identifiers hold. Locks the ILB-Edge classes that name-based
         // detection missed (`offset`, `lastIndex`, `stride`, `i++`).
-        { code: 'result[dstOffset++] = 1;' },
+        {
+          name: 'a post-incremented counter key is numeric, so the write cannot reach __proto__',
+          code: 'result[dstOffset++] = 1;',
+        },
         { code: 'arr[i--] = 1;' },
         { code: 'const v = buffer[n - 1];' },
         {

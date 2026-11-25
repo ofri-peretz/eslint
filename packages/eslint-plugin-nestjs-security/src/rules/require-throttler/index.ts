@@ -355,8 +355,12 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
           return;
         }
 
+        // At the route decorator, not the method: a method's range starts at
+        // its FIRST decorator, which on brocoders/nestjs-boilerplate's OAuth
+        // handlers is `@SerializeOptions`, `@ApiOkResponse` or `@Public`,
+        // so the finding pointed at the wrong line.
         context.report({
-          node,
+          node: routeDecorator,
           messageId: 'missingThrottler',
           data: { name: methodName },
         });

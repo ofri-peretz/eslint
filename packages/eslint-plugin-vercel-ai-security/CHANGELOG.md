@@ -5,6 +5,13 @@ All notable changes to `eslint-plugin-vercel-ai-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.0.6
+
+### Patch Changes
+
+- **📚 Docs** — rule descriptions no longer end mid-sentence (no-unhandled-promise, require-max-steps)
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.2.0`
+
 ## 3.0.5
 
 ### Patch Changes

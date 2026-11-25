@@ -3,7 +3,10 @@
 // limits.fileSize: multer has no default for it. The limit counts when it is in
 // the interceptor's own options (inline or through a const of the file) or in a
 // MulterModule.register() of the project. Options the file cannot show (an
-// import, a spread) are left alone. A MaxFileSizeValidator pipe is not a limit:
+// import, a spread) are left alone. A fileSize, a limits or an options argument
+// spelled undefined or null sets nothing (NestJS leaves it out of the merge), and
+// fileSize: Infinity lifts the limit, the module's included, so it is reported
+// whatever the project sets. A MaxFileSizeValidator pipe is not a limit:
 // it runs after the upload has been received. NoFilesInterceptor accepts no
 // file, and an interceptor from another package is not multer's.
 module require_upload_size_limit {
@@ -22,14 +25,20 @@ module require_upload_size_limit {
     | ConstNoLimit      // const options = { dest: './uploads' }
     | Imported          // import { options } from './multer.config'
     | Spread            // { ...base, dest: './uploads' }
+    | InfiniteFileSize  // { limits: { fileSize: Infinity } }
+    | NilFileSize       // { limits: { fileSize: undefined } }
+    | NilLimits         // { limits: null }
+    | NilOptions        // FileInterceptor('file', undefined)
   type Spelling = Named | Aliased | Namespace | NamespaceSubscript | OtherPackage
-  type Project = NoModule | ModuleNoLimit | ModuleLimit
+  type Project = NoModule | ModuleNoLimit | ModuleLimit | ModuleInfinite
 
   pure def unbounded(o: Opts): bool =
     o == Absent or o == NoLimits or o == LimitsNoFileSize or o == ConstNoLimit
+      or o == NilFileSize or o == NilLimits or o == NilOptions
 
   pure def reports(i: Interceptor, o: Opts, sp: Spelling, p: Project, validator: bool): bool =
-    i != NoFiles and sp != OtherPackage and unbounded(o) and p != ModuleLimit
+    i != NoFiles and sp != OtherPackage
+      and (o == InfiniteFileSize or (unbounded(o) and p != ModuleLimit))
 
   var interceptor: Interceptor
   var opts: Opts
@@ -42,13 +51,16 @@ module require_upload_size_limit {
   action step = {
     // Every interceptor is crossed with every options shape; the import
     // spelling, the project and the validator pipe are crossed on
-    // FileInterceptor with one unbounded and one bounded shape.
+    // FileInterceptor with one unbounded, one bounded, one lifted and one nil
+    // shape.
     nondet i = Set(File, Files, FileFields, AnyFiles, NoFiles).oneOf()
     nondet o = Set(Absent, NoLimits, LimitsNoFileSize, InlineFileSize, ConstFileSize,
-                   ConstNoLimit, Imported, Spread).oneOf()
-    val full = i == File and (o == Absent or o == InlineFileSize)
+                   ConstNoLimit, Imported, Spread, InfiniteFileSize, NilFileSize,
+                   NilLimits, NilOptions).oneOf()
+    val full = i == File and (o == Absent or o == InlineFileSize
+                              or o == InfiniteFileSize or o == NilFileSize)
     nondet sp = (if (full) Set(Named, Aliased, Namespace, NamespaceSubscript, OtherPackage) else Set(Named)).oneOf()
-    nondet p = (if (full) Set(NoModule, ModuleNoLimit, ModuleLimit) else Set(NoModule)).oneOf()
+    nondet p = (if (full) Set(NoModule, ModuleNoLimit, ModuleLimit, ModuleInfinite) else Set(NoModule)).oneOf()
     nondet v = (if (full) Set(true, false) else Set(false)).oneOf()
     nondet tc = Set(Prod, TestDefault, TestFlip).oneOf()
     all {
