@@ -5,6 +5,21 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.3.0
+
+### Minor Changes
+
+- **✨ Feature** — Add `no-modulo-biased-random` (strict): reports a byte from `crypto.randomBytes` or `getRandomValues` reduced with `%` to pick a character when the divisor does not divide the byte's range, which makes some characters of a generated secret more likely than others.
+
+### Patch Changes
+
+- **🐛 Fix** — Fix false positives found linting popular Node.js packages and Express/NestJS starters.
+
+  - `no-zip-slip`: `zlib.createGzip()` / `createGunzip()` no longer make a file an archive file (a gzip stream has no entry names), so `path.join(this.dirname, this.filename)` in a log transport is not an archive entry. A bare `unzip(...)` call whose callee is bound to a relative module is the project's own code and is not an extraction. A member canonicalized in place by path-module calls, as a statement (`opts.path = path.resolve(path.normalize(opts.path))`), is not a join onto anything; any later read of it is judged on its own. The same join in a file that imports an archive library, a bare `unzip` imported from a package, a relative binding that is reassigned, two entries in one join, and an entry used as a join base still report.
+  - `require-stream-error-handler`: an `'error'` listener at the end of a pipe chain (`src.pipe(dest).on('finish', f).on('error', h)`) covers `dest`, because `.pipe()` returns its destination. A destination built in place is covered by the listener that ends the chain. A stream binding returned by the function that owns it, assigned once (resolved by scope, not by name), is handed to the caller, who owns its listeners. A stream piped into and never returned, passed on or listened to still reports.
+
+- **🐛 Fix** — `no-toctou-vulnerability`: `if (existsSync(p)) rmSync(p, { force: true })` is no longer reported. With a static `force: true` option, `rm`/`rmSync` (including `fs.promises.rm`) swallows ENOENT, so the check is redundant rather than racy. `rm` with `force: false`, without `force`, with spread options, and every other mutation (`unlinkSync`, `writeFileSync`, ...) still report.
+
 ## 6.2.1
 
 ### Patch Changes
