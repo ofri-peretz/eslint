@@ -10,7 +10,7 @@
     },
     {
       "name": "eslint-plugin-node-security",
-      "rules": 44,
+      "rules": 45,
       "description": "ESLint Node security rules for Node.js — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
       "version": "6.2.0",
@@ -18,7 +18,7 @@
     },
     {
       "name": "eslint-plugin-secure-coding",
-      "rules": 35,
+      "rules": 36,
       "description": "ESLint security rules for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
       "version": "6.4.12",
@@ -202,7 +202,7 @@
     },
     {
       "name": "eslint-plugin-reliability",
-      "rules": 9,
+      "rules": 10,
       "description": "ESLint reliability rules for runtime safety — enforces error handling, network timeouts, null checks, and safe type narrowing",
       "category": "quality",
       "version": "5.0.8",
@@ -245,7 +245,7 @@
       "rules": 68,
       "description": "ESLint React hooks and JSX rules — prop-types, JSX correctness, render performance, and class-to-hooks migration for modern React codebases",
       "category": "react",
-      "version": "2.4.2",
+      "version": "2.4.3",
       "published": true
     },
     {
@@ -257,7 +257,7 @@
       "published": true
     }
   ],
-  "totalRules": 513,
+  "totalRules": 516,
   "totalPlugins": 31,
   "allPluginsCount": 32,
   "generatedAt": "2026-11-25"

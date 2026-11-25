@@ -24,7 +24,7 @@
 
 ## Covered natively by oxlint
 
-None of these 35 rules has an oxlint built-in equivalent. Every rule here is new to oxlint.
+None of these 36 rules has an oxlint built-in equivalent. Every rule here is new to oxlint.
 
 - **Why** — a linter nobody reads protects nothing. We would rather miss a finding
   than spend your attention on one that was never real.
@@ -151,6 +151,7 @@ Install [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plu
 | [no-sql-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-sql-injection?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-secure-coding)                                 |  CWE-89  | A03:2021 |      | Detects SQL statements built from attacker-controlled input in files that import no SQL driver               | 🟢  | 💼  |     |     |     |     |
 | [no-template-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-template-injection?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-secure-coding)                       |  CWE-94  | A03:2021 |      | Disallow dynamic strings as template arguments to server-side template engines (CWE-94)                      | 🟢  | 💼  |     |     |     |     |
 | [no-unchecked-loop-condition](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-unchecked-loop-condition?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-secure-coding)           | CWE-400  |          |      | Detects unchecked loop conditions that could cause DoS                                                       | 🟢  |     |     |     |     |     |
+| [no-unguarded-uri-decode](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-unguarded-uri-decode?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-secure-coding)                   | CWE-248  | A04:2021 |      | Disallow decodeURIComponent/decodeURI on request input outside a try/catch                                   | 🟢  |     |     |     |     |     |
 | [no-unlimited-resource-allocation](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-unlimited-resource-allocation?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-secure-coding) | CWE-770  |          |      | Detects unlimited resource allocation that could cause DoS                                                   | 🟢  |     | ⚠️  |     |     |     |
 | [no-unsafe-deserialization](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-unsafe-deserialization?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-secure-coding)               | CWE-502  |          |      | Detects unsafe deserialization of untrusted data                                                             | 🟢  |     | ⚠️  |     |     |     |
 | [no-unsafe-regex-construction](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-unsafe-regex-construction?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-secure-coding)         | CWE-400  |          |      | ESLint Rule: no-unsafe-regex-construction with LLM-optimized suggestions and auto-fix capabilities           | 🟢  | 💼  |     |     |     |     |

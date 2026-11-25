@@ -5,8 +5,8 @@
 Every rule declares `meta.interop.runtimes`. A rule lists `oxlint` only when its
 own test suite passes on oxlint's `RuleTester` as well as ESLint's
 (`vitest.dual-rule-tester.ts`), and it is not type-aware. Measured on oxlint
-`1.90.0`: **583 of 612** rules run on
-both engines. The 29 below run on ESLint only. In oxlint or Vite+ they still load,
+`1.94.0`: **588 of 616** rules run on
+both engines. The 28 below run on ESLint only. In oxlint or Vite+ they still load,
 but nothing guarantees they report the same findings, so do not rely on them there.
 
 Re-measure with `npm run oxlint:runtimes:survey`, then `npm run oxlint:runtimes`.
@@ -34,7 +34,6 @@ Re-measure with `npm run oxlint:runtimes:survey`, then `npm run oxlint:runtimes`
 | `modularity/enforce-naming`                      | 1 of 27 of its test cases fail on oxlint, e.g. const data = {};: Should have 1 error but had 0: []                                                                                                                                             |
 | `nestjs-security/no-missing-validation-pipe`     | Type-aware: reads TypeScript parser services, which oxlint does not provide (undecoratedDto resolves the @Body() DTO and its decorators' origin when parserOptions.project is set; syntax-only behaviour is unchanged without it).             |
 | `nestjs-security/require-guards`                 | 41 of 86 of its test cases fail on oxlint, e.g. a role checked by hand inside the handler instead of by a guard: Should have 1 error but had 0: []                                                                                             |
-| `node-security/lock-file`                        | 7 of 13 of its test cases fail on oxlint, e.g. a lock file for a package manager the project does not use: Should have 1 error but had 0: []                                                                                                   |
 | `postgresql-security/no-unsafe-query`            | 1 of 437 of its test cases fail on oxlint, e.g. FP: a numeric auto-initialised enum member folds to a constant: Cannot read properties of null (reading 'type')                                                                                |
 | `react-features/jsx-uses-react`                  | No RuleTester cases to measure it on oxlint with.                                                                                                                                                                                              |
 | `react-features/jsx-uses-vars`                   | No RuleTester cases to measure it on oxlint with.                                                                                                                                                                                              |

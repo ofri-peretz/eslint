@@ -98,14 +98,14 @@ const results = await Promise.all(userIds.map((id) => fetchUser(id)));
 
 ## Covered natively by oxlint
 
-oxlint already ships 2 of these 9 rules as built-ins. Enable the built-in instead: it is the same check, runs natively, and running both would report every finding twice. Each rule carries the mapping as `meta.interop.nativeEquivalent`.
+oxlint already ships 2 of these 10 rules as built-ins. Enable the built-in instead: it is the same check, runs natively, and running both would report every finding twice. Each rule carries the mapping as `meta.interop.nativeEquivalent`.
 
 | This plugin                    | oxlint built-in           |
 | :----------------------------- | :------------------------ |
 | `reliability/error-message`    | `unicorn/error-message`   |
 | `reliability/no-await-in-loop` | `eslint/no-await-in-loop` |
 
-What this package adds to oxlint is the other 7: every rule in the table below that is not listed here.
+What this package adds to oxlint is the other 8: every rule in the table below that is not listed here.
 
 - **Why** — a linter nobody reads protects nothing. We would rather miss a finding
   than spend your attention on one that was never real.
@@ -191,7 +191,8 @@ Install [`eslint-plugin-reliability`](https://www.npmjs.com/package/eslint-plugi
 | [no-missing-error-context](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-missing-error-context?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)             |          |       |      | Report a thrown value the code proves carries no message, or no stack trace when that is required.           | 🟢  |     |     |     | 💡  |     |
 | [no-missing-null-checks](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-missing-null-checks?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)                 | CWE-476  |       |      | ESLint Rule: no-missing-null-checks with LLM-optimized suggestions and auto-fix capabilities.                | 🟢  |     | ⚠️  |     | 💡  |     |
 | [no-silent-errors](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-silent-errors?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)                             |          |       |      | Report catch blocks that do nothing, so an error is never silently swallowed.                                | 🟢  | 💼  |     |     | 💡  |     |
-| [no-unhandled-promise](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-unhandled-promise?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)                     | CWE-1024 |       |      | Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This…  | 🟢  |     |     |     | 💡  |     |
+| [no-unbounded-cause-recursion](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-unbounded-cause-recursion?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)     | CWE-674  |       |      | Require a visited set or depth bound in a function that recurses down error.cause                            | 🟢  |     |     |     |     |     |
+| [no-unhandled-promise](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-unhandled-promise?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)                     | CWE-1024 |       |      | Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling.        | 🟢  |     |     |     | 💡  |     |
 | [no-unsafe-type-narrowing](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-unsafe-type-narrowing?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)             |          |       |      | Report double type assertions through unknown or any that bypass the type checker.                           | 🟢  |     |     |     | 💡  |     |
 | [require-network-timeout](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/require-network-timeout?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)               |          |       |      | Require timeout configuration for network requests. This rule is part of eslint-plugin-reliability and prov… | 🟢  | 💼  |     |     | 💡  |     |
 

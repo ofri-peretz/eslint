@@ -9,6 +9,7 @@
     "no-missing-error-context",
     "no-missing-null-checks",
     "no-silent-errors",
+    "no-unbounded-cause-recursion",
     "no-unhandled-promise",
     "no-unsafe-type-narrowing",
     "require-network-timeout"

@@ -19,6 +19,7 @@ import { noUnsafeTypeNarrowing } from './rules/reliability/no-unsafe-type-narrow
 import { requireNetworkTimeout } from './rules/reliability/require-network-timeout';
 import { noAwaitInLoop } from './rules/reliability/no-await-in-loop';
 import { noJsdocTerminatorInExample } from './rules/reliability/no-jsdoc-terminator-in-example';
+import { noUnboundedCauseRecursion } from './rules/reliability/no-unbounded-cause-recursion';
 
 export const rules = {
   'no-unhandled-promise': noUnhandledPromise,
@@ -30,6 +31,7 @@ export const rules = {
   'require-network-timeout': requireNetworkTimeout,
   'no-await-in-loop': noAwaitInLoop,
   'no-jsdoc-terminator-in-example': noJsdocTerminatorInExample,
+  'no-unbounded-cause-recursion': noUnboundedCauseRecursion,
 
   // Categorized names
   'error-handling/no-unhandled-promise': noUnhandledPromise,
@@ -41,6 +43,7 @@ export const rules = {
   'reliability/require-network-timeout': requireNetworkTimeout,
   'reliability/no-await-in-loop': noAwaitInLoop,
   'reliability/no-jsdoc-terminator-in-example': noJsdocTerminatorInExample,
+  'reliability/no-unbounded-cause-recursion': noUnboundedCauseRecursion,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**

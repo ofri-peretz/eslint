@@ -1,0 +1,29 @@
+{
+  "cwe": "CWE-674",
+  "name": "Uncontrolled Recursion (Cyclic Error Cause Chain)",
+  "owasp": "A04:2021",
+  "severity": "MEDIUM",
+  "expectedPlugins": ["eslint-plugin-reliability"],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "rethrow-cause-no-guard.js",
+        "description": "recurses on error.cause with no visited set (Next.js unstable_rethrow)"
+      },
+      {
+        "file": "copy-error-destructured-cause.js",
+        "description": "copies an error, recursing on a destructured cause (Node.js copyError before #67572)"
+      }
+    ],
+    "safe": [
+      {
+        "file": "copy-error-with-memo.js",
+        "description": "a map of copies looked up and written ends a cycle"
+      },
+      {
+        "file": "flatten-cause-depth-bound.js",
+        "description": "a depth parameter compared and passed on changed"
+      }
+    ]
+  }
+}

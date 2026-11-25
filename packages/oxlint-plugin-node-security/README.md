@@ -26,7 +26,7 @@
 
 ## Covered natively by oxlint
 
-None of these 44 rules has an oxlint built-in equivalent. Every rule here is new to oxlint.
+None of these 45 rules has an oxlint built-in equivalent. Every rule here is new to oxlint.
 
 - **Why** — a linter nobody reads protects nothing. We would rather miss a finding
   than spend your attention on one that was never real.
@@ -174,6 +174,7 @@ Install [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plu
 | [no-insecure-key-derivation](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-insecure-key-derivation?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)               | CWE-916  | A02:2021 |      | Disallow PBKDF2 with insufficient iterations (< 100,000)                                                     | 🟢  |     |     |     |     |     |
 | [no-insecure-rsa-padding](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-insecure-rsa-padding?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                     | CWE-327  | A02:2021 |      | Disallow RSA PKCS#1 v1.5 padding (CVE-2023-46809 Marvin Attack)                                              | 🟢  |     |     |     |     |     |
 | [no-math-random-crypto](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-math-random-crypto?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                         | CWE-338  | A02:2021 |      | Disallow Math.random() for cryptographic purposes (tokens, keys, secrets, salts, IVs)                        | 🟢  | 💼  |     |     |     |     |
+| [no-modulo-biased-random](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-modulo-biased-random?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                     | CWE-330  | A02:2021 |      | Disallow reducing a random byte with % when the divisor does not divide its range                            | 🟢  |     |     |     |     |     |
 | [no-self-signed-certs](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-self-signed-certs?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                           | CWE-295  | A07:2021 |      | Disallow rejectUnauthorized false in TLS options                                                             | 🟢  | 💼  |     |     |     |     |
 | [no-sha1-hash](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-sha1-hash?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                                           | CWE-327  | A02:2021 |      | Disallow sha1() from crypto-hash package (use sha256 or sha512)                                              | 🟢  |     |     |     |     |     |
 | [no-shell-injection](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-shell-injection?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-node-security)                               |  CWE-78  | A03:2021 |      | Disallow string concatenation or template expressions in shell command arguments (CWE-78)                    | 🟢  | 💼  |     |     |     |     |

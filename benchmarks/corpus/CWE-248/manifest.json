@@ -1,9 +1,12 @@
 {
   "cwe": "CWE-248",
-  "name": "Uncaught Exception (Unhandled Stream or Emitter Error)",
+  "name": "Uncaught Exception (Unhandled Stream or Emitter Error, Malformed URI Decode)",
   "owasp": "A04:2021",
   "severity": "MEDIUM",
-  "expectedPlugins": ["eslint-plugin-node-security"],
+  "expectedPlugins": [
+    "eslint-plugin-node-security",
+    "eslint-plugin-secure-coding"
+  ],
   "fixtures": {
     "vulnerable": [
       {
@@ -21,6 +24,14 @@
       {
         "file": "spawn-no-error-listener.js",
         "description": "child_process.spawn with a close listener and no 'error' listener (Eleventy spawnAsync)"
+      },
+      {
+        "file": "decode-route-param-unguarded.js",
+        "description": "decodeURIComponent(req.params.name) with no try/catch: a malformed escape is a 500"
+      },
+      {
+        "file": "decode-location-hash-unguarded.js",
+        "description": "decodeURIComponent(location.hash.slice(1)) with no try/catch"
       }
     ],
     "safe": [
@@ -43,6 +54,14 @@
       {
         "file": "exec-never-throws-unhandled.js",
         "description": "exec and execFile listen for 'error' inside Node, so they cannot crash"
+      },
+      {
+        "file": "decode-route-param-in-try.js",
+        "description": "the route-param decode inside try/catch answering 400"
+      },
+      {
+        "file": "search-params-already-decoded.js",
+        "description": "url.searchParams.get() is already decoded and never throws"
       }
     ]
   }

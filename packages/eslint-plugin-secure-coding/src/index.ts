@@ -69,6 +69,7 @@ import { noPiiInLogs } from './rules/no-pii-in-logs';
 // Security rules - Resource & DoS
 import { noUnlimitedResourceAllocation } from './rules/no-unlimited-resource-allocation';
 import { noUncheckedLoopCondition } from './rules/no-unchecked-loop-condition';
+import { noUnguardedUriDecode } from './rules/no-unguarded-uri-decode';
 
 // Security rules - Auth & runtime hardening (wired 2026-05-09 — implementations existed but were unregistered)
 import { detectWeakPasswordValidation } from './rules/detect-weak-password-validation';
@@ -138,6 +139,10 @@ export const rules: Record<
   // Resource Handling (2 rules)
   'no-unlimited-resource-allocation': noUnlimitedResourceAllocation,
   'no-unchecked-loop-condition': noUncheckedLoopCondition,
+  // CWE-248: a decodeURIComponent of request input throws URIError on a
+  // malformed escape. In `strict` only until a corpus run measures it
+  // (docs/intents/a-uri-decode-on-request-input-is-a-crash).
+  'no-unguarded-uri-decode': noUnguardedUriDecode,
 
   // Auth & runtime hardening (4 rules — wired 2026-05-09)
   'detect-weak-password-validation': detectWeakPasswordValidation,

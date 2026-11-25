@@ -23,6 +23,7 @@ describe('eslint-plugin-reliability plugin interface', () => {
     expect(ruleKeys).toContain('require-network-timeout');
     expect(ruleKeys).toContain('no-await-in-loop');
     expect(ruleKeys).toContain('no-jsdoc-terminator-in-example');
+    expect(ruleKeys).toContain('no-unbounded-cause-recursion');
 
     // Categorized names
     expect(ruleKeys).toContain('error-handling/no-unhandled-promise');
@@ -34,8 +35,9 @@ describe('eslint-plugin-reliability plugin interface', () => {
     expect(ruleKeys).toContain('reliability/require-network-timeout');
     expect(ruleKeys).toContain('reliability/no-await-in-loop');
     expect(ruleKeys).toContain('reliability/no-jsdoc-terminator-in-example');
+    expect(ruleKeys).toContain('reliability/no-unbounded-cause-recursion');
 
-    expect(ruleKeys.length).toBe(18); // 9 flat + 9 categorized
+    expect(ruleKeys.length).toBe(20); // 10 flat + 10 categorized
   });
 
   it('should export rules matching plugin.rules', () => {

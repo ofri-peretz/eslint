@@ -18,7 +18,10 @@ const { pipeline } = require('stream/promises');
 
 async function download(req, res) {
   try {
-    await pipeline(fs.createReadStream(path.join('./uploads', path.basename(req.params.id))), res);
+    await pipeline(
+      fs.createReadStream(path.join('./uploads', path.basename(req.params.id))),
+      res,
+    );
   } catch {
     if (!res.headersSent) res.status(404).end();
   }

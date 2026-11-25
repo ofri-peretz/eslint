@@ -126,6 +126,21 @@ app.post('/transfer', csrfProtection, (req, res) => {
 ```
 
 ```javascript
+import lusca from 'lusca';
+
+// A wrapper that builds lusca's CSRF middleware and hands it the request and
+// its own next counts as global protection. The rule does not read which paths
+// the wrapper skips: a skipped route must chain its own, as below.
+app.use((req, res, next) => {
+  if (req.path === '/api/upload') next();
+  else lusca.csrf()(req, res, next);
+});
+
+// lusca's combined form protects unless `csrf` is the literal `false`.
+app.post('/api/upload', upload, lusca({ csrf: true }), saveUpload);
+```
+
+```javascript
 // No cookie and no session anywhere in the file: nothing to forge with.
 // Not reported.
 const router = express.Router();
@@ -138,11 +153,11 @@ app.post('/signup', createAccount);
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `false` | Allow missing CSRF in test files |
+| Option             | Type       | Default                           | Description                               |
+| ------------------ | ---------- | --------------------------------- | ----------------------------------------- |
+| `allowInTests`     | `boolean`  | `false`                           | Allow missing CSRF in test files          |
 | `protectedMethods` | `string[]` | `["post","put","patch","delete"]` | HTTP methods that require CSRF protection |
-| `ignorePatterns` | `string[]` | `[]` | Route patterns to ignore |
+| `ignorePatterns`   | `string[]` | `[]`                              | Route patterns to ignore                  |
 
 ```json
 {

@@ -3,8 +3,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-11-25",
   "totalPlugins": 32,
-  "totalRules": 517,
-  "oxlintCompatible": 517,
+  "totalRules": 520,
+  "oxlintCompatible": 520,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1771,7 +1771,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 44,
+      "ruleCount": 45,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1901,6 +1901,12 @@
         },
         {
           "name": "no-math-random-crypto",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-modulo-biased-random",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2884,7 +2890,7 @@
       "short": "reliability",
       "shim": "tools/oxlint-plugins/interlace-reliability.cjs",
       "subpath": "eslint-plugin-reliability/oxlint",
-      "ruleCount": 9,
+      "ruleCount": 10,
       "rules": [
         {
           "name": "error-handling/error-message",
@@ -2929,6 +2935,12 @@
           "isTypeAware": true
         },
         {
+          "name": "reliability/no-unbounded-cause-recursion",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "reliability/no-unsafe-type-narrowing",
           "portability": "compatible",
           "blockers": [],
@@ -2947,7 +2959,7 @@
       "short": "secure-coding",
       "shim": "tools/oxlint-plugins/interlace-secure-coding.cjs",
       "subpath": "eslint-plugin-secure-coding/oxlint",
-      "ruleCount": 35,
+      "ruleCount": 36,
       "rules": [
         {
           "name": "detect-non-literal-regexp",
@@ -3107,6 +3119,12 @@
         },
         {
           "name": "no-unchecked-loop-condition",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unguarded-uri-decode",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

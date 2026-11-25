@@ -34,7 +34,7 @@ Use it alongside `eslint-plugin-security`, not instead of it: keep that plugin i
 | `flagship`           | 2     | 2      | 0        |
 | `recommended`        | 18    | 12     | 6        |
 | `recommended-strict` | 18    | 18     | 0        |
-| `strict`             | 35    | 35     | 0        |
+| `strict`             | 36    | 36     | 0        |
 | `owasp-top-10`       | 9     | 7      | 2        |
 
 ### `flagship`
@@ -73,7 +73,7 @@ Same rules as `recommended`.
 
 ### `strict`
 
-Everything in `recommended` plus 17 more (some shared rules run at a different severity here):
+Everything in `recommended` plus 18 more (some shared rules run at a different severity here):
 
 - `no-directive-injection` (error): Detects directive injection vulnerabilities in templates.
 - `no-format-string-injection` (error): Detects format string injection vulnerabilities.
@@ -85,6 +85,7 @@ Everything in `recommended` plus 17 more (some shared rules run at a different s
 - `require-backend-authorization` (error): Require server-side authorization checks.
 - `no-pii-in-logs` (error): Prevent PII (email, SSN, credit cards) in console logs.
 - `no-unchecked-loop-condition` (error): Detects unchecked loop conditions that could cause DoS.
+- `no-unguarded-uri-decode` (error): Disallow decodeURIComponent/decodeURI on request input outside a try/catch.
 - `detect-weak-password-validation` (error): Identify weak password requirements.
 - `no-electron-security-issues` (error): Detects Electron security vulnerabilities and insecure configurations.
 - `no-hardcoded-session-tokens` (error): Detect hardcoded session/JWT tokens.

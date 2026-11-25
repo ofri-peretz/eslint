@@ -45,6 +45,7 @@ describe('eslint-plugin-node-security plugin interface', () => {
       'no-insecure-key-derivation',
       'no-insecure-rsa-padding',
       'no-math-random-crypto',
+      'no-modulo-biased-random',
       'no-self-signed-certs',
       'no-sha1-hash',
       'no-static-iv',

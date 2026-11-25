@@ -509,6 +509,13 @@
           "noCoverage": 2,
           "timeout": 5
         },
+        "no-modulo-biased-random": {
+          "score": 65,
+          "killed": 416,
+          "survived": 198,
+          "noCoverage": 28,
+          "timeout": 5
+        },
         "no-self-signed-certs": {
           "score": 94.7,
           "killed": 91,
@@ -1169,6 +1176,13 @@
           "noCoverage": 0,
           "timeout": 9
         },
+        "no-hardcoded-credentials": {
+          "score": 93.5,
+          "killed": 1211,
+          "survived": 83,
+          "noCoverage": 0,
+          "timeout": 2
+        },
         "no-homoglyph-identifiers": {
           "score": 53.7,
           "killed": 104,
@@ -1203,6 +1217,13 @@
           "survived": 30,
           "noCoverage": 0,
           "timeout": 1
+        },
+        "no-unguarded-uri-decode": {
+          "score": 93.1,
+          "killed": 251,
+          "survived": 18,
+          "noCoverage": 1,
+          "timeout": 6
         },
         "no-weak-password-recovery": {
           "score": 70.4,
@@ -1250,7 +1271,6 @@
         "no-electron-security-issues",
         "no-format-string-injection",
         "no-graphql-injection",
-        "no-hardcoded-credentials",
         "no-hardcoded-session-tokens",
         "no-improper-type-validation",
         "no-insecure-comparison",
