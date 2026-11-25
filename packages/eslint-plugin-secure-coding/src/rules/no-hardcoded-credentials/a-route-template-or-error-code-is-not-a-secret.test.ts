@@ -23,8 +23,14 @@
  * clients: lowercase words, no digits, so it can never carry entropy.
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
+import { afterAll, describe, it } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noHardcodedCredentials } from './index';
+
+RuleTester.afterAll = afterAll;
+RuleTester.it = it;
+RuleTester.itOnly = it.only;
+RuleTester.describe = describe;
 
 const ruleTester = new RuleTester({
   languageOptions: { parser, ecmaVersion: 2022, sourceType: 'module' },

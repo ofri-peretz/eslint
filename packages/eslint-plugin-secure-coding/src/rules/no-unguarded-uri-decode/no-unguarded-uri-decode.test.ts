@@ -4,8 +4,14 @@
  * MIT license that can be found in the LICENSE file.
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
+import { afterAll, describe, it } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noUnguardedUriDecode } from './index';
+
+RuleTester.afterAll = afterAll;
+RuleTester.it = it;
+RuleTester.itOnly = it.only;
+RuleTester.describe = describe;
 
 const ruleTester = new RuleTester({
   languageOptions: { parser, ecmaVersion: 2022, sourceType: 'module' },
