@@ -109,4 +109,31 @@ describe('dependency ledger', () => {
     }
     expect(problems).toEqual([]);
   });
+
+  // PRINCIPLES.md rule 2: a package that ships with `dependencies` drags them
+  // into every consumer's tree. import-next resolves imports through the devkit,
+  // which treats `oxc-resolver` as an optional peer and degrades without it, so
+  // import-next itself ships only in-family packages.
+  it.each(['eslint-plugin-import-next', 'oxlint-plugin-import-next'])(
+    '%s ships only in-family dependencies',
+    (dir) => {
+      const manifests = execFileSync('git', ['ls-files', '*package.json'], {
+        encoding: 'utf8',
+      })
+        .split('\n')
+        .filter((f) => f && !NOT_A_WORKSPACE.test(f))
+        .map((f) => JSON.parse(fs.readFileSync(f, 'utf8')));
+      const ours = new Set(manifests.map((p) => p.name));
+      const pkg = JSON.parse(
+        fs.readFileSync(`packages/${dir}/package.json`, 'utf8'),
+      );
+      const external = Object.keys(pkg.dependencies ?? {}).filter(
+        (n) => !ours.has(n),
+      );
+      expect(
+        external,
+        'move it to an optional peer (the devkit lazy-loads it) or own the code',
+      ).toEqual([]);
+    },
+  );
 });
