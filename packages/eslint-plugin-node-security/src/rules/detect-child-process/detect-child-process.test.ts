@@ -122,6 +122,7 @@ describe('detect-child-process', () => {
           // A literal command with a shell is a different matter: the argv array
           // is a script again, so a dynamic element can start a second process.
           {
+            name: 'a literal execFile command run with shell: true still reports',
             code: 'child_process.execFile("git", ["clone", repoUrl], { shell: true });',
             options: [{ reportUnresolvedCommands: true }],
             errors: [{ messageId: 'childProcessCommandInjection' }],

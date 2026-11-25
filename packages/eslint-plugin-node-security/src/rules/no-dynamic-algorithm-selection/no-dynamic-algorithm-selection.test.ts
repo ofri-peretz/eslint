@@ -116,6 +116,7 @@ describe('no-dynamic-algorithm-selection', () => {
         // A call site DOES pass the argument — the parameter is now the
         // caller's choice, and this is exactly the FN the fix must not create.
         {
+          name: 'a call site passing a request value to the defaulted algorithm parameter still reports',
           code:
             "function h(p, a = 'sha256') { return crypto.createHash(a) }\n" +
             'h(p, req.query.algo);',

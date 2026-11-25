@@ -62,6 +62,7 @@ ruleTester.run('require-secure-deletion', requireSecureDeletion, {
     },
     // True positives kept across naming conventions and computed access.
     {
+      name: 'delete of a refreshToken property still reports',
       code: 'delete session.refreshToken',
       errors: [{ messageId: 'violationDetected' }],
     },

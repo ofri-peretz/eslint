@@ -64,6 +64,7 @@ describe('no-math-random-crypto', () => {
       },
       // Allowed in test files when opted in
       {
+        name: 'Math.random in a test file is allowed when allowInTests is on',
         code: 'const secret = Math.random();',
         filename: 'thing.test.ts',
         options: [{ allowInTests: true }],

@@ -154,6 +154,7 @@ ruleTester.run('lock-file', lockFile, {
     // `any` and list all three candidate names, which is what the schema's
     // `default: 'any'` promises a reader.
     {
+      name: 'with no option, a project without a lock file reports',
       code: 'const invalidNoOption = 1',
       filename: projectWithoutLockFile(),
       errors: [

@@ -128,6 +128,7 @@ describe('no-insecure-key-derivation', () => {
       valid: [
         // A const carrying a sufficient count must not start reporting.
         {
+          name: 'a const carrying a sufficient iteration count does not report',
           code: 'const ROUNDS = 600000; crypto.pbkdf2(password, salt, ROUNDS, 32, "sha256", cb);',
         },
         // A `let` can be raised (or lowered) before the call.

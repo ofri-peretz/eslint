@@ -53,6 +53,7 @@ describe('no-ssrf', () => {
         { code: 'db.query(userInput);' },
         // Test files ignored by default
         {
+          name: 'fetch in a test file is skipped when allowInTests is on',
           code: 'fetch(userUrl);',
           filename: 'api.test.ts',
           options: [{ allowInTests: true }],

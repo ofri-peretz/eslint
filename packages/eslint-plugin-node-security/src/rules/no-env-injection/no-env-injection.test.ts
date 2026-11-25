@@ -212,6 +212,7 @@ describe('no-env-injection', () => {
       },
       // One alias hop, and two.
       {
+        name: 'a request value used as the env key through one alias still reports',
         code: `function h(req) { const k = req.body.key; process.env[k] = '1'; }`,
         errors: [{ messageId: 'envKeyInjection' }],
       },

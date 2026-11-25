@@ -81,6 +81,7 @@ describe('no-weak-hash-algorithm', () => {
       },
       // Separators and case are normalised, so cache-key is the same name.
       {
+        name: 'md5 assigned to a cacheBuster property is a cache key, not a security hash',
         code: 'const res = { "x": 1 }; res.cacheBuster = createHash("md5").update(v).digest("hex");',
       },
       // A user-supplied name list replaces the default.

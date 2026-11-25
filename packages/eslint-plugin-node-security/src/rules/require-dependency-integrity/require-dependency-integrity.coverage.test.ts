@@ -40,6 +40,7 @@ describe('require-dependency-integrity coverage gaps', () => {
       // Every CDN tag protected, attributes spread over lines as they are in
       // real templates.
       {
+        name: 'every CDN script tag carries integrity, attributes spread over lines',
         code: [
           'const t = `',
           '  <script',

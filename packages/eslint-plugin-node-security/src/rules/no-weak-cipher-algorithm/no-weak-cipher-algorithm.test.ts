@@ -211,6 +211,7 @@ ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
     },
     // Blowfish
     {
+      name: 'Blowfish reports as a weak cipher',
       code: `const cipher = crypto.createCipheriv('blowfish', key, iv);`,
       errors: [
         {

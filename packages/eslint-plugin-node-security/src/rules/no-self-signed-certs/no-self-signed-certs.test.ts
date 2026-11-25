@@ -39,6 +39,7 @@ describe('no-self-signed-certs', () => {
         code: 'const x = { rejectUnauthorized: validated };',
       },
       {
+        name: 'an https.request with rejectUnauthorized: true is not reported',
         code: 'https.request({ hostname: "example.com", rejectUnauthorized: true });',
       },
     ],

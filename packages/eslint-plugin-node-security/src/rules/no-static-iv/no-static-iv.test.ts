@@ -114,6 +114,7 @@ describe('no-static-iv', () => {
         },
         // Buffer.alloc with static string (edge case)
         {
+          name: 'Buffer.alloc of a static string as the IV still reports',
           code: 'crypto.createCipheriv("aes-256-gcm", key, Buffer.alloc("16"));',
           errors: [{ messageId: 'staticIv' }],
         },

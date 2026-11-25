@@ -74,6 +74,7 @@ describe('no-cryptojs', () => {
     valid: [
       // A local `require` is a different function. Both spellings.
       {
+        name: 'a locally declared require is a different function',
         code: [
           'const stubs = { "crypto-js": {} };',
           'function require(id) { return stubs[id]; }',

@@ -40,6 +40,7 @@ describe('no-insecure-http-parser', () => {
       },
       // A non-literal value may well be false at runtime — reporting is a guess.
       {
+        name: 'a non-literal insecureHTTPParser value is not reported on a guess',
         code: `http.createServer({ insecureHTTPParser: allowLegacy }, handler);`,
       },
       { code: `opts.insecureHTTPParser = allowLegacy;` },

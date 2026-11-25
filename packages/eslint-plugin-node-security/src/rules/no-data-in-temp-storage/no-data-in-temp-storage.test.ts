@@ -36,6 +36,7 @@ ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
     },
     // A randomised segment is the mitigation — the path is no longer guessable.
     {
+      name: 'a randomUUID segment makes the temp path unguessable',
       code: "const file = path.join(os.tmpdir(), crypto.randomUUID() + '.tmp');",
     },
     { code: 'const file = path.join(os.tmpdir(), `run-${Date.now()}.tmp`);' },

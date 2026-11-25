@@ -150,15 +150,45 @@ function namesACredential(text: string): boolean {
   return true;
 }
 
+/**
+ * A string is a NAME — a storage key, a file path, an env var — when it is one
+ * token of name characters: `'authToken'`, `'client_secret.json'`,
+ * `` `${dir}/token.json` ``. Anything with whitespace, quotes, braces or other
+ * punctuation in it is CONTENT, and content says nothing about what it is.
+ *
+ * Reading content as a name is #1548: a test writing a fake shell stub,
+ *
+ * ```js
+ * writeFileSync(bin, `#!/bin/sh\nprintf '{"usage":{"input_tokens":10}}'\n`);
+ * ```
+ *
+ * was a credential written to disk, because the joined template text contains
+ * `token`. So would be any JSON, script or prose that mentions a password.
+ */
+const NAME_SHAPED = /^[\w.\-/\\:@~$+]*$/;
+
+/** The text of a string literal when it is name-shaped, else empty. */
+function nameShaped(text: string): string {
+  return NAME_SHAPED.test(text) ? text : '';
+}
+
 /** The identifier-ish name of an expression, for name evidence. Empty when there is none. */
 function nameOf(node: TSESTree.Node): string {
   switch (node.type) {
     case AST_NODE_TYPES.Identifier:
       return node.name;
     case AST_NODE_TYPES.Literal:
-      return typeof node.value === 'string' ? node.value : '';
+      return typeof node.value === 'string' ? nameShaped(node.value) : '';
     case AST_NODE_TYPES.TemplateLiteral:
-      return node.quasis.map((q) => q.value.raw).join('');
+      // Each static part must be name-shaped on its own: `${dir}/token.json`
+      // is a path, and one quasi of content makes the whole literal content.
+      // A quasi with an escape that cannot be cooked (`cooked === null`) is
+      // not a name either.
+      return node.quasis.every(
+        (q) => q.value.cooked !== null && NAME_SHAPED.test(q.value.cooked),
+      )
+        ? node.quasis.map((q) => q.value.cooked).join('')
+        : '';
     case AST_NODE_TYPES.MemberExpression:
       if (node.property.type === AST_NODE_TYPES.Identifier)
         return node.property.name;

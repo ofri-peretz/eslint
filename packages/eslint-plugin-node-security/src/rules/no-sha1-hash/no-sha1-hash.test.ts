@@ -75,6 +75,7 @@ describe('no-sha1-hash', () => {
         ],
       },
       {
+        name: 'a sha1() call imported from crypto-hash reports',
         // Test sha1() call after import - this triggers the CallExpression path
         code: 'import { sha1 } from "crypto-hash"; sha1(data);',
         errors: [

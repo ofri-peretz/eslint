@@ -540,6 +540,7 @@ export function read(req, other){ const file = req.query.f; if (!other.startsWit
     // The callee is passed the request at a LATER line than the sink. Calls are
     // judged at Program:exit precisely so statement order is not the criterion.
     {
+      name: 'a helper sink that the request reaches from a later line still reports',
       code: "function read(p) { fs.readFileSync(p); }\napp.get('/f', (req, res) => read(req.query.name));",
       errors: [{ messageId: 'violationDetected' }],
     },

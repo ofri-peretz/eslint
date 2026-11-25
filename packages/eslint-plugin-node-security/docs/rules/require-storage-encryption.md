@@ -137,11 +137,12 @@ This rule owns the **filesystem**. Client storage — `localStorage`, `sessionSt
 [`require-secure-credential-storage`](./require-secure-credential-storage.md). Both
 require evidence that what is being stored is a credential:
 
-| Code                                                             | Why it is silent                                                                                                                   |
-| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `fs.writeFile(sitemapPath, sitemap)`                             | A write, but nothing says a credential is in it.                                                                                   |
-| `fs.writeFileSync('session_token.txt', encrypt(token))`          | Encrypted on the way out — where `encrypt` **provably** encrypts (below).                                                          |
-| `const key = fs.readFileSync(path.join(__dirname, './ssl.key'))` | A read, not a write — and reading a TLS key at startup is how TLS works. `key` on its own is deliberately not treated as evidence. |
+| Code                                                                 | Why it is silent                                                                                                                   |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `fs.writeFile(sitemapPath, sitemap)`                                 | A write, but nothing says a credential is in it.                                                                                   |
+| `fs.writeFileSync('session_token.txt', encrypt(token))`              | Encrypted on the way out — where `encrypt` **provably** encrypts (below).                                                          |
+| `const key = fs.readFileSync(path.join(__dirname, './ssl.key'))`     | A read, not a write — and reading a TLS key at startup is how TLS works. `key` on its own is deliberately not treated as evidence. |
+| ``fs.writeFileSync(bin, `#!/bin/sh\nprintf '{"input_tokens":10}'`)`` | The written text is content, not a name. Only a string that is one name-shaped token (a key, a path) counts as evidence.           |
 
 The write is recognised through the `fs` module however it is bound —
 `fs.writeFileSync`, `fs.promises.writeFile`, or a named

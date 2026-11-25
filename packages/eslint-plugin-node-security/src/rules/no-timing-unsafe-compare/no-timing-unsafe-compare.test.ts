@@ -235,6 +235,7 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
           // constant-cased and a real secret — the casing alone is not evidence,
           // the namespace is. Locked so the guard is never widened to identifiers.
           {
+            name: 'a bare SCREAMING_SNAKE identifier compared with === stays a finding',
             code: 'if (API_KEY === expected) {}',
             errors: [{ messageId: 'timingUnsafeCompare' }],
           },

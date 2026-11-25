@@ -81,6 +81,7 @@ ruleTester.run(
       // Dependency confusion: the scope is fixed, the package name is not. This
       // is the shape the rule's own docs open with.
       {
+        name: 'a scoped package prefix joined to a runtime name still reports',
         code: "const plugin = require('@my-org/' + pluginName);",
         errors: [{ messageId: 'violationDetected' }],
       },

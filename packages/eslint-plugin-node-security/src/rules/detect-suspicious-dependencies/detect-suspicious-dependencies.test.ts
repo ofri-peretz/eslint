@@ -56,6 +56,7 @@ ruleTester.run('detect-suspicious-dependencies', detectSuspiciousDependencies, {
       errors: [{ messageId: 'violationDetected' }],
     },
     {
+      name: 'a transposed spelling of express is a typosquat',
       code: "import e from 'exprses'",
       errors: [{ messageId: 'violationDetected' }],
     },

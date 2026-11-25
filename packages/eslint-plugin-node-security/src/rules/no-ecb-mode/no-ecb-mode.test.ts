@@ -156,6 +156,7 @@ describe('no-ecb-mode', () => {
       // initializer proves nothing about the value that arrives. Unresolved,
       // not safe — and unresolved stays quiet by design.
       {
+        name: 'a let reassigned before the call proves nothing about the mode that arrives',
         code: 'let mode = "aes-256-ecb"; mode = pickMode(); crypto.createCipheriv(mode, key, iv);',
       },
       // A const holding a safe mode must not start reporting.

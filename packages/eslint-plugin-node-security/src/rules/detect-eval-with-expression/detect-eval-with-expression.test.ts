@@ -573,6 +573,7 @@ describe('vm module code execution (CWE-94)', () => {
       // Moved from `valid` (BUG, FN): a constant computed key and an ES2022
       // string export name both name the sink export.
       {
+        name: 'runInNewContext destructured from vm by a computed key still reports',
         code: `const { ['runInNewContext']: run } = require('vm'); run(userCode);`,
         errors: [{ messageId: 'vmCodeExecution' }],
       },

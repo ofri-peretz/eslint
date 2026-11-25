@@ -79,6 +79,7 @@ ruleTester.run(
       // control in the `invalid` half, which is the same file name with the
       // wrapper removed.
       {
+        name: 'a credential written through crypto.publicEncrypt is encrypted on the way out',
         code: "const crypto = require('node:crypto'); fs.writeFileSync('password.txt', crypto.publicEncrypt(key, secret))",
       },
       {

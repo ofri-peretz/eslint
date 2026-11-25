@@ -45,6 +45,7 @@ describe('prefer-native-crypto', () => {
       },
       // Subpath imports name the same dependency.
       {
+        name: 'a crypto-js subpath import names the same dependency',
         code: 'import md5 from "crypto-js/md5";',
         errors: [{ messageId: 'preferNative' }],
       },

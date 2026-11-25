@@ -82,6 +82,7 @@ describe('no-unsafe-buffer-alloc', () => {
       },
       // The whole-buffer copy idiom, with and without a receiver form.
       {
+        name: 'allocUnsafe filled by a whole-buffer src.copy is initialised',
         code: 'const b = Buffer.allocUnsafe(src.length); src.copy(b); send(b);',
       },
       { code: 'const b = Buffer.allocUnsafe(n); b.set(src); send(b);' },

@@ -79,6 +79,7 @@ describe('no-cryptojs-weak-random', () => {
         { code: 'CryptoJS.random(16);' },
         // A local class wearing the library's name, backed by the platform CSPRNG.
         {
+          name: 'a local class wearing the library\'s name, backed by the platform CSPRNG',
           code: [
             'import { randomBytes } from "node:crypto";',
             'class WordArray { static random(n) { return randomBytes(n); } }',

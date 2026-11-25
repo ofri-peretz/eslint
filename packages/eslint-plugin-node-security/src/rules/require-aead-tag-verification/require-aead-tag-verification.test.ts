@@ -127,6 +127,7 @@ describe('require-aead-tag-verification', () => {
       { code: `const d = crypto[make]('aes-256-gcm', key, iv);` },
       // Not a plain `const x = call()` binding.
       {
+        name: 'a destructured createDecipheriv result is not a tracked decipher binding',
         code: `const { d } = crypto.createDecipheriv('aes-256-gcm', key, iv);`,
       },
       { code: `let d;` },

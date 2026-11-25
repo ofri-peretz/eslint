@@ -71,6 +71,7 @@ describe('no-unbounded-decompression', () => {
       { code: `${REQUIRE}zlib.gunzipSync();` },
       // Payload shapes that are not literal blobs but also not Buffer.from().
       {
+        name: 'gunzipSync of a Buffer.from body with maxOutputLength is bounded',
         code: `${REQUIRE}zlib.gunzipSync(Buffer.from(body), { maxOutputLength: 1 });`,
       },
       {

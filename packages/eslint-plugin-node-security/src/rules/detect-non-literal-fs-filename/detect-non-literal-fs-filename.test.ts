@@ -56,6 +56,7 @@ describe('detect-non-literal-fs-filename', () => {
         },
         // Guard clause validation - path validated with startsWith() before use
         {
+          name: 'a filename checked with startsWith() against a resolved base before the read is guarded',
           code: `
             const SAFE_DIR = path.resolve(__dirname, 'uploads');
             function safeReadFile(userFilename) {

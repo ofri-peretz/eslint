@@ -40,6 +40,7 @@ describe('no-deprecated-buffer', () => {
       },
       // `Buffer` imported from a LOCAL module. safe/09-*
       {
+        name: 'a Buffer imported from a local module is not Node\'s Buffer',
         code: [
           "import { Buffer } from './lib/frame-buffer.js';",
           'export const fb = new Buffer(8);',

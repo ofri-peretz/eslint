@@ -93,6 +93,7 @@ describe('no-dynamic-require', () => {
       valid: [
         // The i18n loader, the archetypal deliberate dynamic require.
         {
+          name: 'a locale require matched by allowPatterns is allowed',
           code: 'const messages = require(`./locales/${lang}.json`);',
           options: [{ allowPatterns: ['^`\\./locales/'] }],
         },

@@ -125,6 +125,7 @@ describe('no-insecure-rsa-padding', () => {
       },
       // Invalid: PKCS#1 v1.5 padding on publicDecrypt
       {
+        name: 'PKCS#1 v1.5 padding on publicDecrypt reports',
         code: 'crypto.publicDecrypt({ key, padding: crypto.constants.RSA_PKCS1_PADDING }, buffer);',
         errors: [
           {

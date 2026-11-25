@@ -132,6 +132,7 @@ describe('no-buffer-overread', () => {
           },
           // …and through one intermediate `const`.
           {
+            name: 'a request index passed through one intermediate const still reports',
             code: 'function h(req) { const at = Number(req.query.at); return buffer[at]; }',
             errors: [{ messageId: 'userControlledBufferIndex' }],
           },

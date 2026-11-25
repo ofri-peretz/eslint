@@ -76,6 +76,7 @@ describe('no-shell-injection', () => {
         },
         // exec with plain identifier — indirect; data-flow out of scope
         {
+          name: 'exec of a plain identifier with no traceable source is not reported',
           code: "import { exec, execSync, spawn, spawnSync, execFile, execFileSync } from 'node:child_process';\nexec(command);",
         },
         // Template literal with no expressions — just a tagged string

@@ -93,6 +93,7 @@ describe('no-dynamic-command-string', () => {
       },
       // Literal keys spell the same object.
       {
+        name: 'a script read from a const table by a quoted literal key is static',
         code: `const SCRIPTS = { 'build': \`npm run build\` }; spawn('sh', ['-c', SCRIPTS.build]);`,
       },
       // A shell NAME in the argv vector is not a shell INVOCATION: no command

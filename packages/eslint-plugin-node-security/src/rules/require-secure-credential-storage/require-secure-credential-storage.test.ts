@@ -99,6 +99,7 @@ ruleTester.run(
       // The real Node idiom: the factory produces a cipher, and `update`/`final`
       // produce the ciphertext. Only reachable by resolving the RECEIVER.
       {
+        name: 'a token sealed with a createCipheriv cipher\'s update and final is encrypted',
         code: "const { createCipheriv } = require('crypto'); const cipher = createCipheriv('aes-256-gcm', key, iv); localStorage.setItem('authToken', Buffer.concat([cipher.update(token), cipher.final()]))",
       },
       // A local wrapper that PROVABLY delegates. The name is irrelevant — this

@@ -135,6 +135,7 @@ describe('no-unsafe-dynamic-require', () => {
       valid: [
         // Empty require (should not trigger)
         {
+          name: 'require() with no argument is not a dynamic require',
           code: 'require();',
         },
         // Spread element (should not trigger)
