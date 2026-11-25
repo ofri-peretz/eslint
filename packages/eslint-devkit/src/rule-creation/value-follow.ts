@@ -669,8 +669,15 @@ export function follow(
     const variable = lookup(node.name, scope);
     if (variable === null) return start;
     const def = variable.defs[0];
-    if (def?.type === 'FunctionName' || def?.type === 'ClassName')
+    if (def?.type === 'FunctionName' || def?.type === 'ClassName') {
+      // `function isDev() {…}; isDev = () => true;` — the declaration is no
+      // longer what the name holds. A declaration is not a write, so any
+      // write is a reassignment.
+      if (variable.references.some((reference) => reference.isWrite())) {
+        return start;
+      }
       return next(def.node);
+    }
     const origin = importOrigin(variable, env);
     if (origin !== null) {
       // `const config = require('./config')` is `module.exports`, when the

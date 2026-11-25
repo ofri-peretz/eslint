@@ -458,3 +458,119 @@ ruleTester.run(
     ],
   },
 );
+
+/**
+ * A digest input is the caller's only when every part of it is. Request taint
+ * is not that proof: `const payload = req.body + pepper` reads the request and
+ * still hides the server's pepper (CodeRabbit review of #1723).
+ */
+const digestOf = (setup: string, input: string): string => `
+  import { createHash } from 'node:crypto';
+  async function verify(req, pepper) {
+    ${setup}
+    const v = createHash('sha256').update(${input}).digest('hex');
+    return v === req.headers['x-hash'];
+  }
+`;
+
+ruleTester.run(
+  'no-timing-unsafe-compare: every part of a digest input must be the caller’s',
+  noTimingUnsafeCompare,
+  {
+    valid: [
+      {
+        name: 'a binding written once with the body',
+        code: digestOf('const payload = req.body;', 'payload'),
+      },
+      {
+        name: 'a binding of the stringified body',
+        code: digestOf('const payload = JSON.stringify(req.body);', 'payload'),
+      },
+      {
+        name: 'a field destructured from the request',
+        code: digestOf('const { body } = req;', 'body'),
+      },
+      {
+        name: 'an awaited body read',
+        code: digestOf('', 'await req.text()'),
+      },
+      {
+        name: 'String() of the body',
+        code: digestOf('', 'String(req.body)'),
+      },
+      {
+        name: 'Buffer.from of the body',
+        code: digestOf('', "Buffer.from(req.body, 'utf8')"),
+      },
+      {
+        name: 'a literal index into the body',
+        code: digestOf('', "req.body['raw']"),
+      },
+    ],
+    invalid: [
+      {
+        name: 'a binding that mixes a server value into the body',
+        code: digestOf('const payload = req.body + pepper;', 'payload'),
+        errors: unsafe,
+      },
+      {
+        name: 'a binding written twice is not judged by either write',
+        code: digestOf(
+          'let payload = req.body; payload = payload + pepper;',
+          'payload',
+        ),
+        errors: unsafe,
+      },
+      {
+        name: 'a binding that reads itself stops',
+        code: digestOf('let payload; payload = payload + req.body;', 'payload'),
+        errors: unsafe,
+      },
+      {
+        name: 'a binding never written is not the caller’s',
+        code: digestOf('let salt;', 'req.body + salt'),
+        errors: unsafe,
+      },
+      {
+        name: 'an imported value joined to the body',
+        code: `import { salt } from './salt';\n${digestOf('', 'req.body + salt')}`,
+        errors: unsafe,
+      },
+      {
+        name: 'an unknown function of the body may add a secret',
+        code: digestOf('', 'pepperize(req.body)'),
+        errors: unsafe,
+      },
+      {
+        name: 'a method on a server object may add a secret',
+        code: digestOf('', 'store.mix(req.body)'),
+        errors: unsafe,
+      },
+      {
+        name: 'a namespace function that is not a pass-through',
+        code: digestOf('', 'JSON.parse(req.body)'),
+        errors: unsafe,
+      },
+      {
+        name: 'a callee that is neither a name nor a member',
+        code: digestOf('', '(0, String)(req.body)'),
+        errors: unsafe,
+      },
+      {
+        name: 'a spread argument',
+        code: digestOf('', 'String(...req.body)'),
+        errors: unsafe,
+      },
+      {
+        name: 'a server value as a computed index',
+        code: digestOf('', 'req.body[pepper]'),
+        errors: unsafe,
+      },
+      {
+        name: 'a fallback to a server value',
+        code: digestOf('', 'req.body || pepper'),
+        errors: unsafe,
+      },
+    ],
+  },
+);

@@ -499,6 +499,8 @@ describe('follow', () => {
     expect(landsOn('const a = make();\nprobe(a.w);')).toBe('a.w');
     expect(landsOn('probe(unknown());')).toBe('unknown()');
     expect(landsOn('probe(1);')).toBe('1');
+    expect(landsOn('function g() {}\ng = h;\nprobe(g);')).toBe('g');
+    expect(landsOn('class K {}\nK = J;\nprobe(K);')).toBe('K');
     expect(landsOn('const a = b;\nconst b = a;\nprobe(a);')).toMatch(/^[ab]$/);
   });
 

@@ -556,6 +556,44 @@ function isInvoked(source: string, name: string): boolean {
 }
 
 /**
+ * `source` with its `//` and `/* *\/` comments blanked out. Quotes and
+ * template literals are skipped whole, so `'http://host'` is not read as a
+ * comment opener. A regex literal holding a quote can throw this off; the
+ * cost is one helper scanned or missed, never a crash.
+ */
+function withoutComments(source: string): string {
+  let out = '';
+  let index = 0;
+  while (index < source.length) {
+    const char = source[index];
+    const next = source[index + 1];
+    if (char === '/' && next === '/') {
+      const end = source.indexOf('\n', index);
+      index = end === -1 ? source.length : end;
+      continue;
+    }
+    if (char === '/' && next === '*') {
+      const end = source.indexOf('*/', index + 2);
+      index = end === -1 ? source.length : end + 2;
+      out += ' ';
+      continue;
+    }
+    if (char === '"' || char === "'" || char === '`') {
+      let end = index + 1;
+      while (end < source.length && source[end] !== char) {
+        end += source[end] === '\\' ? 2 : 1;
+      }
+      out += source.slice(index, end + 1);
+      index = end + 1;
+      continue;
+    }
+    out += char;
+    index += 1;
+  }
+  return out;
+}
+
+/**
  * A pipe registered in a helper the bootstrap file imports.
  *
  * `main.ts` often hands `app` to `setupApp(app)` or `applyGlobalValidation(app)`
@@ -570,9 +608,11 @@ function registerHelperPipes(
   into: MutableContext,
 ): void {
   if (into.hasGlobalValidationPipe) return;
-  for (const specifier of invokedLocalImports(source)) {
+  // A commented-out `// setupApp(app);` runs nothing, and a helper whose only
+  // `useGlobalPipes` is in a comment registers nothing.
+  for (const specifier of invokedLocalImports(withoutComments(source))) {
     const helper = readLocalModule(specifier, file, root);
-    if (helper && USE_GLOBAL_PIPES_RE.test(helper.source)) {
+    if (helper && USE_GLOBAL_PIPES_RE.test(withoutComments(helper.source))) {
       into.hasGlobalValidationPipe = true;
       return;
     }

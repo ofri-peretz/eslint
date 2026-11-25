@@ -213,7 +213,7 @@ export function setupApp(app: INestApplication) {
 }
 ```
 
-Only one hop is followed, and only project-local specifiers (`./`, `../`, `src/`, `@/`). An `import type`, or a helper imported but never called, registers nothing and is not read.
+Only one hop is followed, and only project-local specifiers (`./`, `../`, `src/`, `@/`). An `import type`, a helper imported but never called, or a call that is commented out registers nothing and is not read.
 
 Turn the scan off with `detectGlobalPipes: false` if you want the routes reported anyway.
 What the scan still cannot resolve is a registration built at runtime or

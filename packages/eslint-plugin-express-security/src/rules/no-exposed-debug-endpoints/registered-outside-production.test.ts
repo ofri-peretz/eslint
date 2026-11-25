@@ -124,6 +124,14 @@ if (process.env.NODE_ENV === 'development') { noop(); } else { app.get('/debug',
         errors: exposed,
       },
       {
+        name: 'a helper reassigned after its declaration is not the declaration',
+        code: route(
+          'isDev()',
+          "function isDev() { return process.env.NODE_ENV === 'development'; }\nisDev = () => true;",
+        ),
+        errors: exposed,
+      },
+      {
         name: 'a generator helper returns an iterator, which is always truthy',
         code: route(
           'isDev()',

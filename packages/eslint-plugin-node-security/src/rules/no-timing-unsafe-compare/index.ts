@@ -136,15 +136,37 @@ const COMPONENT_EXTENSION = /\.(?:vue|svelte)$/;
  * JSX, which a component built with the automatic runtime does with no import.
  */
 const JSX_EXTENSION = /\.(?:tsx|jsx)$/;
+/**
+ * Exports a framework runs on the server, whatever else the file renders:
+ * Remix's `loader` and `action`, the Next.js pages-router data functions and
+ * the app-router metadata functions. A request reaches them.
+ */
+const SERVER_ENTRY_EXPORTS = new Set([
+  'loader',
+  'action',
+  'getServerSideProps',
+  'getStaticProps',
+  'getStaticPaths',
+  'generateMetadata',
+  'generateStaticParams',
+]);
+/**
+ * A Next.js app-router file: a server component unless it says `'use client'`,
+ * so rendering JSX or importing React proves nothing about where it runs.
+ */
+const NEXT_APP_ROUTER_FILE =
+  /(?:^|[\\/])app[\\/](?:.*[\\/])?(?:page|layout|template|default|not-found|loading|route)\.[jt]sx?$/;
 
 /**
  * Whether this module runs in the user's browser, where no remote attacker can
  * time a comparison.
  *
  * `'use server'` wins over everything: a Next.js server action in a `.tsx`
- * file runs on the server. Then `'use client'`, a `.vue` or `.svelte` file, a
+ * file runs on the server. Then `'use client'`, or a `.vue` or `.svelte` file.
+ * A file that holds server code (a Remix `loader`, a Next.js data function or
+ * app-router file, an inline `'use server'` action) is checked. Otherwise a
  * `.tsx` or `.jsx` file that renders JSX, or an import of a UI framework
- * (`react/jsx-runtime` and other subpaths count).
+ * (`react/jsx-runtime` and other subpaths count; type-only imports do not).
  */
 export function isBrowserModule(
   program: TSESTree.Program,
@@ -159,17 +181,99 @@ export function isBrowserModule(
   if (directives.has('use server')) return false;
   if (directives.has('use client')) return true;
   if (COMPONENT_EXTENSION.test(filename)) return true;
+  if (holdsServerCode(program, filename)) return false;
   if (JSX_EXTENSION.test(filename) && rendersJsx(program)) return true;
   return program.body.some(
     (statement) =>
       statement.type === AST_NODE_TYPES.ImportDeclaration &&
-      statement.importKind !== 'type' &&
+      importsCode(statement) &&
       BROWSER_FRAMEWORKS.has(packageName(statement.source.value)),
   );
 }
 
+/**
+ * Whether an import brings in the module's code. `import type { FC }` does
+ * not, and neither does `import { type FC }`: the declaration there is a value
+ * import, but every name it binds is a type. A side-effect import
+ * (`import 'react'`) binds nothing and runs the module.
+ */
+function importsCode(statement: TSESTree.ImportDeclaration): boolean {
+  if (statement.importKind === 'type') return false;
+  if (statement.specifiers.length === 0) return true;
+  return statement.specifiers.some(
+    (specifier) =>
+      specifier.type !== AST_NODE_TYPES.ImportSpecifier ||
+      specifier.importKind !== 'type',
+  );
+}
+
+/**
+ * Whether a module that renders UI also holds code a request reaches: a
+ * Remix route's `loader`, a Next.js data function, an app-router server
+ * component, or an inline `'use server'` action. Rendering JSX in the same
+ * file does not move that code to the browser.
+ */
+function holdsServerCode(program: TSESTree.Program, filename: string): boolean {
+  if (NEXT_APP_ROUTER_FILE.test(filename)) return true;
+  if (program.body.some(exportsServerEntry)) return true;
+  return someNode(program, isServerAction);
+}
+
+function exportsServerEntry(statement: TSESTree.ProgramStatement): boolean {
+  if (statement.type !== AST_NODE_TYPES.ExportNamedDeclaration) return false;
+  const names: string[] = [];
+  const declaration = statement.declaration;
+  if (declaration?.type === AST_NODE_TYPES.FunctionDeclaration) {
+    // An exported function declaration always has a name.
+    names.push((declaration.id as TSESTree.Identifier).name);
+  } else if (declaration?.type === AST_NODE_TYPES.VariableDeclaration) {
+    for (const declarator of declaration.declarations) {
+      if (declarator.id.type === AST_NODE_TYPES.Identifier) {
+        names.push(declarator.id.name);
+      }
+    }
+  }
+  for (const specifier of statement.specifiers) {
+    if (specifier.exported.type === AST_NODE_TYPES.Identifier) {
+      names.push(specifier.exported.name);
+    }
+  }
+  return names.some((name) => SERVER_ENTRY_EXPORTS.has(name));
+}
+
+/** A function whose body opens with `'use server'`: a Next.js server action. */
+function isServerAction(node: TSESTree.Node): boolean {
+  if (
+    node.type !== AST_NODE_TYPES.FunctionDeclaration &&
+    node.type !== AST_NODE_TYPES.FunctionExpression &&
+    node.type !== AST_NODE_TYPES.ArrowFunctionExpression
+  ) {
+    return false;
+  }
+  if (node.body.type !== AST_NODE_TYPES.BlockStatement) return false;
+  for (const statement of node.body.body) {
+    if (statement.type !== AST_NODE_TYPES.ExpressionStatement) return false;
+    if (statement.directive === undefined) return false;
+    if (statement.directive === 'use server') return true;
+  }
+  return false;
+}
+
 /** Whether a JSX element or fragment appears anywhere under `root`. */
 function rendersJsx(root: TSESTree.Node): boolean {
+  return someNode(
+    root,
+    (node) =>
+      node.type === AST_NODE_TYPES.JSXElement ||
+      node.type === AST_NODE_TYPES.JSXFragment,
+  );
+}
+
+/** Whether any node under `root`, `root` included, satisfies `test`. */
+function someNode(
+  root: TSESTree.Node,
+  test: (node: TSESTree.Node) => boolean,
+): boolean {
   const stack: unknown[] = [root];
   while (stack.length > 0) {
     const value = stack.pop();
@@ -179,12 +283,7 @@ function rendersJsx(root: TSESTree.Node): boolean {
     }
     if (typeof value !== 'object' || value === null) continue;
     const node = value as TSESTree.Node;
-    if (
-      node.type === AST_NODE_TYPES.JSXElement ||
-      node.type === AST_NODE_TYPES.JSXFragment
-    ) {
-      return true;
-    }
+    if (test(node)) return true;
     for (const [key, child] of Object.entries(node)) {
       if (key !== 'parent') stack.push(child);
     }
@@ -199,6 +298,18 @@ function packageName(specifier: string): string {
     ? parts.slice(0, 2).join('/')
     : (parts[0] as string);
 }
+
+/** Global functions whose result holds only their arguments. */
+const PASS_THROUGH_FUNCTIONS: ReadonlySet<string> = new Set([
+  'String',
+  'encodeURIComponent',
+  'encodeURI',
+]);
+/** `JSON.stringify(x)` and `Buffer.from(x)`: the same, through a namespace. */
+const PASS_THROUGH_METHODS: ReadonlyMap<string, string> = new Map([
+  ['JSON', 'stringify'],
+  ['Buffer', 'from'],
+]);
 
 const DEFAULT_SECRET_PATTERNS = [
   // Common secret names (camelCase, snake_case, kebab-case)
@@ -891,7 +1002,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
             type: 'boolean',
             default: false,
             description:
-              "Also check browser modules ('use client', .vue/.svelte files, .tsx/.jsx files that render JSX, or modules importing react, vue, svelte, preact, solid-js or @angular/core). Off by default: a comparison in the user's own browser is not a remote timing oracle.",
+              "Also check browser modules ('use client', .vue/.svelte files, .tsx/.jsx files that render JSX, or modules importing react, vue, svelte, preact, solid-js or @angular/core). A file that also holds server code (a Remix loader or action, a Next.js data function or app-router file, an inline 'use server' action) is always checked. Off by default: a comparison in the user's own browser is not a remote timing oracle.",
           },
           reportLiteralComparands: {
             type: 'boolean',
@@ -1042,14 +1153,95 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
      * the request, the other is the server's, and the digest hides it.
      */
     function callerSupplies(input: TSESTree.Node): boolean {
-      const operands = digestOperands(input);
       return (
-        operands.some((operand) => readsUntrusted(operand)) &&
-        operands.every(
-          (operand) =>
-            operand.type === AST_NODE_TYPES.Literal || readsUntrusted(operand),
-        )
+        digestOperands(input).some((operand) => readsUntrusted(operand)) &&
+        callerKnows(input, new Set())
       );
+    }
+
+    /**
+     * Whether every part of this value is one the caller sent or can read.
+     * Request taint alone is not enough: `const payload = req.body + pepper`
+     * reads the request, and the `pepper` it adds is the server's. So a
+     * binding written once is judged by what it was written with, and a call
+     * only by its arguments, when it is one that adds nothing of its own:
+     * `JSON.stringify`, `String`, `Buffer.from`, `encodeURIComponent`, or a
+     * method on a value the caller knows (`req.rawBody.toString('utf8')`).
+     */
+    function callerKnows(
+      node: TSESTree.Node,
+      seen: Set<TSESLint.Scope.Variable>,
+    ): boolean {
+      const bare = unwrapTypeSyntax(node);
+      switch (bare.type) {
+        case AST_NODE_TYPES.Literal:
+          return true;
+        case AST_NODE_TYPES.TemplateLiteral:
+          return bare.expressions.every((part) => callerKnows(part, seen));
+        case AST_NODE_TYPES.BinaryExpression:
+          return (
+            callerKnows(bare.left as TSESTree.Node, seen) &&
+            callerKnows(bare.right, seen)
+          );
+        case AST_NODE_TYPES.AwaitExpression:
+          return callerKnows(bare.argument, seen);
+        case AST_NODE_TYPES.MemberExpression:
+          return (
+            readsUntrusted(bare) &&
+            (!bare.computed || callerKnows(bare.property, seen))
+          );
+        case AST_NODE_TYPES.Identifier:
+          return callerKnowsBinding(bare, seen);
+        case AST_NODE_TYPES.CallExpression:
+          return (
+            bare.arguments.every(
+              (argument) =>
+                argument.type !== AST_NODE_TYPES.SpreadElement &&
+                callerKnows(argument, seen),
+            ) && addsNothing(bare.callee, seen)
+          );
+        default:
+          return false;
+      }
+    }
+
+    /** A name: judged by its one write, or as a request root when unbound. */
+    function callerKnowsBinding(
+      node: TSESTree.Identifier,
+      seen: Set<TSESLint.Scope.Variable>,
+    ): boolean {
+      if (isImportedRoot(node)) return false;
+      const variable = findVariable(sourceCode, node);
+      if (
+        variable === null ||
+        variable.defs.some((def) => def.type === 'Parameter')
+      ) {
+        return readsUntrusted(node);
+      }
+      const writes = variable.references.filter((ref) => ref.isWrite());
+      const written = writes.length === 1 ? writes[0].writeExpr : null;
+      if (written == null || seen.has(variable)) return false;
+      seen.add(variable);
+      return callerKnows(written, seen);
+    }
+
+    /** A callee that returns only what its arguments (and receiver) hold. */
+    function addsNothing(
+      callee: TSESTree.Expression,
+      seen: Set<TSESLint.Scope.Variable>,
+    ): boolean {
+      if (callee.type === AST_NODE_TYPES.Identifier) {
+        return PASS_THROUGH_FUNCTIONS.has(callee.name);
+      }
+      if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+      const object = callee.object;
+      if (
+        object.type === AST_NODE_TYPES.Identifier &&
+        PASS_THROUGH_METHODS.get(object.name) === propertyName(callee)
+      ) {
+        return true;
+      }
+      return callerKnows(object, seen);
     }
 
     /**

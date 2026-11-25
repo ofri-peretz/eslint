@@ -70,6 +70,41 @@ ruleTester.run(
         filename: 'src/components/change-password-form.tsx',
       },
       {
+        name: 'a react import with one value specifier among type ones counts',
+        code: `import { type FC, useEffect } from 'react';\n${SOCKET_HANDLER}`,
+        filename: 'src/chats.ts',
+      },
+      {
+        name: 'a side-effect react import counts',
+        code: `import 'react';\n${SOCKET_HANDLER}`,
+        filename: 'src/chats.ts',
+      },
+      {
+        name: 'a default react import counts',
+        code: `import React from 'react';\n${SOCKET_HANDLER}`,
+        filename: 'src/chats.ts',
+      },
+      {
+        name: 'exports that are not server entries leave a component a component',
+        code: `${SOCKET_HANDLER}\nexport function Button() { return <button />; }\nexport const size = 1, { theme } = {};\nexport { size as loaderSize, size as 'loader-size' };\nexport * as all from './all';\nexport default function Page() { return <main />; }`,
+        filename: 'src/components/button.tsx',
+      },
+      {
+        name: "a 'use client' app-router page is browser code",
+        code: `'use client';\n${SOCKET_HANDLER}\nexport default function Page() { return <main />; }`,
+        filename: 'app/page.tsx',
+      },
+      {
+        name: 'a non-route file under app/ is not an app-router file (Angular src/app)',
+        code: `import { Component } from '@angular/core';\n${SOCKET_HANDLER}`,
+        filename: 'src/app/pages.component.ts',
+      },
+      {
+        name: "a function with other directives or an expression body is not a 'use server' action",
+        code: `${SOCKET_HANDLER}\nfunction a() { 'use strict'; }\nfunction b() { run(); 'use server'; }\nconst c = () => 'use server';\nfunction d() {}\nexport const List = () => <ul />;`,
+        filename: 'src/list.tsx',
+      },
+      {
         name: 'a .jsx file that renders only a fragment',
         code: `${SOCKET_HANDLER}\nexport const List = () => <></>;`,
         filename: 'src/list.jsx',
@@ -117,6 +152,42 @@ ruleTester.run(
         name: 'a .jsx request handler with no JSX is checked (case registry ILB-0008)',
         code: `import crypto from 'node:crypto';\nfunction check(req, secret) { if (req.headers.authorization === secret) { return true; } return false; }`,
         filename: 'src/check.jsx',
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a type-only named specifier is not a react import (import { type FC })',
+        code: `import { type FC } from 'react';\n${SOCKET_HANDLER}`,
+        filename: 'src/gateway.ts',
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a Remix route loader in a file that renders JSX is server code',
+        code: `${SOCKET_HANDLER}\nexport async function loader() { return null; }\nexport default function Route() { return <main />; }`,
+        filename: 'app/routes/admin.tsx',
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a Remix action exported as a const is server code too',
+        code: `import { useState } from 'react';\n${SOCKET_HANDLER}\nexport const action = async () => null;`,
+        filename: 'app/routes/admin.ts',
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'getServerSideProps exported by name is server code',
+        code: `${SOCKET_HANDLER}\nfunction getServerSideProps() { return { props: {} }; }\nexport { getServerSideProps };\nexport default function Page() { return <main />; }`,
+        filename: 'pages/admin.tsx',
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a Next.js app-router page is a server component',
+        code: `${SOCKET_HANDLER}\nexport default function Page() { return <main />; }`,
+        filename: 'src/app/admin/page.tsx',
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: "an inline 'use server' action in a component file is server code",
+        code: `${SOCKET_HANDLER}\nexport default function Form() {\n  async function save() { 'use strict'; 'use server'; }\n  return <form action={save} />;\n}`,
+        filename: 'src/components/form.tsx',
         errors: [{ messageId: 'timingUnsafeCompare' }],
       },
       {

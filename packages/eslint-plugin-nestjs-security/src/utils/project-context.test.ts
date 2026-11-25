@@ -307,11 +307,46 @@ describe('scanProject — global provider registration', () => {
         'a same-named member of something else',
         "import { setupApp } from './setup'; other.setupApp(app);",
       ],
+      [
+        'a call commented out with //',
+        "import { setupApp } from './setup';\n// setupApp(app);",
+      ],
+      [
+        'a call inside a block comment',
+        "import { setupApp } from './setup';\n/* setupApp(app); */ const done = true;",
+      ],
+      [
+        'a call inside an unclosed block comment',
+        "import { setupApp } from './setup';\n/* setupApp(app);",
+      ],
     ])('does not follow %s', (_shape, main) => {
       const root = makeProject({
         'src/main.ts': main,
         'src/setup.ts':
           'export default function setup(app) { app.useGlobalPipes(new ValidationPipe()); } export const setupApp = setup;',
+      });
+      expect(scanProject(root).hasGlobalValidationPipe).toBe(false);
+    });
+
+    it('reads a call past strings that hold comment openers', () => {
+      const root = makeProject({
+        'src/main.ts': [
+          "import { setupApp } from './setup';",
+          "const url = 'http://host/*'; const quote = \"it\\'s // fine\";",
+          'const path = `a//b`;',
+          'setupApp(app); // done',
+        ].join('\n'),
+        'src/setup.ts':
+          'export function setupApp(app) { app.useGlobalPipes(new ValidationPipe()); }',
+      });
+      expect(scanProject(root).hasGlobalValidationPipe).toBe(true);
+    });
+
+    it('does not count a helper whose only pipe is in a comment', () => {
+      const root = makeProject({
+        'src/main.ts': "import { setupApp } from './setup'; setupApp(app);",
+        'src/setup.ts':
+          'export function setupApp(app) {\n  // app.useGlobalPipes(new ValidationPipe());\n}',
       });
       expect(scanProject(root).hasGlobalValidationPipe).toBe(false);
     });
