@@ -5,7 +5,7 @@
 // @cwe           CWE-022
 // @expected      vulnerable
 // This MUST be detected
-// GHSA-hc55-p739-j48w / CVE-2025-53110: @modelcontextprotocol/server-filesystem <= 0.6.2
+// GHSA-hc55-p739-j48w: @modelcontextprotocol/server-filesystem <= 0.6.2
 // Containment checked with startsWith and no separator: allowed "/srv/data" also
 // admits "/srv/data-secrets/key". Extracted from dist/index.js validatePath().
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';

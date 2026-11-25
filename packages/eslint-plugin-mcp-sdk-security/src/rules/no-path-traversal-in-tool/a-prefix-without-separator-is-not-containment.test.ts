@@ -3,11 +3,12 @@
  * path separator. `'/srv/data-secrets/key'.startsWith('/srv/data')` is true, so
  * an unanchored prefix lets every sibling directory that shares the name through.
  *
- * Ground truth: GHSA-hc55-p739-j48w (CVE-2025-53110),
+ * Ground truth: GHSA-hc55-p739-j48w,
  * @modelcontextprotocol/server-filesystem <= 0.6.2, whose validatePath() ran
  * `allowedDirectories.some(dir => normalizedRequested.startsWith(dir))`. The
  * fix (2025.7.1) compares `p === dir || p.startsWith(dir + path.sep)`. The
- * corpus pair lives in benchmarks/corpus/CVE/CVE-2025-53110-*.
+ * corpus pair lives in
+ * benchmarks/corpus/CVE/GHSA-hc55-p739-j48w-mcp-filesystem-prefix-collision.
  *
  * Written test-first: the invalid cases below passed silently before the rule
  * required the separator. The valid cases pin the escape test on a
