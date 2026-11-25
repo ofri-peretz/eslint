@@ -474,15 +474,18 @@ ruleTester.run(
   {
     valid: [
       {
-        name: 'a template literal is not an anonymous function or class',
-        code: 'export default `template`;',
-      },
-      {
         name: 'identifier default export is a named reference',
         code: `const x = 1; export default x;`,
       },
     ],
     invalid: [
+      {
+        // eslint-plugin-import 2.32.0 tests/src/rules/no-anonymous-default-export.js:54
+        // reports a template literal ("Assign literal to a variable").
+        name: 'a template literal is reported, as upstream reports it',
+        code: 'export default `template`;',
+        errors: [{ messageId: 'anonymousDefaultExport' }],
+      },
       {
         name: 'parenthesized class expression',
         code: `export default (class {});`,
