@@ -96,14 +96,14 @@ describe('tables fold into cards', () => {
   });
 });
 
-describe('install commands get a tab per package manager', () => {
-  const fence = (value: string, lang = 'bash', meta: string | null = null) => ({
-    type: 'code',
-    lang,
-    meta,
-    value,
-  });
+const fence = (value: string, lang = 'bash', meta: string | null = null) => ({
+  type: 'code',
+  lang,
+  meta,
+  value,
+});
 
+describe('install commands get a tab per package manager', () => {
   it('takes a fence of only npm installs', () => {
     expect(
       isInstallFence(fence('npm install eslint-plugin-secure-coding')),
