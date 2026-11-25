@@ -83,6 +83,7 @@ write(
     'assign(READ_ONLY, {});',
   ].join('\n'),
 );
+write('auth/default-routes.js', "export default { resetPassword: '/reset-password' };");
 const service = join(root, 'tokens/service.js');
 
 ruleTester.run(
@@ -154,6 +155,16 @@ ruleTester.run(
           import { ROUTES } from '../auth/routes.js';
           export function isReset(req) {
             return req.path === ROUTES.resetPassword || req.path === ROUTES.nested.changePassword;
+          }
+        `,
+      },
+      {
+        name: 'a default-exported object of literals is held by no variable, so nothing rewrites it',
+        filename: service,
+        code: `
+          import ROUTES from '../auth/default-routes.js';
+          export function isReset(req) {
+            return req.path === ROUTES.resetPassword;
           }
         `,
       },
