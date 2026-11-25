@@ -5,6 +5,28 @@ All notable changes to `eslint-plugin-nestjs-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.3.1
+
+### Patch Changes
+
+- **🐛 Fix** — no-missing-validation-pipe finds a global pipe registered in a helper main.ts imports
+
+  `main.ts` often hands `app` to `setupApp(app)` in `setup.ts` or `applyGlobalValidation(app)` in `config/app-validation.ts`, and the project scan only read module, `main.ts` and `bootstrap.ts` files, so it missed the `app.useGlobalPipes(...)` there and reported every DTO route as unvalidated. The scan now follows, one hop, the project-local imports the bootstrap file runs: a side-effect import, or a value import it calls. `import type` and an import never called are skipped. On rolling-scopes/rsschool-app the rule drops from 104 reports to the 5 inputs with no class type; on OpenWA from 93 to 0.
+
+- **🐛 Fix** — no-missing-validation-pipe ignores commented-out helper calls
+
+  The helper scan read `// setupApp(app);` in `main.ts` as a call, and a `useGlobalPipes` that was only in a comment of the helper as a registration, so a project with no global pipe was treated as having one. Comments are now blanked before both reads; strings that contain `//` are left alone. The text of strings and template literals is dropped the same way (`log('setupApp(app)')` is not a call), while a call inside a `${…}` interpolation still counts.
+
+- **🐛 Fix** — no-missing-validation-pipe names the real problem when a global pipe is registered
+
+  With `app.useGlobalPipes(new ValidationPipe())` in place, an input typed as an inline literal, `any`, `unknown` or `object` was reported as "receives user input without ValidationPipe", and the fix told you to register the global pipe the project already had. The pipe passes such a value through because there is no class to validate against. These inputs now get their own message, which asks for a DTO class. Found on Ghostfolio's controllers, where six routes type their body inline beside a global pipe.
+
+- **🐛 Fix** — no-missing-validation-pipe accepts a project decorator that wraps ValidationPipe
+
+  A helper such as `export function UseValidationPipe(o) { return UsePipes(new ValidationPipe(o)); }` is now followed to its definition, in the same file or across relative imports and `export *` barrels, and counts as the pipe when every path out of it installs `ValidationPipe` (directly or through `applyDecorators`). Ever Gauzy applies its pipe this way, and the rule reported 1,386 of its route parameters as unvalidated. On its core and auth packages the count drops from 827 to 278, the handlers that carry no pipe at all. The devkit's cross-file `exportedValue` now reads `export *` re-exports, and the walk is exported as `valueFollow`.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.3.1`
+
 ## 4.3.0
 
 ### Minor Changes

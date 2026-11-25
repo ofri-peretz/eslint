@@ -5,6 +5,28 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.3.1
+
+### Patch Changes
+
+- **🐛 Fix** — no-timing-unsafe-compare skips browser code
+
+  A timing oracle needs the comparison to run on a server the attacker can time. In a React, Vue, Svelte or Angular module it runs in the user's own browser: OpenWA's dashboard compares a socket event's `sessionId` with the session the user picked, and the rule reported it as a secret compare. Files that start with `'use client'`, are `.tsx`/`.jsx`/`.vue`/`.svelte`, or import a UI framework (not type-only) are now skipped; `'use server'` overrides all of them. `includeBrowserCode: true` restores the old behaviour. On the files that drew the rule's 82 reports in a 40-app scan, 30 were browser code and are now silent.
+
+- **🐛 Fix** — no-timing-unsafe-compare skips imported literal constants and plain digests of request data
+
+  An imported name is followed across relative imports, and a value written there as a literal counts as a constant, the way a local `const` already did. Unleash compares an event type with `API_TOKEN_DELETED = 'api-token-deleted'`, which was reported because of the word `token`. A property of an imported object of literals counts too: Ghost compares `ctx.path` with `ROUTES.resetPassword`. A `createHash(...).update(...).digest()` is a secret only when something it hashes was not supplied by the caller. Before, comparing the SHA-256 of the request body with the client's `content-sha256` header was reported, as in Unleash's edge HMAC verifier. The digest is recognised through the `crypto` namespace too (`crypto.createHash(...)`). Keyed derivations and digests of stored values still report, and so does an HMAC written inline in the template it is compared as (`` `sha256=${createHmac(...)...}` === header ``), which was missed before. An input joined with a server value by any operator (`req.body + pepper`, `req.body ^ pepper`, a template carrying both) is not the caller's; an encoding argument (`.update(body, 'utf8')`) is not an input; a chain call other than `digest`, `toString`, `toLowerCase` or `toUpperCase` (`.concat(secret)`) is not a plain digest; and an imported object written to again in its module (`KEYS.api = process.env.KEY`, `Object.assign`, `delete`) is not a constant.
+
+- **🐛 Fix** — no-timing-unsafe-compare keeps checking server code that shares a file with JSX
+
+  The browser-code skip now leaves a file checked when it also holds server code: an exported Remix `loader` or `action`, a Next.js data or metadata function, a Next.js app-router file (a server component unless it says `'use client'`), or an inline `'use server'` action. A react import whose names are all `type` (`import { type FC } from 'react'`) no longer counts as browser code. And a plain digest of the request is the caller's only when every part of its input is: a binding that joins a server value (`const payload = req.body + pepper`) or an unknown call around the body now keeps the report. Session state read through the request (`req.session.apiToken`) is the server's, a local `String`, `JSON` or `Buffer` is not the built-in, and a literal and the body in separate `.update()` calls are judged together.
+
+- **🐛 Fix** — no-timing-unsafe-compare checks a .tsx or .jsx file that renders no JSX
+
+  The browser-code skip treated every `.tsx` and `.jsx` file as a UI component, so a request handler in a `.tsx` file (a Remix loader, or the case registry's `case.tsx`) compared `req.headers.authorization === apiKey` with no report. Seven registry cases regressed (ILB-0008, 0043, 0099 to 0102, 0104). The extension now counts only when the file renders JSX; a component built with the automatic JSX runtime still needs no import to be skipped. On the 40-app scan, the 30 browser-code reports stay skipped.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.3.1`
+
 ## 6.3.0
 
 ### Minor Changes

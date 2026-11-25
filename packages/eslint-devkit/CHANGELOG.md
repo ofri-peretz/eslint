@@ -5,6 +5,22 @@ All notable changes to `@interlace/eslint-devkit` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.3.1
+
+### Patch Changes
+
+- **🐛 Fix** — value-follow reads export ownership the way ES modules do
+
+  `exportedValue` now stops at an explicit export with no initialiser (`export let token;`) instead of falling through to a star re-export of another `token`; resolves `export * as ns from './x'` to that module's namespace; and returns nothing for a name two `export *` statements carry to different values, which ES modules treat as not exported.
+
+- **🐛 Fix** — value-follow stops at a function or class name that is reassigned
+
+  `follow` resolved `isDev` to its `function isDev()` declaration even after `isDev = () => true`, so a rule judged the declaration rather than the value the name holds. It now stops at the name, as it already did for a variable written more than once. In express-security, `no-exposed-debug-endpoints` reports a debug route guarded by a reassigned helper. An exported function, class or `let` that its module writes again is not followed either, through a barrel's `export *` too. Separately, `no-exposed-debug-endpoints` no longer trusts a guard helper a factory returned (`const isDev = makeGuard()`), since an earlier `return` in the factory may be the one that runs.
+
+- **🐛 Fix** — no-missing-validation-pipe accepts a project decorator that wraps ValidationPipe
+
+  A helper such as `export function UseValidationPipe(o) { return UsePipes(new ValidationPipe(o)); }` is now followed to its definition, in the same file or across relative imports and `export *` barrels, and counts as the pipe when every path out of it installs `ValidationPipe` (directly or through `applyDecorators`). Ever Gauzy applies its pipe this way, and the rule reported 1,386 of its route parameters as unvalidated. On its core and auth packages the count drops from 827 to 278, the handlers that carry no pipe at all. The devkit's cross-file `exportedValue` now reads `export *` re-exports, and the walk is exported as `valueFollow`.
+
 ## 2.3.0
 
 ### Minor Changes

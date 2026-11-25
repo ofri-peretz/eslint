@@ -5,6 +5,16 @@ All notable changes to `eslint-plugin-express-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.4.2
+
+### Patch Changes
+
+- **🐛 Fix** — no-exposed-debug-endpoints skips routes registered only outside production
+
+  A debug route inside `if (process.env.NODE_ENV === 'development')`, `!== 'production'`, either half of an `&&`, or a call to a helper (same file or relative import) that returns one of those is never registered in production. Uptime Kuma mounts its webhook echo routes under `if (isDevEnv())`, and both were reported. The `else` branch, `||`, and helpers whose return the rule cannot read still report. So do an `async` or generator helper, whose Promise or iterator is always truthy, and a `process` that is a local object rather than the Node global.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.3.1`
+
 ## 4.4.1
 
 ### Patch Changes
