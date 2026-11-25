@@ -26,6 +26,7 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { isInSchemePrefixTable } from '../no-http-urls/scheme-prefix-table';
 
 type MessageIds = 'unencryptedTransmission' | 'useHttps';
 
@@ -351,6 +352,13 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
 
       // A protocol string being tested against is not a transmission.
       if (isProtocolInspection(node, node.parent as TSESTree.Node)) {
+        return;
+      }
+
+      // Nor an entry of a URI-scheme prefix table: `['ftp://ftp.', 'ftp://', 'tel:']`
+      // names no host, so there is nothing to transmit to.
+      // @source tauri-apps/plugins-workspace plugins/nfc/guest-js/index.ts:299
+      if (isInSchemePrefixTable(node)) {
         return;
       }
 
