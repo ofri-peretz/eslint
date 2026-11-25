@@ -81,12 +81,14 @@ export function send(res: any) { new PassThrough().pipe(res); }`,
     ],
     invalid: [
       {
+        // @found reasoned from Readable.fromWeb (#1712): the subclasses inherit fromWeb, not seen in real code
         name: 'FN: PassThrough inherits Duplex.fromWeb, so its stream is a node stream with no listener',
         code: `import { PassThrough } from 'node:stream';
 export function save(body: any, res: any) { PassThrough.fromWeb(body).pipe(res); }`,
         errors: [{ messageId: 'unhandledStreamError', line: 2, column: 45 }],
       },
       {
+        // @found reasoned from Readable.fromWeb (#1712): the subclasses inherit fromWeb, not seen in real code
         name: 'FN: Transform inherits Duplex.fromWeb too',
         code: `import { Transform } from 'node:stream';
 export function save(body: any, res: any) { Transform.fromWeb(body).pipe(res); }`,

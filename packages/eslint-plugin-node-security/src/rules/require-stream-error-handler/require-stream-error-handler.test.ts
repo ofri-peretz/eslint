@@ -113,7 +113,10 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     },
     // A computed callee names no method statically, so it constructs nothing
     // this rule can identify.
-    'const s = factories[kind](p); s.pipe(res);',
+    {
+      name: 'a computed callee names no stream factory, so its result is not judged',
+      code: 'const s = factories[kind](p); s.pipe(res);',
+    },
     // A property access is neither an inline construction nor a name this file
     // binds, so there is nothing to attribute a missing listener to.
     'this.request.pipe(res);',
