@@ -321,6 +321,23 @@ function isNamespacedKey(value: string): boolean {
 }
 
 /**
+ * A slash-namespaced error code, `infra_token/invalid_token`: two or more
+ * lowercase snake or kebab parts, no digits, each one words. Hoppscotch's
+ * backend declares every error this way, and a part ending in `token` opens
+ * the credential-context gate. A generated secret carries digits or mixed
+ * case; a code is written to be read and to be matched by a client.
+ */
+function isSlashNamespacedCode(value: string): boolean {
+  const parts = value.split('/');
+  return (
+    parts.length >= 2 &&
+    parts.every(
+      (part) => /^[a-z]+(?:[_-][a-z]+)*$/.test(part) && isNaturalWordString(part),
+    )
+  );
+}
+
+/**
  * A single word of another language: letters only, at most a leading capital,
  * at least one letter outside ASCII (`Contraseña`, `Lösenord`). A translated
  * label for the slot, never a generated secret, which mixes classes and digits.
@@ -631,9 +648,11 @@ function isUrlOrPath(value: string): boolean {
   // A substituted token is a route segment wherever it stands, not only at the
   // root: `/auth/[provider]/token` (a Next.js dynamic segment) is the address
   // of a token as much as `/oauth2/token` is, and it was reported as one.
+  // An OpenAPI path template writes the same slot as `{id}`: Teable's
+  // openapi package declares `GET_ACCESS_TOKEN = '/access-token/{id}'`.
   if (
     !segments.every((segment) =>
-      /^(?:[A-Za-z0-9._~%:@-]*|<[A-Za-z_$][\w$]*>|\[[A-Za-z_$][\w$]*\])$/.test(
+      /^(?:[A-Za-z0-9._~%:@-]*|<[A-Za-z_$][\w$]*>|\[[A-Za-z_$][\w$]*\]|\{[A-Za-z_$][\w$]*\})$/.test(
         segment,
       ),
     )
@@ -718,6 +737,8 @@ export function isSecretShaped(
   // Pure word strings are identifiers / i18n keys / message constants.
   if (isNaturalWordString(value)) return false;
   if (isNamespacedKey(value) || isForeignWord(value)) return false;
+  // Not for a password slot: a passphrase may be words joined by a slash.
+  if (category !== 'password' && isSlashNamespacedCode(value)) return false;
   if (isTypeTag(value) || isMaskedDisplay(value)) return false;
   // A credential mixes at least two character classes, or — for single-charset
   // secrets like a 21-character lowercase blob — is long and high-entropy.

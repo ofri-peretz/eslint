@@ -12,7 +12,10 @@
 // (passport.authenticate('jwt', { session: false }), which reads the
 // Authorization header a browser does not attach) - unless the handler also
 // reads a cookie, which makes the cookie the credential that counts. CSRF middleware mounted globally,
-// per-route, or inside a middleware array protects it. ignorePatterns
+// per-route, or inside a middleware array protects it. So does lusca: a
+// global wrapper that builds lusca.csrf() and hands it the request and its own
+// next (LuscaWrapper), or lusca({ csrf: true }) in the route chain (LuscaRoute).
+// lusca({ csrf: false }) mounted globally turns CSRF off (LuscaOff). ignorePatterns
 // silences a matching route path. Options: protectedMethods ['post'] narrows
 // the methods (PostOnly); ignorePatterns ['/transfer'] (IgnoreMatch) or
 // ['/api/webhook'] (IgnoreOther, does not match). Spellings: app = express(),
@@ -24,7 +27,7 @@ module require_csrf_protection {
 
   type Cred = Session | CookieParser | CookieRead | NoCred
   type Auth = RouteMw | GlobalAuth | ReadsUser | NoAuth
-  type Csrf = NoCsrf | GlobalCsrf | RouteCsrf | ArrayCsrf
+  type Csrf = NoCsrf | GlobalCsrf | RouteCsrf | ArrayCsrf | LuscaWrapper | LuscaRoute | LuscaOff
   type Method = Post | Put | Patch | Delete | Get
   type Spelling = App | Router | RouteChain | RequireApp
   type Opts = Default | PostOnly | IgnoreMatch | IgnoreOther
@@ -42,14 +45,14 @@ module require_csrf_protection {
     sh == GuardOnly or (sh == Bearer and c != CookieRead)
 
   pure def reports(c: Cred, a: Auth, x: Csrf, m: Method, sp: Spelling, o: Opts, sh: Shape): bool =
-    ambient(c) and a != NoAuth and x == NoCsrf and protectedMethod(m, o) and o != IgnoreMatch
+    ambient(c) and a != NoAuth and (x == NoCsrf or x == LuscaOff) and protectedMethod(m, o) and o != IgnoreMatch
       and not(exemptShape(sh, c))
 
   // The credential x auth x csrf core is crossed at app/post/default options;
   // every other spelling/method/option with a session app, two auth shapes
   // and no or route-level CSRF.
   pure val CORE = tuples(Set(Session, CookieParser, CookieRead, NoCred), Set(RouteMw, GlobalAuth, ReadsUser, NoAuth),
-                         Set(NoCsrf, GlobalCsrf, RouteCsrf, ArrayCsrf), Set(Post), Set(App), Set(Default), Set(Normal))
+                         Set(NoCsrf, GlobalCsrf, RouteCsrf, ArrayCsrf, LuscaWrapper, LuscaRoute, LuscaOff), Set(Post), Set(App), Set(Default), Set(Normal))
   pure val REST = tuples(Set(Session), Set(RouteMw, GlobalAuth), Set(NoCsrf, RouteCsrf),
                          Set(Post, Put, Patch, Delete, Get), Set(App, Router, RouteChain, RequireApp),
                          Set(Default, PostOnly, IgnoreMatch, IgnoreOther), Set(Normal))

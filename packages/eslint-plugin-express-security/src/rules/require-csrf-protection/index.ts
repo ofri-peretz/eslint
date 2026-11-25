@@ -259,34 +259,82 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
     let allowInTests: boolean;
     let protectedMethods: string[];
     let ignorePatterns: string[];
-    /** Is this identifier bound by an import or require of a csrf module? */
-    function isCsrfModuleBinding(node: TSESTree.Identifier): boolean {
+    /**
+     * The module specifier an identifier is bound to by an `import` or a
+     * `require(…)`, or undefined when it is bound to anything else.
+     */
+    function moduleSpecifierOf(node: TSESTree.Identifier): string | undefined {
       let scope: TSESLint.Scope.Scope | null =
         context.sourceCode.getScope(node);
       while (scope) {
         const variable = scope.set.get(node.name);
         if (variable) {
           const def = variable.defs[0];
-          if (!def) return false;
+          if (!def) return undefined;
           if (def.type === 'ImportBinding') {
-            return (
-              def.parent.type === 'ImportDeclaration' &&
-              CSRF_MODULE.test(String(def.parent.source.value))
-            );
+            return def.parent.type === 'ImportDeclaration'
+              ? String(def.parent.source.value)
+              : undefined;
           }
-          if (def.type !== 'Variable' || !def.node.init) return false;
+          if (def.type !== 'Variable' || !def.node.init) return undefined;
           const init = def.node.init;
-          return (
-            init.type === 'CallExpression' &&
+          return init.type === 'CallExpression' &&
             init.callee.type === 'Identifier' &&
             init.callee.name === 'require' &&
-            init.arguments[0]?.type === 'Literal' &&
-            CSRF_MODULE.test(String(init.arguments[0].value))
-          );
+            init.arguments[0]?.type === 'Literal'
+            ? String(init.arguments[0].value)
+            : undefined;
         }
         scope = scope.upper;
       }
-      return false;
+      return undefined;
+    }
+
+    /** Is this identifier bound by an import or require of a csrf module? */
+    function isCsrfModuleBinding(node: TSESTree.Identifier): boolean {
+      const specifier = moduleSpecifierOf(node);
+      return specifier !== undefined && CSRF_MODULE.test(specifier);
+    }
+
+    /** Is this identifier bound by an import or require of `lusca`? */
+    function isLuscaBinding(node: TSESTree.Node): boolean {
+      return node.type === 'Identifier' && moduleSpecifierOf(node) === 'lusca';
+    }
+
+    /**
+     * A call that builds CSRF middleware from a module the file imported:
+     * `csurf()`, `lusca.csrf()`, or `lusca({ csrf: true })`. The last is lusca's
+     * combined form; it protects unless the `csrf` key is a literal `false`.
+     */
+    function isCsrfFactoryCall(node: TSESTree.Node): boolean {
+      if (node.type !== 'CallExpression') return false;
+      const callee = node.callee;
+      if (callee.type === 'Identifier') {
+        if (isCsrfModuleBinding(callee)) return true;
+        if (!isLuscaBinding(callee)) return false;
+        const [options] = node.arguments;
+        return (
+          options?.type === 'ObjectExpression' &&
+          options.properties.some(
+            (property) =>
+              property.type === 'Property' &&
+              !property.computed &&
+              ((property.key.type === 'Identifier' &&
+                property.key.name === 'csrf') ||
+                (property.key.type === 'Literal' &&
+                  property.key.value === 'csrf')) &&
+              !(
+                property.value.type === 'Literal' &&
+                property.value.value === false
+              ),
+          )
+        );
+      }
+      return (
+        callee.type === 'MemberExpression' &&
+        isLuscaBinding(callee.object) &&
+        propertyName(callee) === 'csrf'
+      );
     }
 
     /**
@@ -311,8 +359,9 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
         if (found || !current || typeof current.type !== 'string') return;
         if (
           current.type === 'CallExpression' &&
-          current.callee.type === 'Identifier' &&
-          isCsrfModuleBinding(current.callee) &&
+          ((current.callee.type === 'Identifier' &&
+            isCsrfModuleBinding(current.callee)) ||
+            isCsrfFactoryCall(current.callee)) &&
           current.arguments.some(
             (argument) =>
               argument.type === 'Identifier' && argument.name === next.name,
@@ -422,7 +471,10 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
         ) {
           for (const arg of flattenMiddleware(node.arguments)) {
             // app.use(csrf())
-            if (arg.type === 'CallExpression' && isCsrfMiddleware(arg)) {
+            if (
+              arg.type === 'CallExpression' &&
+              (isCsrfMiddleware(arg) || isCsrfFactoryCall(arg))
+            ) {
               hasGlobalCsrf = true;
               return;
             }
@@ -489,7 +541,10 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
           const chain = flattenMiddleware(rest.slice(0, -1));
 
           // Check if CSRF middleware is in the route's own chain
-          if (hasCsrfInMiddlewareChain(chain)) {
+          if (
+            hasCsrfInMiddlewareChain(chain) ||
+            chain.some(isCsrfFactoryCall)
+          ) {
             return;
           }
 
