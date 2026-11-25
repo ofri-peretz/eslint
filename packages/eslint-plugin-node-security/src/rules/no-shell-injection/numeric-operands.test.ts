@@ -44,6 +44,31 @@ ruleTester.run('numeric operands', noShellInjection, {
       name: 'a unary minus inside a concatenation',
       code: `${EXEC}function f(n) { exec('nice ' + -n); }`,
     },
+    {
+      // @found synthetic
+      name: 'a logical not is a boolean',
+      code: `${EXEC}function f(a) { exec('flag ' + !a); }`,
+    },
+    {
+      // @found synthetic
+      name: 'a computed Number member is the same coercion',
+      code: `${EXEC}function f(a) { exec('kill ' + Number['parseFloat'](a)); }`,
+    },
+    {
+      // @found synthetic
+      name: 'arithmetic other than + is a number',
+      code: `${EXEC}function f(a, b) { exec('kill ' + (a - b)); }`,
+    },
+    {
+      // @found synthetic
+      name: 'a comparison is a boolean',
+      code: `${EXEC}function f(a, b) { exec('test ' + (a < b)); }`,
+    },
+    {
+      // @found synthetic
+      name: 'a nested + of numbers is a number',
+      code: `${EXEC}function f(a: number, b: number) { exec('kill ' + (a + b)); }`,
+    },
   ],
   invalid: [
     {
@@ -67,8 +92,43 @@ ruleTester.run('numeric operands', noShellInjection, {
       errors: [{ messageId: 'shellInjection' }],
     },
     {
-      name: 'a member call on something other than Number still reports',
-      code: `${EXEC}function f(id) { exec('kill ' + Math.floor(id) + util.parseInt(id) + Number[k](id) + Number.raw(id)); }`,
+      name: 'a parseInt on another object still reports',
+      code: `${EXEC}function f(id) { exec('kill ' + util.parseInt(id)); }`,
+      errors: [{ messageId: 'shellInjection' }],
+    },
+    {
+      name: 'a Number member that is not a coercion still reports',
+      code: `${EXEC}function f(id) { exec('kill ' + Number.raw(id)); }`,
+      errors: [{ messageId: 'shellInjection' }],
+    },
+    {
+      name: 'a Number member read through a runtime key still reports',
+      code: `${EXEC}function f(id, k) { exec('kill ' + Number[k](id)); }`,
+      errors: [{ messageId: 'shellInjection' }],
+    },
+    {
+      name: 'a call whose callee is neither a name nor a member still reports',
+      code: `${EXEC}function f(id) { exec('kill ' + (0, Number)(id)); }`,
+      errors: [{ messageId: 'shellInjection' }],
+    },
+    {
+      name: 'a declared global has no annotation to read',
+      code: `/* global pid */\n${EXEC}exec('kill ' + pid);`,
+      errors: [{ messageId: 'shellInjection' }],
+    },
+    {
+      name: 'every declaration must say number',
+      code: `${EXEC}function f(s: string) { var p: number = 1; var p: string = s; exec('kill ' + p); }`,
+      errors: [{ messageId: 'shellInjection' }],
+    },
+    {
+      name: 'a + of a number and a string still reports',
+      code: `${EXEC}function f(a: number, raw) { exec('kill ' + (a + raw)); }`,
+      errors: [{ messageId: 'shellInjection' }],
+    },
+    {
+      name: 'a + of a string and a number still reports',
+      code: `${EXEC}function f(a: number, raw) { exec('kill ' + (raw + a)); }`,
       errors: [{ messageId: 'shellInjection' }],
     },
     {
@@ -82,7 +142,7 @@ ruleTester.run('numeric operands', noShellInjection, {
       errors: [{ messageId: 'shellInjection' }],
     },
     {
-      name: 'a logical not is not numeric',
+      name: 'a boolean beside a raw string still reports',
       code: `${EXEC}function f(a: string) { exec('x ' + !a + a); }`,
       errors: [{ messageId: 'shellInjection' }],
     },

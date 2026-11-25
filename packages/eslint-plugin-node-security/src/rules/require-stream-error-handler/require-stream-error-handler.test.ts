@@ -116,7 +116,10 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     'const s = factories[kind](p); s.pipe(res);',
     // A property access is neither an inline construction nor a name this file
     // binds, so there is nothing to attribute a missing listener to.
-    'this.request.pipe(res);',
+    {
+      name: 'a stream read off a property is not constructed in this file',
+      code: 'this.request.pipe(res);',
+    },
     // Not a pipe at all.
     'fs.createReadStream(p).setEncoding("utf8");',
     // A computed or non-member callee is not `.pipe`.

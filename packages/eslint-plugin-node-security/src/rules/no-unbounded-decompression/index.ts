@@ -246,8 +246,20 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
       const writes = variable.references
         .filter((ref) => ref.isWrite())
         .map((ref) => ref.writeExpr);
+      // `x++` writes with no expression to follow.
       return writes.length > 0 && writes.every((w) => w != null)
         ? (writes as TSESTree.Node[])
+        : null;
+    }
+
+    /** `name` when this identifier is the receiver of `identifier.name(…)`. */
+    function methodCalledOn(identifier: TSESTree.Node): string | null {
+      const member = identifier.parent as TSESTree.Node;
+      if (member.type !== AST_NODE_TYPES.MemberExpression) return null;
+      const call = member.parent;
+      return call.type === AST_NODE_TYPES.CallExpression &&
+        call.callee === member
+        ? propertyName(member)
         : null;
     }
 
@@ -255,10 +267,8 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
      * `createDecipheriv('aes-256-gcm', …)` from node:crypto, with its tag set
      * through `setAuthTag` somewhere in the file.
      */
-    function isAuthenticatingDecipher(
-      identifier: TSESTree.Identifier,
-    ): boolean {
-      const writes = writesOf(identifier);
+    function isAuthenticatingDecipher(identifier: TSESTree.Node): boolean {
+      const writes = writesOf(identifier as TSESTree.Identifier);
       if (writes === null || writes.length !== 1) return false;
       const [init] = writes;
       if (init.type !== AST_NODE_TYPES.CallExpression) return false;
@@ -275,16 +285,11 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
       ) {
         return false;
       }
-      return findVariable(context.sourceCode, identifier)!.references.some(
-        (ref) => {
-          const member = ref.identifier.parent;
-          return (
-            member.type === AST_NODE_TYPES.MemberExpression &&
-            member.object === ref.identifier &&
-            propertyName(member) === 'setAuthTag' &&
-            member.parent.type === AST_NODE_TYPES.CallExpression
-          );
-        },
+      return findVariable(
+        context.sourceCode,
+        identifier as TSESTree.Identifier,
+      )!.references.some(
+        (ref) => methodCalledOn(ref.identifier) === 'setAuthTag',
       );
     }
 
@@ -292,8 +297,7 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
     function decipherStep(node: TSESTree.Node): 'update' | 'final' | null {
       if (
         node.type !== AST_NODE_TYPES.CallExpression ||
-        node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-        node.callee.object.type !== AST_NODE_TYPES.Identifier
+        node.callee.type !== AST_NODE_TYPES.MemberExpression
       ) {
         return null;
       }
@@ -311,30 +315,38 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
      * verifies, so a bomb has to be sealed with the codec's key: whoever can
      * do that already writes the payloads. Followed through `const`/`let`
      * bindings (every write must qualify) and `.subarray()` / `.slice()`.
+     * `seen` stops a binding written from itself (`p = p.subarray(1)`).
      */
-    function isAuthenticatedPlaintext(node: TSESTree.Node, depth = 0): boolean {
-      if (depth > 8) return false;
+    function isAuthenticatedPlaintext(
+      node: TSESTree.Node,
+      seen: Set<string> = new Set(),
+    ): boolean {
       if (node.type === AST_NODE_TYPES.Identifier) {
+        if (seen.has(node.name)) return false;
+        seen.add(node.name);
         const writes = writesOf(node);
         return (
           writes !== null &&
-          writes.every((write) => isAuthenticatedPlaintext(write, depth + 1))
+          writes.every((write) => isAuthenticatedPlaintext(write, seen))
         );
       }
-      if (node.type !== AST_NODE_TYPES.CallExpression) return false;
+      if (
+        node.type !== AST_NODE_TYPES.CallExpression ||
+        node.callee.type !== AST_NODE_TYPES.MemberExpression
+      ) {
+        return false;
+      }
       const callee = node.callee;
-      if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
       const method = propertyName(callee);
       if (method === 'subarray' || method === 'slice') {
-        return isAuthenticatedPlaintext(callee.object, depth + 1);
+        return isAuthenticatedPlaintext(callee.object, seen);
       }
       // `Buffer.concat([d.update(x), d.final()])`: every part is a step of
       // the decipher, and `final()` is one of them.
       const array = node.arguments[0];
       if (
         method !== 'concat' ||
-        callee.object.type !== AST_NODE_TYPES.Identifier ||
-        callee.object.name !== 'Buffer' ||
+        context.sourceCode.getText(callee.object) !== 'Buffer' ||
         array?.type !== AST_NODE_TYPES.ArrayExpression
       ) {
         return false;

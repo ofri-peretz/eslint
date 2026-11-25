@@ -51,6 +51,7 @@ import {
 } from '@interlace/eslint-devkit';
 
 import { makeIsLiteralConstant } from '../../utils/constant-folding';
+import { findVariable } from '../../utils/provenance';
 
 type MessageIds = 'shellInjection';
 /**
@@ -159,10 +160,11 @@ function hasTruthyShellOption(node: TSESTree.CallExpression): boolean {
  */
 const NUMERIC_COERCIONS = new Set(['Number', 'parseInt', 'parseFloat']);
 
-function isNumberAnnotated(id: TSESTree.Node): boolean {
+function isNumberAnnotated(def: { name: TSESTree.Node }): boolean {
+  // A parameter or variable def's name is always its bound Identifier.
   return (
-    id.type === AST_NODE_TYPES.Identifier &&
-    id.typeAnnotation?.typeAnnotation.type === AST_NODE_TYPES.TSNumberKeyword
+    (def.name as TSESTree.Identifier).typeAnnotation?.typeAnnotation.type ===
+    AST_NODE_TYPES.TSNumberKeyword
   );
 }
 
@@ -170,42 +172,32 @@ function makeIsNumericValued(
   sourceCode: TSESLint.SourceCode,
 ): (node: TSESTree.Node) => boolean {
   return (node) => {
-    switch (node.type) {
-      case AST_NODE_TYPES.UnaryExpression:
-        return node.operator === '+' || node.operator === '-';
-      case AST_NODE_TYPES.CallExpression: {
-        const callee = node.callee;
-        if (callee.type === AST_NODE_TYPES.Identifier) {
-          if (!NUMERIC_COERCIONS.has(callee.name)) return false;
-          // A local function named `Number` is not the global.
-          const ref = sourceCode
-            .getScope(node)
-            .references.find((r) => r.identifier === callee);
-          return !ref?.resolved || ref.resolved.defs.length === 0;
-        }
+    // Every unary operator yields a number, a boolean, `undefined` or a
+    // `typeof` keyword: none of them can carry a shell metacharacter.
+    if (node.type === AST_NODE_TYPES.UnaryExpression) return true;
+    if (node.type === AST_NODE_TYPES.CallExpression) {
+      const callee = node.callee;
+      if (callee.type === AST_NODE_TYPES.Identifier) {
+        // A local function named `Number` is not the global.
+        const variable = findVariable(sourceCode, callee);
         return (
-          callee.type === AST_NODE_TYPES.MemberExpression &&
-          !callee.computed &&
-          callee.object.type === AST_NODE_TYPES.Identifier &&
-          callee.object.name === 'Number' &&
-          propertyName(callee) !== null &&
-          NUMERIC_COERCIONS.has(propertyName(callee) as string)
+          NUMERIC_COERCIONS.has(callee.name) &&
+          (variable === null || variable.defs.length === 0)
         );
       }
-      case AST_NODE_TYPES.Identifier: {
-        const ref = sourceCode
-          .getScope(node)
-          .references.find((r) => r.identifier === node);
-        const defs = ref?.resolved?.defs;
-        return (
-          !!defs &&
-          defs.length > 0 &&
-          defs.every((def) => isNumberAnnotated(def.name))
-        );
-      }
-      default:
-        return false;
+      return (
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        sourceCode.getText(callee.object) === 'Number' &&
+        NUMERIC_COERCIONS.has(propertyName(callee) ?? '')
+      );
     }
+    if (node.type !== AST_NODE_TYPES.Identifier) return false;
+    const variable = findVariable(sourceCode, node);
+    return (
+      variable !== null &&
+      variable.defs.length > 0 &&
+      variable.defs.every(isNumberAnnotated)
+    );
   };
 }
 
@@ -339,11 +331,12 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
           if (part.type === AST_NODE_TYPES.TemplateLiteral) {
             return part.expressions.every(isSafePart);
           }
+          if (part.type !== AST_NODE_TYPES.BinaryExpression) return false;
+          // Only `+` can build a string. Every other binary operator yields
+          // a number or a boolean.
           return (
-            part.type === AST_NODE_TYPES.BinaryExpression &&
-            part.operator === '+' &&
-            isSafePart(part.left) &&
-            isSafePart(part.right)
+            part.operator !== '+' ||
+            (isSafePart(part.left) && isSafePart(part.right))
           );
         };
 

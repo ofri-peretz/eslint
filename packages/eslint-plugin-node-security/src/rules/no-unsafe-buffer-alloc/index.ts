@@ -226,11 +226,17 @@ const COUNT_NAMES: ReadonlySet<string> = new Set([
   'bytelength',
 ]);
 
-/** Declared types whose `.length` is the size of bytes already held. */
+/** Declared types whose `.byteLength` is the size of bytes already held. */
 const BYTE_TYPES: ReadonlySet<string> = new Set([
   'Buffer',
   'Uint8Array',
   'ArrayBuffer',
+]);
+
+/** …and whose `.length` is: the byte types plus `string`. */
+const TEXT_OR_BYTE_TYPES: ReadonlySet<string> = new Set([
+  ...BYTE_TYPES,
+  AST_NODE_TYPES.TSStringKeyword,
 ]);
 
 /** `Buffer.alloc` / `Buffer.allocUnsafe` / `Buffer.allocUnsafeSlow`. */
@@ -766,16 +772,19 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
      * that is whatever number the peer put in the field.
      */
     function isSizeOfBytesInMemory(node: TSESTree.MemberExpression): boolean {
-      if (
-        node.computed ||
-        node.object.type !== AST_NODE_TYPES.Identifier ||
-        !['length', 'byteLength'].includes(
-          (node.property as TSESTree.Identifier).name,
-        )
-      ) {
-        return false;
-      }
-      const defs = findVariable(sourceCode, node.object)?.defs ?? [];
+      const property = propertyName(node);
+      // `o.length` and `o['length']` are the same property. A string has a
+      // `length` and no `byteLength`.
+      const types =
+        property === 'length'
+          ? TEXT_OR_BYTE_TYPES
+          : property === 'byteLength'
+            ? BYTE_TYPES
+            : null;
+      if (types === null) return false;
+      const defs =
+        findVariable(sourceCode, node.object as TSESTree.Identifier)?.defs ??
+        [];
       return (
         defs.length > 0 &&
         defs.every((def) => {
@@ -783,10 +792,12 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
           const annotation = (def.name as TSESTree.Identifier).typeAnnotation
             ?.typeAnnotation;
           return (
-            annotation?.type === AST_NODE_TYPES.TSStringKeyword ||
-            (annotation?.type === AST_NODE_TYPES.TSTypeReference &&
-              annotation.typeName.type === AST_NODE_TYPES.Identifier &&
-              BYTE_TYPES.has(annotation.typeName.name))
+            annotation !== undefined &&
+            types.has(
+              annotation.type === AST_NODE_TYPES.TSTypeReference
+                ? sourceCode.getText(annotation.typeName)
+                : annotation.type,
+            )
           );
         })
       );

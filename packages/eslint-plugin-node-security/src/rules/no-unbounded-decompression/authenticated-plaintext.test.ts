@@ -63,8 +63,106 @@ ruleTester.run('authenticated plaintext', noUnboundedDecompression, {
         parts: 'decipher.final()',
       }),
     },
+    {
+      // @found synthetic
+      name: 'FP: slice instead of subarray',
+      code: codec().replace('plaintext.subarray(1)', 'plaintext.slice(1)'),
+    },
+    {
+      // @found synthetic
+      name: 'FP: the decipher also handed to a helper',
+      code: codec({ tag: 'decipher.setAuthTag(t); keep(decipher);' }),
+    },
   ],
   invalid: [
+    {
+      name: 'an algorithm with a GCM-like infix still reports',
+      code: codec({ algorithm: 'aes-256-gcm-x' }),
+      errors: bomb,
+    },
+    {
+      name: 'a prefixed chacha20 name still reports',
+      code: codec({ algorithm: 'xchacha20-poly1305' }),
+      errors: bomb,
+    },
+    {
+      name: 'a suffixed chacha20 name still reports',
+      code: codec({ algorithm: 'chacha20-poly1305-x' }),
+      errors: bomb,
+    },
+    {
+      name: 'a setAuthTag handed over but never called still reports',
+      code: codec({ tag: 'register(decipher.setAuthTag);' }),
+      errors: bomb,
+    },
+    {
+      name: 'a decipher only passed to a helper still reports',
+      code: codec({ tag: 'register(decipher);' }),
+      errors: bomb,
+    },
+    {
+      name: 'createCipheriv is not a decipher',
+      code: codec().replace(/createDecipheriv/g, 'createCipheriv'),
+      errors: bomb,
+    },
+    {
+      name: 'a decipher from a local factory still reports',
+      code: codec().replace(
+        "import { createDecipheriv } from 'node:crypto';\n",
+        'function createDecipheriv(...a) { return make(a); }\n',
+      ),
+      errors: bomb,
+    },
+    {
+      name: 'a plain call among the parts still reports',
+      code: codec({ parts: 'load(), decipher.final()' }),
+      errors: bomb,
+    },
+    {
+      name: 'a non-concat Buffer method still reports',
+      code: codec({ extra: 'plaintext = Buffer.from([decipher.final()]);' }),
+      errors: bomb,
+    },
+    {
+      name: 'a concat on another object still reports',
+      code: codec({ extra: 'plaintext = Chunks.concat([decipher.final()]);' }),
+      errors: bomb,
+    },
+    {
+      name: 'a concat with no arguments still reports',
+      code: codec({ extra: 'plaintext = Buffer.concat();' }),
+      errors: bomb,
+    },
+    {
+      name: 'a write with no expression still reports',
+      code: codec({ extra: 'plaintext++;' }),
+      errors: bomb,
+    },
+    {
+      name: 'a binding written from itself still reports',
+      code: codec({ extra: 'plaintext = plaintext.subarray(0);' }),
+      errors: bomb,
+    },
+    {
+      name: 'a reassigned parameter keeps the caller value',
+      code: `${HEAD}export function f(key: Buffer, p: Buffer) {
+  const d = createDecipheriv('aes-256-gcm', key, iv);
+  d.setAuthTag(t);
+  if (fresh) p = Buffer.concat([d.final()]);
+  return inflateRawSync(p);
+}`,
+      errors: bomb,
+    },
+    {
+      name: 'a declared global has no write to follow',
+      code: `/* global body */\n${HEAD}export function f() { return inflateRawSync(body); }`,
+      errors: bomb,
+    },
+    {
+      name: 'an undeclared payload still reports',
+      code: `${HEAD}export function f() { return inflateRawSync(body); }`,
+      errors: bomb,
+    },
     {
       name: 'an unauthenticated mode still reports',
       code: codec({ algorithm: 'aes-256-cbc' }),

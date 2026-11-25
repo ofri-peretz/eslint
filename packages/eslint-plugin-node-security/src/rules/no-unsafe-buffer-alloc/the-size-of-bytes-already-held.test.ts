@@ -37,8 +37,33 @@ ruleTester.run('the size of bytes already held', noUnsafeBufferAlloc, {
         return [Buffer.alloc(chunk.byteLength), Buffer.alloc(msg.length)];
       }`,
     },
+    {
+      // @found synthetic
+      name: 'FP: the length read through a string key is the same property',
+      code: `export function f(chunk: Buffer) { return Buffer.alloc(chunk['length']); }`,
+    },
   ],
   invalid: [
+    {
+      name: 'a string has no byteLength',
+      code: `export function f(msg: string) { return Buffer.alloc(msg.byteLength); }`,
+      errors: unbounded,
+    },
+    {
+      name: 'another property of a typed Buffer still reports',
+      code: `export function f(chunk: Buffer) { return Buffer.alloc(chunk.declaredSize); }`,
+      errors: unbounded,
+    },
+    {
+      name: 'every declaration must be typed as bytes',
+      code: `export function f(raw) { var chunk: Buffer = Buffer.from('x'); var chunk = raw; return Buffer.alloc(chunk.length); }`,
+      errors: unbounded,
+    },
+    {
+      name: 'a number-typed value has no byte length',
+      code: `export function f(chunk: number) { return Buffer.alloc(chunk.length); }`,
+      errors: unbounded,
+    },
     {
       name: 'an untyped wire-named value still reports',
       code: `export function f(msg) { return Buffer.alloc(msg.length); }`,
