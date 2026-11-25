@@ -54,6 +54,10 @@ describe('claude-code-review.yml hands the reviewer the triggered checklist', ()
     expect(prompt).toContain('${{ steps.checklist.outputs.items }}');
   });
 
+  it('reserves path:line citations for findings, which the hit-rate script counts', () => {
+    expect(WORKFLOW).toContain('ONLY for a finding, never to confirm');
+  });
+
   it('tells the reviewer not to repeat what programs already gate', () => {
     expect(WORKFLOW).toContain('Report nothing');
     expect(WORKFLOW).toContain('one of them would report');

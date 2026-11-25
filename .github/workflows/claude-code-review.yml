@@ -213,7 +213,9 @@ jobs:
             ${{ steps.checklist.outputs.items }}
 
             Be precise and low-noise: only post a finding when you can cite the
-            specific file:line and explain why it is wrong. Cap nits -- prefer a
+            specific file:line and explain why it is wrong. Cite `path:line`
+            ONLY for a finding, never to confirm something is correct:
+            scripts/review-hit-rate.ts counts every citation as a finding. Cap nits -- prefer a
             single summary line over many inline style comments. If you find no
             blocking issues, say so plainly.
 
