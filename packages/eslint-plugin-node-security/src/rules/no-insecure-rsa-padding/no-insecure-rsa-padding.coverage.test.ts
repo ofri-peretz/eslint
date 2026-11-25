@@ -32,6 +32,7 @@ describe('no-insecure-rsa-padding coverage gaps', () => {
       },
       // allowInTests but non-test file with safe padding → regex operand false
       {
+        name: 'allowInTests in a non-test file with already-safe OAEP padding is not reported regardless',
         code: 'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buf);',
         options: [{ allowInTests: true }],
         filename: 'rsa.ts',

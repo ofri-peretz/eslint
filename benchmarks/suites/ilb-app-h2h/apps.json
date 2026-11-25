@@ -1,0 +1,19 @@
+{
+  "nodegoat": {
+    "repo": "https://github.com/OWASP/NodeGoat.git",
+    "commit": "c5cb68a7084e4ae7dcc60e6a98768720a81841e8",
+    "commitDate": "2023-06-21",
+    "license": "Apache-2.0 (LICENSE file at the pin is the Apache License 2.0 text; package.json says \"Apache 2.0\")",
+    "stack": "Express, MongoDB, plain JavaScript (CommonJS)",
+    "truthSource": "app/views/tutorial/{a1..a10,redos,ssrf}.html at the pin (the bundled tutorial the README points to), plus the fix-comments in the source",
+    "truthFile": "truth/nodegoat.json",
+    "lintGlobs": [
+      "server.js",
+      "app/routes/**/*.js",
+      "app/data/**/*.js",
+      "config/**/*.js",
+      "Gruntfile.js"
+    ],
+    "ignoreNote": "tests (test/**), vendored assets (app/assets/**), artifacts/** and cypress excluded for both plugins"
+  }
+}

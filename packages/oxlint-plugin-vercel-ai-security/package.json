@@ -1,7 +1,7 @@
 {
   "name": "oxlint-plugin-vercel-ai-security",
-  "version": "3.0.2",
-  "description": "The vercel-ai-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-vercel-ai-security.",
+  "version": "3.0.5",
+  "description": "Oxlint AI SDK security rules for the Vercel AI SDK — detects prompt injection, system-prompt leaks, hardcoded API keys, and unvalidated model output in generateText and streamText. Same rules and rule IDs as eslint-plugin-vercel-ai-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./index.js",
@@ -77,6 +77,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-vercel-ai-security": "3.0.2"
+    "eslint-plugin-vercel-ai-security": "3.0.5"
   }
 }

@@ -99,16 +99,31 @@ flowchart TD
 
 ## Examples
 
+The evidence is the VALUE being logged or thrown, never a word in the prose
+around it: an identifier, a property or an object key whose name says it holds a
+secret (followed one binding hop, and through a local object literal), or a
+string literal that writes a credential out (`'password: hunter2'`). A label —
+`token:`, `password=`, `API key:` — in front of a value the rule cannot name is
+prose and is not reported.
+
 ### ❌ Incorrect
 
 ```typescript
-// Example of incorrect usage
+console.log(`access token: ${accessToken}`); // the value is named accessToken
+throw new Error('password: ' + password); // the value is named password
+logger.error('rejected', { deliveryId, apiKey }); // structured field holding a key
+console.log(user.password); // a property that holds a password
+console.log('password: hunter2'); // a literal that writes the credential out
 ```
 
 ### ✅ Correct
 
 ```typescript
-// Example of correct usage
+console.log(`Using resumption token: ${lastEventId}`); // an event id under a label
+console.log(`  Token: ${authServerUrl}api/auth/mcp/token`); // an endpoint URL
+console.log('Set your API key:\n  export ANTHROPIC_API_KEY=your-api-key-here'); // help text
+throw new Error(`Failed to fetch access token: ${error.message}`); // a diagnostic
+console.log('token length', token.length); // a size, not the token
 ```
 
 ## Configuration Examples
@@ -137,6 +152,13 @@ export default [
 
 - [`rule-name`](./rule-name) - Description
 
+## Reported Even When Intended
+
+A generated demo password printed as a startup banner —
+``console.log(`Password: ${DEMO_USER_CREDENTIALS.password}`)`` — is still a
+credential in a log stream, and intent is not visible to a linter. It is
+reported; suppress it inline where the banner is wanted.
+
 <WhenNotToUse />
 
 <FalseNegativeCTA />
@@ -144,6 +166,21 @@ export default [
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
+
+### A Label in Front of an Unnamed Value
+
+**Why**: A label is prose. Until 2026-11 the rule reported `token: ${t}` on the
+label alone; on the MCP TypeScript SDK's examples that produced four findings
+and no leak (an SSE event id, an endpoint URL, help text naming an env var).
+The value must now name the secret itself.
+
+```typescript
+// ❌ NOT DETECTED - the label says token, the value is named t
+console.log(`access token: ${t}`);
+```
+
+**Mitigation**: Name values after what they hold (`accessToken`), which is also
+what makes the leak visible in review.
 
 ### Values from Variables
 

@@ -28,7 +28,16 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 ## 📋 Description
 
-The `'unsafe-inline'` CSP directive allows inline JavaScript and CSS, completely bypassing the protection CSP provides against XSS attacks. This is one of the most common CSP misconfigurations.
+The `'unsafe-inline'` CSP keyword allows inline JavaScript, completely bypassing the protection CSP provides against XSS attacks. This is one of the most common CSP misconfigurations.
+
+The keyword is judged by the directive it sits in. It is reported under a
+script-governing directive — `script-src`, `script-src-elem`, `script-src-attr`,
+or `default-src` when the policy has no `script-src` — and in a bare source list
+delivered as a CSP header, where the directive is out of sight. Under
+`style-src` it permits inline CSS: CSS injection, a real but lower-severity
+weakness than script execution, reported only with `checkStyleSrc: true` under
+its own MEDIUM message. Under a directive where it means nothing (`img-src`) it
+is not reported.
 
 ## 🔍 What This Rule Detects
 
@@ -49,8 +58,8 @@ flowchart TD
 // Literal string with unsafe-inline
 const csp = "script-src 'unsafe-inline'";
 
-// Template literal
-const policy = `default-src 'self'; style-src 'unsafe-inline'`;
+// default-src governs scripts when there is no script-src
+const policy = `default-src 'self' 'unsafe-inline'; style-src 'self'`;
 
 // In HTTP header
 res.setHeader('Content-Security-Policy', "script-src 'unsafe-inline'");
@@ -70,6 +79,9 @@ const policy = "script-src 'self' 'sha256-xxxxx'";
 
 // Strict CSP without inline
 res.setHeader('Content-Security-Policy', "default-src 'self'");
+
+// Inline STYLES only — reported with checkStyleSrc: true
+const sandbox = "default-src 'none'; style-src 'unsafe-inline'";
 ```
 
 ## 🛠️ Options
@@ -91,9 +103,10 @@ res.setHeader('Content-Security-Policy', "default-src 'self'");
 }
 ```
 
-| Option         | Type      | Default | Description                    |
-| -------------- | --------- | ------- | ------------------------------ |
-| `allowInTests` | `boolean` | `true`  | Disable the rule in test files |
+| Option          | Type      | Default | Description                                                          |
+| --------------- | --------- | ------- | -------------------------------------------------------------------- |
+| `allowInTests`  | `boolean` | `true`  | Disable the rule in test files                                       |
+| `checkStyleSrc` | `boolean` | `false` | Also report `'unsafe-inline'` that permits inline styles (MEDIUM)    |
 
 ## 💡 Why This Matters
 

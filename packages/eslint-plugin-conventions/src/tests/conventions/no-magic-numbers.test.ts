@@ -39,36 +39,100 @@ describe('no-magic-numbers', () => {
       {
         name: '5000 with nothing saying what it measures',
         code: 'setTimeout(cb, 5000);',
-        errors: [{ messageId: 'noMagicNumber', suggestions: [{ messageId: 'extractConst', output: 'const MAGIC_5000 = 5000;\nsetTimeout(cb, MAGIC_5000);' }] }],
+        errors: [
+          {
+            messageId: 'noMagicNumber',
+            suggestions: [
+              {
+                messageId: 'extractConst',
+                output: 'const MAGIC_5000 = 5000;\nsetTimeout(cb, MAGIC_5000);',
+              },
+            ],
+          },
+        ],
       },
       {
         code: 'const limit = users.length > 100 ? users.slice(0, 100) : users;',
         errors: [
-          { messageId: 'noMagicNumber', suggestions: [{ messageId: 'extractConst', output: 'const MAGIC_100 = 100;\nconst limit = users.length > MAGIC_100 ? users.slice(0, 100) : users;' }] },
-          { messageId: 'noMagicNumber', suggestions: [{ messageId: 'extractConst', output: 'const MAGIC_100 = 100;\nconst limit = users.length > 100 ? users.slice(0, MAGIC_100) : users;' }] },
+          {
+            messageId: 'noMagicNumber',
+            suggestions: [
+              {
+                messageId: 'extractConst',
+                output:
+                  'const MAGIC_100 = 100;\nconst limit = users.length > MAGIC_100 ? users.slice(0, 100) : users;',
+              },
+            ],
+          },
+          {
+            messageId: 'noMagicNumber',
+            suggestions: [
+              {
+                messageId: 'extractConst',
+                output:
+                  'const MAGIC_100 = 100;\nconst limit = users.length > 100 ? users.slice(0, MAGIC_100) : users;',
+              },
+            ],
+          },
         ],
       },
       {
         code: 'if (response.status === 404) {}',
-        errors: [{ messageId: 'noMagicNumber', suggestions: [{ messageId: 'extractConst', output: 'const MAGIC_404 = 404;\nif (response.status === MAGIC_404) {}' }] }],
+        errors: [
+          {
+            messageId: 'noMagicNumber',
+            suggestions: [
+              {
+                messageId: 'extractConst',
+                output:
+                  'const MAGIC_404 = 404;\nif (response.status === MAGIC_404) {}',
+              },
+            ],
+          },
+        ],
       },
       {
         code: 'const scaled = value * 1.5;',
-        errors: [{ messageId: 'noMagicNumber', suggestions: [{ messageId: 'extractConst', output: 'const MAGIC_1_5 = 1.5;\nconst scaled = value * MAGIC_1_5;' }] }],
+        errors: [
+          {
+            messageId: 'noMagicNumber',
+            suggestions: [
+              {
+                messageId: 'extractConst',
+                output:
+                  'const MAGIC_1_5 = 1.5;\nconst scaled = value * MAGIC_1_5;',
+              },
+            ],
+          },
+        ],
       },
     ],
   });
 
-  ruleTester.run('no-magic-numbers — ignoreArrayIndexes: false', noMagicNumbers, {
-    valid: [],
-    invalid: [
-      {
-        code: 'const x = arr[5];',
-        options: [{ ignoreArrayIndexes: false }],
-        errors: [{ messageId: 'noMagicNumber', suggestions: [{ messageId: 'extractConst', output: 'const MAGIC_5 = 5;\nconst x = arr[MAGIC_5];' }] }],
-      },
-    ],
-  });
+  ruleTester.run(
+    'no-magic-numbers — ignoreArrayIndexes: false',
+    noMagicNumbers,
+    {
+      valid: [],
+      invalid: [
+        {
+          code: 'const x = arr[5];',
+          options: [{ ignoreArrayIndexes: false }],
+          errors: [
+            {
+              messageId: 'noMagicNumber',
+              suggestions: [
+                {
+                  messageId: 'extractConst',
+                  output: 'const MAGIC_5 = 5;\nconst x = arr[MAGIC_5];',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  );
 });
 
 /**
@@ -110,9 +174,15 @@ describe('no-magic-numbers — loop bounds and arity', () => {
       { code: 'for (let i = 0; i < f(g(h(9))); i++) { run(i); }' },
       { code: 'for (let i = 0; i < a[b[c[7]]]; i++) { run(i); }' },
       // The literal on either side of the comparison.
-      { code: 'function f() { if (3 === arguments.length) { return 1; } return 0; }' },
-      { code: 'function f() { if (arguments.length === 3) { return 1; } return 0; }' },
-      { code: 'function f(args) { if (args.length !== 2) { return 1; } return 0; }' },
+      {
+        code: 'function f() { if (3 === arguments.length) { return 1; } return 0; }',
+      },
+      {
+        code: 'function f() { if (arguments.length === 3) { return 1; } return 0; }',
+      },
+      {
+        code: 'function f(args) { if (args.length !== 2) { return 1; } return 0; }',
+      },
       {
         code: 'for (let i = 0; i < 4; i += 1) { run(i); }',
         options: [{ ignoreLoopBounds: true }],
@@ -145,7 +215,8 @@ describe('no-magic-numbers — loop bounds and arity', () => {
             suggestions: [
               {
                 messageId: 'extractConst',
-                output: 'const MAGIC_5000 = 5000;\nconst cfg = { timeout: MAGIC_5000 };',
+                output:
+                  'const MAGIC_5000 = 5000;\nconst cfg = { timeout: MAGIC_5000 };',
               },
             ],
           },
@@ -161,7 +232,8 @@ describe('no-magic-numbers — loop bounds and arity', () => {
             suggestions: [
               {
                 messageId: 'extractConst',
-                output: 'const MAGIC_3 = 3;\nconst r = compute(bar.length, MAGIC_3);',
+                output:
+                  'const MAGIC_3 = 3;\nconst r = compute(bar.length, MAGIC_3);',
               },
             ],
           },
@@ -177,7 +249,8 @@ describe('no-magic-numbers — loop bounds and arity', () => {
             suggestions: [
               {
                 messageId: 'extractConst',
-                output: 'const MAGIC_4 = 4;\nfor (let i = 0; i < MAGIC_4; i += 1) { run(i); }',
+                output:
+                  'const MAGIC_4 = 4;\nfor (let i = 0; i < MAGIC_4; i += 1) { run(i); }',
               },
             ],
           },

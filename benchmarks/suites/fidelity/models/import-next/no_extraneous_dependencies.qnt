@@ -6,12 +6,21 @@
 // `{"type":"module"}` scope marker in a sub-folder is not one.
 //
 // Allowed: `dependencies`; `devDependencies`, `optionalDependencies`,
-// `peerDependencies`, `bundledDependencies` / `bundleDependencies` (npm
-// accepts both spellings) while their option is true (the default); the
-// package's own name (Node self-reference through `exports`).
+// `peerDependencies` and the bundled list while their option is true (the
+// default); the package's own name (Node self-reference through `exports`).
+// The bundled list is `bundleDependencies` when the manifest has it, else
+// `bundledDependencies` — npm's precedence, and eslint-plugin-import's
+// (`pkg.bundleDependencies || pkg.bundledDependencies`). The manifest here
+// has both, so a package listed only in `bundledDependencies` is undeclared.
 //
 // Never checked: Node builtins (`fs/promises`, `node:fs`), relative paths,
-// `#imports`, URL schemes (`virtual:x`). Erased at compile time, so never
+// `#imports`, URL schemes (`virtual:x`), and an internal module: a specifier
+// that resolves to a file of this package outside `node_modules`, such as a
+// tsconfig `paths` alias (`@/local`) - eslint-plugin-import's default
+// (`includeInternal: false`). A specifier is a package to declare only once
+// it resolves, as in eslint-plugin-import: an alias that resolves to nothing
+// (`@/nope`) is not checked. Every package name here is installed, listed or
+// not, so its verdict turns on the manifest alone. Erased at compile time, so never
 // reported: `import type`, `export type ... from`, and an import whose
 // specifiers are all inline `type` (unless `verbatimModuleSyntax`, which keeps
 // it as `import {} from 'pkg'`).
@@ -31,7 +40,7 @@ module no_extraneous_dependencies {
   type Listing = Deps | Dev | Optional | Peer | Bundled | BundleAlt | None | Self
   type Opts = Defaults | NoDev | NoOptional | NoPeer | NoBundled | Verbatim | Workspace
   type Shape = Bare | Subpath | Scoped | ScopedSubpath | Marker
-             | Builtin | NodeBuiltin | Relative | Hash | Protocol
+             | Builtin | NodeBuiltin | Relative | Hash | Protocol | Alias | AliasMissing
 
   pure def erased(f: Form, o: Opts): bool =
     f == TypeOnly or f == ExportType or (f == InlineType and o != Verbatim)
@@ -41,7 +50,8 @@ module no_extraneous_dependencies {
       or (l == Dev and o != NoDev)
       or (l == Optional and o != NoOptional)
       or (l == Peer and o != NoPeer)
-      or ((l == Bundled or l == BundleAlt) and o != NoBundled)
+      // `bundleDependencies` (BundleAlt) wins; `bundledDependencies` is shadowed.
+      or (l == BundleAlt and o != NoBundled)
 
   pure def packageShape(sh: Shape): bool =
     Set(Bare, Subpath, Scoped, ScopedSubpath, Marker).contains(sh)
@@ -62,7 +72,8 @@ module no_extraneous_dependencies {
                     ExportNamed, ExportAll, ExportAllAs, Require, Dynamic, ImportEquals).oneOf()
     nondet l0 = Set(Deps, Dev, Optional, Peer, Bundled, BundleAlt, None, Self).oneOf()
     nondet o0 = Set(Defaults, NoDev, NoOptional, NoPeer, NoBundled, Verbatim, Workspace).oneOf()
-    nondet sh0 = Set(Subpath, Scoped, ScopedSubpath, Marker, Builtin, NodeBuiltin, Relative, Hash, Protocol).oneOf()
+    nondet sh0 = Set(Subpath, Scoped, ScopedSubpath, Marker, Builtin, NodeBuiltin, Relative, Hash, Protocol,
+                     Alias, AliasMissing).oneOf()
     nondet l1 = Set(Deps, None).oneOf()
     val f = if (fc == Grid) f0 else Default
     val l = if (fc == Grid) l0 else l1

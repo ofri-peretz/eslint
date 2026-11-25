@@ -3,7 +3,7 @@ title: no-self-signed-certs
 description: Disallow rejectUnauthorized false in TLS options
 tags: ['security', 'tls', 'cwe-295', 'nodejs', 'mitm']
 category: security
-severity: critical
+severity: high
 cwe: CWE-295
 owasp: 'A07:2021'
 autofix: false

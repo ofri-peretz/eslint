@@ -37,9 +37,11 @@ describe('no-unknown-property', () => {
           code: '<input type="text" value="test" />',
         },
         {
+          name: 'className and id are known properties of a div',
           code: '<div className="container" id="main" />',
         },
         {
+          name: 'src and alt are known properties of an img',
           code: '<img src="image.jpg" alt="description" />',
         },
         {
@@ -70,6 +72,31 @@ describe('no-unknown-property', () => {
         },
       ],
       invalid: [],
+    });
+  });
+
+  describe('Capture-phase event handlers (regression lock)', () => {
+    // #1568: React gives every known event handler a `...Capture` twin for
+    // the capture phase. `VALID_DOM_PROPERTIES` only lists the bubble-phase
+    // name, so onFocusCapture/onClickCapture read as unknown without this.
+    ruleTester.run('capture-phase handlers', noUnknownProperty, {
+      valid: [
+        {
+          name: 'onFocusCapture is the capture twin of the known onFocus',
+          code: '<article onFocusCapture={() => {}} />',
+        },
+        {
+          name: 'onClickCapture is the capture twin of the known onClick',
+          code: '<article onFocusCapture={() => {}} onClickCapture={() => {}} />',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a Capture suffix on an unknown base handler is still unknown',
+          code: '<article onBogusHandlerCapture={() => {}} />',
+          errors: [{ messageId: 'noUnknownProperty' }],
+        },
+      ],
     });
   });
 
@@ -476,5 +503,32 @@ describe('no-unknown-property', () => {
         },
       ],
     });
+  });
+});
+
+describe('no-unknown-property: namespaced SVG attributes', () => {
+  ruleTester.run('namespaced SVG attributes', noUnknownProperty, {
+    valid: [
+      {
+        name: 'xlinkHref is the camelCase form React accepts',
+        code: '<use xlinkHref="#icon" />',
+      },
+      {
+        name: 'an unrelated namespaced name passes through',
+        code: '<svg xmlns:foo="urn:x" />',
+      },
+    ],
+    invalid: [
+      {
+        name: 'xlink:href suggests xlinkHref',
+        code: '<use xlink:href="#icon" />',
+        errors: [{ messageId: 'invalidNamespacedProp' }],
+      },
+      {
+        name: 'xml:lang suggests xmlLang',
+        code: '<svg xml:lang="en" />',
+        errors: [{ messageId: 'invalidNamespacedProp' }],
+      },
+    ],
   });
 });

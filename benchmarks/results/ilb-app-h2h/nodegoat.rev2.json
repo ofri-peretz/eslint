@@ -1,0 +1,637 @@
+{
+  "suite": "ilb-app-h2h",
+  "app": "nodegoat",
+  "pin": "c5cb68a7084e4ae7dcc60e6a98768720a81841e8",
+  "license": "Apache-2.0 (LICENSE file at the pin is the Apache License 2.0 text; package.json says \"Apache 2.0\")",
+  "generatedAt": "2026-11-20T10:49:29.586Z",
+  "toolchain": {
+    "node": "v24.12.0",
+    "platform": "darwin-arm64",
+    "eslint": "10.13.0",
+    "tsParser": "8.68.0",
+    "ourRepo": {
+      "head": "a17ccfaa56335d886dd3952e3968b4e078e99a7a",
+      "dirtyPackages": []
+    },
+    "plugins": {
+      "secure-coding": {
+        "name": "eslint-plugin-secure-coding",
+        "version": "6.1.3",
+        "path": "packages/eslint-plugin-secure-coding/dist/src/index.js",
+        "source": "local-build"
+      },
+      "node-security": {
+        "name": "eslint-plugin-node-security",
+        "version": "6.0.7",
+        "path": "packages/eslint-plugin-node-security/dist/src/index.js",
+        "source": "local-build"
+      },
+      "express-security": {
+        "name": "eslint-plugin-express-security",
+        "version": "4.0.4",
+        "path": "packages/eslint-plugin-express-security/dist/src/index.js",
+        "source": "local-build"
+      },
+      "mongodb-security": {
+        "name": "eslint-plugin-mongodb-security",
+        "version": "10.0.3",
+        "path": "packages/eslint-plugin-mongodb-security/dist/src/index.js",
+        "source": "local-build"
+      },
+      "sequelize-security": {
+        "name": "eslint-plugin-sequelize-security",
+        "version": "2.0.3",
+        "path": "packages/eslint-plugin-sequelize-security/dist/src/index.js",
+        "source": "local-build"
+      },
+      "security": {
+        "name": "eslint-plugin-security",
+        "version": "4.2.1",
+        "source": "npm"
+      }
+    }
+  },
+  "truthItems": 20,
+  "summary": {
+    "A": {
+      "label": "eslint-plugin-security recommended",
+      "side": "incumbent",
+      "filesLinted": 24,
+      "loc": 1745,
+      "ms": 105,
+      "parseErrors": 0,
+      "findings": 8,
+      "duplicateRuleHitsDropped": 0,
+      "findingsPerKLoc": 4.6,
+      "tp": 4,
+      "fpTotal": 4,
+      "fpRightPlaceWrongReason": 0,
+      "unlistedReal": 0,
+      "undecidable": 0,
+      "precisionStrict": 0.5,
+      "precisionLenient": 0.5,
+      "precisionStrictWilson95": [0.215, 0.785],
+      "truthItems": 20,
+      "itemsHit": ["NG-01", "NG-19"],
+      "recallAll": 0.1,
+      "recallLintableY": 0.286,
+      "lintableYCount": 7,
+      "byRule": {
+        "security/detect-child-process": 1,
+        "security/detect-eval-with-expression": 3,
+        "security/detect-non-literal-require": 2,
+        "security/detect-possible-timing-attacks": 1,
+        "security/detect-unsafe-regex": 1
+      },
+      "findingsDetail": [
+        {
+          "file": "Gruntfile.js",
+          "line": 165,
+          "ruleId": "security/detect-child-process",
+          "message": "Found child_process.exec() with non Literal first argument",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "Same grunt db-reset task as above: developer-run, no remote input."
+        },
+        {
+          "file": "app/routes/contributions.js",
+          "line": 32,
+          "ruleId": "security/detect-eval-with-expression",
+          "message": "eval with argument of type MemberExpression",
+          "verdict": "TP",
+          "itemIds": ["NG-01"],
+          "regionIds": ["NG-01"]
+        },
+        {
+          "file": "app/routes/contributions.js",
+          "line": 33,
+          "ruleId": "security/detect-eval-with-expression",
+          "message": "eval with argument of type MemberExpression",
+          "verdict": "TP",
+          "itemIds": ["NG-01"],
+          "regionIds": ["NG-01"]
+        },
+        {
+          "file": "app/routes/contributions.js",
+          "line": 34,
+          "ruleId": "security/detect-eval-with-expression",
+          "message": "eval with argument of type MemberExpression",
+          "verdict": "TP",
+          "itemIds": ["NG-01"],
+          "regionIds": ["NG-01"]
+        },
+        {
+          "file": "app/routes/profile.js",
+          "line": 59,
+          "ruleId": "security/detect-unsafe-regex",
+          "message": "Unsafe Regular Expression",
+          "verdict": "TP",
+          "itemIds": ["NG-19"],
+          "regionIds": ["NG-19"]
+        },
+        {
+          "file": "app/routes/session.js",
+          "line": 176,
+          "ruleId": "security/detect-possible-timing-attacks",
+          "message": "Potential timing attack, left side: true",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": []
+        },
+        {
+          "file": "config/config.js",
+          "line": 7,
+          "ruleId": "security/detect-non-literal-require",
+          "message": "Found non-literal argument in require",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": []
+        },
+        {
+          "file": "config/config.js",
+          "line": 8,
+          "ruleId": "security/detect-non-literal-require",
+          "message": "Found non-literal argument in require",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": []
+        }
+      ]
+    },
+    "A-all": {
+      "label": "eslint-plugin-security, every rule at error",
+      "side": "incumbent",
+      "filesLinted": 24,
+      "loc": 1745,
+      "ms": 24,
+      "parseErrors": 0,
+      "findings": 8,
+      "duplicateRuleHitsDropped": 0,
+      "findingsPerKLoc": 4.6,
+      "tp": 4,
+      "fpTotal": 4,
+      "fpRightPlaceWrongReason": 0,
+      "unlistedReal": 0,
+      "undecidable": 0,
+      "precisionStrict": 0.5,
+      "precisionLenient": 0.5,
+      "precisionStrictWilson95": [0.215, 0.785],
+      "truthItems": 20,
+      "itemsHit": ["NG-01", "NG-19"],
+      "recallAll": 0.1,
+      "recallLintableY": 0.286,
+      "lintableYCount": 7,
+      "byRule": {
+        "security/detect-child-process": 1,
+        "security/detect-eval-with-expression": 3,
+        "security/detect-non-literal-require": 2,
+        "security/detect-possible-timing-attacks": 1,
+        "security/detect-unsafe-regex": 1
+      },
+      "findingsDetail": [
+        {
+          "file": "Gruntfile.js",
+          "line": 165,
+          "ruleId": "security/detect-child-process",
+          "message": "Found child_process.exec() with non Literal first argument",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "Same grunt db-reset task as above: developer-run, no remote input."
+        },
+        {
+          "file": "app/routes/contributions.js",
+          "line": 32,
+          "ruleId": "security/detect-eval-with-expression",
+          "message": "eval with argument of type MemberExpression",
+          "verdict": "TP",
+          "itemIds": ["NG-01"],
+          "regionIds": ["NG-01"]
+        },
+        {
+          "file": "app/routes/contributions.js",
+          "line": 33,
+          "ruleId": "security/detect-eval-with-expression",
+          "message": "eval with argument of type MemberExpression",
+          "verdict": "TP",
+          "itemIds": ["NG-01"],
+          "regionIds": ["NG-01"]
+        },
+        {
+          "file": "app/routes/contributions.js",
+          "line": 34,
+          "ruleId": "security/detect-eval-with-expression",
+          "message": "eval with argument of type MemberExpression",
+          "verdict": "TP",
+          "itemIds": ["NG-01"],
+          "regionIds": ["NG-01"]
+        },
+        {
+          "file": "app/routes/profile.js",
+          "line": 59,
+          "ruleId": "security/detect-unsafe-regex",
+          "message": "Unsafe Regular Expression",
+          "verdict": "TP",
+          "itemIds": ["NG-19"],
+          "regionIds": ["NG-19"]
+        },
+        {
+          "file": "app/routes/session.js",
+          "line": 176,
+          "ruleId": "security/detect-possible-timing-attacks",
+          "message": "Potential timing attack, left side: true",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": []
+        },
+        {
+          "file": "config/config.js",
+          "line": 7,
+          "ruleId": "security/detect-non-literal-require",
+          "message": "Found non-literal argument in require",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": []
+        },
+        {
+          "file": "config/config.js",
+          "line": 8,
+          "ruleId": "security/detect-non-literal-require",
+          "message": "Found non-literal argument in require",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": []
+        }
+      ]
+    },
+    "B": {
+      "label": "secure-coding + node-security + express-security, recommended presets",
+      "side": "ours",
+      "filesLinted": 24,
+      "loc": 1745,
+      "ms": 505,
+      "parseErrors": 0,
+      "findings": 10,
+      "duplicateRuleHitsDropped": 0,
+      "findingsPerKLoc": 5.7,
+      "tp": 6,
+      "fpTotal": 1,
+      "fpRightPlaceWrongReason": 0,
+      "unlistedReal": 3,
+      "undecidable": 0,
+      "precisionStrict": 0.6,
+      "precisionLenient": 0.9,
+      "precisionStrictWilson95": [0.313, 0.832],
+      "truthItems": 20,
+      "itemsHit": ["NG-01", "NG-18", "NG-19", "NG-20"],
+      "recallAll": 0.2,
+      "recallLintableY": 0.571,
+      "lintableYCount": 7,
+      "byRule": {
+        "express-security/no-user-controlled-redirect": 1,
+        "node-security/detect-eval-with-expression": 3,
+        "node-security/no-shell-injection": 1,
+        "node-security/no-ssrf": 1,
+        "secure-coding/no-hardcoded-credentials": 2,
+        "secure-coding/no-redos-vulnerable-regex": 2
+      },
+      "findingsDetail": [
+        {
+          "file": "Gruntfile.js",
+          "line": 166,
+          "ruleId": "node-security/no-shell-injection",
+          "message": "🔒 CWE-78 OWASP:A05-Injection CVSS:9.8 | Shell command built via string concatenation or template literal. An attacker who controls any interpolated value can execute arbitrary OS commands. | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: Use spawn(cmd, [arg1, arg2]) with separate arguments instead of exec(cmd + args). Never build shell commands via string interpolation. | https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "exec() command is built from process.env.NODE_ENV or a CLI argument of a developer-run grunt task (db-reset). No attacker-controlled input reaches it."
+        },
+        {
+          "file": "app/routes/contributions.js",
+          "line": 32,
+          "ruleId": "node-security/detect-eval-with-expression",
+          "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | Use direct property access instead of eval() for dynamic property access | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use obj[key] or Map.get(key) instead of eval() | https://owasp.org/www-community/attacks/Code_Injection",
+          "verdict": "TP",
+          "itemIds": ["NG-01"],
+          "regionIds": ["NG-01"]
+        },
+        {
+          "file": "app/routes/contributions.js",
+          "line": 33,
+          "ruleId": "node-security/detect-eval-with-expression",
+          "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | Use direct property access instead of eval() for dynamic property access | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use obj[key] or Map.get(key) instead of eval() | https://owasp.org/www-community/attacks/Code_Injection",
+          "verdict": "TP",
+          "itemIds": ["NG-01"],
+          "regionIds": ["NG-01"]
+        },
+        {
+          "file": "app/routes/contributions.js",
+          "line": 34,
+          "ruleId": "node-security/detect-eval-with-expression",
+          "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | Use direct property access instead of eval() for dynamic property access | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use obj[key] or Map.get(key) instead of eval() | https://owasp.org/www-community/attacks/Code_Injection",
+          "verdict": "TP",
+          "itemIds": ["NG-01"],
+          "regionIds": ["NG-01"]
+        },
+        {
+          "file": "app/routes/index.js",
+          "line": 72,
+          "ruleId": "express-security/no-user-controlled-redirect",
+          "message": "🔒 CWE-601 OWASP:A01-Broken CVSS:6.1 | res.redirect() receives a value directly from req.query, which is user-controlled. An attacker can redirect victims to a malicious site. | HIGH\n   Fix: Validate the redirect target against an allowlist of trusted paths/origins, or use a relative path that cannot be redirected off-domain. | https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html",
+          "verdict": "TP",
+          "itemIds": ["NG-18"],
+          "regionIds": ["NG-18"]
+        },
+        {
+          "file": "app/routes/profile.js",
+          "line": 59,
+          "ruleId": "secure-coding/no-redos-vulnerable-regex",
+          "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Self-loop quantifier (exponential backtracking): A quantifier reaches itself via the parent loop. An attacker can craft input that triggers exponential backtracking. | CRITICAL\n   Fix: Atomic group, possessive quantifier, or rewrite to remove the ambiguity — Not a finding if the quantifiers cannot overlap | https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS",
+          "verdict": "TP",
+          "itemIds": ["NG-19"],
+          "regionIds": ["NG-19"]
+        },
+        {
+          "file": "app/routes/research.js",
+          "line": 16,
+          "ruleId": "node-security/no-ssrf",
+          "message": "🔒 CWE-918 OWASP:A01-Broken CVSS:9.1 | HTTP call whose URL argument name suggests user input. This is a naming heuristic, not data-flow analysis — review whether the URL could originate from an untrusted source at runtime. | LOW\n   Fix: If the URL comes from user input, validate it against an allowlist of permitted hosts before making the request. | https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html",
+          "verdict": "TP",
+          "itemIds": ["NG-20"],
+          "regionIds": ["NG-20"]
+        },
+        {
+          "file": "app/routes/session.js",
+          "line": 143,
+          "ruleId": "secure-coding/no-redos-vulnerable-regex",
+          "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or rewrite to remove the ambiguity — Not a finding if the quantifiers cannot overlap | https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS",
+          "verdict": "unlisted-real",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "EMAIL_RE = /^[\\S]+@[\\S]+\\.[\\S]+$/ is reachable from unauthenticated POST /signup (email is regex-tested after the other fields pass; email has no length cap). Input '@'.repeat(n) fails the match after quadratic backtracking: measured 2000 chars 2 ms, 4000 chars 8 ms, 8000 chars 31 ms (Node 24, V8 irregexp), so a 100 KB body (body-parser default limit) costs about 5 s of event-loop time. A real, undocumented ReDoS."
+        },
+        {
+          "file": "config/env/development.js",
+          "line": 6,
+          "ruleId": "secure-coding/no-hardcoded-credentials",
+          "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Credential value detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.ZAP_API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html",
+          "verdict": "unlisted-real",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "zapApiKey is a committed random-looking 26-character literal (a hard-coded credential in source). Label corrected from FP on the coordinator's review (2026-11-21, rev 1b). Impact is bounded (a local OWASP ZAP scanner key in developer configs, not documented in the NodeGoat tutorial), so it is unlisted-real, not a truth-table hit: strict precision still counts it as FP, lenient counts it as TP."
+        },
+        {
+          "file": "config/env/test.js",
+          "line": 6,
+          "ruleId": "secure-coding/no-hardcoded-credentials",
+          "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Credential value detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.ZAP_API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html",
+          "verdict": "unlisted-real",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "zapApiKey is a committed random-looking 26-character literal (a hard-coded credential in source). Label corrected from FP on the coordinator's review (2026-11-21, rev 1b). Impact is bounded (a local OWASP ZAP scanner key in developer configs, not documented in the NodeGoat tutorial), so it is unlisted-real, not a truth-table hit: strict precision still counts it as FP, lenient counts it as TP."
+        }
+      ]
+    },
+    "C": {
+      "label": "B + mongodb-security recommended",
+      "side": "ours",
+      "filesLinted": 24,
+      "loc": 1745,
+      "ms": 88,
+      "parseErrors": 0,
+      "findings": 12,
+      "duplicateRuleHitsDropped": 0,
+      "findingsPerKLoc": 6.9,
+      "tp": 7,
+      "fpTotal": 2,
+      "fpRightPlaceWrongReason": 0,
+      "unlistedReal": 3,
+      "undecidable": 0,
+      "precisionStrict": 0.583,
+      "precisionLenient": 0.833,
+      "precisionStrictWilson95": [0.32, 0.807],
+      "truthItems": 20,
+      "itemsHit": ["NG-01", "NG-02", "NG-18", "NG-19", "NG-20"],
+      "recallAll": 0.25,
+      "recallLintableY": 0.714,
+      "lintableYCount": 7,
+      "byRule": {
+        "express-security/no-user-controlled-redirect": 1,
+        "mongodb-security/no-unsafe-where": 1,
+        "mongodb-security/require-tls-connection": 1,
+        "node-security/detect-eval-with-expression": 3,
+        "node-security/no-shell-injection": 1,
+        "node-security/no-ssrf": 1,
+        "secure-coding/no-hardcoded-credentials": 2,
+        "secure-coding/no-redos-vulnerable-regex": 2
+      },
+      "findingsDetail": [
+        {
+          "file": "server.js",
+          "line": 30,
+          "ruleId": "mongodb-security/require-tls-connection",
+          "message": "🔒 CWE-295 OWASP:A02-Cryptographic CVSS:7.4 | MongoDB connection is not using TLS encryption | HIGH\n   Fix: Add { tls: true } to connection options | https://www.mongodb.com/docs/manual/tutorial/configure-ssl/",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": []
+        },
+        {
+          "file": "Gruntfile.js",
+          "line": 166,
+          "ruleId": "node-security/no-shell-injection",
+          "message": "🔒 CWE-78 OWASP:A05-Injection CVSS:9.8 | Shell command built via string concatenation or template literal. An attacker who controls any interpolated value can execute arbitrary OS commands. | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: Use spawn(cmd, [arg1, arg2]) with separate arguments instead of exec(cmd + args). Never build shell commands via string interpolation. | https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html",
+          "verdict": "FP",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "exec() command is built from process.env.NODE_ENV or a CLI argument of a developer-run grunt task (db-reset). No attacker-controlled input reaches it."
+        },
+        {
+          "file": "app/routes/contributions.js",
+          "line": 32,
+          "ruleId": "node-security/detect-eval-with-expression",
+          "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | Use direct property access instead of eval() for dynamic property access | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use obj[key] or Map.get(key) instead of eval() | https://owasp.org/www-community/attacks/Code_Injection",
+          "verdict": "TP",
+          "itemIds": ["NG-01"],
+          "regionIds": ["NG-01"]
+        },
+        {
+          "file": "app/routes/contributions.js",
+          "line": 33,
+          "ruleId": "node-security/detect-eval-with-expression",
+          "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | Use direct property access instead of eval() for dynamic property access | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use obj[key] or Map.get(key) instead of eval() | https://owasp.org/www-community/attacks/Code_Injection",
+          "verdict": "TP",
+          "itemIds": ["NG-01"],
+          "regionIds": ["NG-01"]
+        },
+        {
+          "file": "app/routes/contributions.js",
+          "line": 34,
+          "ruleId": "node-security/detect-eval-with-expression",
+          "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | Use direct property access instead of eval() for dynamic property access | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use obj[key] or Map.get(key) instead of eval() | https://owasp.org/www-community/attacks/Code_Injection",
+          "verdict": "TP",
+          "itemIds": ["NG-01"],
+          "regionIds": ["NG-01"]
+        },
+        {
+          "file": "app/routes/index.js",
+          "line": 72,
+          "ruleId": "express-security/no-user-controlled-redirect",
+          "message": "🔒 CWE-601 OWASP:A01-Broken CVSS:6.1 | res.redirect() receives a value directly from req.query, which is user-controlled. An attacker can redirect victims to a malicious site. | HIGH\n   Fix: Validate the redirect target against an allowlist of trusted paths/origins, or use a relative path that cannot be redirected off-domain. | https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html",
+          "verdict": "TP",
+          "itemIds": ["NG-18"],
+          "regionIds": ["NG-18"]
+        },
+        {
+          "file": "app/routes/profile.js",
+          "line": 59,
+          "ruleId": "secure-coding/no-redos-vulnerable-regex",
+          "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Self-loop quantifier (exponential backtracking): A quantifier reaches itself via the parent loop. An attacker can craft input that triggers exponential backtracking. | CRITICAL\n   Fix: Atomic group, possessive quantifier, or rewrite to remove the ambiguity — Not a finding if the quantifiers cannot overlap | https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS",
+          "verdict": "TP",
+          "itemIds": ["NG-19"],
+          "regionIds": ["NG-19"]
+        },
+        {
+          "file": "app/routes/research.js",
+          "line": 16,
+          "ruleId": "node-security/no-ssrf",
+          "message": "🔒 CWE-918 OWASP:A01-Broken CVSS:9.1 | HTTP call whose URL argument name suggests user input. This is a naming heuristic, not data-flow analysis — review whether the URL could originate from an untrusted source at runtime. | LOW\n   Fix: If the URL comes from user input, validate it against an allowlist of permitted hosts before making the request. | https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html",
+          "verdict": "TP",
+          "itemIds": ["NG-20"],
+          "regionIds": ["NG-20"]
+        },
+        {
+          "file": "app/routes/session.js",
+          "line": 143,
+          "ruleId": "secure-coding/no-redos-vulnerable-regex",
+          "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or rewrite to remove the ambiguity — Not a finding if the quantifiers cannot overlap | https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS",
+          "verdict": "unlisted-real",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "EMAIL_RE = /^[\\S]+@[\\S]+\\.[\\S]+$/ is reachable from unauthenticated POST /signup (email is regex-tested after the other fields pass; email has no length cap). Input '@'.repeat(n) fails the match after quadratic backtracking: measured 2000 chars 2 ms, 4000 chars 8 ms, 8000 chars 31 ms (Node 24, V8 irregexp), so a 100 KB body (body-parser default limit) costs about 5 s of event-loop time. A real, undocumented ReDoS."
+        },
+        {
+          "file": "app/data/allocations-dao.js",
+          "line": 78,
+          "ruleId": "mongodb-security/no-unsafe-where",
+          "message": "🔒 CWE-943 OWASP:A01-Broken CVSS:9 | The $where operator executes JavaScript and enables Remote Code Execution | CRITICAL\n   Fix: Remove $where and use standard query operators like $eq, $in, $regex | https://nvd.nist.gov/vuln/detail/CVE-2025-23061",
+          "verdict": "TP",
+          "itemIds": ["NG-02"],
+          "regionIds": ["NG-02"]
+        },
+        {
+          "file": "config/env/development.js",
+          "line": 6,
+          "ruleId": "secure-coding/no-hardcoded-credentials",
+          "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Credential value detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.ZAP_API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html",
+          "verdict": "unlisted-real",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "zapApiKey is a committed random-looking 26-character literal (a hard-coded credential in source). Label corrected from FP on the coordinator's review (2026-11-21, rev 1b). Impact is bounded (a local OWASP ZAP scanner key in developer configs, not documented in the NodeGoat tutorial), so it is unlisted-real, not a truth-table hit: strict precision still counts it as FP, lenient counts it as TP."
+        },
+        {
+          "file": "config/env/test.js",
+          "line": 6,
+          "ruleId": "secure-coding/no-hardcoded-credentials",
+          "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Credential value detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.ZAP_API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html",
+          "verdict": "unlisted-real",
+          "itemIds": [],
+          "regionIds": [],
+          "reason": "zapApiKey is a committed random-looking 26-character literal (a hard-coded credential in source). Label corrected from FP on the coordinator's review (2026-11-21, rev 1b). Impact is bounded (a local OWASP ZAP scanner key in developer configs, not documented in the NodeGoat tutorial), so it is unlisted-real, not a truth-table hit: strict precision still counts it as FP, lenient counts it as TP."
+        }
+      ]
+    }
+  },
+  "comparison": {
+    "A_vs_B": {
+      "incumbentOnly": [],
+      "oursOnly": ["NG-18", "NG-20"],
+      "both": ["NG-01", "NG-19"],
+      "neither": [
+        "NG-02",
+        "NG-03",
+        "NG-04",
+        "NG-05",
+        "NG-06",
+        "NG-07",
+        "NG-08",
+        "NG-09",
+        "NG-10",
+        "NG-11",
+        "NG-12",
+        "NG-13",
+        "NG-14",
+        "NG-15",
+        "NG-16",
+        "NG-17"
+      ]
+    },
+    "A_vs_C": {
+      "incumbentOnly": [],
+      "oursOnly": ["NG-02", "NG-18", "NG-20"],
+      "both": ["NG-01", "NG-19"],
+      "neither": [
+        "NG-03",
+        "NG-04",
+        "NG-05",
+        "NG-06",
+        "NG-07",
+        "NG-08",
+        "NG-09",
+        "NG-10",
+        "NG-11",
+        "NG-12",
+        "NG-13",
+        "NG-14",
+        "NG-15",
+        "NG-16",
+        "NG-17"
+      ]
+    },
+    "A-all_vs_B": {
+      "incumbentOnly": [],
+      "oursOnly": ["NG-18", "NG-20"],
+      "both": ["NG-01", "NG-19"],
+      "neither": [
+        "NG-02",
+        "NG-03",
+        "NG-04",
+        "NG-05",
+        "NG-06",
+        "NG-07",
+        "NG-08",
+        "NG-09",
+        "NG-10",
+        "NG-11",
+        "NG-12",
+        "NG-13",
+        "NG-14",
+        "NG-15",
+        "NG-16",
+        "NG-17"
+      ]
+    },
+    "A-all_vs_C": {
+      "incumbentOnly": [],
+      "oursOnly": ["NG-02", "NG-18", "NG-20"],
+      "both": ["NG-01", "NG-19"],
+      "neither": [
+        "NG-03",
+        "NG-04",
+        "NG-05",
+        "NG-06",
+        "NG-07",
+        "NG-08",
+        "NG-09",
+        "NG-10",
+        "NG-11",
+        "NG-12",
+        "NG-13",
+        "NG-14",
+        "NG-15",
+        "NG-16",
+        "NG-17"
+      ]
+    }
+  }
+}

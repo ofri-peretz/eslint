@@ -30,6 +30,18 @@ describe('loadTypeScript', () => {
     expect(loadTypeScript()).toBe(loadTypeScript());
   });
 
+  it('resolves once, however often it is asked', () => {
+    let resolutions = 0;
+    const resolve = (): never => {
+      resolutions++;
+      throw new Error("Cannot find module 'typescript'");
+    };
+    loadTypeScript(resolve);
+    loadTypeScript(resolve);
+    // An absent module is remembered too: null is an answer, not a miss.
+    expect(resolutions).toBe(1);
+  });
+
   it('returns null rather than throwing when TypeScript is absent', () => {
     clearTypeScriptCache();
     expect(

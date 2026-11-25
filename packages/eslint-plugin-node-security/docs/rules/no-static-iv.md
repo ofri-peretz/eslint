@@ -97,16 +97,31 @@ const cipher3 = crypto.createCipheriv('aes-256-gcm', key, staticIv);
 ```typescript
 import crypto from 'crypto';
 
-// Generate random IV for each encryption
+// Generate a random IV for each encryption (AES-CBC: 16 bytes). CBC is not
+// authenticated — pair it with an HMAC, or prefer GCM below.
 const iv = crypto.randomBytes(16);
-const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
 
 // Store IV with ciphertext (it's not secret)
 const encrypted = Buffer.concat([iv, cipher.update(data), cipher.final()]);
 
-// For GCM, use 12-byte IV (nonce)
+// For GCM, use a 12-byte IV (nonce) and keep the authentication tag:
+// without it the ciphertext cannot be authenticated on decrypt.
 const gcmNonce = crypto.randomBytes(12);
 const gcmCipher = crypto.createCipheriv('aes-256-gcm', key, gcmNonce);
+const sealed = Buffer.concat([gcmCipher.update(data), gcmCipher.final()]);
+const tag = gcmCipher.getAuthTag(); // 16 bytes; store it with nonce and ciphertext
+const stored = Buffer.concat([gcmNonce, tag, sealed]);
+
+// Decrypt: split, set the tag, and let final() throw if it does not verify.
+const nonce = stored.subarray(0, 12);
+const authTag = stored.subarray(12, 28);
+const decipher = crypto.createDecipheriv('aes-256-gcm', key, nonce);
+decipher.setAuthTag(authTag);
+const plain = Buffer.concat([
+  decipher.update(stored.subarray(28)),
+  decipher.final(),
+]);
 ```
 
 ## Security Impact

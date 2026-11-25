@@ -50,6 +50,8 @@ Detects `eval(variable)` which can allow an attacker to run arbitrary code insid
 
 **Risk:** If the string passed to `eval()` contains user-controlled input, an attacker can execute malicious JavaScript code within the context of the application. This can lead to data theft, session hijacking, or server-side remote code execution (RCE).
 
+> `new Function('s', 'return import(s)')` is not reported: the idiom that keeps a build from turning `import()` into `require()`. One parameter, and a body that is exactly `return import(<that parameter>)`.
+
 ## Rule Details
 
 This rule detects dangerous use of `eval()` and `Function()` constructor with dynamic expressions that can lead to remote code execution (RCE) vulnerabilities.

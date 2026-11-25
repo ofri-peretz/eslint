@@ -3,8 +3,9 @@ title: no-dynamic-require
 description: Forbid require() calls with non-literal arguments
 tags: ['security', 'node']
 category: security
-severity: medium
+severity: critical
 autofix: false
+cwe: CWE-94
 ---
 
 > **Keywords:** dynamic require, CommonJS, static analysis, bundler, ESLint rule, webpack, LLM-optimized

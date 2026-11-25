@@ -3,7 +3,7 @@ title: detect-child-process
 description: Detects instances of childprocess & non-literal exec() calls that may allow command injection
 tags: ['security', 'node']
 category: security
-severity: medium
+severity: critical
 cwe: CWE-78
 autofix: false
 ---
@@ -15,7 +15,7 @@ autofix: false
 Detects instances of childprocess & non-literal exec() calls that may allow command injection
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**CWE:** [CWE-78](https://cwe.mitre.org/data/definitions/78.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects instances of `child_process` & non-literal `exec()` calls that may allow command injection. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.

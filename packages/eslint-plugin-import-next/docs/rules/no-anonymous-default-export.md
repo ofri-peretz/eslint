@@ -34,6 +34,21 @@ export default handler;
 export default { retries: 3 };
 ```
 
+### eslint-plugin-import options
+
+A config carried over from `import/no-anonymous-default-export` loads, and is
+read the way that plugin reads it. Naming any of `allowArray`,
+`allowAnonymousClass`, `allowAnonymousFunction`, `allowCallExpression`,
+`allowNew`, `allowLiteral` or `allowObject` switches to its defaults: an
+array, a literal or template literal, an object and a `new` expression are
+reported unless allowed, and a call is allowed unless `allowCallExpression`
+is `false`. `allowAnonymousClass` and `allowAnonymousFunction` are its names
+for `allowClassExpression` and `allowFunctionExpression`.
+
+Without one of those options this rule reports only anonymous functions and
+classes; eslint-plugin-import with no options also reports arrays, literals,
+objects and `new` expressions.
+
 ## Options
 
 ```json
@@ -55,6 +70,34 @@ export default { retries: 3 };
         "type": "boolean",
         "default": false,
         "description": "Allow anonymous function expression default exports."
+      },
+      "allowArray": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: allow an array."
+      },
+      "allowAnonymousClass": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: allow an anonymous class (`allowClassExpression`)."
+      },
+      "allowAnonymousFunction": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: allow an anonymous function (`allowFunctionExpression`)."
+      },
+      "allowCallExpression": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: allow a function call (default `true`)."
+      },
+      "allowNew": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: allow a `new` expression."
+      },
+      "allowLiteral": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: allow a literal or template literal."
+      },
+      "allowObject": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: allow an object expression."
       }
     },
     "additionalProperties": false

@@ -5,6 +5,297 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.4.12
+
+### Patch Changes
+
+- **🧪 Tests** — no-hardcoded-credentials locks that a migration-shaped name in a secret slot still reports
+
+  Adds a boundary case (`const secret = 'AddMfaColumnsToUsers1784073600000'` reports) and documents the leading-zero floor in `isTimestampedName`. No behaviour change.
+
+## 6.4.11
+
+### Patch Changes
+
+- **🐛 Fix** — no-hardcoded-credentials stops exempting a DI-token-shaped value held in a password slot
+
+  `isInjectionTokenName`'s `SCREAMING_SNAKE(qualifier)` shape exemption used to apply regardless of
+  the slot it was assigned to, so `const password = 'BULLMQ_CONFIG(default)';` was not reported: the
+  same call-shaped string that correctly clears a `TOKEN`-named slot also cleared a `password`-named
+  one. Nothing stores a real dependency-injection token in a slot named `password`, so the exemption
+  now checks the slot's own inferred category and no longer applies there — a DI-token-shaped value
+  in any other slot (`token`, `apikey`, `database`, `other`) keeps the exemption exactly as before
+  (#1686).
+
+- **🐛 Fix** — no-hardcoded-credentials no longer reports migration class names as secret keys
+
+  A name made of words plus an epoch timestamp, such as `AddMfaColumnsToUsers1784073600000`, passed every random-key shape test and was reported at CVSS 9.8.
+
+## 6.4.10
+
+### Patch Changes
+
+- **🐛 Fix** — no-graphql-injection accepts `gql` documents composed from other `gql` documents
+
+  `gql`query { ...Asset } ${ASSET_FRAGMENT}`` no longer reports when the interpolation is a `gql`/`graphql`
+tagged template, written in place or bound to a single-assignment `const`. That is the Apollo/graphql-tag
+composition idiom, and it was 192 of 254 findings in vendure-ecommerce/vendure. A `gql` tag now makes its
+template a document even with no static text, so `gql`${input}`` is checked. Imported fragments still report,
+  whatever they are named, because an import cannot be resolved within the file; so does any user value
+  interpolated into a query.
+
+## 6.4.9
+
+### Patch Changes
+
+- **🐛 Fix** — no-insecure-comparison checks value provenance before exempting a re-encoding or store re-read
+
+  An original written through an alias, a buffer changed later in a loop body, a store swapped through a
+  property between two reads, and a guard whose condition is reassigned after the choice no longer earn
+  the exemption.
+
+- **🐛 Fix** — stop flagging safe comparisons and messages found in nestjs/authentication
+
+  Each exemption is narrow, and a lookalike that is a real bug still reports.
+
+  - `no-insecure-comparison`: record identifiers such as `token.userId` are judged by the field name
+    (new `recordMetadataTails` option), a `Buffer.from(x, enc).toString(enc)` round trip over an
+    unchanged `x` is a canonical-form check, and the same field from two reads of one store call is a
+    concurrency check.
+  - `no-sensitive-data-exposure`: a message quoting an option with a `true`, `false`, `null` or
+    `undefined` setting, when that is the message's only label-and-value pair.
+
+## 6.4.8
+
+### Patch Changes
+
+- **🐛 Fix** — Found linting open-source Node apps: fewer false positives in `no-hardcoded-credentials` (i18n keys, single foreign words, type tags, masked values, `tests.js` modules), `no-xpath-injection` (own `evaluate` method, log prefixes, usage strings), `no-sensitive-data-exposure` (a fact about a secret), `no-weak-password-recovery` (React components, log prose) and `no-privilege-escalation` (a role comparison guarding the write).
+
+## 6.4.7
+
+### Patch Changes
+
+- **🐛 Fix** — Fix false positives found linting popular Node.js and React packages.
+
+  - `no-unsafe-regex-construction`: `new RegExp(source, caseSensitive ? undefined : "i")` is not "dynamic flags"; `undefined` is a closed leaf like a string literal. A parameter shadowing `undefined` and any open leaf still report.
+  - `no-improper-sanitization`: an escape helper that replaces `&`, `<`, `>` and then, in a later reachable statement of the same block, replaces `"` with a quote entity on the same variable (resolved by scope, not spelling) is complete. A chain with no such statement, a shadowing or different variable, a step after a `return`, a step after the value was already used, and a chain that lacks the ampersand step still report.
+  - `no-xxe-injection`: a call to a parse method that a class or prototype of this file implements, on a receiver that is an instance of it (`this`, a `var _this = this` alias, or a `new Local()` binding), is delegation inside the parser library and is not reported. A prototype method that is only an alias of an external parser, a parameter or imported receiver, and an unrelated external parser that happens to share the method name still report.
+
+- **🐛 Fix** — Fix three false positives found linting popular Express/NestJS packages.
+
+  - `no-unlimited-resource-allocation`: a zlib decompression stream that is handed, directly or through a local factory, to a consumer that also receives a `limit` / `maxSize` option is bounded where it is read and no longer reported. A stream with no limited consumer still reports.
+  - `no-xxe-injection`: `@microsoft/tsdoc` is added to `entityIncapableModules`; `TSDocParser#parseString` parses comment text, not XML. Parsers of unknown origin with the same method name still report.
+  - `no-hardcoded-credentials`: a dependency-injection token name written as `SCREAMING_SNAKE(word)` (`'BULLMQ_CONFIG(default)'`) in a `*_TOKEN` slot is not a secret. Random values in the same slot still report.
+
+- **🐛 Fix** — Fix three false positives from the issue backlog.
+
+  - `no-hardcoded-credentials`: an ambiguous "common password" keyword match
+    (e.g. the string `'password'`) now needs the enclosing slot's own category
+    to actually say "password" (or an unclassified-but-credential-ish name),
+    not merely to end in some unrelated credential word — a route-name list
+    like `SENSITIVE_ROUTE_TOKENS` no longer reports the word `'password'` as a
+    credential (#1557).
+  - `no-missing-null-checks`: a `const` already narrowed truthy by a ternary
+    stays narrowed inside a nested callback declared in the narrowed arm — the
+    binding can never be reassigned before the callback runs. A `let` or a
+    parameter gives no such guarantee and still reports (#1564).
+  - `no-extraneous-dependencies`: a tsconfig `@/` path alias
+    (`"paths": { "@/*": ["./src/*"] }`, the create-next-app / shadcn
+    convention) is never a scoped package — npm scopes need at least one
+    character after `@` — so it is no longer reported as missing when an
+    unmodelled resolver is configured (#1551).
+
+## 6.4.6
+
+### Patch Changes
+
+- **🐛 Fix** — detect-object-injection false positive on a const dispatch table indexed by its own key-union type
+
+  `obj[key]` where `obj` is a `const` object literal with a closed set of
+  literal keys, and `key`'s own declared TS type — stated directly or through
+  a type alias in the same file — is a union of string literals that is a
+  subset of that key set, no longer reports. `__proto__` and `constructor`
+  are excluded by the key's own type, so no runtime guard is needed to prove
+  the access cannot reach the prototype.
+
+## 6.4.5
+
+### Patch Changes
+
+- **🐛 Fix** — detect-object-injection sees past a TS type-only cast
+
+  `isPrototypelessObject` and `hasPrecedingValidation` resolve an identifier's
+  initializer / key to decide whether a write or an invoked read through it is
+  safe, but neither unwrapped a TS type-only cast (`as T`, `satisfies T`, the
+  `<T>x` assertion) first — both are erased at compile time and change nothing
+  about the value underneath.
+
+  Two false positives from this:
+
+  - `const target = Object.create(null) as Record<string, number>; target[k] = v;`
+    reported CWE-1321 global prototype pollution: the identifier branch of
+    `isPrototypelessObject` pattern-matched `declarator.init` against
+    `CallExpression` directly, so the cast wrapper made it miss the
+    `Object.create(null)` it already recognises without the cast (#1573).
+  - `if (!Object.hasOwn(WRITERS, kind)) throw ...; WRITERS[kind as keyof typeof WRITERS]();`
+    still reported CWE-915 object injection despite the guard:
+    `hasPrecedingValidation` required `propertyNode.type === Identifier`
+    before reading the key name, so a cast around the key — the standard way
+    to narrow a dispatch-table key to its own key union — made it never
+    recognise the `Object.hasOwn` guard on the same identifier (#1547, the
+    hasOwn-guarded half; the unguarded, type-union-only half of that issue
+    needs real TypeScript type-checker information this rule does not have
+    and is left open).
+
+  Both now unwrap through the existing `withoutTypeAnnotation` helper before
+  the structural check, the same helper `isLocallyConstructed` already uses
+  for exactly this reason.
+
+## 6.4.4
+
+### Patch Changes
+
+- **🐛 Fix** — `no-hardcoded-credentials` no longer reports a word identifier with one trailing colon, a key or clipboard prefix such as `'huly-table-metadata:'` under a `TOKEN`-named constant (an adopter had to disable it). A colon between a label and a payload (`user:Zk9f...`, `admin:...`), and a dense value that merely ends in a colon, still report.
+
+## 6.4.3
+
+### Patch Changes
+
+- **🐛 Fix** — second round of false positives, and copied session secrets now reported
+
+  `no-insecure-comparison` no longer reports `"function" == typeof x` (two strings) or a secret-named member compared with a `const` bound to a literal. `no-improper-type-validation` reads `!!x` and `Boolean(x)` as a null guard. `no-unchecked-loop-condition` no longer reports loops over `multiValueHeaders` / `rawHeaders`. `no-unsafe-deserialization` skips a receiver reached through a `transformer` property.
+
+  `no-hardcoded-credentials` now reports well-known copied session secrets (`keyboard cat`, `changeme`, `your-secret-key`, ...) even with `allowPlaceholders` on, follows a `const` options object passed to the session middleware, and covers `@fastify/session` / `fastify-session`. New option `knownSessionSecrets` replaces the built-in list.
+
+## 6.4.2
+
+### Patch Changes
+
+- **🐛 Fix** — three false positives found by linting NestJS and ESLint
+
+  `no-unsafe-regex-construction` no longer calls flags "dynamic" when every value they can take is written out: a ternary of literals (`caseSensitive ? "u" : "iu"`) or a `const` bound to one. A variable, a concatenation or any open leaf still reports.
+
+  `no-sensitive-data-exposure` no longer treats a dependency-injection token (a class reference or `Symbol` bound once) as a credential, and no longer falls back to the receiver's name when a local object literal declares the key itself.
+
+  `no-unsafe-deserialization` no longer treats `this.deserializer.deserialize(buffer)` on a pluggable collaborator the class owns as an untrusted-payload reviver. An imported sink, or a call on a parameter, still reports.
+
+## 6.4.1
+
+### Patch Changes
+
+- **📚 Docs** — Getting Started now leads each plugin README, with the ESLint install line and a flat config that loads
+
+  The install block was below the Description and the doctrine, and on 17 of the 31 plugins there was no flat-config snippet on the page at all. `eslint-plugin-secure-coding`'s README showed `...securePlugin.configs.recommended`, which throws `TypeError: ... is not iterable` when pasted, because `configs.recommended` is one object. Every plugin README now opens with `npm install --save-dev eslint <plugin>` and `import { configs } from '<plugin>'` and `export default [configs.recommended]` in an `eslint.config.mjs`, then the Description. A test now loads that snippet in ESLint for every plugin.
+
+  The star banner above the first heading, the footer block with the star counter and the Dev.to ask are replaced by one `## Support` paragraph at the end: report a false positive, or star the repo if the plugin helped.
+
+  `eslint-plugin-import-next` opens with its drop-in grade, read from the newest `benchmarks/results/ilb-import-parity` result with its date: passes 2,035 of 2,135 (95.3%) of eslint-plugin-import 2.32.0's own test cases, measured 2026-11-19.
+
+  Eight taglines now say what the plugin flags instead of "security rules for X" (secure-coding, node-security, browser-security, nestjs-security, express-security, vercel-ai-security, react-a11y, import-next). `eslint-plugin-node-security` adds one proof line: the public repositories that list it, with the date they were checked.
+
+## 6.4.0
+
+### Minor Changes
+
+- **✨ Feature** — `no-improper-sanitization` reports Angular's `DomSanitizer.bypassSecurityTrust*` on non-constant input
+
+  `bypassSecurityTrustHtml`, `Script`, `Style`, `Url` and `ResourceUrl` turn Angular's sanitizer off for one value (CWE-79, message `angularSanitizerBypass`). They are reported unless the argument is a literal, a template literal with no substitutions, a concatenation of literals, a `const` bound to one of those, or the output of a sanitizer (`DOMPurify.sanitize`, `sanitizer.sanitize(...)`, `escapeHtml`). Expect new findings in Angular front ends.
+
+## 6.3.0
+
+### Minor Changes
+
+- **🐛 Fix** — no-hardcoded-credentials reports a literal session secret
+
+  `session({ secret: 'keyboard cat' })` was silent: the value reads as prose, and this rule decides on the
+  value's shape. A string literal passed as `secret` to a call resolved (through the scope manager) to
+  `express-session` or `cookie-session`, as an element of that `secret` array, or in `cookie-session`'s `keys`,
+  is now reported whatever it looks like. `process.env.X`, config lookups, `process.env.X || 'dev'` defaults,
+  placeholders and `ignorePatterns` entries stay quiet, as does a local function that is merely named `session`.
+  Expect new findings wherever a session secret is written in source.
+
+### Patch Changes
+
+- **🐛 Fix** — three false positives and one crash reported by adopters
+
+  - `no-hardcoded-credentials` no longer reports a template placeholder name under a key called `token`. `Replacement.create({ token: 'unsubscribeUrl', value })` (stamhoofd/stamhoofd EmailBuilder.ts and exampleReplacements.ts, four disables) was read as a high-entropy blob because the word check rejected four consonants in a row, which `unsubscribe`, `subscribe`, `construct` and `abstract` all contain. The limit is now five. A value with digits or a real key shape under `token` still reports.
+  - `no-sensitive-data-exposure` no longer reports `` `unexpected key type: ${privateKey.type}` `` (honojs/hono `src/utils/jwt/jws.ts:110`). `type`, `algorithm`, `extractable` and `usages` are CryptoKey's own attributes and cannot carry the key; `privateKey`, `privateKey.pem` and `privateKey.value` still report.
+  - `import-next/no-default-export` no longer throws on `export default class {}` in plain JavaScript. espree gives a class no `decorators` field and the 4.1.2 autofix read its `length`.
+
+## 6.2.0
+
+### Minor Changes
+
+- **🐛 Fix** — no-unsafe-deserialization no longer reports eval() and the Function constructor
+
+  `eval(x)`, `window.eval(x)` and `new Function(x)` turn a string into running code. That is code
+  injection (CWE-95), and `node-security/detect-eval-with-expression` already reports it, so a
+  combined run reported every such line twice, once under the wrong class. This rule now leaves them
+  to the owner and keeps what is deserialization: `unserialize`, `deserialize`, node-serialize, YAML
+  loaders, and strings handed to `setTimeout` / `setInterval`.
+
+  `eval` and `Function` are removed from the default `dangerousFunctions` and are ignored if listed.
+  The `dangerousFunctionConstructor` message is gone. If you run `secure-coding` without
+  `node-security`, add `node-security/detect-eval-with-expression` to keep eval coverage.
+
+- **✨ Feature** — no-disabled-template-escaping covers swig, nunjucks and Handlebars
+
+  The rule only knew `escapeMarkup = false`. It now also reports `swig.setDefaults({ autoescape:
+false })`, `new swig.Swig({ autoescape: false })`, `nunjucks.configure(path, { autoescape: false })`,
+  `new nunjucks.Environment(loader, { autoescape: false })`, `env.opts.autoescape = false` and
+  Handlebars `compile` / `precompile` with `{ noEscape: true }`. An options object declared once as a
+  `const` and then passed to one of those calls is followed.
+
+  The option name alone does not name an engine, so the object has to reach one of those calls:
+  `render(page, { autoescape: false })` stays quiet. EJS `<%-` and Pug `!=` live inside template
+  files that ESLint never parses and are not reachable from a JavaScript rule.
+
+## 6.1.3
+
+### Patch Changes
+
+- **📚 Docs** — ship an AGENTS.md that tells AI assistants how to enable the plugin and what each preset catches
+
+  Generated from the package's own presets and rules, so it cannot drift. `eslint-plugin-secure-coding`: the README no longer shows `...configs.recommended` spread into an array, which threw "not iterable".
+
+## 6.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — no-sensitive-data-exposure reports a secret VALUE, not a credential word in the prose
+
+  A label in front of a value the rule cannot name — `token: ${t}`,
+  `'password: ' + value`, `Using resumption token: ${eventId}`,
+  `Token: ${url}api/auth/mcp/token` — is no longer reported on the label alone.
+  The value must name the secret itself (an identifier, property or object key,
+  one binding hop or a local object literal away), or a string literal must write
+  one out (`'password: hunter2'`). A label and its value must also sit on one line,
+  so help text naming an environment variable is not a credential.
+
+  On the MCP TypeScript SDK's examples this removes four false positives. Logging
+  `accessToken`, `user.password` or `{ apiKey }` still reports, and a secret
+  aliased into `.message` through a local object literal is now caught with no
+  label at all.
+
+  Docs: nine rule docs named a template CWE-693 in their header or front matter;
+  they now name the rule's own CWE.
+
+## 6.1.1
+
+### Patch Changes
+
+- **📚 Docs** — npm descriptions lead with what people search for
+
+  Each description now opens with the search phrase, such as "ESLint NestJS security rules — …" instead of "ESLint plugin for NestJS security — …". npm search ranks that opening phrase above download counts, so the old wording kept these packages out of the results for searches like "eslint security". The oxlint-plugin-* aliases open the same way, with "Oxlint". No rule or code changes.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.0.4`
+
+## 6.1.0
+
+### Minor Changes
+
+- **✨ Feature** — `no-unchecked-loop-condition` no longer reports a loop whose bound is a literal, such as `for (let cp = 0; cp <= 0x10_ff_ff; cp++)`. The author chose that number and no input reaches it, so it is not CWE-400. The literal-bound check (`largeLoopBound`) still exists as an iteration budget, but it is now opt-in: set `maxStaticIterations` to turn it on. Bounds read from user input, and infinite loops with no exit, are reported as before.
+
 ## 6.0.2
 
 ### Patch Changes

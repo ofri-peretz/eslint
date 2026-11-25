@@ -11,6 +11,12 @@
  * @see https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-named-as-default-member.md
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
+
+import { exportMapOf } from '../utils/export-map';
+import {
+  PARSE_ERROR_MESSAGE,
+  reportParseErrors,
+} from '../utils/export-map-rules';
 import {
   AST_NODE_TYPES,
   createRule,
@@ -20,7 +26,7 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'namedAsDefaultMember';
+type MessageIds = 'namedAsDefaultMember' | 'parseError';
 
 type RuleOptions = [];
 
@@ -54,6 +60,7 @@ export const noNamedAsDefaultMember = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-named-as-default-member.md',
       }),
+      parseError: PARSE_ERROR_MESSAGE,
     },
     schema: [],
   },
@@ -137,9 +144,30 @@ export const noNamedAsDefaultMember = createRule<RuleOptions, MessageIds>({
         }
       },
       'Program:exit'() {
+        /**
+         * The other evidence: the names the module itself declares and
+         * exports, read by parsing it (`../utils/export-map`), as
+         * eslint-plugin-import does. Its re-exports are not followed.
+         */
+        const parsed = new Set<string>();
         for (const { source, spec } of defaults) {
-          const named = namedBySource.get(source);
-          if (!named) continue;
+          const exports = exportMapOf(source, context);
+          if (exports && exports.errors.length > 0) {
+            const declaration = spec.parent as TSESTree.ImportDeclaration;
+            if (!parsed.has(source)) {
+              parsed.add(source);
+              reportParseErrors(context, declaration.source, source, exports);
+            }
+            continue;
+          }
+          const inFile = namedBySource.get(source);
+          const exported = exports?.namespace;
+          if (!inFile && !exported?.size) continue;
+          const named = {
+            has: (name: string) =>
+              name !== 'default' &&
+              (inFile?.has(name) === true || exported?.has(name) === true),
+          };
           for (const variable of context.sourceCode.getDeclaredVariables(
             spec,
           )) {

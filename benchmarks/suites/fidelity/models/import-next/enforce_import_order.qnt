@@ -1,5 +1,6 @@
-// Model of eslint-plugin-import-next/enforce-import-order (also exported as
-// `order`). Import declarations follow the configured group order, are
+// Model of eslint-plugin-import-next/enforce-import-order, import-next's own
+// opinionated ordering (`order` is eslint-plugin-import's, modelled in
+// order.qnt). Import declarations follow the configured group order, are
 // alphabetized inside a group, and groups are separated as configured. Each
 // input is two adjacent import declarations, `first` then `second`.
 //

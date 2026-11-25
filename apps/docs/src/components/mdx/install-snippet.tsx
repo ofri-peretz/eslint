@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
-import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
+import { DynamicCodeBlock } from '@/components/docs/code-block';
 
 import { track } from '@/lib/analytics';
 

@@ -49,32 +49,133 @@ import { width } from './width.js'; // names width.ts: load-bearing
 ## Options
 
 ```json
-[
-  {
-    "type": "object",
-    "properties": {
-      "pattern": {
-        "type": "object",
-        "additionalProperties": {
+{
+  "anyOf": [
+    {
+      "type": "array",
+      "items": [
+        {
           "type": "string",
-          "enum": [
-            "always",
-            "never"
-          ]
+          "enum": ["always", "ignorePackages", "never"]
         }
-      },
-      "default": {
-        "type": "string",
-        "enum": [
-          "always",
-          "never"
-        ]
-      }
+      ],
+      "additionalItems": false
     },
-    "additionalProperties": false
-  }
-]
+    {
+      "type": "array",
+      "items": [
+        {
+          "type": "string",
+          "enum": ["always", "ignorePackages", "never"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "enum": ["always", "ignorePackages", "never"]
+              }
+            },
+            "default": {
+              "type": "string",
+              "enum": ["always", "never"]
+            },
+            "ignorePackages": {
+              "type": "boolean"
+            },
+            "checkTypeImports": {
+              "type": "boolean"
+            },
+            "pathGroupOverrides": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "pattern": {
+                    "type": "string"
+                  },
+                  "patternOptions": {
+                    "type": "object"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": ["enforce", "ignore"]
+                  }
+                },
+                "additionalProperties": false,
+                "required": ["pattern", "action"]
+              }
+            }
+          },
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["always", "ignorePackages", "never"]
+          }
+        }
+      ],
+      "additionalItems": false
+    },
+    {
+      "type": "array",
+      "items": [
+        {
+          "type": "object",
+          "properties": {
+            "pattern": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "enum": ["always", "ignorePackages", "never"]
+              }
+            },
+            "default": {
+              "type": "string",
+              "enum": ["always", "never"]
+            },
+            "ignorePackages": {
+              "type": "boolean"
+            },
+            "checkTypeImports": {
+              "type": "boolean"
+            },
+            "pathGroupOverrides": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "pattern": {
+                    "type": "string"
+                  },
+                  "patternOptions": {
+                    "type": "object"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": ["enforce", "ignore"]
+                  }
+                },
+                "additionalProperties": false,
+                "required": ["pattern", "action"]
+              }
+            }
+          },
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["always", "ignorePackages", "never"]
+          }
+        }
+      ],
+      "additionalItems": false
+    }
+  ]
+}
 ```
+
+### eslint-plugin-import options
+
+Every shape `import/extensions` accepts loads: `['always']`, `['never']`, `['ignorePackages']`, `['never', { js: 'always' }]`, `[{ json: 'always' }]`, and `['always', { pattern, ignorePackages, checkTypeImports, pathGroupOverrides }]`. Written that way, the options are read with eslint-plugin-import's semantics: package subpaths (`pkg/file`) are checked unless `ignorePackages`, a specifier that resolves nowhere is judged by what is written, a directory import (`.`) needs its extension under `always`, type-only imports are skipped unless `checkTypeImports`, and `pathGroupOverrides` (globs, matched with Node's `path.matchesGlob`) can `enforce` or `ignore`. This rule's own `[{ pattern, default }]` keeps its own reading.
 
 ## Implementation
 

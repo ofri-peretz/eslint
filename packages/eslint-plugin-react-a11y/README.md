@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  Accessibility (a11y) rules for React applications, enforcing WCAG standards.
+  ESLint rules for React accessibility: ARIA, alt text, keyboard interaction and focus management, from WCAG 2.1.
 </p>
 
 <p align="center">
@@ -22,11 +22,32 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
 
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
+## Getting Started
+
+- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-react-a11y?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y). 📚
+
+<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
+
+```bash
+npm install --save-dev eslint eslint-plugin-react-a11y
+```
+
+```js
+// eslint.config.mjs
+import { configs } from 'eslint-plugin-react-a11y';
+
+export default [configs.recommended];
+```
+
+`recommended` is the preset to start with. The others are listed under Configuration Presets below.
+
+Using oxlint or Vite+? Install `oxlint-plugin-react-a11y`: the same rules under the same `react-a11y/<rule>` IDs, without ESLint. Its [page](https://www.npmjs.com/package/oxlint-plugin-react-a11y) has the setup.
+
+<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## Description
 
-This plugin provides Accessibility (a11y) rules for React applications, enforcing WCAG standards.
+This plugin provides ESLint rules for React accessibility: ARIA, alt text, keyboard interaction and focus management, from WCAG 2.1.
 
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 
@@ -43,40 +64,6 @@ That trade costs recall, and we measure it:
 · [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).
 
 <!-- AUTO-GENERATED:DOCTRINE:END -->
-
-## Getting Started
-
-- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-react-a11y?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y). 📚
-
-<!-- AUTO-GENERATED:INSTALL:START - Do not edit manually -->
-
-**oxlint / Vite+** — the same rules under the same `react-a11y/<rule>` IDs, without ESLint:
-
-```bash
-npm install oxlint-plugin-react-a11y --save-dev
-```
-
-```jsonc
-// .oxlintrc.json
-{ "jsPlugins": ["oxlint-plugin-react-a11y"] }
-```
-
-```ts
-// vite.config.ts
-import { defineConfig } from 'vite-plus';
-
-export default defineConfig({
-  lint: { jsPlugins: ['oxlint-plugin-react-a11y'] },
-});
-```
-
-**ESLint:**
-
-```bash
-npm install eslint-plugin-react-a11y --save-dev
-```
-
-<!-- AUTO-GENERATED:INSTALL:END -->
 
 ## ⚙️ Configuration Presets
 | Preset        | Description                                                                   |
@@ -108,7 +95,7 @@ export default [
   {
     files: ['**/*.{ts,tsx}'],
     rules: {
-      'react-a11y/img-requires-alt': 'error',
+      'react-a11y/alt-text': 'error',
     },
   },
 ];
@@ -138,7 +125,7 @@ export default [
       'react-a11y': reactA11y,
     },
     rules: {
-      'react-a11y/img-requires-alt': [
+      'react-a11y/alt-text': [
         'error',
         {
           allowAriaLabel: true,
@@ -155,6 +142,40 @@ export default [
   },
 ];
 ```
+
+## Migrating from eslint-plugin-jsx-a11y
+
+Facts, as measured against eslint-plugin-jsx-a11y 6.10.2.
+
+- **Keep your rule IDs and disable comments.** Register the plugin under the `jsx-a11y` key and every
+  shared rule resolves under `jsx-a11y/<rule>`. 35 rule names are the same in both plugins; none is renamed.
+
+  ```javascript
+  import reactA11y from 'eslint-plugin-react-a11y';
+
+  export default [
+    {
+      plugins: { 'jsx-a11y': reactA11y },
+      rules: { 'jsx-a11y/alt-text': 'error' },
+    },
+  ];
+  ```
+
+  `// eslint-disable-next-line jsx-a11y/alt-text` keeps working unchanged.
+- **Rules that do not exist here:** `aria-proptypes` (a live upstream rule, enabled in both upstream presets),
+  and the three rules deprecated upstream: `accessible-emoji`, `label-has-for` and `no-onchange`. A config that
+  names any of them throws `Could not find "<rule>"` on load, even as `off`.
+- **Options load.** The option objects in upstream's `recommended` and `strict` presets load without error
+  (`includeRoles`, `allowExpressionValues`, element-keyed handler lists, `elements`, `hoverInHandlers`). Which are
+  read is listed on each rule's page; `includeRoles` is accepted and read by nothing, as upstream.
+- **`settings['jsx-a11y']` is not read yet.** `components`, `polymorphicPropName`, `polymorphicAllowList` and
+  `attributes` are ignored by every rule. Use the per-rule options (`components`, `controlComponents`, ...) instead.
+- **The presets use the `react-a11y/` prefix** and are not aliased to `jsx-a11y/`. `configs.recommended` and
+  `flatConfigs.recommended` (also `strict`) are the same object, keyed `react-a11y`; spreading one next to a plugin
+  registered as `jsx-a11y` enables the rules under both prefixes. Each preset sets
+  `languageOptions.parserOptions.ecmaFeatures.jsx`.
+- **Severities differ.** `recommended` here is `error` for WCAG Level A rules and `warn` for the rest;
+  upstream's is `error` for nearly every rule, with per-rule options that these presets do not carry.
 
 ## 📦 Compatibility
 | Package | Version |
@@ -182,7 +203,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [alt-text](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/alt-text?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) | CWE-252 |  |  | Enforce alt text on images and other visual elements that carry accessibility impact. | 🟢 | 💼 |  |  | 💡 |  |
+| [alt-text](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/alt-text?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | Enforce alt text on images and other visual elements that carry accessibility impact. | 🟢 | 💼 |  |  | 💡 |  |
 | [anchor-ambiguous-text](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-ambiguous-text?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | anchor-ambiguous-text rule | 🟢 |  | ⚠️ |  | 💡 |  |
 | [anchor-has-content](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-has-content?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | anchor-has-content rule | 🟢 | 💼 |  |  | 💡 |  |
 | [anchor-is-valid](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-is-valid?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-react-a11y) |  |  |  | anchor-is-valid rule | 🟢 |  | ⚠️ |  | 💡 |  |
@@ -269,11 +290,10 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->
 
 <!-- INTERLACE:STAR_CTA:START -->
-## ⭐ Support & follow
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
+## Support
 
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 <!-- INTERLACE:STAR_CTA:END -->
 

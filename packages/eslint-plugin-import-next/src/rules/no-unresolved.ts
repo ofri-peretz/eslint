@@ -8,16 +8,19 @@
  * ESLint Rule: no-unresolved
  * Ensures imports point to resolvable modules (eslint-plugin-import inspired)
  */
+import { readdirSync } from 'node:fs';
 import { builtinModules } from 'node:module';
+import path from 'node:path';
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { resolveModule } from '@interlace/eslint-devkit';
+import { resolveWithSettings } from '../utils/settings-resolver';
 
 type MessageIds =
   | 'unresolvedImport'
   | 'moduleNotFound'
   | 'invalidExtension'
+  | 'casingMismatch'
   | 'addIgnoreComment';
 
 export interface Options {
@@ -27,6 +30,62 @@ export interface Options {
   ignore?: string[];
   /** Allow unresolved imports in certain contexts */
   allowUnresolved?: boolean;
+  /**
+   * eslint-plugin-import's module-visitor switches. Absent, this rule's own
+   * reading: every `import`/`export … from`/`import()` and every `require()`,
+   * no AMD. Set, eslint-plugin-import's: `esmodule: false` skips the ES
+   * module spellings, `commonjs: false` skips `require()` (and TS
+   * `import x = require()`), `amd: true` checks `require([…], fn)` and
+   * `define([…], fn)` dependency arrays.
+   */
+  commonjs?: boolean;
+  amd?: boolean;
+  esmodule?: boolean;
+  /**
+   * Report a specifier that resolves only because the file system ignores
+   * case (`./MyComponent` naming `myComponent.js` on macOS), which breaks on
+   * a case-sensitive one. Off unless set. `caseSensitive` checks the path
+   * below the working directory; `caseSensitiveStrict` checks all of it.
+   */
+  caseSensitive?: boolean;
+  caseSensitiveStrict?: boolean;
+}
+
+/** Characters that make an `ignore` entry a regular expression. */
+const REGEX_SYNTAX = /[\^$\\()[\]{}|+?]/;
+
+/**
+ * One `ignore` entry as a predicate. This rule's own forms keep their
+ * meaning: `*` matches any run of characters, and a plain string matches
+ * exactly or as a path prefix. An entry written as a regular expression
+ * (`'\\.svg$'`, `'^@/'`), which is how eslint-plugin-import reads every
+ * entry, is matched as one.
+ */
+function ignoreMatcher(pattern: string): (importPath: string) => boolean {
+  // Still matched literally too: an entry that was written as a name
+  // before (`'virtual:icons?raw'`) keeps matching that name.
+  const literal = (importPath: string) =>
+    importPath === pattern || importPath.startsWith(`${pattern}/`);
+  // eslint-plugin-import reads an entry as a regular expression, as written;
+  // this rule's own form reads `*` as any run of characters. An entry with
+  // `*` is matched both ways, so neither an upstream config (`'ab*c'` ignores
+  // `ac`) nor an existing one (`'src/*.(js|ts)'` ignores `src/widget.ts`)
+  // loses an ignore. An entry that does not compile is a literal name only
+  // (`'pkg(v1'`), rather than a crash that takes the lint run down.
+  const hasStar = pattern.includes('*');
+  const sources = [
+    ...(hasStar || REGEX_SYNTAX.test(pattern) ? [pattern] : []),
+    ...(hasStar ? [pattern.replace(/\*/g, '.*')] : []),
+  ];
+  const regexes = sources.flatMap((source) => {
+    try {
+      return [new RegExp(source)];
+    } catch {
+      return [];
+    }
+  });
+  return (importPath) =>
+    literal(importPath) || regexes.some((regex) => regex.test(importPath));
 }
 
 type RuleOptions = [Options?];
@@ -57,6 +116,15 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
         description: 'Cannot find module or file',
         severity: 'HIGH',
         fix: 'Verify the file exists and the path is correct',
+        documentationLink:
+          'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-unresolved.md',
+      }),
+      casingMismatch: formatLLMMessage({
+        icon: MessageIcons.ARCHITECTURE,
+        issueName: 'Casing Mismatch',
+        description: 'Import casing does not match the underlying filesystem',
+        severity: 'HIGH',
+        fix: 'Spell the path with the casing of the file on disk',
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-unresolved.md',
       }),
@@ -95,12 +163,38 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
             items: {
               type: 'string',
             },
-            description: 'Modules/patterns to ignore during resolution.',
+            description:
+              'Modules/patterns to ignore during resolution: exact or path prefix, `*` as a wildcard, or a regular expression.',
           },
           allowUnresolved: {
             type: 'boolean',
             default: false,
             description: 'Allow unresolved imports in certain contexts.',
+          },
+          commonjs: {
+            type: 'boolean',
+            description:
+              'eslint-plugin-import: check `require()` calls (absent: checked).',
+          },
+          amd: {
+            type: 'boolean',
+            description:
+              'eslint-plugin-import: check AMD `require([...])`/`define([...])` dependencies.',
+          },
+          esmodule: {
+            type: 'boolean',
+            description:
+              'eslint-plugin-import: check `import`/`export ... from`/`import()` (absent: checked).',
+          },
+          caseSensitive: {
+            type: 'boolean',
+            description:
+              'Report a specifier whose casing differs from the file on disk, below the working directory.',
+          },
+          caseSensitiveStrict: {
+            type: 'boolean',
+            description:
+              'Like `caseSensitive`, for the whole path, above the working directory too.',
           },
         },
         additionalProperties: false,
@@ -117,17 +211,44 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let options: Options | undefined;
-    let ignore: string[];
-    let allowUnresolved: boolean;
+    let ignore: ((importPath: string) => boolean)[];
+    let coreModules: unknown[];
+    let checkCase: boolean;
+    let strictCase: boolean;
+    /** Directory listings for the casing check, per file. */
+    let listings: Map<string, string[]>;
 
     function shouldIgnore(importPath: string): boolean {
-      return ignore.some((pattern: string) => {
-        if (pattern.includes('*')) {
-          const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-          return regex.test(importPath);
-        }
-        return importPath === pattern || importPath.startsWith(pattern + '/');
-      });
+      return ignore.some((matches) => matches(importPath));
+    }
+
+    function listing(dir: string): string[] {
+      let names = listings.get(dir);
+      if (!names) {
+        names = readdirSync(dir);
+        listings.set(dir, names);
+      }
+      return names;
+    }
+
+    /**
+     * eslint-plugin-import's `fileExistsWithCaseSync`: every segment of the
+     * resolved path, from the file up, must appear with that exact spelling
+     * in its parent's listing. A case-insensitive file system resolves a
+     * mis-cased specifier; this is what catches it. Without `strict` the walk
+     * stops at the process's working directory (upstream's reading, and the
+     * same under every engine), whose own spelling is the user's shell's.
+     */
+    function casingMatches(file: string): boolean {
+      const stop = process.cwd().toLowerCase();
+      let current = file;
+      for (;;) {
+        if (!strictCase && current.toLowerCase() === stop) return true;
+        const dir = path.dirname(current);
+        if (dir === current) return true;
+        if (!listing(dir).includes(path.basename(current))) return false;
+        current = dir;
+      }
     }
 
     function checkImport(importPath: string, node: TSESTree.Node) {
@@ -144,15 +265,51 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      // Skip built-in modules
-      if (builtinModules.includes(importPath)) {
+      // Skip built-in modules, and the names `import/core-modules` declares
+      // as provided by the runtime (`electron`).
+      if (
+        builtinModules.includes(importPath) ||
+        coreModules.includes(importPath)
+      ) {
+        return;
+      }
+
+      // eslint-plugin-import skips a type-only declaration before resolving
+      // anything (`no-unresolved.js:33`, v2.32.0): `import type` and
+      // `export type … from` are erased, so a module that exists only at
+      // type-check time (not installed here, or declarations-only) is not a
+      // runtime resolution failure. It reads the DECLARATION's kind: an inline
+      // `import { type X }` is `importKind: 'value'` and is still resolved, as
+      // is `import()` and `require()`, which have no declaration kind.
+      const declaration = node.parent as {
+        importKind?: string;
+        exportKind?: string;
+      };
+      if (
+        declaration.importKind === 'type' ||
+        declaration.exportKind === 'type'
+      ) {
         return;
       }
 
       const filePath = context.filename;
-      const resolved = resolveModule(importPath, filePath, {
-        extensions: options?.extensions,
-      });
+      const found = resolveWithSettings(
+        importPath,
+        filePath,
+        context.settings,
+        options?.extensions,
+      );
+      // A `@types/*` package holds declarations only: Node cannot load it,
+      // and TypeScript refuses a value import of it by that name (TS6137,
+      // "import 'x' instead of '@types/x'"). Finding its `.d.ts` is not
+      // resolving it. A `require('@types/x')` is a runtime load of a `.d.ts`,
+      // which fails the same way, so it is unresolved too.
+      const resolved =
+        found !== null &&
+        importPath.startsWith('@types/') &&
+        /\.d\.[cm]?ts$/.test(found)
+          ? null
+          : found;
 
       if (!resolved) {
         context.report({
@@ -196,13 +353,60 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
             },
           ],
         });
+      } else if (checkCase && !casingMatches(resolved)) {
+        context.report({
+          node,
+          messageId: 'casingMismatch',
+          data: { importPath },
+        });
       }
     }
+
+    /** AMD `require([...], fn)` / `define([...], fn)`: each named dependency. */
+    function checkAmd(node: TSESTree.CallExpression) {
+      const [dependencies] = node.arguments;
+      if (
+        node.callee.type !== 'Identifier' ||
+        (node.callee.name !== 'require' && node.callee.name !== 'define') ||
+        node.arguments.length !== 2 ||
+        dependencies.type !== 'ArrayExpression'
+      ) {
+        return;
+      }
+      for (const element of dependencies.elements) {
+        if (
+          element?.type === 'Literal' &&
+          typeof element.value === 'string' &&
+          // RequireJS's magic modules, never files.
+          element.value !== 'require' &&
+          element.value !== 'exports'
+        ) {
+          checkImport(element.value, element);
+        }
+      }
+    }
+
+    let esmodule: boolean;
+    let commonjs: boolean;
+    let amd: boolean;
 
     return {
       before() {
         [options] = context.options;
-        ({ ignore = [], allowUnresolved = false } = options || {});
+        const {
+          allowUnresolved = false,
+          caseSensitive = false,
+          caseSensitiveStrict = false,
+        } = options || {};
+        ignore = (options?.ignore ?? []).map(ignoreMatcher);
+        coreModules = (context.settings['import/core-modules'] ??
+          []) as unknown[];
+        esmodule = options?.esmodule !== false;
+        commonjs = options?.commonjs !== false;
+        amd = options?.amd === true;
+        strictCase = caseSensitiveStrict;
+        checkCase = caseSensitive || caseSensitiveStrict;
+        listings = new Map();
 
         // If allowUnresolved is true, don't check anything
         if (allowUnresolved) {
@@ -211,6 +415,7 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
         return true;
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        if (!esmodule) return;
         const importPath = node.source.value;
 
         if (typeof importPath === 'string') {
@@ -219,20 +424,24 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
       },
 
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (!esmodule) return;
         if (node.source && typeof node.source.value === 'string') {
           checkImport(node.source.value, node.source);
         }
       },
 
       ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        if (!esmodule) return;
         if (node.source && typeof node.source.value === 'string') {
           checkImport(node.source.value, node.source);
         }
       },
 
       CallExpression(node: TSESTree.CallExpression) {
+        if (amd) checkAmd(node);
         // Check require() calls
         if (
+          commonjs &&
           node.callee.type === 'Identifier' &&
           node.callee.name === 'require' &&
           node.arguments.length === 1
@@ -248,6 +457,7 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
       ImportExpression(node: TSESTree.ImportExpression) {
         // Handle dynamic imports: import("module")
         if (
+          esmodule &&
           node.source.type === 'Literal' &&
           typeof node.source.value === 'string'
         ) {
@@ -258,6 +468,7 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
       TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
         // Handle TypeScript import = require() syntax
         if (
+          commonjs &&
           node.moduleReference.type === 'TSExternalModuleReference' &&
           node.moduleReference.expression.type === 'Literal' &&
           typeof node.moduleReference.expression.value === 'string'

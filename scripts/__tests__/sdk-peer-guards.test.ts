@@ -20,8 +20,13 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import semver from 'semver';
 
 const PACKAGES_DIR = join(__dirname, '../../packages');
+
+function manifestOf(dir: string): Manifest {
+  return JSON.parse(readFileSync(join(PACKAGES_DIR, dir, 'package.json'), 'utf-8')) as Manifest;
+}
 
 interface Manifest {
   name?: string;
@@ -135,5 +140,27 @@ describe('SDK peer dependencies', () => {
       if (!manifest.peerDependencies?.react) missing.push(dir);
     }
     expect(missing, 'these plugins lint JSX but name no React version').toEqual([]);
+  });
+
+  it('bounded does not mean current: optional SDK peers must admit the SDK major actually shipping', () => {
+    // #1555: `@anthropic-ai/sdk@1.9.0` next to `@anthropic-ai/claude-agent-sdk`
+    // (whose own peer resolves to the SDK's 1.x line) failed `npm install`
+    // with ERESOLVE: eslint-plugin-anthropic-security's peer range was
+    // `>=0.1.0 <1.0.0`. That range IS bounded (the general check above
+    // passes it), so it needs its own assertion: a currently-shipping major
+    // must satisfy the range, not just have a ceiling somewhere.
+    const manifest = manifestOf('eslint-plugin-anthropic-security');
+    const currentMajors: Record<string, string> = {
+      '@anthropic-ai/sdk': '1.9.0',
+      '@anthropic-ai/claude-agent-sdk': '0.3.326',
+    };
+    const stale: string[] = [];
+    for (const [dep, version] of Object.entries(currentMajors)) {
+      const range = manifest.peerDependencies?.[dep];
+      if (!range || !semver.satisfies(version, range)) {
+        stale.push(`${dep}@${version} does not satisfy "${range}"`);
+      }
+    }
+    expect(stale, 'the peer ceiling excludes the SDK major adopters actually install').toEqual([]);
   });
 });

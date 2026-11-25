@@ -1,12 +1,15 @@
 const { tag } = require('../../lib.cjs');
 
 module.exports = {
-  domain: 38,
+  domain: 52,
   traces: 400,
   rule: 'no-unchecked-loop-condition',
   key: (s) =>
-    `${tag(s.loop)}|${tag(s.exit)}|${tag(s.bound)}|allowBreak=${s.allowBreak}`,
-  config: (s) => ({ allowWhileTrueWithBreak: s.allowBreak }),
+    `${tag(s.loop)}|${tag(s.exit)}|${tag(s.bound)}|allowBreak=${s.allowBreak}|budget=${s.budget}`,
+  config: (s) => ({
+    allowWhileTrueWithBreak: s.allowBreak,
+    ...(s.budget ? { maxStaticIterations: 10000 } : {}),
+  }),
   code: (s) => {
     const l = tag(s.loop);
     const exit = {

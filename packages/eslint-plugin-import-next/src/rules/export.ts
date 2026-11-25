@@ -18,7 +18,14 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 
-type MessageIds = 'duplicateExport' | 'duplicateDefault';
+import { exportMapOf } from '../utils/export-map';
+import {
+  PARSE_ERROR_MESSAGE,
+  reportParseErrors,
+} from '../utils/export-map-rules';
+
+type MessageIds =
+  'duplicateExport' | 'duplicateDefault' | 'noNamedExports' | 'parseError';
 
 type RuleOptions = [];
 
@@ -156,14 +163,37 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/export.md',
       }),
+      noNamedExports: formatLLMMessage({
+        icon: MessageIcons.QUALITY,
+        issueName: 'Empty Star Export',
+        description: "No named exports found in module '{{source}}'",
+        severity: 'MEDIUM',
+        fix: 'Remove the export *, or re-export the default by name (export { default } from)',
+        documentationLink:
+          'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/export.md',
+      }),
+      parseError: PARSE_ERROR_MESSAGE,
     },
     schema: [],
   },
   defaultOptions: [],
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    let exportsByName: Map<string, ExportKind[]>;
-    let hasDefaultExport: TSESTree.Node | null;
+    /** Every export of a name, by scoped name: its kind and its node. */
+    let exportsByName: Map<
+      string,
+      { name: string; kind: ExportKind; node: TSESTree.Node }[]
+    >;
+    /**
+     * The default exports of each module (the file, or a `declare module`).
+     * `overloadOf` is the name of a default function, so its overload
+     * signatures and implementation count as one default, or `''` for any
+     * other default.
+     */
+    let defaultsByScope: Map<
+      string,
+      { node: TSESTree.Node; overloadOf: string; signature: boolean }[]
+    >;
 
     /**
      * The namespace path a declaration sits inside, as a key prefix.
@@ -213,40 +243,89 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
       kind: ExportKind,
     ) {
       const name = `${scopeKey(node)}${rawName}`;
-      const previous = exportsByName.get(name);
-      if (!previous) {
-        exportsByName.set(name, [kind]);
-        return;
-      }
-      if (previous.some((other) => !canShareName(other, kind))) {
-        context.report({
-          node,
-          messageId: 'duplicateExport',
-          data: { name: rawName },
-        });
-        return;
-      }
-      previous.push(kind);
+      const entries = exportsByName.get(name);
+      const entry = { name: rawName, kind, node };
+      if (entries) entries.push(entry);
+      else exportsByName.set(name, [entry]);
     }
 
-    function checkDefaultExport(node: TSESTree.Node) {
-      if (hasDefaultExport) {
-        context.report({
-          node,
-          messageId: 'duplicateDefault',
-        });
-      } else {
-        hasDefaultExport = node;
+    /**
+     * Each `declare module 'x' {}` block is its own module with its own
+     * default, so the key is the enclosing module path, as for names.
+     */
+    function checkDefaultExport(
+      node: TSESTree.Node,
+      overloadOf = '',
+      signature = false,
+    ) {
+      const scope = scopeKey(node);
+      const entries = defaultsByScope.get(scope);
+      const entry = { node, overloadOf, signature };
+      if (entries) entries.push(entry);
+      else defaultsByScope.set(scope, [entry]);
+    }
+
+    /**
+     * Every export that clashes with another of its name is reported, the
+     * first included, as eslint-plugin-import does: each one is a place the
+     * reader has to fix. An export that merges with all the others (a type
+     * beside a value, a namespace beside its class) is not.
+     */
+    function reportClashes() {
+      for (const entries of exportsByName.values()) {
+        for (const entry of entries) {
+          if (
+            entries.some(
+              (other) =>
+                other !== entry && !canShareName(other.kind, entry.kind),
+            )
+          ) {
+            context.report({
+              node: entry.node,
+              messageId: 'duplicateExport',
+              data: { name: entry.name },
+            });
+          }
+        }
+      }
+      for (const entries of defaultsByScope.values()) {
+        // A default function's overload signatures and its implementation
+        // are one default; it is reported at the implementation, or at its
+        // first signature when it has none.
+        const units = new Map<string | TSESTree.Node, TSESTree.Node>();
+        for (const { node, overloadOf, signature } of entries) {
+          const key = overloadOf || node;
+          if (!units.has(key) || !signature) units.set(key, node);
+        }
+        if (units.size < 2) continue;
+        for (const node of units.values()) {
+          context.report({ node, messageId: 'duplicateDefault' });
+        }
       }
     }
 
     return {
       before() {
-        exportsByName = new Map<string, ExportKind[]>();
-        hasDefaultExport = null;
+        exportsByName = new Map();
+        defaultsByScope = new Map();
       },
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
-        checkDefaultExport(node);
+        // `export default function f(a: string): void;` and the `f` that
+        // follows are one default function: overload signatures and the
+        // implementation share its name. An ambient one with no
+        // implementation (`declare module`, a `.d.ts`) is still the default.
+        const declaration = node.declaration;
+        const fn =
+          (declaration.type === AST_NODE_TYPES.TSDeclareFunction ||
+            declaration.type === AST_NODE_TYPES.FunctionDeclaration) &&
+          declaration.id
+            ? `function ${declaration.id.name}`
+            : '';
+        checkDefaultExport(
+          node,
+          fn,
+          declaration.type === AST_NODE_TYPES.TSDeclareFunction,
+        );
       },
 
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
@@ -336,8 +415,33 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
         // export * as name from '...'
         if (node.exported) {
           checkAndAddExport(node.exported.name, node, 'starAs');
+          return;
         }
-        // Regular export * doesn't create named conflicts we can statically detect
+        // `export * from './m'` exports every name './m' does but its
+        // default, read by parsing it (`../utils/export-map`). A module that
+        // is not known (unresolved, ignored, CommonJS) adds nothing.
+        const exports = exportMapOf(node.source.value, context);
+        if (!exports) return;
+        if (exports.errors.length > 0) {
+          reportParseErrors(context, node.source, node.source.value, exports);
+          return;
+        }
+        const names = new Set<string>();
+        exports.forEach((_, name) => {
+          if (name !== 'default') names.add(name);
+        });
+        if (names.size === 0 && !exports.hasUnknown()) {
+          context.report({
+            node: node.source,
+            messageId: 'noNamedExports',
+            data: { source: node.source.value },
+          });
+        }
+        for (const name of names) checkAndAddExport(name, node, 'reexport');
+      },
+
+      'Program:exit'() {
+        reportClashes();
       },
     };
   },

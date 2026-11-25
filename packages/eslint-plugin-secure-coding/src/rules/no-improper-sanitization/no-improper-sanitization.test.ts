@@ -183,6 +183,7 @@ describe('no-improper-sanitization', () => {
           // now an allowlist (literal IS the argument), so any wrapper falls
           // through to the normal checks.
           {
+            name: 'a request value in a logical-or fallback sent to res.send',
             code: `res.send(req.query.name || '<p>fallback</p>');`,
             errors: [{ messageId: 'unsafeReplaceSanitization' }],
           },
@@ -483,6 +484,7 @@ describe('no-improper-sanitization', () => {
         invalid: [
           // innerHTML with unsanitized user input
           {
+            name: 'request body assigned straight to innerHTML',
             code: 'element.innerHTML = req.body.content;',
             errors: [{ messageId: 'insufficientXssProtection' }],
           },

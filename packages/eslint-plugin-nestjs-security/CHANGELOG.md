@@ -5,6 +5,111 @@ All notable changes to `eslint-plugin-nestjs-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.5
+
+### Patch Changes
+
+- **🐛 Fix** — require-validation-pipe-whitelist warns that whitelist strips undecorated DTO fields
+
+  `whitelist: true` keeps a property only when it carries a class-validator decorator, so a declared but undecorated field is removed too. The message and docs said only undeclared properties were stripped; following them as written would have broken three of the ten NestJS samples the rule flags. The fix text now says to decorate every accepted field first (`@IsString()`, `@IsOptional()`, `@Allow()`).
+
+## 4.2.4
+
+### Patch Changes
+
+- **📚 Docs** — Getting Started now leads each plugin README, with the ESLint install line and a flat config that loads
+
+  The install block was below the Description and the doctrine, and on 17 of the 31 plugins there was no flat-config snippet on the page at all. `eslint-plugin-secure-coding`'s README showed `...securePlugin.configs.recommended`, which throws `TypeError: ... is not iterable` when pasted, because `configs.recommended` is one object. Every plugin README now opens with `npm install --save-dev eslint <plugin>` and `import { configs } from '<plugin>'` and `export default [configs.recommended]` in an `eslint.config.mjs`, then the Description. A test now loads that snippet in ESLint for every plugin.
+
+  The star banner above the first heading, the footer block with the star counter and the Dev.to ask are replaced by one `## Support` paragraph at the end: report a false positive, or star the repo if the plugin helped.
+
+  `eslint-plugin-import-next` opens with its drop-in grade, read from the newest `benchmarks/results/ilb-import-parity` result with its date: passes 2,035 of 2,135 (95.3%) of eslint-plugin-import 2.32.0's own test cases, measured 2026-11-19.
+
+  Eight taglines now say what the plugin flags instead of "security rules for X" (secure-coding, node-security, browser-security, nestjs-security, express-security, vercel-ai-security, react-a11y, import-next). `eslint-plugin-node-security` adds one proof line: the public repositories that list it, with the date they were checked.
+
+## 4.2.3
+
+### Patch Changes
+
+- **📚 Docs** — ship an AGENTS.md that tells AI assistants how to enable the plugin and what each preset catches
+
+  Generated from the package's own presets and rules, so it cannot drift. `eslint-plugin-secure-coding`: the README no longer shows `...configs.recommended` spread into an array, which threw "not iterable".
+
+## 4.2.2
+
+### Patch Changes
+
+- **🐛 Fix** — `require-guards` reported nothing on an unguarded `@Controller('admin')` in a project that declares no auth library, because the no-authentication-system abstention covered the whole project. A controller or route mounted at `admin`, `superadmin`, `backoffice` and similar paths is now reported there too. Also fixed: an admin controller whose only guard is `ThrottlerGuard` (or a subclass) was counted as guarded, and `app.useGlobalGuards(new ThrottlerGuard())` was counted as a global authentication guard (it now counts as a global throttler, which also quiets `require-throttler`); `@Sse()` routes are now checked; and array paths such as `@Controller(['auth', 'sso'])` and `{ path: [...] }` are read by the public-route exemption. The rule pages now document why `login` is not reported by `require-guards` and why a guarded `verifyEmail` is not reported by `require-throttler`.
+
+## 4.2.1
+
+### Patch Changes
+
+- **📚 Docs** — npm descriptions lead with what people search for
+
+  Each description now opens with the search phrase, such as "ESLint NestJS security rules — …" instead of "ESLint plugin for NestJS security — …". npm search ranks that opening phrase above download counts, so the old wording kept these packages out of the results for searches like "eslint security". The oxlint-plugin-* aliases open the same way, with "Oxlint". No rule or code changes.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.0.4`
+
+## 4.2.0
+
+### Minor Changes
+
+- **✨ Feature** — `require-upload-size-limit`, and `require-throttler` now asks for a bound guard
+
+  **New rule**
+
+  - `require-upload-size-limit` (CWE-770, `warn` in `recommended`) reports `FileInterceptor`, `FilesInterceptor`, `FileFieldsInterceptor` and `AnyFilesInterceptor` from `@nestjs/platform-express` whose options set no `limits.fileSize`. multer has no default for it, so the route stores a file of any size. A limit in a `const` of the same file or in a `MulterModule.register()` of the project counts; a `ParseFilePipe` `MaxFileSizeValidator` does not, because it runs after the upload has been received. Options the file cannot show (an import, a call, a spread) are left alone.
+
+  **New reports**
+
+  - `require-throttler` no longer takes a `ThrottlerModule.forRoot()` import for app-wide rate limiting. The module only configures limits; nothing is throttled until `ThrottlerGuard` is bound. A project that imports the module and binds the guard nowhere now gets its sensitive routes reported.
+
+  - `require-guards`: a globally bound `ThrottlerGuard` subclass named without "Throttler" (`RequestThrottleByUserGuard`) is no longer mistaken for the project's authentication guard, which silenced the rule project-wide.
+
+  **Reports removed**
+
+  - `require-throttler` reads what a globally bound class extends, through relative imports, `src/…` / `@/…` paths and barrel files, instead of its name. A `ThrottlerGuard` subclass named without "Throttler", or bound as `APP_INTERCEPTOR`, now counts as rate limiting. The name is consulted only when the class cannot be reached (a package or a path alias).
+
+  If the new `require-throttler` report is one you do not want, `assumeGlobalThrottler: true` covers it.
+
+## 4.1.1
+
+### Patch Changes
+
+- **🐛 Fix** — `no-missing-validation-pipe` no longer reports one named scalar
+
+  `@Param('id') id` is a URL path segment and always a string, and an unannotated `@Query('page') page = 1` is validated exactly as much as `page: string`, which was already exempt. Both were reported with advice to add a `ValidationPipe`, which does nothing for a primitive. On 79 NestJS repositories those two shapes were 105 of the rule's 489 reports; 20 of them were added by 4.1.0, which started reading default-valued parameters.
+
+  Still reported: a whole `@Body()`, `@Query()` or `@Param()` object with nothing validating it, a keyed body field (`@Body('code') code`), and a keyed query value annotated as an object or a DTO.
+
+## 4.1.0
+
+### Minor Changes
+
+- **✨ Feature** — NestJS 12 — Standard Schema validation and serialization, returned web responses
+
+  **New reports**
+
+  - `no-missing-validation-pipe` reports a parameter that declares a `schema` (`@Body({ schema })`, `@Param('id', { schema })`) when no `StandardSchemaValidationPipe` runs on the parameter, the handler, the controller or globally. NestJS 12 only attaches the schema as metadata; that pipe is the one thing that enforces it. New message id: `schemaWithoutPipe`.
+  - `no-missing-validation-pipe` no longer takes an options object for a pipe: `@Body({ pipes: [] }) dto: CreateDto` is reported, and so is a decorated parameter with a default value (`@Body() dto: CreateDto = {}`), which used to be skipped.
+  - `no-res-bypass-serialization` treats `StandardSchemaSerializerInterceptor` as a serializer, so a bare `@Res()` under it is reported.
+  - `no-res-bypass-serialization` reports `return Response.json(value)` from a handler under a serializer: from NestJS 12.4 a returned web `Response` is sent as it is and no serializer touches it. New message id: `webResponseBypassesSerialization`.
+  - `no-permissive-cors` follows a `const` alias (`const corsOptions = base; app.enableCors(corsOptions)`) and reads through `as` / `satisfies` (`app.enableCors({ origin: '*' } as CorsOptions)`).
+  - `require-throttler` no longer takes `ThrottlerModule.forRoot()` or `forRoot([])` for app-wide rate limiting: neither declares a throttler.
+
+  **Reports removed**
+
+  - `no-res-bypass-serialization` and `no-unsafe-multer-filename`: a nested function or `catch` clause that declares the tracked name again through a destructured or default-valued parameter is a different binding, and is no longer read as the injected response / the multer callback.
+
+  If a new report is one you do not want, the options that cover it are unchanged: `assumeGlobalPipes`, `assumeGlobalSerializer`, `assumeGlobalThrottler`.
+
+### Patch Changes
+
+- **🐛 Fix** — install alongside NestJS 12
+
+  The `@nestjs/common` peer range stopped at `^11.0.0`, so `npm install eslint-plugin-nestjs-security` in a NestJS 12 project failed with `ERESOLVE`. The range now admits `^12.0.0`. No rule changes in this entry.
+
 ## 4.0.1
 
 ### Patch Changes

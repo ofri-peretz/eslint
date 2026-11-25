@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-import-next",
-  "version": "3.0.1",
-  "description": "ESLint plugin for imports and module boundaries \u2014 drop-in replacement for eslint-plugin-import, 3.1x faster end-to-end, zero-config migration.",
+  "version": "4.1.11",
+  "description": "ESLint import rules — eslint-plugin-import replacement for ESLint 10 (and 8, 9): same import/* rule names and settings (node, typescript and custom-alias resolvers), passes 95% of its own test cases. Flat config.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./dist/src/index.js",
@@ -52,6 +52,11 @@
     "interlace-quality",
     "eslint-plugin-import",
     "eslint-plugin-import-alternative",
+    "eslint-plugin-import-replacement",
+    "eslint-10",
+    "eslint10",
+    "flat-config",
+    "peer-dependency",
     "import",
     "imports",
     "no-cycle",
@@ -73,14 +78,14 @@
     "agentic"
   ],
   "engines": {
-    "node": ">=22.13.0"
+    "node": "^20.19.0 || ^22.13.0 || >=24"
   },
   "peerDependencies": {
     "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0",
     "typescript": "^4.8.4 || ^5.0.0 || ^6.0.0"
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.0.1",
+    "@interlace/eslint-devkit": "^2.1.1",
     "oxc-resolver": "^11.24.2"
   },
   "devDependencies": {

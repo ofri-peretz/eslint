@@ -48,12 +48,70 @@ import utils from './server-utils';
           "type": "string"
         },
         "description": "Array of restricted path patterns"
+      },
+      "zones": {
+        "type": "array",
+        "minItems": 1,
+        "description": "eslint-plugin-import zones: files in `target` may not import files in `from`, except those in `except`",
+        "items": {
+          "type": "object",
+          "properties": {
+            "target": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                }
+              ]
+            },
+            "from": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                }
+              ]
+            },
+            "except": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": ["target", "from"],
+          "additionalProperties": false
+        }
+      },
+      "basePath": {
+        "type": "string",
+        "description": "Directory the zones' paths are relative to. Default: ESLint's cwd."
       }
     },
     "additionalProperties": false
   }
 ]
 ```
+
+### eslint-plugin-import options
+
+`zones` and `basePath` work as in `import/no-restricted-paths`: a file inside a zone's `target` may not import a file inside its `from`, unless it is inside one of its `except` paths; `message` is appended to the report. `target`, `from` and `except` may be paths or globs, resolved against `basePath` (default: ESLint's cwd). Imports are compared as resolved files. A misconfigured zone (an `except` outside `from`, a non-glob `except` under a glob `from`, or a `from` list mixing globs and paths) is reported on the import. `restricted` keeps its own meaning alongside.
 
 ## Implementation
 

@@ -1,0 +1,23 @@
+{
+  "juiceshop": {
+    "repo": "https://github.com/juice-shop/juice-shop.git",
+    "commit": "c9f99228d9d56afb5f5ca7925376292f7fa44b13",
+    "commitDate": "2026-11-19",
+    "license": "MIT (LICENSE file at the pin: MIT text, Copyright (c) 2014-2026 Bjoern Kimminich & the OWASP Juice Shop contributors; package.json says MIT)",
+    "stack": "Express + Angular, TypeScript (Sequelize/SQLite, MarsDB)",
+    "truthSource": "vuln-code-snippet vuln-line markers in the source at the pin (line level) joined to data/static/challenges.yml on the challenge key (item level)",
+    "truthFile": "truth/juiceshop.json",
+    "lintGlobs": [
+      "app.ts",
+      "server.ts",
+      "data/**/*.ts",
+      "lib/**/*.ts",
+      "models/**/*.ts",
+      "routes/**/*.ts",
+      "rsn/**/*.ts",
+      "frontend/src/app/**/*.ts"
+    ],
+    "checkAllFilesLinted": true,
+    "ignoreNote": "test/**, *.spec.ts, cypress/**, frontend/src/assets/**, data/static/codefixes/** excluded for both plugins (shared.mjs); TypeScript parsed with @typescript-eslint/parser for both sides"
+  }
+}

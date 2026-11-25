@@ -1,5 +1,10 @@
-// Model of eslint-plugin-react-features/no-string-refs.
-// String refs are a legacy React API (removed in React 19). Reported:
+// Model of eslint-plugin-react-features/no-string-refs, configured as the
+// legacy API is: `noTemplateLiterals` on (a template literal counts as a
+// string ref) and `settings.react.version` below 18.3 (`this.refs` is still the
+// string-ref API). By default a template literal ref is left alone, and so is
+// `this.refs`, because with no version the newest React is assumed (eslint-
+// plugin-react does the same). String refs are a legacy React API (removed in
+// React 19). Reported:
 //   - a `ref` whose value is provably a string, on any element (React handles
 //     `ref` itself, so a component is no different): `ref="x"`, `ref={"x"}`,
 //     a template literal (with or without placeholders: it is still a

@@ -21,6 +21,7 @@ import {
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 import { resolveConstantString } from '../../utils/const-value';
+import { bindingInit, findVariable } from '../../utils/provenance';
 
 type MessageIds = 'violationDetected';
 
@@ -132,6 +133,44 @@ function isSensitiveName(name: string, phrases: readonly string[]): boolean {
   });
 }
 
+/**
+ * Is `object` a local binding that holds a fresh shallow copy, made with
+ * `{ ...source }` or `Object.assign({}, source)` and never reassigned?
+ *
+ * Deleting a key from such a copy is how code strips options before handing
+ * them on (`const opts = { ...options }; delete opts.secret;`). The original
+ * object, which every other reference shares, still holds the value, and
+ * nothing the copy could scrub would change that, so the report has no
+ * remedy at that site. A delete on the original, or on any binding that is a
+ * parameter, an alias, or reassigned, still reports.
+ */
+function isLocalShallowCopy(
+  sourceCode: Parameters<typeof bindingInit>[0],
+  object: TSESTree.Node,
+): boolean {
+  if (object.type !== AST_NODE_TYPES.Identifier) return false;
+  const init = bindingInit(sourceCode, object);
+  if (!init) return false;
+  const variable = findVariable(sourceCode, object);
+  // `bindingInit` found the single definition, so the variable exists.
+  if (variable!.references.some((ref) => ref.isWrite() && !ref.init)) {
+    return false;
+  }
+  if (init.type === AST_NODE_TYPES.ObjectExpression) {
+    return init.properties.some(
+      (property) => property.type === AST_NODE_TYPES.SpreadElement,
+    );
+  }
+  return (
+    init.type === AST_NODE_TYPES.CallExpression &&
+    init.callee.type === AST_NODE_TYPES.MemberExpression &&
+    init.callee.object.type === AST_NODE_TYPES.Identifier &&
+    init.callee.object.name === 'Object' &&
+    propertyName(init.callee) === 'assign' &&
+    init.arguments[0]?.type === AST_NODE_TYPES.ObjectExpression
+  );
+}
+
 export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
   name: 'require-secure-deletion',
   meta: {
@@ -238,6 +277,16 @@ export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
       },
       UnaryExpression(node: TSESTree.UnaryExpression) {
         if (node.operator !== 'delete') return;
+        const target =
+          node.argument.type === AST_NODE_TYPES.ChainExpression
+            ? node.argument.expression
+            : node.argument;
+        if (
+          target.type === AST_NODE_TYPES.MemberExpression &&
+          isLocalShallowCopy(context.sourceCode, target.object)
+        ) {
+          return;
+        }
         reportIfSensitive(node, deletedPropertyName(node.argument));
       },
 
@@ -261,6 +310,7 @@ export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
         }
         const key = node.arguments[1];
         if (!key) return;
+        if (isLocalShallowCopy(context.sourceCode, node.arguments[0])) return;
         reportIfSensitive(
           node,
           resolveConstantString(context.sourceCode, key)?.value,

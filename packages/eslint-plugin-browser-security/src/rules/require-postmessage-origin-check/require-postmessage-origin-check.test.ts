@@ -99,6 +99,7 @@ ruleTester.run(
       },
       // Uses custom validation function
       {
+        name: 'a call to a custom isAllowedOrigin(event.origin) guard is an origin check',
         code: `
         window.addEventListener('message', (event) => {
           if (!isAllowedOrigin(event.origin)) return;
@@ -108,6 +109,7 @@ ruleTester.run(
       },
       // Function reference (can't analyze, so we allow)
       {
+        name: 'a handler passed by reference cannot be analysed, so it is allowed',
         code: `
         window.addEventListener('message', messageHandler);
       `,

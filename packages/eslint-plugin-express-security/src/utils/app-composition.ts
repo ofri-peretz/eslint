@@ -66,7 +66,10 @@ export const RELEASE_SELECTOR =
  * server on its own — the precondition for CSRF to exist at all.
  */
 const CREDENTIAL_PACKAGES: ReadonlySet<string> = new Set([
-  'cookie-parser',
+  // `cookie-parser` is deliberately absent. It fills `req.cookies` for whatever a
+  // cookie holds (a language flag, a consent banner) and says nothing about
+  // authority; a cookie that *is* a credential shows up as a read of
+  // `req.cookies` / `res.cookie` (below), or as a session store (here).
   'express-session',
   'cookie-session',
   'client-sessions',
@@ -149,6 +152,83 @@ export function fileHasAmbientCredentials(ast: TSESTree.Program): boolean {
     if (isCredentialModuleLoad(node) || isCredentialMember(node)) found = true;
   });
   return found;
+}
+
+/** The binding a `Router()` / `express.Router()` / `require('express').Router()` call is assigned to. */
+function routerBindingName(node: TSESTree.Node): string | null {
+  if (
+    node.type !== AST_NODE_TYPES.VariableDeclarator ||
+    node.id.type !== AST_NODE_TYPES.Identifier ||
+    node.init?.type !== AST_NODE_TYPES.CallExpression
+  ) {
+    return null;
+  }
+  const callee = node.init.callee;
+  if (callee.type === AST_NODE_TYPES.Identifier) {
+    return callee.name === 'Router' ? node.id.name : null;
+  }
+  return callee.type === AST_NODE_TYPES.MemberExpression &&
+    propertyName(callee) === 'Router'
+    ? node.id.name
+    : null;
+}
+
+/** `express()` or `require('express')()`: the file that makes the application. */
+function createsApplication(node: TSESTree.Node): boolean {
+  if (node.type !== AST_NODE_TYPES.CallExpression) return false;
+  const callee = node.callee;
+  if (callee.type === AST_NODE_TYPES.Identifier)
+    return callee.name === 'express';
+  return (
+    callee.type === AST_NODE_TYPES.CallExpression &&
+    callee.callee.type === AST_NODE_TYPES.Identifier &&
+    callee.callee.name === 'require' &&
+    callee.arguments[0]?.type === AST_NODE_TYPES.Literal &&
+    callee.arguments[0].value === 'express'
+  );
+}
+
+/**
+ * Is this file a routes module whose credential is configured by its importer?
+ *
+ * A router that is handed to an importer (`module.exports = router`,
+ * `return router`, `export default router`) does not create the application, so
+ * the session middleware that makes its routes cookie-authenticated lives in
+ * the module that mounts it. When such a file also renders documents
+ * (`res.render`, `res.sendFile`, a view engine) it is the routes file of a
+ * server-rendered app, and a server-rendered app's authority is a session
+ * cookie. DVNA is built this way: `server.js` calls `app.use(session(...))`,
+ * `routes/app.js` registers the POST routes.
+ *
+ * Both halves are required. A router that renders nothing is the file shape of
+ * a JSON API, whose bearer clients carry nothing a cross-site request can
+ * borrow; a file that creates the app is the place the session would have been
+ * written, so its absence there is an absence.
+ */
+export function fileInheritsAmbientCredentials(ast: TSESTree.Program): boolean {
+  const routers = new Set<string>();
+  let createsApp = false;
+  walk(ast, (node) => {
+    if (createsApplication(node)) createsApp = true;
+    const router = routerBindingName(node);
+    if (router !== null) routers.add(router);
+  });
+  if (createsApp || routers.size === 0) return false;
+
+  let released = false;
+  walk(ast, (node) => {
+    if (released) return;
+    if (
+      node.type === AST_NODE_TYPES.AssignmentExpression ||
+      node.type === AST_NODE_TYPES.ExportDefaultDeclaration ||
+      node.type === AST_NODE_TYPES.ReturnStatement
+    ) {
+      for (const name of routers) {
+        if (nodeReleasesBinding(node, name)) released = true;
+      }
+    }
+  });
+  return released && servesBrowserDocuments(ast);
 }
 
 /** Responders that put a *document* in front of a browser. */

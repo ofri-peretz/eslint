@@ -23,7 +23,10 @@ import { normalizePath, getRelativePath } from '@interlace/eslint-devkit';
  * own true positives went silent when written with a string subscript — the
  * notation a bundler emits.
  */
-import { isNonProductionPath } from '../../lib/non-production-paths';
+import {
+  isLoggerModule,
+  isNonProductionPath,
+} from '../../lib/non-production-paths';
 import { isGlobalObject } from '../../lib/global-binding';
 
 /**
@@ -50,7 +53,8 @@ type MessageIds =
   | 'strategyRemove'
   | 'strategyConvert'
   | 'strategyComment'
-  | 'strategyWarn';
+  | 'strategyWarn'
+  | 'suggestRemoveDiscardingArguments';
 
 interface SeverityMapping {
   [consoleMethod: string]: string; // e.g., { "log": "info", "debug": "verbose", "error": "error" }
@@ -80,6 +84,13 @@ export interface Options {
    * `no-debug-code-in-production` was reporting under a different name.
    */
   ignoreNonProductionPaths?: boolean;
+
+  /**
+   * Skip the module that IS the logger (`logger.ts`, `hmrLogger.ts`, `log.ts`).
+   * It calls `console.log` because that is its job; telling it to "use a
+   * logger" points back at itself. Default: true.
+   */
+  ignoreLoggerModules?: boolean;
 
   /** Name of the logger to use (e.g., 'logger', 'winston'). Default: 'logger' */
   loggerName?: string;
@@ -112,7 +123,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
       cvss: 5,
     },
     fixable: 'code',
-    hasSuggestions: false,
+    hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 43% reduction (51→29 tokens) - compact format for logger context
       consoleLogFound: formatLLMMessage({
@@ -148,6 +159,15 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
         fix: '// console.log(...)',
         documentationLink: 'https://owasp.org/www-project-log-review-guide/',
       }),
+      suggestRemoveDiscardingArguments: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Remove Statement, Discard Arguments',
+        description:
+          'The arguments may have side effects that removing the statement drops',
+        severity: 'LOW',
+        fix: 'Remove the statement only if its arguments need not run',
+        documentationLink: 'https://owasp.org/www-project-log-review-guide/',
+      }),
       strategyWarn: formatLLMMessage({
         icon: MessageIcons.STRATEGY,
         issueName: 'Warn Strategy',
@@ -169,6 +189,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
             description: 'Strategy for handling console.log',
           },
           ignoreNonProductionPaths: { type: 'boolean', default: true },
+          ignoreLoggerModules: { type: 'boolean', default: true },
           ignorePaths: {
             type: 'array',
             items: { type: 'string' },
@@ -228,6 +249,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
       strategy: 'remove',
       ignorePaths: [],
       ignoreNonProductionPaths: true,
+      ignoreLoggerModules: true,
       loggerName: 'logger',
       severityMap: { log: 'log' }, // Only flag console.log by default
       autoDetectLogger: true,
@@ -238,6 +260,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     let strategy: Strategy;
     let ignorePaths: string[];
     let ignoreNonProductionPaths: boolean;
+    let ignoreLoggerModules: boolean;
     let loggerName: string | undefined;
     let maxOccurrences: number | 'all' | undefined;
     let severityMap: SeverityMapping;
@@ -272,6 +295,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     const shouldIgnoreFile = (): boolean => {
       if (ignoreNonProductionPaths && isNonProductionPath(filename))
         return true;
+      if (ignoreLoggerModules && isLoggerModule(filename)) return true;
       if (ignorePaths.length === 0) return false;
 
       const normalizedPath = normalizePath(filename);
@@ -307,6 +331,43 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
       });
     };
 
+    /**
+     * Is `statement` the call itself, sitting in a statement list? `remove` and
+     * `comment` rewrite a whole statement, so nothing else is safe to take.
+     */
+    const isRemovableStatement = (
+      statement: TSESTree.Statement,
+      call: TSESTree.CallExpression,
+    ): boolean => {
+      const parentType = statement.parent?.type;
+      return (
+        statement.type === 'ExpressionStatement' &&
+        statement.expression === call &&
+        (parentType === 'BlockStatement' ||
+          parentType === 'Program' ||
+          parentType === 'SwitchCase' ||
+          parentType === 'StaticBlock')
+      );
+    };
+
+    /**
+     * The text `remove` and `comment` act on. Normally the whole statement.
+     *
+     * Without semicolons, a `;` at the start of the next line is a guard
+     * against the two lines joining — `;[1].forEach(...)`, `;(function () {})()`
+     * — and it PARSES as the terminator of the `console.log` before it, so the
+     * statement's range includes it. Taking the statement took the guard, and
+     * `console.info(0)` met `[1].forEach(...)` as one expression (#1541). A `;`
+     * on a later line than the call is therefore left where it is.
+     */
+    const rewriteRange = (statement: TSESTree.Statement): [number, number] => {
+      const last = sourceCode.getLastToken(statement);
+      const call = (statement as TSESTree.ExpressionStatement).expression;
+      const guard =
+        last?.value === ';' && last.loc.start.line > call.loc.end.line;
+      return [statement.range[0], guard ? call.range[1] : statement.range[1]];
+    };
+
     return {
       before() {
         const options = context.options[0] || {};
@@ -314,6 +375,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
           strategy = 'remove',
           ignorePaths = [],
           ignoreNonProductionPaths = true,
+          ignoreLoggerModules = true,
           loggerName,
           maxOccurrences,
           severityMap = {},
@@ -485,17 +547,21 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
            * report is unaffected; only the automatic rewrite is withheld.
            */
           if (strategy === 'remove' || strategy === 'comment') {
-            const wrapsCallExactly =
-              statement.type === 'ExpressionStatement' &&
-              statement.expression === node;
-            const parentType = statement.parent?.type;
-            const inStatementList =
-              parentType === 'BlockStatement' ||
-              parentType === 'Program' ||
-              parentType === 'SwitchCase' ||
-              parentType === 'StaticBlock';
+            if (!isRemovableStatement(statement, node)) return null;
 
-            if (!wrapsCallExactly || !inStatementList) return null;
+            /**
+             * `remove` takes the arguments with the call, so an argument that
+             * DOES something goes with it: `console.log(i++)` removed `i++` and
+             * the program printed 0 where it printed 1 (#1541). The deletion is
+             * offered as a suggestion instead. `comment` leaves the call in the
+             * source for the reader to see, so it is not held to this.
+             */
+            if (
+              strategy === 'remove' &&
+              !node.arguments.every(isSideEffectFree)
+            ) {
+              return null;
+            }
           }
 
           /**
@@ -523,7 +589,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
 
           switch (strategy) {
             case 'remove':
-              return fixer.remove(statement);
+              return fixer.removeRange(rewriteRange(statement));
 
             case 'convert':
               return fixer.replaceText(
@@ -549,7 +615,8 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
                * closing brace to the same comment, so there the fixer declines.
                * The report is unaffected; only the rewrite is withheld.
                */
-              const end = statement.loc.end;
+              const [start, stop] = rewriteRange(statement);
+              const end = sourceCode.getLocFromIndex(stop);
               const afterStatement = sourceCode.lines[end.line - 1].slice(
                 end.column,
               );
@@ -562,11 +629,11 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
                * is matched first so a CRLF file gains one `// ` per line. The
                * `// ` goes after each line's own indentation.
                */
-              const commented = sourceCode
-                .getText(statement)
+              const commented = sourceCode.text
+                .slice(start, stop)
                 .replace(/(^|\r\n|[\r\n\u2028\u2029])([ \t]*)/gu, '$1$2// ');
 
-              return fixer.replaceText(statement, commented);
+              return fixer.replaceTextRange([start, stop], commented);
             }
 
             case 'warn':
@@ -583,6 +650,26 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
           conversionInfo = ` → ${effectiveLogger}.${targetLoggerMethod}()`;
         }
 
+        /**
+         * Where `remove` declines only because an argument may do something,
+         * the deletion is still on offer — as a suggestion the reader applies
+         * knowing the arguments will not run.
+         */
+        const statement = findParentStatement(node);
+        const suggest: TSESLint.ReportSuggestionArray<MessageIds> =
+          strategy === 'remove' &&
+          statement &&
+          isRemovableStatement(statement, node) &&
+          !node.arguments.every(isSideEffectFree)
+            ? [
+                {
+                  messageId: 'suggestRemoveDiscardingArguments',
+                  fix: (fixer: TSESLint.RuleFixer) =>
+                    fixer.removeRange(rewriteRange(statement)),
+                },
+              ]
+            : [];
+
         // ✅ Only report if not exceeding limit
         if (!shouldSkipReport) {
           context.report({
@@ -598,12 +685,72 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
               method: targetLoggerMethod,
             },
             fix,
+            suggest,
           });
         }
       },
     };
   },
 });
+
+/**
+ * Can this argument be dropped without changing what the program does?
+ *
+ * Allow-list, not deny-list: anything not named here (a call, `new`, an
+ * assignment, an update, `await`, `yield`, a tagged template, `delete`, a
+ * spread — which runs an iterator or a getter —, a class expression) may do
+ * something, and `remove` must not take it with the statement.
+ *
+ * Property reads are allowed: `console.log(user.name)` is the common case, and
+ * a getter that matters is rare enough that withholding every such fix would
+ * leave the autofix useless.
+ */
+function isSideEffectFree(node: TSESTree.Node | null): boolean {
+  if (node === null) return true;
+  switch (node.type) {
+    case 'Literal':
+    case 'Identifier':
+    case 'ThisExpression':
+    case 'ArrowFunctionExpression':
+    case 'FunctionExpression':
+      return true;
+    case 'TemplateLiteral':
+      return node.expressions.every(isSideEffectFree);
+    case 'ArrayExpression':
+      return node.elements.every(isSideEffectFree);
+    case 'ObjectExpression':
+      return node.properties.every(
+        (property) =>
+          property.type === 'Property' &&
+          (!property.computed || isSideEffectFree(property.key)) &&
+          isSideEffectFree(property.value),
+      );
+    case 'MemberExpression':
+      return (
+        isSideEffectFree(node.object) &&
+        (!node.computed || isSideEffectFree(node.property))
+      );
+    case 'BinaryExpression':
+    case 'LogicalExpression':
+      return isSideEffectFree(node.left) && isSideEffectFree(node.right);
+    case 'ConditionalExpression':
+      return (
+        isSideEffectFree(node.test) &&
+        isSideEffectFree(node.consequent) &&
+        isSideEffectFree(node.alternate)
+      );
+    case 'UnaryExpression':
+      return node.operator !== 'delete' && isSideEffectFree(node.argument);
+    case 'ChainExpression':
+    case 'TSNonNullExpression':
+    case 'TSAsExpression':
+    case 'TSSatisfiesExpression':
+    case 'TSTypeAssertion':
+      return isSideEffectFree(node.expression);
+    default:
+      return false;
+  }
+}
 
 /**
  * Find the parent statement node for proper removal

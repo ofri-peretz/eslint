@@ -1051,6 +1051,12 @@ ruleTester.run('require-guards (mutation audit)', requireGuards, {
       code: ctl(`@Post('hook') receive(@Headers('x-api-key') key: string) {}`),
     },
     {
+      name: 'a credential header read through a pipe is still a credential header',
+      code: ctl(
+        `@Post('hook') receive(@Headers('x-api-key', TrimPipe) key: string) {}`,
+      ),
+    },
+    {
       name: 'a config read with a default value is still a secret source',
       code: ctl(`
         @Post('hook') receive(@Query('token') token: string) {
@@ -1085,6 +1091,18 @@ ruleTester.run('require-guards (mutation audit)', requireGuards, {
     },
   ]),
   invalid: nest([
+    {
+      name: 'the whole header bag is not a credential header',
+      code: ctl(
+        `@Post('hook') receive(@Headers() headers: Record<string, string>) {}`,
+      ),
+      errors: [{ messageId: 'missingGuards' }],
+    },
+    {
+      name: 'a bare @Controller reference declares no path, and its routes are still checked',
+      code: ctl(`@Get('invoices') list() {}`, `@Controller`),
+      errors: [{ messageId: 'missingGuards' }],
+    },
     {
       name: 'a POST probe-named handler is a write, never a probe',
       code: ctl(`@Post('state') getStatus() {}`),
@@ -1208,3 +1226,117 @@ ruleTester.run('require-guards (mutation audit, config keys)', requireGuards, {
     },
   ]),
 });
+
+// A guard has to authenticate. Rate limiting runs for every caller, so a
+// controller whose only guard is a throttler is as open as one with none.
+ruleTester.run(
+  'require-guards (throttler is not access control)',
+  requireGuards,
+  {
+    valid: nest([
+      {
+        name: 'a throttler next to a real guard is still guarded',
+        code: ctl(
+          `@Get('users') list() {}`,
+          `@Controller('admin') @UseGuards(ThrottlerGuard, JwtAuthGuard)`,
+        ),
+      },
+      {
+        // Authors put a throttler on a route they know is public and
+        // abuse-prone. ghostfolio's passkey sign-in carries nothing else.
+        name: 'a throttler alone off a privileged path is a public, rate-limited route',
+        code: ctl(
+          `@Post('webauthn/verify-authentication') attest() {}`,
+          `@Controller('auth') @UseGuards(CustomThrottlerGuard)`,
+        ),
+      },
+      {
+        name: 'a handler-level throttler alone on an ordinary controller',
+        code: ctl(
+          `@Post() @UseGuards(CustomThrottlerGuard) create() {}`,
+          `@Controller('user')`,
+        ),
+      },
+      {
+        name: 'a throttler the config names as the required guard satisfies it',
+        code: ctl(
+          `@Get('users') list() {}`,
+          `@Controller('admin') @UseGuards(ThrottlerGuard)`,
+        ),
+        options: [{ requiredGuards: ['ThrottlerGuard'] }],
+      },
+    ]),
+    invalid: nest([
+      {
+        // @found read against the guard model in #1599: ThrottlerGuard is rate limiting, not authentication
+        name: 'FN: a class-level ThrottlerGuard alone leaves the admin API open',
+        code: ctl(
+          `@Delete('users/:id') remove() {}`,
+          `@Controller('admin') @UseGuards(ThrottlerGuard)`,
+        ),
+        errors: [{ messageId: 'missingGuards' }],
+      },
+      {
+        // @found read against the guard model in #1599: a ThrottlerGuard subclass is still not authentication
+        name: 'FN: a ThrottlerGuard subclass on the handler alone leaves it open',
+        code: ctl(
+          `@Delete('users/:id') @UseGuards(ThrottlerBehindProxyGuard) remove() {}`,
+          `@Controller('admin')`,
+        ),
+        errors: [{ messageId: 'missingGuards' }],
+      },
+    ]),
+  },
+);
+
+// `@Controller()` takes a path, an array of paths, or an options object whose
+// `path` is either. The public-route exemption has to read all of them.
+ruleTester.run(
+  'require-guards (Nest 12 controller path forms)',
+  requireGuards,
+  {
+    valid: nest([
+      {
+        name: 'an array of controller paths that includes an auth entry point',
+        code: ctl(`@Post() enter() {}`, `@Controller(['auth/login'])`),
+      },
+      {
+        name: 'an options object whose path is an array, with a version',
+        code: ctl(
+          `@Post() enter() {}`,
+          `@Controller({ path: ['sso', 'saml'], version: '1' })`,
+        ),
+      },
+      {
+        name: 'an options object with a path and a version, as Nest 12 apps write it',
+        code: ctl(
+          `@Post('login') enter() {}`,
+          `@Controller({ path: 'auth', version: '1' })`,
+        ),
+      },
+      {
+        name: 'BY DESIGN: login is how a caller obtains a guard, so it is not reported',
+        code: ctl(
+          `@Post('login') login(@Body() credentials: Record<string, string>) {}`,
+          `@Controller('auth')`,
+        ),
+      },
+    ]),
+    invalid: nest([
+      {
+        name: 'an options object with an array path stays in scope when no entry is public',
+        code: ctl(
+          `@Delete(':id') remove() {}`,
+          `@Controller({ path: ['users', 'accounts'], version: '1' })`,
+        ),
+        errors: [{ messageId: 'missingGuards' }],
+      },
+      {
+        // @found read the route decorator list against the NestJS docs while fixing #1599: @Sse is a route
+        name: 'FN: a server-sent-events stream is a route and needs a guard',
+        code: ctl(`@Sse('events') events() {}`, `@Controller('admin')`),
+        errors: [{ messageId: 'missingGuards' }],
+      },
+    ]),
+  },
+);

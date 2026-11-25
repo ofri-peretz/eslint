@@ -12,6 +12,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { reactExport } from '../../utils/react-api';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { reactVersionAtLeast } from '../../utils/react-settings';
 
 type MessageIds = 'noRenderReturnValue';
 
@@ -41,11 +42,32 @@ export const noRenderReturnValue = createRule<[], MessageIds>({
   },
   defaultOptions: [],
   createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
+    /**
+     * Where `render` lives, as `settings.react.version` says: `React` alone in
+     * 0.13, `React` or `ReactDOM` in 0.14, `ReactDOM` otherwise.
+     */
+    let renderModules: readonly (string | null)[];
+
     return {
+      before() {
+        renderModules =
+          reactVersionAtLeast(context, '0.14.0') &&
+          !reactVersionAtLeast(context, '0.15.0')
+            ? ['react', 'react-dom']
+            : reactVersionAtLeast(context, '0.13.0') &&
+                !reactVersionAtLeast(context, '0.14.0')
+              ? ['react']
+              : ['react-dom'];
+      },
       // react-dom's `render`, however it is named, whose result is used.
       CallExpression(node: TSESTree.CallExpression) {
         const api = reactExport(node.callee, context.sourceCode.getScope(node));
-        if (api?.module !== 'react-dom' || api.name !== 'render') return;
+        if (
+          !api ||
+          api.name !== 'render' ||
+          !renderModules.includes(api.module)
+        )
+          return;
         const target = usedAs(node);
         if (target) {
           context.report({ node: target, messageId: 'noRenderReturnValue' });

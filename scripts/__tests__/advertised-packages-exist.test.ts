@@ -76,7 +76,8 @@ function sourceFiles(dir: string): string[] {
 // `npm i -D pkg` / `npm install --save-dev pkg`. Stops at the first character
 // that can't be part of a package name, so a trailing `${...}` or quote ends
 // the match instead of being swallowed into it.
-const INSTALL_COMMAND = /npm\s+(?:i|install)\s+(?:-D\s+|--save-dev\s+)?(@?[a-z0-9][a-z0-9._/-]*)/g;
+const INSTALL_COMMAND =
+  /npm\s+(?:i|install)\s+(?:-D\s+|--save-dev\s+)?(@?[a-z0-9][a-z0-9._/-]*)/g;
 
 /**
  * Ours to publish. Third-party installs the guides legitimately recommend
@@ -85,10 +86,21 @@ const INSTALL_COMMAND = /npm\s+(?:i|install)\s+(?:-D\s+|--save-dev\s+)?(@?[a-z0-
  * Interlace scope, one of our plugins, or carry the brand in its name (which
  * is what `eslint-config-interlace` did).
  */
+/**
+ * Third-party plugins the guides compare against or combine with ours
+ * (/docs/getting-started/detect-xss-eslint-flat-config and friends). Not ours
+ * to publish, so there is no workspace package to find.
+ */
+const THIRD_PARTY_PLUGINS = new Set([
+  'eslint-plugin-security',
+  'eslint-plugin-no-unsanitized',
+]);
+
 const isOurs = (name: string): boolean =>
-  name.startsWith('@interlace/') ||
-  name.startsWith('eslint-plugin-') ||
-  name.includes('interlace');
+  !THIRD_PARTY_PLUGINS.has(name) &&
+  (name.startsWith('@interlace/') ||
+    name.startsWith('eslint-plugin-') ||
+    name.includes('interlace'));
 
 describe('docs site advertises only publishable packages', () => {
   const advertised = DOCS_DIRS.flatMap(sourceFiles).flatMap((file) => {
@@ -105,17 +117,20 @@ describe('docs site advertises only publishable packages', () => {
     expect(advertised.length).toBeGreaterThan(0);
   });
 
-  it.each(advertised)('$file advertises $name, which we publish', ({ name }) => {
-    const pkg = workspacePackages.get(name);
-    expect(
-      pkg,
-      `\`npm i ${name}\` is advertised but no workspace package is named that. ` +
-        `Either the name is wrong or the package was removed.`,
-    ).toBeDefined();
-    expect(
-      pkg!.private,
-      `\`npm i ${name}\` is advertised but packages/${pkg!.dir} is ` +
-        `private: true — it is never published, so the command installs nothing.`,
-    ).toBe(false);
-  });
+  it.each(advertised)(
+    '$file advertises $name, which we publish',
+    ({ name }) => {
+      const pkg = workspacePackages.get(name);
+      expect(
+        pkg,
+        `\`npm i ${name}\` is advertised but no workspace package is named that. ` +
+          `Either the name is wrong or the package was removed.`,
+      ).toBeDefined();
+      expect(
+        pkg!.private,
+        `\`npm i ${name}\` is advertised but packages/${pkg!.dir} is ` +
+          `private: true — it is never published, so the command installs nothing.`,
+      ).toBe(false);
+    },
+  );
 });

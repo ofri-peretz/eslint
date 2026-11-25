@@ -25,7 +25,10 @@
 //
 // Defaults: `export default`, `export { v as default }` and
 // `export { default } from './m'` are each a default export; two of them is
-// a duplicate. `export * from` never re-exports a default.
+// a duplicate. `export * from` never re-exports a default. Each
+// `declare module 'x' {}` block is a module of its own, with its own default,
+// and an overload signature (`export default function f(a: string): void;`)
+// is not a second default.
 // A different name is never a duplicate (safe twin of every pair).
 module export_rule {
   type Kind = Const | Function | Class | Interface | TypeAlias | Enum | EnumBare | Namespace | TypeNamespace

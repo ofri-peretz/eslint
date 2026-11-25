@@ -118,7 +118,8 @@ Conditionals and fallbacks are transparent too
 common `fs.mkdir(dest, { recursive: true }, () => cb(null, file.originalname))`
 still stores the client's name. Only a nested function that rebinds `cb`,
 `file` or a tainted local is skipped, because inside it that name is a
-different value.
+different value — whether the parameter is plain, default-valued
+(`(err, cb = noop) => …`) or destructured (`({ file }) => …`).
 
 ## What this rule deliberately does not report
 

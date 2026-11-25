@@ -3,7 +3,7 @@ title: detect-non-literal-fs-filename
 description: Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system
 tags: ['security', 'node']
 category: security
-severity: medium
+severity: high
 cwe: CWE-22
 autofix: false
 ---
@@ -15,7 +15,7 @@ autofix: false
 Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**CWE:** [CWE-22](https://cwe.mitre.org/data/definitions/22.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.
@@ -223,21 +223,22 @@ fs.readFile(safePath, callback);
 
 ```typescript
 function securePath(baseDir: string, userPath: string): string {
-  const resolved = path.resolve(baseDir, userPath);
+  const root = path.resolve(baseDir);
+  const resolved = path.resolve(root, userPath);
 
-  // Check if resolved path is within base directory
-  if (!resolved.startsWith(baseDir)) {
+  // Containment by path.relative, not startsWith: `resolved.startsWith(root)`
+  // accepts `/safe-dir-evil/file` for a root of `/safe-dir`.
+  const rel = path.relative(root, resolved);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) {
     throw new Error('Path traversal detected');
-  }
-
-  // Additional security: remove any remaining ..
-  const normalized = path.normalize(resolved);
-  if (normalized.includes('..')) {
-    throw new Error('Invalid path segments');
   }
 
   return resolved;
 }
+
+// A symlink inside the root can still point outside it. Where links are
+// possible, compare real paths of what exists (fs.realpathSync), and check
+// again at open time if the tree can change underneath you.
 ```
 
 ## Common Attack Vectors
@@ -294,17 +295,21 @@ class SecurePath {
   constructor(private baseDir: string) {}
 
   resolve(userPath: string): string {
-    const resolved = path.resolve(this.baseDir, userPath);
+    if (userPath.includes('\0')) throw new Error('Invalid path');
+    const root = fs.realpathSync(this.baseDir);
+    const resolved = path.resolve(root, userPath);
 
-    // Security checks
-    if (!resolved.startsWith(this.baseDir)) {
-      throw new Error('Path traversal attempt');
-    }
+    // `startsWith(this.baseDir)` would accept a sibling such as
+    // `/srv/data-evil` for `/srv/data`; path.relative cannot be fooled that way.
+    const inside = (target: string) => {
+      const rel = path.relative(root, target);
+      return !rel.startsWith('..') && !path.isAbsolute(rel);
+    };
+    if (!inside(resolved)) throw new Error('Path traversal attempt');
 
-    // Remove dangerous segments
-    const normalized = path.normalize(resolved);
-    if (normalized.includes('..') || normalized.includes('\0')) {
-      throw new Error('Invalid path');
+    // Follow symlinks for paths that exist, and check the real target too.
+    if (fs.existsSync(resolved) && !inside(fs.realpathSync(resolved))) {
+      throw new Error('Symlink escapes the base directory');
     }
 
     return resolved;

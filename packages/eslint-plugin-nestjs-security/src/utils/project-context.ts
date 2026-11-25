@@ -44,8 +44,21 @@ export interface NestProjectContext {
   hasGlobalAuthGuard: boolean;
   /** A pipe (`APP_PIPE` / `useGlobalPipes`) is registered app-wide. */
   hasGlobalValidationPipe: boolean;
-  /** Rate limiting is configured app-wide (ThrottlerModule + guard). */
+  /**
+   * A `ThrottlerGuard`, or a class extending it, is bound app-wide.
+   *
+   * The binding is the fact, not the module import: `ThrottlerModule.forRoot()`
+   * only configures limits, and nothing is throttled until the guard runs.
+   * Measured on 79 repositories: 21 import the module, and 3 of those bind the
+   * guard nowhere — the import alone used to silence `require-throttler` there.
+   */
   hasGlobalThrottler: boolean;
+  /**
+   * Some `MulterModule.register()` sets `limits.fileSize`, or builds its options
+   * where this scan cannot read them. Module options are merged under every
+   * upload interceptor of that module's controllers.
+   */
+  hasModuleUploadLimit: boolean;
   /**
    * The project has an authentication system of some kind.
    *
@@ -114,14 +127,26 @@ const PROVIDE_RE = new RegExp(
 );
 /** `useClass: X` / `useExisting: X` inside a provider object. */
 const USE_CLASS_RE = /use(?:Class|Existing)\s*:\s*([A-Za-z_$][\w$]*)/;
-/** Guards that are not authentication guards. */
+/**
+ * A throttling guard, by name. Only consulted when the class itself is out of
+ * reach — see `isThrottlerGuard`, which reads what the class extends.
+ */
 const NON_AUTH_GUARD = /Throttler/i;
 /** `app.useGlobalPipes(...)` in the bootstrap file. */
 const USE_GLOBAL_PIPES_RE = /useGlobalPipes\s*\(/;
-/** `app.useGlobalGuards(...)` in the bootstrap file. */
-const USE_GLOBAL_GUARDS_RE = /useGlobalGuards\s*\(/;
-/** `ThrottlerModule.forRoot(...)` / `.forRootAsync(...)`. */
-const THROTTLER_MODULE_RE = /ThrottlerModule\s*\.\s*forRoot(?:Async)?\s*\(/;
+/** `app.useGlobalGuards(` up to the opening paren, in the bootstrap file. */
+const USE_GLOBAL_GUARDS_RE = /useGlobalGuards\s*\(/g;
+/** A guard named inside a `useGlobalGuards(...)` argument list. */
+const GUARD_NAME_RE = /[A-Za-z_$][\w$]*Guard(?![\w$])/g;
+/** `MulterModule.register(` / `.registerAsync(`, up to the opening paren. */
+const MULTER_MODULE_RE = /MulterModule\s*\.\s*register(Async)?\s*\(/g;
+/** `import { A, B as C } from 'x'` and `export { A } from 'x'`. */
+const NAMED_FROM_RE =
+  /(?:import|export)\s+(?:type\s+)?\{([^}]*)\}\s*from\s*['"]([^'"]+)['"]/g;
+/** `export * from './x'`. */
+const EXPORT_ALL_RE = /export\s*\*\s*from\s*['"]([^'"]+)['"]/g;
+/** How many files a class is followed through before giving up. */
+const MAX_HOPS = 6;
 
 /** Dependencies that only exist to authenticate or authorize. */
 const AUTH_DEPENDENCY =
@@ -136,6 +161,12 @@ const AUTH_IN_MODULE =
  * class reference, so the arguments are a plain identifier list.
  */
 const APPLY_RE = /\.\s*apply\s*\(([^)]*)\)/g;
+/**
+ * The `.forRoutes(` chained to an `.apply(...)`, matched from the end of that
+ * apply (sticky). Only the chained call counts: more than 40 characters in
+ * between means we ran past this `.apply()` into an unrelated statement.
+ */
+const CHAINED_FOR_ROUTES_RE = /[\s\S]{0,40}?\.forRoutes[^(]*\(/y;
 /** Middleware whose job is authentication. */
 const AUTH_MIDDLEWARE = /(?:^|[a-z])(?:Auth|Jwt|Session|Passport|Token)/;
 /** …but these carry an auth-ish word without authenticating anything. */
@@ -201,53 +232,186 @@ function collectConfigFiles(root: string, limits: ScanLimits): string[] {
 }
 
 /** Fold one file's source into the accumulating project context. */
-/**
- * `whitelist: true` reachable from a file that registers a global pipe.
- *
- * Checked inline first, then in that file's own relative imports — one hop, no
- * recursion. The common real shape is a `ValidationPipeOptions` const in its own
- * module (`new ValidationPipe(validationOptions)`), which an inline-only check
- * misses. Scoping to the registering file's imports keeps a sibling app in a
- * monorepo from silencing this one.
- */
-
-function analyzeSource(source: string, into: MutableContext): void {
+function analyzeSource(
+  source: string,
+  file: string,
+  root: string,
+  into: MutableContext,
+): void {
   PROVIDE_RE.lastIndex = 0;
   let match: RegExpExecArray | null;
-  let registersPipeViaToken = false;
   while ((match = PROVIDE_RE.exec(source)) !== null) {
     const [, token, tail] = match;
     into.globalProviders.add(token);
 
-    if (token === 'APP_GUARD') {
+    if (token === 'APP_GUARD' || token === 'APP_INTERCEPTOR') {
       const useClass = USE_CLASS_RE.exec(tail)?.[1];
+      // What the class extends decides; its name only when the class is out of
+      // reach. `ApiRateLimitInterceptor extends ThrottlerGuard`, bound as an
+      // interceptor, is a real one that no name pattern finds.
+      const throttles =
+        useClass !== undefined &&
+        (isThrottlerGuard(useClass, source, file, root) ??
+          NON_AUTH_GUARD.test(useClass));
+      if (throttles) into.hasGlobalThrottler = true;
       // A factory-provided guard has no class name to inspect; assume it
       // authenticates rather than reporting every route in the project.
-      if (useClass === undefined || !NON_AUTH_GUARD.test(useClass)) {
-        into.hasGlobalAuthGuard = true;
-      }
-      if (useClass !== undefined && NON_AUTH_GUARD.test(useClass)) {
-        into.hasGlobalThrottler = true;
-      }
+      else if (token === 'APP_GUARD') into.hasGlobalAuthGuard = true;
     } else if (token === 'APP_PIPE') {
       into.hasGlobalValidationPipe = true;
-      registersPipeViaToken = true;
     }
   }
 
-  const fileRegistersPipe =
-    USE_GLOBAL_PIPES_RE.test(source) || registersPipeViaToken;
-  if (fileRegistersPipe) into.hasGlobalValidationPipe = true;
-  // `whitelist: true` must appear in the SAME file that registers the pipe.
-  // Testing the accumulated `hasGlobalValidationPipe` instead was a real bug: in
-  // a monorepo, one app's whitelisting pipe silenced every other app's DTO
-  // findings, because the flag carries across files. Measured on a 5-app corpus
-  // where only one app whitelists — it zeroed all four others.
-  if (USE_GLOBAL_GUARDS_RE.test(source)) into.hasGlobalAuthGuard = true;
-  if (THROTTLER_MODULE_RE.test(source)) into.hasGlobalThrottler = true;
+  if (USE_GLOBAL_PIPES_RE.test(source)) into.hasGlobalValidationPipe = true;
+  registerGlobalGuards(source, file, root, into);
+  if (registersUploadLimit(source)) into.hasModuleUploadLimit = true;
 
   if (AUTH_IN_MODULE.test(source)) into.sawAuthInModule = true;
   collectAuthMiddlewareTargets(source, into.authMiddlewareTargets);
+}
+
+/**
+ * Fold every `app.useGlobalGuards(...)` call into the context.
+ *
+ * Which guard it registers decides what it protects: `useGlobalGuards(new
+ * ThrottlerGuard())` limits request rate and authenticates nobody, and counting
+ * it as an auth guard silenced `require-guards` on a project whose every route
+ * was open. An argument with no guard-shaped name (`app.get(X)`, a variable
+ * called `guards`) is assumed to authenticate, as a factory-provided `APP_GUARD`
+ * is.
+ */
+function registerGlobalGuards(
+  source: string,
+  file: string,
+  root: string,
+  into: MutableContext,
+): void {
+  USE_GLOBAL_GUARDS_RE.lastIndex = 0;
+  while (USE_GLOBAL_GUARDS_RE.exec(source) !== null) {
+    let depth = 1;
+    let end = USE_GLOBAL_GUARDS_RE.lastIndex;
+    for (; end < source.length && depth > 0; end++) {
+      if (source[end] === '(') depth++;
+      else if (source[end] === ')') depth--;
+    }
+    const names =
+      source.slice(USE_GLOBAL_GUARDS_RE.lastIndex, end).match(GUARD_NAME_RE) ??
+      [];
+    const throttlers = names.filter(
+      (name) =>
+        isThrottlerGuard(name, source, file, root) ?? NON_AUTH_GUARD.test(name),
+    );
+    if (throttlers.length > 0) into.hasGlobalThrottler = true;
+    if (throttlers.length < names.length || names.length === 0) {
+      into.hasGlobalAuthGuard = true;
+    }
+  }
+}
+
+/**
+ * Whether a `MulterModule.register()` in this file may bound upload size.
+ *
+ * `fileSize` anywhere in the call's arguments counts. So does a
+ * `registerAsync` with no inline `useFactory`: its options come from a class
+ * in another file, and assuming they are unlimited would be a guess.
+ */
+function registersUploadLimit(source: string): boolean {
+  MULTER_MODULE_RE.lastIndex = 0;
+  let call: RegExpExecArray | null;
+  while ((call = MULTER_MODULE_RE.exec(source)) !== null) {
+    let depth = 1;
+    let end = MULTER_MODULE_RE.lastIndex;
+    for (; end < source.length && depth > 0; end++) {
+      if (source[end] === '(') depth++;
+      else if (source[end] === ')') depth--;
+    }
+    const args = source.slice(MULTER_MODULE_RE.lastIndex, end);
+    // The key — bare, shorthand or quoted — not the word:
+    // `destination: './fileSize'` sets no limit.
+    if (/\bfileSize(?:\s*[:,}]|['"]\s*:)/.test(args)) return true;
+    if (call[1] !== undefined && !/\buseFactory\b/.test(args)) return true;
+  }
+  return false;
+}
+
+/** The file a project-local specifier names, read; null when there is none. */
+function readLocalModule(
+  specifier: string,
+  fromFile: string,
+  root: string,
+): { source: string; file: string } | null {
+  // `./x` is relative to the importer; `src/x` and `@/x` (the two rootDir
+  // spellings NestJS starters use) are relative to the project.
+  const base = specifier.startsWith('.')
+    ? resolvePath(getDirname(fromFile), specifier)
+    : specifier.startsWith('src/')
+      ? joinPath(root, specifier)
+      : specifier.startsWith('@/')
+        ? joinPath(root, 'src', specifier.slice(2))
+        : null;
+  if (base === null) return null;
+  // An ESM project writes the specifier as the file it will be once compiled:
+  // `./rate-limit.guard.js` is `rate-limit.guard.ts` on disk.
+  const stem = base.replace(/\.js$/, '');
+  for (const file of [`${stem}.ts`, joinPath(base, 'index.ts')]) {
+    const source = readFileSync(file);
+    if (source !== null) return { source, file };
+  }
+  return null;
+}
+
+/**
+ * Whether `name`, as bound in `source`, is `ThrottlerGuard` from
+ * `@nestjs/throttler` or a class extending it.
+ *
+ * Follows the class through its declaration, the import that brought it in and
+ * barrel re-exports, `MAX_HOPS` files deep. `null` means the answer is somewhere
+ * this cannot read — a package, a path alias — and the caller has to fall back.
+ */
+export function isThrottlerGuard(
+  name: string,
+  source: string,
+  file: string,
+  root: string,
+  hops = MAX_HOPS,
+): boolean | null {
+  if (hops === 0) return null;
+  const id = name.replace(/\$/g, String.raw`\$`);
+  const declared = new RegExp(
+    String.raw`class\s+${id}(?![\w$])(?:\s*<[^>{]*>)?(?:\s+extends\s+([\w$]+))?`,
+  ).exec(source);
+  if (declared !== null) {
+    const [, parent] = declared;
+    // A class with no parent is not a throttler, whatever it is called.
+    return parent === undefined
+      ? false
+      : isThrottlerGuard(parent, source, file, root, hops - 1);
+  }
+
+  for (const [, specifiers, from] of source.matchAll(NAMED_FROM_RE)) {
+    for (const specifier of specifiers.split(',')) {
+      const [imported, local = imported] = specifier
+        .trim()
+        .replace(/^type\s+/, '')
+        .split(/\s+as\s+/);
+      if (local !== name) continue;
+      if (from === '@nestjs/throttler') return imported === 'ThrottlerGuard';
+      const next = readLocalModule(from, file, root);
+      return (
+        next &&
+        isThrottlerGuard(imported, next.source, next.file, root, hops - 1)
+      );
+    }
+  }
+
+  // Not declared and not named here: a barrel may pass it through.
+  for (const [, from] of source.matchAll(EXPORT_ALL_RE)) {
+    const next = readLocalModule(from, file, root);
+    const answer =
+      next && isThrottlerGuard(name, next.source, next.file, root, hops - 1);
+    if (answer !== null) return answer;
+  }
+  return null;
 }
 
 /**
@@ -256,27 +420,19 @@ function analyzeSource(source: string, into: MutableContext): void {
  * Scanned with a paren counter rather than a regex: `forRoutes` takes object
  * literals (`{path: 'articles/:slug', method: RequestMethod.PUT}`) whose nesting
  * a regex cannot follow, and stopping at the first `)` would truncate the list
- * after its first entry.
+ * after its first entry. Empty when no `.forRoutes(...)` is chained: an empty
+ * list names no route, which is all the caller needs to know.
  */
-function forRoutesArguments(source: string, from: number): string | null {
-  const call = source.indexOf('.forRoutes', from);
-  if (call === -1) return null;
-  // Only the chained call counts. Anything longer means we ran past this
-  // `.apply()` into an unrelated statement.
-  if (!/^[\s\S]{0,40}$/.test(source.slice(from, call))) return null;
-
-  const open = source.indexOf('(', call);
-  if (open === -1) return null;
-  let depth = 0;
-  for (let i = open; i < source.length; i++) {
-    const char = source[i];
+function forRoutesArguments(source: string, from: number): string {
+  CHAINED_FOR_ROUTES_RE.lastIndex = from;
+  if (!CHAINED_FOR_ROUTES_RE.test(source)) return '';
+  const rest = source.slice(CHAINED_FOR_ROUTES_RE.lastIndex);
+  let depth = 1;
+  for (const [i, char] of rest.split('').entries()) {
     if (char === '(') depth++;
-    else if (char === ')') {
-      depth--;
-      if (depth === 0) return source.slice(open + 1, i);
-    }
+    else if (char === ')' && --depth === 0) return rest.slice(0, i);
   }
-  return null;
+  return '';
 }
 
 /**
@@ -298,7 +454,6 @@ function collectAuthMiddlewareTargets(source: string, into: Set<string>): void {
     if (NOT_AUTH_MIDDLEWARE.test(middleware)) continue;
 
     const args = forRoutesArguments(source, APPLY_RE.lastIndex);
-    if (args === null) continue;
 
     ROUTE_PATH_RE.lastIndex = 0;
     let path: RegExpExecArray | null;
@@ -335,6 +490,7 @@ interface MutableContext {
   hasGlobalAuthGuard: boolean;
   hasGlobalValidationPipe: boolean;
   hasGlobalThrottler: boolean;
+  hasModuleUploadLimit: boolean;
   /** A module or bootstrap file names a guard, strategy or JWT module. */
   sawAuthInModule: boolean;
   authMiddlewareTargets: Set<string>;
@@ -350,15 +506,14 @@ export function scanProject(
     hasGlobalAuthGuard: false,
     hasGlobalValidationPipe: false,
     hasGlobalThrottler: false,
+    hasModuleUploadLimit: false,
     sawAuthInModule: false,
     authMiddlewareTargets: new Set<string>(),
   };
 
   for (const file of collectConfigFiles(root, limits)) {
-    const source = readFileSync(file);
-    if (source !== null) {
-      analyzeSource(source, accumulator);
-    }
+    // An unreadable file reads as empty: nothing to learn from it.
+    analyzeSource(readFileSync(file) ?? '', file, root, accumulator);
   }
 
   const { sawAuthInModule, ...context } = accumulator;
@@ -397,6 +552,7 @@ export function getProjectContext(
       hasGlobalAuthGuard: false,
       hasGlobalValidationPipe: false,
       hasGlobalThrottler: false,
+      hasModuleUploadLimit: false,
       // A synthetic filename is not evidence that a project lacks auth.
       hasAuthMechanism: true,
       authMiddlewareTargets: new Set<string>(),

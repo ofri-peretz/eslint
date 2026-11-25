@@ -7,7 +7,6 @@ function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
     // This primitive doesn't own accessible naming; consumers pair it with
     // <Label htmlFor> (or their own aria-label) one level up, same as
     // shadcn's Input.
-    // eslint-disable-next-line react-a11y/control-has-associated-label, react-a11y/no-missing-aria-labels
     <input
       type={type}
       data-slot="input"

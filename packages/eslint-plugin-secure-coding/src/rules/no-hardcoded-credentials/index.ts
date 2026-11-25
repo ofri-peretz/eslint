@@ -107,6 +107,13 @@ export interface Options {
 
   /** Extra placeholder words, ON TOP of `placeholderWords`. Default: [] */
   additionalPlaceholderWords?: string[];
+
+  /**
+   * Secrets copied from a README or tutorial that are reported in a session
+   * middleware's signing slot even when `allowPlaceholders` is on. REPLACES the
+   * built-in list. Default: DEFAULT_KNOWN_SESSION_SECRETS
+   */
+  knownSessionSecrets?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -260,12 +267,87 @@ function classCount(classes: CharClasses): number {
   );
 }
 
-/** A token is "pronounceable" if it has a vowel and no long consonant run. */
+/**
+ * A token is "pronounceable" if it has a vowel and no long consonant run.
+ *
+ * "Long" is five. Four consonants in a row is ordinary English: `unsubscribe`
+ * (`bscr`), `subscribe`, `construct`, `abstract`, `transcript`, `instruct`.
+ * With the limit at four, the template key `token: 'unsubscribeUrl'` read as a
+ * 14-character high-entropy blob and was reported as a hard-coded credential
+ * (stamhoofd/stamhoofd EmailBuilder.ts:503, :786, :847). Five in a row is what
+ * a random string produces and a word almost never does (`strengths`).
+ */
 function isPronounceable(token: string): boolean {
   const lower = token.toLowerCase();
   if (!/[aeiouy]/.test(lower)) return false;
-  if (/[bcdfghjklmnpqrstvwxz]{4,}/.test(lower)) return false;
+  if (/[bcdfghjklmnpqrstvwxz]{5,}/.test(lower)) return false;
   return true;
+}
+
+/**
+ * Type names a schema or DTO writes as the VALUE of a field to describe it:
+ * `enableAuth: 'boolean?'` declares an optional boolean flag, and the slot name
+ * is what opened the credential gate.
+ *
+ * @protocol-constant These are the names of the ECMAScript and TypeScript
+ * built-in types themselves, a closed language surface rather than a vocabulary.
+ */
+const TYPE_TAG_NAMES: ReadonlySet<string> = new Set([
+  'string',
+  'number',
+  'boolean',
+  'bigint',
+  'object',
+  'array',
+  'date',
+]);
+
+/** A type tag, optionally marked optional: `boolean`, `boolean?`. */
+function isTypeTag(value: string): boolean {
+  const bare = value.endsWith('?') ? value.slice(0, -1) : value;
+  return TYPE_TAG_NAMES.has(bare);
+}
+
+/**
+ * A namespaced translation key, `apostrophe:enterPassword`: a lowercase
+ * namespace, one colon, and a camelCase key. The camelCase boundary is the
+ * evidence; `admin:hunter2` and `user:secret` are credential pairs and have none.
+ */
+function isNamespacedKey(value: string): boolean {
+  const match = /^([a-z][a-z0-9-]*):([a-z][a-z0-9]*[A-Z][A-Za-z0-9]*)$/.exec(
+    value,
+  );
+  return match !== null && isNaturalWordString(match[2] as string);
+}
+
+/**
+ * A single word of another language: letters only, at most a leading capital,
+ * at least one letter outside ASCII (`Contraseña`, `Lösenord`). A translated
+ * label for the slot, never a generated secret, which mixes classes and digits.
+ */
+function isForeignWord(value: string): boolean {
+  return /^\p{Lu}?\p{Ll}+$/u.test(value) && /\P{ASCII}/u.test(value);
+}
+
+/**
+ * Bullet glyphs a UI uses to MASK a stored secret (`••••••••7f2a`). A run of
+ * them is the display of a credential, never the credential.
+ *
+ * @protocol-constant U+2022 and U+25CF are two Unicode code points, characters
+ * rather than words, so there is no vocabulary here for a project to tune.
+ */
+const MASK_GLYPHS: readonly string[] = ['•', '●'];
+
+function isMaskedDisplay(value: string): boolean {
+  return MASK_GLYPHS.some((glyph) => value.includes(glyph.repeat(4)));
+}
+
+/**
+ * A module whose own basename is `tests` (`plugins/x/tests.js`): the suite
+ * entry point several frameworks use instead of a `*.test.js` suffix.
+ */
+function isTestsModule(filename: string): boolean {
+  return /(^|[\\/])tests\.(?:[cm]?[jt]s)$/.test(filename);
 }
 
 /**
@@ -291,7 +373,40 @@ function isPronounceable(token: string): boolean {
  * allowed but kept sparse, and every alphabetic token must still read as a
  * word — which is what rejects the random blob above (`qbp` has no vowel).
  */
-export function isNaturalWordString(value: string): boolean {
+/**
+ * A migration class name: words, then the epoch timestamp the generator
+ * appended (`AddMfaColumnsToUsers1784073600000`). TypeORM and MikroORM write
+ * 13 digits (milliseconds); some generators write 10 (seconds).
+ *
+ * ToolJet lists about sixty of these as plain strings to order its upgrades,
+ * and each one passed every shape test for a random key: mixed case, digits,
+ * no ascending run, past the 32-character bar for context-free reporting. All
+ * were reported at CWE-798 / CVSS 9.8.
+ *
+ * The timestamp must fall between 2000 and 2100, and everything before it
+ * must read as words. A key with digits at the end has digits elsewhere too,
+ * or a prefix that does not read as words.
+ */
+const EPOCH_2000_S = 946_684_800;
+const EPOCH_2100_S = 4_102_444_800;
+
+function isTimestampedName(value: string): boolean {
+  const match = /^([A-Za-z]+)(\d{13}|\d{10})$/.exec(value);
+  if (!match) return false;
+  const [, name, stamp] = match;
+  const seconds = stamp.length === 13 ? Number(stamp) / 1000 : Number(stamp);
+  // The floor matters only for a stamp with leading zeros (`0938475610`):
+  // the smallest 10-digit number without one is already September 2001.
+  if (seconds < EPOCH_2000_S || seconds > EPOCH_2100_S) return false;
+  return isNaturalWordString(name);
+}
+
+export function isNaturalWordString(raw: string): boolean {
+  // One trailing colon is how a key prefix is written (`huly-table-metadata:`,
+  // a clipboard marker an adopter had to disable). It is a namespace, not a
+  // `user:secret` pair: nothing follows the colon, and what precedes it still
+  // has to read as words. A colon anywhere else keeps the value out.
+  const value = raw.length > 1 && raw.endsWith(':') ? raw.slice(0, -1) : raw;
   if (!/^[A-Za-z][A-Za-z0-9_\-. ]*$/.test(value)) return false;
   const digits = value.replace(/[^0-9]/g, '').length;
   // Sparse: an ordinal or a well-known numeric suffix, not encoded entropy.
@@ -377,6 +492,7 @@ export function looksRandom(value: string): boolean {
   // scored as a random blob and was reported at CVSS 9.8: 18 of this rule's 21
   // corpus findings, all one field name.
   if (isNaturalWordString(value)) return false;
+  if (isTimestampedName(value)) return false;
   return shannonEntropy(value) >= 3.5;
 }
 
@@ -443,6 +559,35 @@ export function isStyleToken(value: string): boolean {
   // credential does not carry one.
   if (/^[a-z][\w-]*-\[[^\]]+\]$/i.test(value)) return true;
   return false;
+}
+
+/**
+ * Is this the name of a dependency-injection token, `SCREAMING_SNAKE(qualifier)`?
+ *
+ * `nestjs/bull` `get-shared-config-token.util.ts`:
+ *
+ *   export const BULL_CONFIG_DEFAULT_TOKEN = 'BULLMQ_CONFIG(default)';
+ *
+ * The slot ends in `TOKEN` and the value mixes upper case with punctuation, so
+ * the shape gate passed it. It is the string a container uses to look a
+ * provider up, written to be read in a stack trace. The shape that gives it
+ * away is a call: an upper-case word run with an underscore in it, then a
+ * parenthesised qualifier that is itself a plain word. A credential is not
+ * written as a function call, and the qualifier test (a natural word, so
+ * `default`, `primary`, `reports`) keeps `STRIPE_KEY(Xk9mP2vQ8zL4nR7w)` out.
+ *
+ * Only the shape is read, not the slot name — a DI token is written the same
+ * way wherever it is stored. The one exception is a slot whose OWN inferred
+ * category is `password`: nothing stores a real DI token there, so the shape
+ * match is far more likely to be a badly generated password that happens to
+ * look like a call (#1686). `isSecretShaped`'s caller passes that category
+ * through for exactly this check.
+ */
+export function isInjectionTokenName(value: string): boolean {
+  const match = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\(([A-Za-z][A-Za-z.-]*)\)$/.exec(
+    value,
+  );
+  return match !== null && isNaturalWordString(match[1] as string);
 }
 
 function isUrlOrPath(value: string): boolean {
@@ -541,7 +686,11 @@ function echoesItsOwnSlotName(value: string, slotName: string): boolean {
   return fold(value) === fold(slotName);
 }
 
-export function isSecretShaped(value: string, minLength: number): boolean {
+export function isSecretShaped(
+  value: string,
+  minLength: number,
+  category?: 'password' | 'token' | 'database' | 'apikey' | 'other',
+): boolean {
   if (value.length < minLength) return false;
   // Sentences and phrases are messages, never credentials.
   if (/\s/.test(value)) return false;
@@ -563,8 +712,13 @@ export function isSecretShaped(value: string, minLength: number): boolean {
   if (isUrlOrPath(value)) return false;
   // CSS is written to be read; see isStyleToken.
   if (isStyleToken(value)) return false;
+  // A DI token name is a lookup key written to be read; see isInjectionTokenName.
+  // Not when the slot's own category is `password` — see that function's note.
+  if (category !== 'password' && isInjectionTokenName(value)) return false;
   // Pure word strings are identifiers / i18n keys / message constants.
   if (isNaturalWordString(value)) return false;
+  if (isNamespacedKey(value) || isForeignWord(value)) return false;
+  if (isTypeTag(value) || isMaskedDisplay(value)) return false;
   // A credential mixes at least two character classes, or — for single-charset
   // secrets like a 21-character lowercase blob — is long and high-entropy.
   if (classCount(charClasses(value)) >= 2) return true;
@@ -1040,6 +1194,50 @@ function looksLikeCredential(
 // check variable names in addition to values
 // @coverage-note: Not currently used, reserved for future enhancement
 
+/**
+ * Packages whose `secret` option signs session cookies.
+ *
+ * @protocol-constant npm package names whose documented options define the signing slot; they identify an API, not English words a project could extend.
+ */
+const SESSION_PACKAGES: ReadonlySet<string> = new Set([
+  'express-session',
+  'cookie-session',
+  '@fastify/session',
+  'fastify-session',
+]);
+
+/** Fastify loads session plugins with `fastify.register(plugin, { secret })`. */
+const REGISTERED_SESSION_PACKAGES: ReadonlySet<string> = new Set([
+  '@fastify/session',
+  'fastify-session',
+]);
+
+/**
+ * Secrets copied from a README or a tutorial into real configuration. In a session
+ * middleware's signing slot these are not documentation: they are the value every
+ * other deployment that copied the same line is signing with, so they are reported
+ * even with `allowPlaceholders` on. Configurable through `knownSessionSecrets`. Bracketed templates (`<your-secret>`) are not
+ * here and stay placeholders.
+ */
+const DEFAULT_KNOWN_SESSION_SECRETS: string[] = [
+  'keyboard cat',
+  'secret',
+  'changeme',
+  'change-me',
+  'change_me',
+  'your-secret-key',
+  'your_secret_key',
+  'your-secret',
+  'yoursecret',
+  'mysecret',
+  'my-secret',
+  'supersecret',
+  'super-secret',
+  'shhhhh',
+  'session secret',
+  'secret key',
+];
+
 export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-credentials',
   meta: {
@@ -1163,6 +1361,13 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
             description:
               'Extra placeholder words, on top of `placeholderWords`.',
           },
+          knownSessionSecrets: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_KNOWN_SESSION_SECRETS,
+            description:
+              'Secrets copied from a README or tutorial (`keyboard cat`, `changeme`) that are reported as the signing secret of a session middleware even when `allowPlaceholders` is true. Matched case-insensitively against the whole value. Replaces the built-in list.',
+          },
         },
         additionalProperties: false,
       },
@@ -1181,6 +1386,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       allowPlaceholders: true,
       placeholderWords: DEFAULT_PLACEHOLDER_WORDS,
       additionalPlaceholderWords: [],
+      knownSessionSecrets: DEFAULT_KNOWN_SESSION_SECRETS,
     },
   ],
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -1195,6 +1401,8 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     let customPatterns: { type: string; pattern: string }[];
     let allowPlaceholders: boolean;
     let placeholderWords: string[];
+    let knownSessionSecrets: string[];
+    let knownSessionSecretSet: Set<string>;
     let additionalPlaceholderWords: string[];
     let placeholderWordSet: ReadonlySet<string>;
     let isTestFile: boolean;
@@ -1389,6 +1597,200 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     }
 
     /**
+     * Which session-middleware package does this callee load?
+     *
+     * `session({ secret })` is a call on a name the author chose, so the NAME
+     * proves nothing. What proves it is where the name comes from: an import of
+     * (or `require` of) `express-session` / `cookie-session`, resolved through
+     * the scope manager so a local function that merely happens to be called
+     * `session` is not mistaken for the middleware.
+     */
+    function sessionPackageOf(
+      callee: TSESTree.Node,
+      from: TSESTree.Node,
+    ): string | null {
+      const requiredPackage = (n: TSESTree.Node | null | undefined) =>
+        n?.type === 'CallExpression' &&
+        n.callee.type === 'Identifier' &&
+        n.callee.name === 'require' &&
+        n.arguments[0]?.type === 'Literal' &&
+        typeof n.arguments[0].value === 'string' &&
+        SESSION_PACKAGES.has(n.arguments[0].value)
+          ? (n.arguments[0].value as string)
+          : null;
+
+      // `require('express-session')({ secret })` inline.
+      if (callee.type === 'CallExpression') return requiredPackage(callee);
+      if (callee.type !== 'Identifier') return null;
+
+      for (
+        let scope: TSESLint.Scope.Scope | null =
+          context.sourceCode.getScope(from);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.set.get(callee.name);
+        if (!variable) continue;
+        const def = variable.defs[0];
+        if (def?.type === 'ImportBinding') {
+          const source = (def.parent as TSESTree.ImportDeclaration).source
+            .value;
+          return SESSION_PACKAGES.has(source) ? source : null;
+        }
+        if (def?.type === 'Variable') {
+          return requiredPackage(
+            (def.node as TSESTree.VariableDeclarator).init,
+          );
+        }
+        return null;
+      }
+      return null;
+    }
+
+    /**
+     * Which session package receives this options object?
+     *
+     *   session({ secret })                       the object is the first argument
+     *   const opts = { secret }; session(opts)   a const holding it, passed on
+     *   fastify.register(fastifySession, { secret })   the plugin form
+     */
+    function sessionPackageOfOptions(
+      options: TSESTree.ObjectExpression,
+    ): string | null {
+      const holder = options.parent;
+      if (holder?.type === 'CallExpression') {
+        if (holder.arguments[0] === options) {
+          return sessionPackageOf(holder.callee, holder);
+        }
+        const plugin = holder.arguments[0];
+        if (
+          holder.arguments[1] === options &&
+          plugin?.type === 'Identifier' &&
+          holder.callee.type === 'MemberExpression' &&
+          propertyName(holder.callee) === 'register'
+        ) {
+          const pkg = sessionPackageOf(plugin, holder);
+          return pkg !== null && REGISTERED_SESSION_PACKAGES.has(pkg)
+            ? pkg
+            : null;
+        }
+        return null;
+      }
+      if (
+        holder?.type === 'VariableDeclarator' &&
+        holder.init === options &&
+        holder.id.type === 'Identifier' &&
+        holder.parent.kind === 'const'
+      ) {
+        // An identifier-named declarator declares exactly one variable.
+        const [variable] = context.sourceCode.getDeclaredVariables(holder);
+        // `opts.secret = process.env.S` replaces the literal before the middleware
+        // sees it. A `const` binding does not freeze its properties, so any
+        // property write on the binding withdraws the claim.
+        const replaced = variable.references.some((reference) => {
+          const member = reference.identifier.parent;
+          return (
+            member?.type === 'MemberExpression' &&
+            member.object === reference.identifier &&
+            member.parent?.type === 'AssignmentExpression' &&
+            member.parent.left === member
+          );
+        });
+        if (replaced) return null;
+        for (const reference of variable.references) {
+          const use = reference.identifier.parent;
+          if (
+            use?.type === 'CallExpression' &&
+            use.arguments[0] === reference.identifier
+          ) {
+            const pkg = sessionPackageOf(use.callee, use);
+            if (pkg !== null) return pkg;
+          }
+        }
+      }
+      return null;
+    }
+
+    /**
+     * Is this literal the signing secret handed to a session middleware?
+     *
+     *   app.use(session({ secret: 'keyboard cat' }))
+     *   app.use(cookieSession({ keys: ['a', 'b'] }))
+     *
+     * The rest of this rule reads the VALUE, because a name alone is a weak
+     * signal. Here the slot is not a name guess: the call was resolved to the
+     * package that defines `secret` as the key cookies are signed with, so any
+     * literal in it is a hardcoded signing key whatever its shape. `keyboard
+     * cat` is prose, and prose is exactly what the shape tests (correctly)
+     * refuse everywhere else.
+     *
+     * `process.env.S`, config lookups and `process.env.S || 'dev'` are not
+     * Literals in this slot, so they are never reached.
+     */
+    function isSessionSecretLiteral(
+      node: TSESTree.Literal,
+      parent: TSESTree.Node | undefined,
+    ): boolean {
+      // The literal is the VALUE, not a quoted key: `{ 'secret': … }` has a
+      // string Literal for a key too.
+      let held: TSESTree.Node = node;
+      let property: TSESTree.Node | undefined = parent;
+      if (property?.type === 'ArrayExpression') {
+        held = property;
+        property = property.parent;
+      }
+      if (property?.type !== 'Property' || property.value !== held) {
+        return false;
+      }
+      // Every spelling of the same key: `secret`, `'secret'`, `['secret']`.
+      const key = objectKeyName(property);
+      if (key === null) return false;
+
+      // A literal value can only sit in an object EXPRESSION; a pattern's values
+      // are binding targets.
+      const options = property.parent as TSESTree.ObjectExpression;
+      const pkg = sessionPackageOfOptions(options);
+      if (pkg === null) return false;
+      // `keys` is how cookie-session names its signing keys; express-session has
+      // no such option, so `keys` there is some other value.
+      return key === 'secret' || (pkg === 'cookie-session' && key === 'keys');
+    }
+
+    function reportCredential(
+      node: TSESTree.Node,
+      value: string,
+      credentialType: string,
+      envVarName: string,
+    ): void {
+      context.report({
+        node,
+        messageId: 'useEnvironmentVariable',
+        data: { credentialType, envVarName },
+        suggest: [
+          {
+            messageId: 'useEnvironmentVariable',
+            data: { envVarName, credentialType },
+            fix: (fixer: TSESLint.RuleFixer) => {
+              return fixer.replaceText(
+                node,
+                `process.env.${envVarName} || '${value}'`,
+              );
+            },
+          },
+          {
+            messageId: 'useSecretManager',
+            fix: (fixer: TSESLint.RuleFixer) => {
+              return fixer.replaceText(
+                node,
+                `await getSecret('${envVarName.toLowerCase()}')`,
+              );
+            },
+          },
+        ],
+      });
+    }
+
+    /**
      * Check a string literal node
      */
     function checkStringLiteral(
@@ -1403,6 +1805,23 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
 
       // Skip if in test files and allowed
       if (isTestFile) {
+        return;
+      }
+
+      // A literal handed to a session middleware as its signing secret is
+      // hardcoded whatever it looks like. Placeholders and the user's ignore
+      // patterns still apply: `secret: '<your-secret>'` is documentation.
+      if (
+        value.length > 0 &&
+        isSessionSecretLiteral(node, parent) &&
+        !(
+          allowPlaceholders &&
+          isPlaceholderValue(value, placeholderWordSet) &&
+          !knownSessionSecretSet.has(value.trim().toLowerCase())
+        ) &&
+        !compiledIgnorePatterns.some((pattern) => pattern.test(value))
+      ) {
+        reportCredential(node, value, 'Session secret', 'SESSION_SECRET');
         return;
       }
 
@@ -1449,12 +1868,27 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       // FPs before the gate landed).
       let finalIsCredential = isCredential;
       let finalType = type;
-      if (
-        isCredential &&
-        confidence === 'ambiguous' &&
-        !isCredentialContext(value, parent)
-      ) {
-        finalIsCredential = false;
+      if (isCredential && confidence === 'ambiguous') {
+        const inContext = isCredentialContext(value, parent);
+        // A "Common password" match is ambiguous about the STRING, not the
+        // slot: `password` is a weak password, but it is also the keyword a
+        // route-name list uses to label the login endpoint. The generic
+        // secret-shaped-blob ambiguous match has no such second life, so any
+        // credential-named slot is still enough for it — but a common
+        // password word needs the slot's OWN category to actually say
+        // "password" (or an unclassified-but-credential-ish name like
+        // `credentials`/`auth`), not merely to end in some other credential
+        // word like `tokens` (#1557: `SENSITIVE_ROUTE_TOKENS = [...,
+        // 'password']` is a route-name list, not a password store).
+        const categoryMismatch =
+          inContext &&
+          type === 'Common password' &&
+          !['password', 'other'].includes(
+            inferCredentialTypeFromContext(parent!),
+          );
+        if (!inContext || categoryMismatch) {
+          finalIsCredential = false;
+        }
       }
 
       // An enum member named after itself is a code, not a credential. Gated
@@ -1505,11 +1939,16 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         !isPlaceholder &&
         !echoesSlot &&
         !compiledIgnorePatterns.some((pattern) => pattern.test(value)) &&
-        isSecretShaped(value, detectionOptions.minLength) &&
-        isCredentialContext(value, parent)
-      ) {
+        isCredentialContext(value, parent) &&
         // isCredentialContext(value, parent) just returned true, which
-        // requires a truthy parent.
+        // requires a truthy parent. Computed before isSecretShaped so the
+        // slot's own category can veto the DI-token exemption (#1686).
+        isSecretShaped(
+          value,
+          detectionOptions.minLength,
+          inferCredentialTypeFromContext(parent!),
+        )
+      ) {
         const ctxType = inferCredentialTypeFromContext(parent!);
         const optionAllows =
           (ctxType === 'password' && detectionOptions.detectPasswords) ||
@@ -1563,35 +2002,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
           .replace(/[^A-Z0-9_]/g, '_');
       }
 
-      context.report({
-        node,
-        messageId: 'useEnvironmentVariable',
-        data: {
-          credentialType: finalType,
-          envVarName,
-        },
-        suggest: [
-          {
-            messageId: 'useEnvironmentVariable',
-            data: { envVarName, credentialType: finalType },
-            fix: (fixer: TSESLint.RuleFixer) => {
-              return fixer.replaceText(
-                node,
-                `process.env.${envVarName} || '${value}'`,
-              );
-            },
-          },
-          {
-            messageId: 'useSecretManager',
-            fix: (fixer: TSESLint.RuleFixer) => {
-              return fixer.replaceText(
-                node,
-                `await getSecret('${envVarName.toLowerCase()}')`,
-              );
-            },
-          },
-        ],
-      });
+      reportCredential(node, value, finalType, envVarName);
     }
 
     return {
@@ -1616,7 +2027,12 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
           allowPlaceholders = true,
           placeholderWords = DEFAULT_PLACEHOLDER_WORDS,
           additionalPlaceholderWords = [],
+          knownSessionSecrets = DEFAULT_KNOWN_SESSION_SECRETS,
         } = options);
+
+        knownSessionSecretSet = new Set(
+          knownSessionSecrets.map((secret) => secret.trim().toLowerCase()),
+        );
 
         placeholderWordSet = new Set([
           ...placeholderWords,
@@ -1624,7 +2040,8 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         ]);
 
         const filename = context.filename;
-        isTestFile = allowInTests && isTestFilePath(filename);
+        isTestFile =
+          allowInTests && (isTestFilePath(filename) || isTestsModule(filename));
 
         // Compile ignore patterns to regex
         // Guarded: a user pattern reaches `new RegExp` here. Measured before this

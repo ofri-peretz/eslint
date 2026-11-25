@@ -3,7 +3,7 @@ title: require-dependency-integrity
 description: "CWE: [CWE-494](https://cwe.mitre.org/data/definitions/494.html)"
 tags: ['security', 'node']
 category: security
-severity: medium
+severity: high
 cwe: CWE-494
 autofix: false
 ---

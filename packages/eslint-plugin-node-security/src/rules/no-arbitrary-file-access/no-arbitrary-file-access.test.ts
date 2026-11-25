@@ -31,7 +31,10 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
       name: 'a path variable traced to no request is not user input',
       code: 'fs.readFile(userFile, cb)',
     },
-    'fs.readdirSync(scanPath)',
+    {
+      name: 'a directory listing of a variable traced to no request is not user input',
+      code: 'fs.readdirSync(scanPath)',
+    },
     'fs.writeFileSync(destPath, content)',
     // A local bound to something visible that is NOT a request.
     {
@@ -235,7 +238,10 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
     },
 
     // FP-5: Variables with safe naming conventions
-    { code: 'fs.readFileSync(safePath)' },
+    {
+      name: 'a variable named safePath with no request behind it is not user input',
+      code: 'fs.readFileSync(safePath)',
+    },
     { code: 'fs.readFileSync(sanitizedPath)' },
     { code: 'fs.readFileSync(validatedFilename)' },
     { code: 'fs.readFileSync(cleanPath)' },

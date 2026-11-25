@@ -191,6 +191,30 @@ function isPasswordRecovery(tokens: readonly string[]): boolean {
   );
 }
 
+/**
+ * Path tokens that name a privileged area.
+ *
+ * A project with no authentication system at all is normally a tutorial or a
+ * scratch service, and the rule stays silent there (see `hasAuthMechanism`).
+ * That silence is wrong for one shape: a controller that *calls itself* admin.
+ * Nobody mounts `@Controller('admin')` for a public resource, so the missing
+ * guard is the finding, whatever the manifest declares.
+ *
+ * Deliberately short. `internal`, `management` and `manage` are left out: they
+ * are as often a network-level boundary or an actuator-style probe as a
+ * privileged API, and this list exists to *add* reports.
+ */
+const PRIVILEGED_TERMS: ReadonlySet<string> = new Set([
+  'admin',
+  'admins',
+  'administrator',
+  'administrators',
+  'administration',
+  'superadmin',
+  'sysadmin',
+  'backoffice',
+]);
+
 /** Verb suffixes used to tell two handlers on one path apart. */
 const HTTP_VERB_SUFFIX: ReadonlySet<string> = new Set([
   'get',
@@ -221,6 +245,17 @@ const HTTP_VERB_SUFFIX: ReadonlySet<string> = new Set([
  */
 const CREDENTIAL_NAME =
   /secret|signature|token|authorization|api[-_]?key|hmac|hub-signature|password|credential/i;
+
+/**
+ * A guard that limits request rate and authenticates nobody.
+ *
+ * `@UseGuards(ThrottlerGuard)` on a controller is the most common guard
+ * decorator in a NestJS codebase after the auth guard itself, and it grants
+ * every caller access. Counting it as access control cleared the controller
+ * and silenced the rule on an admin API with nothing but rate limiting. The
+ * subclass spelling (`ThrottlerBehindProxyGuard`) carries the same word.
+ */
+const NON_AUTH_GUARD = /Throttler/i;
 
 /** A route handler awaiting resolution once every class in the file is known. */
 interface Pending {
@@ -404,9 +439,10 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
     // mechanism. A project with no authentication at all has no guard to
     // forget, and reporting each of its routes teaches the reader to disable
     // the rule. 38 of 94 corpus1 findings were NestJS's own tutorial samples.
-    if (project !== null && !project.hasAuthMechanism) {
-      return {};
-    }
+    //
+    // Not absolute: a controller that names itself admin is still reported (see
+    // `PRIVILEGED_TERMS`), because there the missing guard is the finding.
+    const noAuthMechanism = project !== null && !project.hasAuthMechanism;
 
     /** Class name -> declaration, so `extends` can be followed within the file. */
     const classesByName = new Map<string, ClassNode>();
@@ -470,9 +506,16 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
      */
     function pathSegments(decorator: TSESTree.Decorator): string[] {
       const call = decoratorCall(decorator);
-      if (!call) return [];
       const out: string[] = [];
-      const push = (node: TSESTree.Node): void => {
+      // A bare `@Controller` reference declares no path.
+      if (!call) return out;
+      const push = (node: TSESTree.Node | null): void => {
+        // `@Controller(['admin', 'staff'])` and `{ path: ['admin'] }` mount one
+        // controller at several paths. Every element is a path.
+        if (node?.type === AST_NODE_TYPES.ArrayExpression) {
+          node.elements.forEach(push);
+          return;
+        }
         const path = staticString(node);
         if (path !== null)
           out.push(...path.toLowerCase().split('/').filter(Boolean));
@@ -600,6 +643,34 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
       // …and the path can spell recovery as one hyphenated segment
       // (`request-password-reset`) or as several.
       return isPasswordRecovery(segments.flatMap((seg) => seg.split('-')));
+    }
+
+    /**
+     * Whether the controller or the route is mounted under a privileged path.
+     * Matched per path segment and per hyphenated token, so `admin`,
+     * `admin-panel` and `super-admin` count while `administrative-area-codes`
+     * and `badminton` do not.
+     */
+    function isPrivilegedPath(
+      node: TSESTree.MethodDefinition,
+      cls: ClassNode,
+    ): boolean {
+      const segments = [
+        ...pathSegments(
+          findDecorator(cls.decorators, 'Controller') as TSESTree.Decorator,
+        ),
+        ...pathSegments(
+          findDecorator(
+            node.decorators,
+            HTTP_METHOD_DECORATORS,
+          ) as TSESTree.Decorator,
+        ),
+      ];
+      return segments.some(
+        (segment) =>
+          PRIVILEGED_TERMS.has(segment.replace(/-/g, '')) ||
+          segment.split('-').some((token) => PRIVILEGED_TERMS.has(token)),
+      );
     }
 
     /**
@@ -800,6 +871,9 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
         if (middlewareProtected(node, cls)) return;
         if (verifiesCredentialHeader(node)) return;
         if (comparesAgainstConfiguredSecret(node)) return;
+        // A project with no authentication system abstains, except for a route
+        // that names a privileged area.
+        if (noAuthMechanism && !isPrivilegedPath(node, cls)) return;
 
         pending.push({ node, cls, name: memberName(node) ?? '<anonymous>' });
       },
@@ -838,18 +912,42 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
             continue;
           }
 
-          const applied = [...(classGuards ?? []), ...(methodGuards ?? [])];
+          const declared = [...(classGuards ?? []), ...(methodGuards ?? [])];
           // An argument this rule cannot name — `@UseGuards(...APP_GUARDS)`,
           // `guards[0]` — may be any guard, the required one included.
-          if (applied.includes('')) continue;
+          if (declared.includes('')) continue;
+
+          // A throttler runs for everyone and authenticates no one, so it is
+          // not the guard this rule asks for — unless the config names it.
+          const applied = declared.filter(
+            (g) => requiredGuards.includes(g) || !NON_AUTH_GUARD.test(g),
+          );
 
           // @UseGuards() present but naming nothing — enforces nothing.
-          if (applied.length === 0) {
+          if (declared.length === 0) {
             context.report({
               node,
               messageId: 'emptyGuards',
               data: { name },
             });
+            continue;
+          }
+
+          // Only a throttler: rate limited, and open to everyone. On a
+          // privileged path that is an unauthenticated admin API. Anywhere else
+          // it is ambiguous, and the throttler is the better evidence: authors
+          // put one on a route they know is public and abuse-prone (ghostfolio's
+          // passkey sign-in and sign-up carry `CustomThrottlerGuard` and nothing
+          // else), so reporting them would add three false positives to the
+          // corpus for no true one.
+          if (applied.length === 0) {
+            if (isPrivilegedPath(node, cls)) {
+              context.report({
+                node,
+                messageId: 'missingGuards',
+                data: { name },
+              });
+            }
             continue;
           }
 

@@ -22,7 +22,11 @@ import { describe, it, expect } from 'vitest';
 import { parse } from '@typescript-eslint/parser';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
-import { fileUsesMongo, isNativeCollectionHandle } from './mongo-evidence';
+import {
+  fileUsesMongo,
+  fileUsesMongoose,
+  isNativeCollectionHandle,
+} from './mongo-evidence';
 
 function usesMongo(code: string): boolean {
   return fileUsesMongo(parse(code) as unknown as TSESTree.Program);
@@ -176,5 +180,131 @@ describe('isNativeCollectionHandle', () => {
     ['a non-literal collection name', `db.collection(name).findOne({});`],
   ])('rejects %s', (_label, code) => {
     expect(isNativeCollectionHandle(receiverOfOutermostCall(code))).toBe(false);
+  });
+});
+
+describe('fileUsesMongo: collection handle held in a variable', () => {
+  it.each([
+    [
+      'a DAO constructor: handle bound once, queried through the variable',
+      `const Dao = function (db) {
+         const col = db.collection('allocations');
+         this.get = (cb) => col.find({ a: 1 }).toArray(cb);
+       };`,
+    ],
+    [
+      'a direct write through the bound handle',
+      `let c = db.collection('u'); c.insertOne(doc);`,
+    ],
+    [
+      'a handle assigned after declaration',
+      `let c; c = db.collection('u'); c.updateMany({}, {});`,
+    ],
+    [
+      'a native method straight on the handle',
+      `const c = db.collection('u'); c.findOne({});`,
+    ],
+  ])('accepts %s', (_label, code) => {
+    expect(usesMongo(code)).toBe(true);
+  });
+
+  it.each([
+    [
+      'a chain rooted at `this`, not at the bound name',
+      `const c = db.collection('u'); this.items.findOne({});`,
+    ],
+    [
+      'a Firestore handle in a variable',
+      `const c = db.collection('u'); c.doc(id).get();`,
+    ],
+    [
+      'a Firestore query through the variable',
+      `const c = db.collection('u'); c.where('a', '==', 1).get();`,
+    ],
+    [
+      'a variable never bound to a collection',
+      `const c = getThing(); c.findOne({});`,
+    ],
+    [
+      'a different variable than the bound one',
+      `const c = db.collection('u'); other.findOne({});`,
+    ],
+    [
+      'a bare find through the variable (Array.find owns the name)',
+      `const c = db.collection('u'); c.find({});`,
+    ],
+  ])('rejects %s', (_label, code) => {
+    expect(usesMongo(code)).toBe(false);
+  });
+});
+
+/**
+ * `fileUsesMongoose` is the Mongoose-only subset of the gate. A rule about a
+ * Mongoose feature (middleware hooks) asks it instead of `fileUsesMongo`, so
+ * every arm that only proves the native driver must say no here and every arm
+ * that proves Mongoose must say yes. Each package entry is its own row so that
+ * removing it from the list fails exactly one test.
+ */
+describe('fileUsesMongoose', () => {
+  const parseProgram = (code: string): TSESTree.Program =>
+    parse(code) as unknown as TSESTree.Program;
+  const usesMongoose = (code: string): boolean =>
+    fileUsesMongoose(parseProgram(code));
+
+  it.each([
+    ['mongoose', `import mongoose from 'mongoose';`],
+    ['@nestjs/mongoose', `import { InjectModel } from '@nestjs/mongoose';`],
+    ['@typegoose/typegoose', `import { prop } from '@typegoose/typegoose';`],
+    ['a mongoose-* plugin', `import paginate from 'mongoose-paginate-v2';`],
+    ['a *-mongoose plugin', `import plm from 'passport-local-mongoose';`],
+    ['a re-export', `export * from 'mongoose';`],
+    ['a named re-export', `export { Schema } from 'mongoose';`],
+    ['require', `const m = require('mongoose');`],
+    ['a dynamic import', `async function f() { return import('mongoose'); }`],
+    ['import-equals', `import m = require('mongoose');`],
+    ['a binding named mongoose', `const mongoose = require('./config/db');`],
+    ['new Schema', `const s = new Schema({ name: String });`],
+    ['new mongoose.Schema', `const s = new db.Schema({ name: String });`],
+    ['Types.ObjectId', `const id = Types.ObjectId(raw);`],
+    ['.lean()', `const rows = await Query.find({}).lean();`],
+  ])('is Mongoose: %s', (_name, code) => {
+    expect(usesMongoose(code)).toBe(true);
+  });
+
+  it.each([
+    ['the mongodb driver', `import { MongoClient } from 'mongodb';`],
+    ['mongodb through require', `const { MongoClient } = require('mongodb');`],
+    ['bson', `import { ObjectId } from 'bson';`],
+    ['connect-mongo', `import MongoStore from 'connect-mongo';`],
+    ['mongodb-client-encryption', `import 'mongodb-client-encryption';`],
+    ['new ObjectId()', `const id = new ObjectId(raw);`],
+    ['a connection string', `const uri = 'mongodb://localhost:27017/app';`],
+    [
+      'a chained native collection call',
+      `countlyDb.collection('apps').updateOne({ _id: id }, { $set: s }, cb);`,
+    ],
+    [
+      'a Schema from another library',
+      `import { Schema } from 'avsc';\nnew Schema({ name: String });`,
+    ],
+    ['a relative import', `import { User } from './models/user';`],
+    ['nothing', `const x = 1;`],
+  ])('is not Mongoose: %s', (_name, code) => {
+    expect(usesMongoose(code)).toBe(false);
+  });
+
+  it('answers a second ask for the same program from its cache', () => {
+    const ast = parseProgram(`import mongoose from 'mongoose';`);
+    expect(fileUsesMongoose(ast)).toBe(true);
+    expect(fileUsesMongoose(ast)).toBe(true);
+  });
+
+  it('keeps the wider gate open for the native-only evidence', () => {
+    expect(usesMongo(`import { MongoClient } from 'mongodb';`)).toBe(true);
+    expect(usesMongo(`const id = new ObjectId(raw);`)).toBe(true);
+    expect(usesMongo(`const uri = 'mongodb://h/db';`)).toBe(true);
+    expect(
+      usesMongo(`db.collection('apps').updateOne({ _id: id }, {}, cb);`),
+    ).toBe(true);
   });
 });

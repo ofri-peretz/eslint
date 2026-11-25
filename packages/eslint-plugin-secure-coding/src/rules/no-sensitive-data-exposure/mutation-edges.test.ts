@@ -52,6 +52,11 @@ describe('no-sensitive-data-exposure (mutation edges)', () => {
         code: "throw new Error('password: ' + password);",
       },
       {
+        // A label is prose; the value names nothing (a-label-is-not-a-value.test.ts).
+        name: 'a camelCase label in front of an opaque value is prose',
+        code: "console.log('secretKey: ' + value);",
+      },
+      {
         name: 'a non-Error constructor is not an error message',
         code: "new Foo('password: ' + password);",
       },
@@ -60,11 +65,6 @@ describe('no-sensitive-data-exposure (mutation edges)', () => {
       {
         name: 'a value followed by trailing spaces is still a value',
         code: "console.log('password: hunter2 ');",
-        errors: exposure,
-      },
-      {
-        name: 'a camelCase label still labels its value',
-        code: "console.log('secretKey: ' + value);",
         errors: exposure,
       },
       // @found Stryker mutation-survivor triage, 2026-11-03

@@ -646,6 +646,27 @@ ruleTester.run(
         ),
       },
       {
+        // @found mutation testing
+        name: 'FP: an inner callback that destructures its own res is a different response',
+        code: serialized(
+          `findAll(@Res() res: Response) { this.bus.on('x', ({ res }) => res.json(this.users)); }`,
+        ),
+      },
+      {
+        // @found mutation testing
+        name: 'FP: an inner callback whose res parameter has a default is a different response',
+        code: serialized(
+          `findAll(@Res() res: Response) { this.bus.on('x', (res = fallback) => res.json(this.users)); }`,
+        ),
+      },
+      {
+        // @found mutation testing
+        name: 'FP: a catch clause that binds res is a different value',
+        code: serialized(
+          `findAll(@Res() res: Response) { try { this.load(); } catch (res) { res.json(this.users); } }`,
+        ),
+      },
+      {
         name: 'a .toString() result is a string, not a serialized object',
         code: serialized(
           `findAll(@Res() res: Response) { res.send(readFileSync('index.html').toString()); }`,
@@ -788,6 +809,148 @@ ruleTester.run(
             data: { writer: 'res.json()' },
           },
         ],
+      },
+    ]),
+  },
+);
+
+/**
+ * NestJS 12. Two changes reach this rule:
+ *  - `StandardSchemaSerializerInterceptor` is a second serializer, and a bare
+ *    `@Res()` bypasses it exactly as it bypasses the class-transformer one.
+ *  - From 12.4 a handler may return a web `Response`, which is sent as the
+ *    whole answer; both serializers pass it through untouched.
+ */
+const under = (decorator: string, handler: string): string => `
+  import { Controller, Get, Res, UseInterceptors } from '@nestjs/common';
+  @Controller('users')
+  ${decorator}
+  class UsersController {
+    @Get()
+    ${handler}
+  }
+`;
+ruleTester.run(
+  'no-res-bypass-serialization (NestJS 12)',
+  noResBypassSerialization,
+  {
+    valid: nest([
+      {
+        name: 'returning the value lets the schema serializer run',
+        code: under(
+          '@UseInterceptors(StandardSchemaSerializerInterceptor)',
+          `findAll() { return this.users; }`,
+        ),
+      },
+      {
+        name: 'a web Response in a controller with no serializer has nothing to bypass',
+        code: under('', `findAll() { return Response.json(this.users); }`),
+      },
+      {
+        name: 'a web Response with a literal body carries no object',
+        code: serialized(`health() { return Response.json({}); }`),
+      },
+      {
+        name: 'a web Response with no body carries no object',
+        code: serialized(`health() { return Response.json(); }`),
+      },
+      {
+        name: 'Response.redirect() sends no object',
+        code: serialized(`go() { return Response.redirect(this.target); }`),
+      },
+      {
+        name: 'a local binding named Response is not the web Response',
+        code: `
+          import { Response } from './http';
+          ${serialized(`findAll() { return Response.json(this.users); }`)}
+        `,
+      },
+      {
+        name: 'json() on some other object is not a web Response',
+        code: serialized(`findAll() { return this.mapper.json(this.users); }`),
+      },
+      {
+        name: 'json() on another global is not a web Response',
+        code: serialized(`findAll() { return Reply.json(this.users); }`),
+      },
+      {
+        name: 'a Response returned from a nested function declaration is not returned by the handler',
+        code: serialized(
+          `findAll() { function build(user) { return Response.json(user); } return this.users.map(build); }`,
+        ),
+      },
+      {
+        name: 'a bracketed Response member that is not json sends no object',
+        code: serialized(`go() { return Response['redirect'](this.target); }`),
+      },
+      {
+        name: 'a namespaced Response is not the global one',
+        code: serialized(
+          `findAll() { return http.Response.json(this.users); }`,
+        ),
+      },
+      {
+        name: 'a bare call is not Response.json',
+        code: serialized(`findAll() { return json(this.users); }`),
+      },
+      {
+        name: 'a Response returned from a callback is not what the handler returns',
+        code: serialized(
+          `findAll() { return this.users.map((user) => { return Response.json(user); }); }`,
+        ),
+      },
+      {
+        name: 'a Response returned by a method that is not a route is not a response',
+        code: serialized(
+          `helper() { return 1; } build() { return Response.json(this.users); }`,
+        ).replace('@Get()\n    helper', 'helper'),
+      },
+    ]),
+    invalid: nest([
+      {
+        // @found NestJS 12 release notes, verified in standard-schema-serializer.interceptor.ts
+        name: 'FN: a bare @Res() bypasses the schema serializer too',
+        code: under(
+          '@UseInterceptors(StandardSchemaSerializerInterceptor)',
+          `findAll(@Res() res) { res.json(this.users); }`,
+        ),
+        errors: [{ messageId: 'bypassesSerialization' }],
+      },
+      {
+        // @found NestJS 12 release notes, verified in standard-schema-serializer.interceptor.ts
+        name: 'FN: a bare @Res() bypasses a constructed schema serializer',
+        code: under(
+          '@UseInterceptors(new StandardSchemaSerializerInterceptor({ schema }))',
+          `findAll(@Res() res) { res.json(this.users); }`,
+        ),
+        errors: [{ messageId: 'bypassesSerialization' }],
+      },
+      {
+        // @found NestJS 12.4 release notes, verified in is-streaming-body.util.ts
+        name: 'FN: a returned web Response carries the object past the serializer',
+        code: serialized(`findAll() { return Response.json(this.users); }`),
+        errors: [{ messageId: 'webResponseBypassesSerialization' }],
+      },
+      {
+        name: "a bracketed Response['json'] is the same call",
+        code: serialized(`findAll() { return Response['json'](this.users); }`),
+        errors: [{ messageId: 'webResponseBypassesSerialization' }],
+      },
+      {
+        name: 'a returned web Response is reported under an assumed global serializer',
+        code: under(
+          '',
+          `async findOne() { return Response.json(await this.find()); }`,
+        ),
+        options: [{ assumeGlobalSerializer: true }],
+        errors: [{ messageId: 'webResponseBypassesSerialization' }],
+      },
+      {
+        name: 'a web Response returned from a branch of the handler is still returned by it',
+        code: serialized(
+          `findAll() { if (this.fast) { return Response.json(this.users, { status: 200 }); } return this.users; }`,
+        ),
+        errors: [{ messageId: 'webResponseBypassesSerialization' }],
       },
     ]),
   },

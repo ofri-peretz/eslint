@@ -3,7 +3,7 @@ title: no-zip-slip
 description: Detects zip slip/archive extraction vulnerabilities
 tags: ['security', 'node']
 category: security
-severity: medium
+severity: high
 cwe: CWE-22
 autofix: false
 ---
@@ -15,7 +15,7 @@ autofix: false
 Detects zip slip/archive extraction vulnerabilities
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**CWE:** [CWE-22](https://cwe.mitre.org/data/definitions/22.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects zip slip/archive extraction vulnerabilities. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security).
@@ -27,7 +27,7 @@ Detects zip slip/archive extraction vulnerabilities. This rule is part of [`esli
 | Aspect            | Details                                                                   |
 | ----------------- | ------------------------------------------------------------------------- |
 | **CWE Reference** | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) (Path Traversal) |
-| **Severity**      | High (CVSS 8.1)                                                           |
+| **Severity**      | High (CVSS 7.5)                                                           |
 | **Auto-Fix**      | 💡 Suggestions available                                                  |
 | **Category**      | Security                                                                  |
 

@@ -40,6 +40,7 @@ describe('no-insecure-comparison', () => {
           code: 'if (x !== y) {}',
         },
         {
+          name: 'a strict equality in a ternary is a safe comparison',
           code: 'const result = a === b ? 1 : 0;',
         },
         {
@@ -47,6 +48,7 @@ describe('no-insecure-comparison', () => {
           code: 'if (value !== null && value !== undefined) {}',
         },
         {
+          name: 'comparing an id is not comparing a secret',
           code: 'if (user.id === userId) {}',
         },
         // Test files (when allowInTests is true)
@@ -57,6 +59,7 @@ describe('no-insecure-comparison', () => {
         },
         // Ignored patterns
         {
+          name: 'a comparison matching an ignorePatterns entry is not reported',
           code: 'if (x == y) {}',
           options: [{ ignorePatterns: ['x == y'] }],
         },
@@ -72,7 +75,10 @@ describe('no-insecure-comparison', () => {
         // it to `=== null` drops the undefined case, so the rule must not
         // report it — core `eqeqeq` exempts it under `smart` for the same
         // reason. Regression guard for the behaviour-changing autofix.
-        'if (body == null) { return 0; }',
+        {
+          name: '== null matches null and undefined, so it is not rewritten to ===',
+          code: 'if (body == null) { return 0; }',
+        },
         'if (body != null) { send(body); }',
         'const size = length == null ? compute() : length;',
         'if (null == body) { return 0; }',
@@ -805,7 +811,10 @@ ruleTester.run(
       {
         code: 'function f(token) { return verifyToken(token).valid === true; }',
       },
-      { code: 'function f(token) { return token.password === null; }' },
+      {
+        name: 'checking that a secret is absent compares nothing secret',
+        code: 'function f(token) { return token.password === null; }',
+      },
       { code: 'function f(token) { return token.secret === undefined; }' },
       { code: 'function f(token) { return undefined === token.apiKey; }' },
     ],

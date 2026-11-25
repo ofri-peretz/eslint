@@ -4,7 +4,7 @@ description: Discourages SELECT  in favor of explicit column lists.
 tags: ['security', 'postgres']
 category: security
 severity: medium
-cwe: CWE-693
+cwe: CWE-1049
 autofix: false
 ---
 
@@ -14,7 +14,7 @@ autofix: false
 Discourages SELECT  in favor of explicit column lists.
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
+**CWE:** [CWE-1049](https://cwe.mitre.org/data/definitions/1049.html)
 
 Discourages `SELECT *` in favor of explicit column lists.
 

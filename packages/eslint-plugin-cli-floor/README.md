@@ -18,41 +18,6 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
 
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
-
-## Description
-
-The CLI floor — commander, yargs and burgee commands with descriptions, one-line examples, no console, and a flag behind every prompt.
-
-It is the lint half of [burgee](https://github.com/ofri-peretz/burgee)'s CLI floor: the requirements whose stated behaviour is a property of a program's **source**, which a runtime cannot hold for a program that never adopted it. They apply to any CLI built on commander or yargs — burgee or not.
-
-| burgee requirement | What it asks                                                     | Rule                          |
-| :----------------- | :--------------------------------------------------------------- | :---------------------------- |
-| F3                 | every command declares a description                             | `require-command-description` |
-| F3, H2             | every command declares an example, and every example is one line | `require-command-example`     |
-| O3                 | command code writes through the output layer, never `console.*`  | `no-console-in-command`       |
-| P1                 | every prompt is backed by a flag; a flag value skips the prompt  | `no-prompt-without-flag`      |
-
-**Scope:** every rule reads a command only when its host is **proven by import** — the receiver of `.command()` resolves, through ESLint's scope analysis, to commander's `Command` / `program` / `createCommand`, to a `yargs()` instance, to a parameter typed `Command` or `Argv` from those modules, or to the object given to burgee's `defineCommand`. `.command()`, `.action()` and `.example()` are ordinary method names that routers, job queues and ORMs own too; none of them is ever reported.
-
-**What it does not do:** follow a handler or a prompt into a helper defined elsewhere, or read a command declared in another file. Where the source cannot be read — a spread, a description in a variable, a command module imported by path — the rule abstains.
-
-<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
-
-- **Why** — a linter nobody reads protects nothing. We would rather miss a finding
-  than spend your attention on one that was never real.
-- **How** — evidence, not names. A rule fires on what the code _does_, resolved
-  through the AST and ESLint's own scope analysis.
-- **What** — every finding carries its fix, in prose for a human and as structured
-  JSON for an agent. Security rules add a CWE mapping and, where assigned, a CVSS score.
-
-That trade costs recall, and we measure it:
-[methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
-· [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md)
-· [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).
-
-<!-- AUTO-GENERATED:DOCTRINE:END -->
-
 ## Getting Started
 
 - To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-cli-floor?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-cli-floor), visit [eslint.interlace.tools](https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-cli-floor). 📚
@@ -86,6 +51,39 @@ npm install eslint-plugin-cli-floor --save-dev
 ```
 
 <!-- AUTO-GENERATED:INSTALL:END -->
+
+## Description
+
+The CLI floor — commander, yargs and burgee commands with descriptions, one-line examples, no console, and a flag behind every prompt.
+
+It is the lint half of [burgee](https://github.com/ofri-peretz/burgee)'s CLI floor: the requirements whose stated behaviour is a property of a program's **source**, which a runtime cannot hold for a program that never adopted it. They apply to any CLI built on commander or yargs — burgee or not.
+
+| burgee requirement | What it asks                                                     | Rule                          |
+| :----------------- | :--------------------------------------------------------------- | :---------------------------- |
+| F3                 | every command declares a description                             | `require-command-description` |
+| F3, H2             | every command declares an example, and every example is one line | `require-command-example`     |
+| O3                 | command code writes through the output layer, never `console.*`  | `no-console-in-command`       |
+| P1                 | every prompt is backed by a flag; a flag value skips the prompt  | `no-prompt-without-flag`      |
+
+**Scope:** every rule reads a command only when its host is **proven by import** — the receiver of `.command()` resolves, through ESLint's scope analysis, to commander's `Command` / `program` / `createCommand`, to a `yargs()` instance, to a parameter typed `Command` or `Argv` from those modules, or to the object given to burgee's `defineCommand`. `.command()`, `.action()` and `.example()` are ordinary method names that routers, job queues and ORMs own too; none of them is ever reported.
+
+**What it does not do:** follow a handler or a prompt into a helper defined elsewhere, or read a command declared in another file. Where the source cannot be read — a spread, a description in a variable, a command module imported by path — the rule abstains.
+
+<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
+
+- **Why** — a linter nobody reads protects nothing. We would rather miss a finding
+  than spend your attention on one that was never real.
+- **How** — evidence, not names. A rule fires on what the code _does_, resolved
+  through the AST and ESLint's own scope analysis.
+- **What** — every finding carries its fix, in prose for a human and as structured
+  JSON for an agent. Security rules add a CWE mapping and, where assigned, a CVSS score.
+
+That trade costs recall, and we measure it:
+[methodology](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-METHODOLOGY.md)
+· [results](https://github.com/ofri-peretz/eslint/blob/main/BENCHMARK-RESULTS.md)
+· [a false positive is a bug](https://github.com/ofri-peretz/eslint/issues).
+
+<!-- AUTO-GENERATED:DOCTRINE:END -->
 
 ## ⚙️ Configuration Presets
 
@@ -165,11 +163,9 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) fo
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 <!-- INTERLACE:STAR_CTA:START -->
 
-## ⭐ Support & follow
+## Support
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
-
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 <!-- INTERLACE:STAR_CTA:END -->
 

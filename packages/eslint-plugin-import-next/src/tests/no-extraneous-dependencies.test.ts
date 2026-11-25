@@ -25,6 +25,22 @@ fs.writeFileSync(path.join(ROOT, 'src/esm/package.json'), '{ "type": "module" }'
 const MARKED = path.join(ROOT, 'src/esm/app.ts');
 afterAll(() => fs.rmSync(ROOT, { recursive: true, force: true }));
 
+/**
+ * The packages the invalid cases import, installed under ROOT. A dependency
+ * is checked once it resolves, as in eslint-plugin-import
+ * (`if (!resolved) return`), so an undeclared package has to exist to be
+ * reported. The cases that pass `packageJson` read no manifest from disk, so
+ * linting them from inside ROOT changes nothing else.
+ */
+for (const name of ['axios', 'jest', 'definitely-not-declared', '..weird', 'zod', 'mdx', 'nope-a', 'bunalt-a']) {
+  fs.mkdirSync(path.join(ROOT, 'node_modules', name), { recursive: true });
+  fs.writeFileSync(path.join(ROOT, 'node_modules', name, 'index.js'), '');
+  fs.writeFileSync(path.join(ROOT, 'node_modules', name, 'index.d.ts'), 'export {};');
+}
+const INSTALLED = path.join(ROOT, 'src/app.ts');
+const installed = <T extends { filename?: string }>(cases: T[]): T[] =>
+  cases.map((c) => ({ filename: INSTALLED, ...c }));
+
 const ruleTester = new RuleTester({
   languageOptions: {
     ecmaVersion: 2022,
@@ -137,6 +153,22 @@ ruleTester.run('no-extraneous-dependencies', noExtraneousDependencies, {
         code: `import { isMainThread } from 'worker_threads';`,
         options: [{ packageJson: mockPackageJson }]
     },
+    // `@/` is the create-next-app / shadcn tsconfig `paths` alias convention
+    // (`"paths": { "@/*": ["./src/*"] }`), not a scoped package: a real scoped
+    // name needs at least one character between `@` and `/`. Splitting on `/`
+    // alone derived the "package" `@/lib`, which is not a valid npm name
+    // either, so it could never match a declared dependency (#1551). An
+    // unmodelled resolver (settings naming one this plugin does not know, as
+    // `fumadocs-mdx:collections` above) is what surfaced it: with one
+    // configured, `notAPackageToDeclare` assumes an unresolved specifier
+    // might still be a real package rather than treating "none of ours
+    // resolves it" as "it resolves to nothing".
+    {
+        name: 'a tsconfig `@/` path alias is not a scoped package name',
+        code: `import { cn } from '@/lib/utils';`,
+        options: [{ packageJson: mockPackageJson }],
+        settings: { 'import/resolver': { webpack: {} } },
+    },
     // A `<scheme>:` specifier is not a package path. Splitting it on `/` alone
     // derived the "package name" `fumadocs-mdx:collections`, which npm's own
     // grammar forbids (`:` is not in [a-z0-9-._~]), so it could never match a
@@ -203,7 +235,7 @@ ruleTester.run('no-extraneous-dependencies', noExtraneousDependencies, {
     }
   ],
 
-  invalid: [
+  invalid: installed([
     // Missing dependency
     {
       name: 'an import of a package that is not in package.json',
@@ -233,7 +265,7 @@ ruleTester.run('no-extraneous-dependencies', noExtraneousDependencies, {
     // We skip other invalid cases because asserting suggestions strings is brittle 
     // and maintenance heavy if messages change. The logic is covered by the invalid
     // case above and the diverse valid cases.
-  ],
+  ]),
 });
 
 /**
@@ -264,7 +296,7 @@ ruleTester.run('no-extraneous-dependencies — what is not a package', noExtrane
     // An absolute path is not a package either.
     { code: "import a from '/abs/path';", options: [{ packageJson: mockPackageJson }] },
   ],
-  invalid: [
+  invalid: installed([
     {
       // POSITIVE CONTROL. Without it every valid case above passes on a rule
       // that stopped reporting.
@@ -308,7 +340,7 @@ ruleTester.run('no-extraneous-dependencies — what is not a package', noExtrane
         },
       ],
     },
-  ],
+  ]),
 });
 
 /**
@@ -348,7 +380,7 @@ ruleTester.run('no-extraneous-dependencies — type-only imports', noExtraneousD
       options: [{ packageJson: typesOnlyPackageJson, verbatimModuleSyntax: true }],
     },
   ],
-  invalid: [
+  invalid: installed([
     {
       // FN GUARD (PR #1125 review): under TypeScript `verbatimModuleSyntax`,
       // `import { type X } from 'pkg'` is NOT erased — tsc emits
@@ -430,7 +462,7 @@ ruleTester.run('no-extraneous-dependencies — type-only imports', noExtraneousD
         },
       ],
     },
-  ],
+  ]),
 });
 
 // Found by the fidelity model (benchmarks/suites/fidelity/models/import-next/
@@ -502,7 +534,7 @@ ruleTester.run('no-extraneous-dependencies — fidelity', noExtraneousDependenci
       options: [{ packageJson: fidelityPackageJson }],
     },
   ],
-  invalid: [
+  invalid: installed([
     {
       name: 'export { a } from an undeclared package',
       code: "export { a } from 'nope-a';",
@@ -559,5 +591,5 @@ ruleTester.run('no-extraneous-dependencies — fidelity', noExtraneousDependenci
       filename: MARKED,
       errors: [{ messageId: 'missingDependency', suggestions: suggestionsFor("import x from 'nope-a';") }],
     },
-  ],
+  ]),
 });

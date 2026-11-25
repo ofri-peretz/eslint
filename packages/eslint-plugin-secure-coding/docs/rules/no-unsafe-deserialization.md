@@ -14,7 +14,7 @@ autofix: false
 Detects unsafe deserialization of untrusted data
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**CWE:** [CWE-502](https://cwe.mitre.org/data/definitions/502.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects unsafe deserialization of untrusted data. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
@@ -54,7 +54,7 @@ Detects unsafe deserialization of untrusted data. This rule is part of [`eslint-
 
 Unsafe deserialization occurs when untrusted data is deserialized in a way that allows attackers to execute arbitrary code or manipulate application logic. This includes:
 
-- Using `eval()` or `Function()` on untrusted data
+- Strings handed to `setTimeout`/`setInterval`, which the engine compiles
 - YAML parsers that execute code
 - JSON with prototype pollution
 - Insecure serialization libraries
@@ -105,7 +105,7 @@ spelled: `{ schema: S }`, `{ 'schema': S }` and `{ ['schema']: S }` are one opti
 ### ❌ Incorrect
 
 ```typescript
-const func = new Function(req.body.input);
+setTimeout('run(' + req.body.input + ')', 100); // a string the engine compiles
 ```
 
 ### ✅ Correct
@@ -136,7 +136,7 @@ const obj = safeDeserialize(userInput);
 {
   rules: {
     'secure-coding/no-unsafe-deserialization': ['error', {
-      dangerousFunctions: ['eval', 'Function', 'serialize.unserialize'],
+      dangerousFunctions: ['serialize.unserialize'],
     }]
   }
 }
@@ -146,7 +146,7 @@ const obj = safeDeserialize(userInput);
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `dangerousFunctions` | `string[]` | `["eval","Function","setTimeout","setInterval","unserialize","deserialize","parseUnsafe"]` | Functions that execute or deserialize untrusted input |
+| `dangerousFunctions` | `string[]` | `["setTimeout","setInterval","unserialize","deserialize","parseUnsafe"]` | Functions that execute or deserialize untrusted input |
 | `validationFunctions` | `string[]` | `["validateInput","sanitizeData","checkSchema","validateSchema"]` | No effect: accepted so existing configurations keep validating. The rule never read it. |
 | `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as safe deserializers |
 | `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
@@ -221,5 +221,5 @@ obj[method](userInput);
 
 ## Related Rules
 
-- [`detect-eval-with-expression`](./detect-eval-with-expression.md) - eval() injection
+- [`detect-eval-with-expression`](./detect-eval-with-expression.md) - owns `eval()` and the `Function` constructor (node-security); this rule does not report them
 - [`detect-object-injection`](./detect-object-injection.md) - Prototype pollution

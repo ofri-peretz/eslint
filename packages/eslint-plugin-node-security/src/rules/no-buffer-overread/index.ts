@@ -235,6 +235,13 @@ type RuleOptions = [Options?];
  */
 const VIEW_METHODS: ReadonlySet<string> = new Set(['slice', 'subarray']);
 
+/**
+ * The names of `Buffer`'s fixed-width numeric accessors: the methods that took
+ * the deprecated `noAssert` flag.
+ */
+const BUFFER_NUMERIC_ACCESSOR =
+  /^(?:read|write)(?:U?Int(?:8|(?:16|32)(?:LE|BE))|U?Int(?:LE|BE)|Float(?:LE|BE)|Double(?:LE|BE)|Big(?:U?)Int64(?:LE|BE))$/;
+
 /** The properties that hold a tracked buffer's size in indexable units. */
 const LENGTH_PROPERTIES: ReadonlySet<string> = new Set([
   'length',
@@ -1015,7 +1022,11 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       ) {
         const callee = node.callee as TSESTree.MemberExpression;
         const method = propertyName(callee);
-        if (method === null || !/^(?:read|write)[A-Z]/.test(method)) return;
+        // The numeric accessors Node's `Buffer` once gave a `noAssert` slot, by
+        // name and no other: `zip.writeFileTo(path, data, true)` ends in an
+        // `overwrite` flag, and `read`/`write` followed by any capital letter
+        // is every file-helper in the ecosystem.
+        if (method === null || !BUFFER_NUMERIC_ACCESSOR.test(method)) return;
         // `readUIntBE(offset, byteLength, noAssert)` takes three; the rest two.
         const flag = node.arguments.at(-1);
         if (

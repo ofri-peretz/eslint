@@ -1,0 +1,189 @@
+---
+title: Detect XSS in JavaScript with ESLint flat config
+description: "A copy-paste eslint.config.js that flags DOM XSS sinks on ESLint 9 and 10, and what eslint-plugin-xss, no-unsanitized and browser-security each miss."
+icon: Shield
+---
+
+To detect XSS in JavaScript with ESLint flat config, enable a plugin that reports non-literal values reaching DOM sinks such as `innerHTML`, `insertAdjacentHTML` and `document.write`. Two maintained plugins do this: Mozilla's [`eslint-plugin-no-unsanitized`](https://www.npmjs.com/package/eslint-plugin-no-unsanitized) and [`eslint-plugin-browser-security`](/docs/security/plugin-browser-security), which is ours. Pick one of these configs.
+
+**Covers ESLint 9 and 10 (flat config). Last updated 2026-11-19.** ESLint 8 is out of scope: `no-unsanitized` 4.x declares `eslint: ^9 || ^10` as its peer range.
+
+<Tabs items={['Mozilla no-unsanitized', 'browser-security (ours)', 'Both, one report per line']}>
+<Tab value="Mozilla no-unsanitized">
+{/* VERIFY: run on ESLint 9 and 10 */}
+```js title="eslint.config.js"
+import noUnsanitized from 'eslint-plugin-no-unsanitized';
+
+export default [noUnsanitized.configs.recommended];
+```
+
+```bash
+npm install --save-dev eslint-plugin-no-unsanitized
+```
+</Tab>
+<Tab value="browser-security (ours)">
+{/* VERIFY: run on ESLint 9 and 10 */}
+```js title="eslint.config.js"
+import browserSecurity from 'eslint-plugin-browser-security';
+
+export default [browserSecurity.configs.recommended];
+```
+
+```bash
+npm install --save-dev eslint-plugin-browser-security
+```
+
+`recommended` also enables storage, cookie, transport and CSP rules. It is used here instead of the `xss` preset on purpose; see [the preset gap](#the-xss-preset-has-a-gap) below.
+</Tab>
+<Tab value="Both, one report per line">
+{/* VERIFY: run on ESLint 9 and 10 */}
+```js title="eslint.config.js"
+import browserSecurity from 'eslint-plugin-browser-security';
+import noUnsanitized from 'eslint-plugin-no-unsanitized';
+
+export default [
+  browserSecurity.configs.recommended,
+  {
+    ...noUnsanitized.configs.recommended,
+    rules: {
+      // browser-security/no-innerhtml already reports these sinks.
+      'no-unsanitized/property': 'off',
+      // Keep only the two sinks browser-security does not report.
+      'no-unsanitized/method': [
+        'error',
+        { defaultDisable: true },
+        { import: { properties: [0] }, setHTMLUnsafe: { properties: [0] } },
+      ],
+    },
+  },
+];
+```
+
+The option is spelled `defaultDisable`. The `no-unsanitized` customization page spells it `disableDefault`, and ESLint rejects that spelling as an unknown property.
+</Tab>
+</Tabs>
+
+TypeScript and JSX files need a parser such as `typescript-eslint` in the same config. Neither plugin configures one.
+
+## What each plugin reports
+
+The table comes from a run on 2026-11-19 with ESLint 9.39.4 and 10.15.0 (the results were identical), `eslint-plugin-no-unsanitized` 4.1.5 and `eslint-plugin-browser-security` 3.0.2. The latest browser-security on npm is 3.1.0, published the same day; the run has not been repeated on it. Each row is one statement where `userInput` is an unknown identifier.
+
+| Statement                                         | no-unsanitized                | browser-security (ours)               |
+| :------------------------------------------------ | :---------------------------- | :------------------------------------ |
+| `el.innerHTML = userInput`                        | reports                       | reports                               |
+| `el.outerHTML = userInput`                        | reports                       | reports                               |
+| ``el.innerHTML = `<b>${userInput}</b>` ``         | reports                       | reports                               |
+| `el.insertAdjacentHTML('beforeend', userInput)`   | reports                       | reports                               |
+| `document.write(userInput)`                       | reports                       | reports                               |
+| `range.createContextualFragment(userInput)`       | reports                       | reports                               |
+| `el['innerHTML'] = userInput`                     | silent                        | reports                               |
+| `iframe.srcdoc = userInput`                       | silent                        | reports                               |
+| `Object.assign(el, { innerHTML: userInput })`     | silent                        | reports                               |
+| `el.setHTMLUnsafe(userInput)`                     | reports                       | silent                                |
+| `import(userInput)` (code loading, not DOM)       | reports                       | silent                                |
+| `el.innerHTML = DOMPurify.sanitize(userInput)`    | reports                       | silent                                |
+| ``el.innerHTML = escapeHTML`<b>${userInput}</b>` `` | silent                        | reports                               |
+| `message` handler writing `e.data` to `innerHTML` | reports                       | reports (`no-postmessage-innerhtml`)  |
+| `$(el).html(userInput)`                           | silent                        | silent                                |
+| `el.innerHTML = '<p>static</p>'`                  | silent                        | silent                                |
+| `el.textContent = userInput`                      | silent                        | silent                                |
+
+`eslint-plugin-security` 4.2.1 reported none of the DOM rows in a separate run on ESLint 10.13.0. None of its fifteen rules targets DOM sinks; `detect-disable-mustache-escape`, for template escaping, is the closest. See [alternatives to eslint-plugin-security](/docs/getting-started/eslint-plugin-security-alternatives).
+
+## eslint-plugin-xss
+
+[`eslint-plugin-xss`](https://www.npmjs.com/package/eslint-plugin-xss) has two rules. `xss/no-mixed-html` warns when HTML strings are concatenated with values that were not passed through an encoder, and it decides what counts as HTML partly from variable and function names (`html`, `asHtml`, `htmlEncoded`). `xss/no-location-href-assign` warns on assignments to `location.href` that are not wrapped in an escape function.
+
+Its latest npm release is 0.1.12, published 2022-06-27. The GitHub repository's last push was 2023-08-29 (GitHub API, 2026-11-19). The README documents only `.eslintrc` configuration and the package ships no flat config.
+
+On 2026-11-19, with the package files loaded directly and one dependency (`requireindex`) replaced by a three-line stand-in:
+
+| ESLint | `xss/no-location-href-assign`                  | `xss/no-mixed-html`                                         |
+| :----- | :--------------------------------------------- | :---------------------------------------------------------- |
+| 9.39.4 | reported `location.href = getNextUrl()`        | threw: `Rule must be an object with a create method`        |
+| 10.15.0 | threw: `context.getSourceCode is not a function` | threw: `Rule must be an object with a create method`        |
+
+`no-mixed-html` is written as a bare function rather than an object with `create`, and both ESLint versions rejected it. `no-location-href-assign` calls `context.getSourceCode()`, which does not exist on ESLint 10.15.0. A project still on `eslint-plugin-xss` will lose both rules when it moves to ESLint 10.
+
+There is no one-to-one replacement. For the `location.href` rule, the closest rule in `browser-security` is [`no-insecure-redirects`](/docs/security/plugin-browser-security/rules/no-insecure-redirects). It reports a request-controlled value written to `location.href` as an open redirect (CWE-601), and it does not report every assignment. We did not diff it against the `xss` rule. Nothing maintained matches `no-mixed-html`, which works from naming conventions.
+
+## eslint-plugin-no-unsanitized
+
+Mozilla builds and uses this plugin for its own products. It has two rules. `no-unsanitized/property` covers `innerHTML` and `outerHTML` assignments. `no-unsanitized/method` covers `insertAdjacentHTML`, `createContextualFragment`, `setHTMLUnsafe`, `import()`, and `write` and `writeln` on a receiver whose name matches `document`. Version 4.1.5 was published 2026-02-19, it has no runtime dependencies, and it is licensed MPL-2.0.
+
+By default a value passes if it is a literal, or if it is wrapped in `Sanitizer.escapeHTML` or `escapeHTML` used as a tagged template, or if it goes through `.setHTML()`. A call to `DOMPurify.sanitize(...)` is reported until you list it:
+
+{/* VERIFY: run on ESLint 9 and 10 */}
+```js title="eslint.config.js"
+import noUnsanitized from 'eslint-plugin-no-unsanitized';
+
+export default [
+  {
+    ...noUnsanitized.configs.recommended,
+    rules: {
+      'no-unsanitized/property': [
+        'error',
+        { escape: { methods: ['DOMPurify.sanitize'] } },
+      ],
+      'no-unsanitized/method': [
+        'error',
+        { escape: { methods: ['DOMPurify.sanitize'] } },
+      ],
+    },
+  },
+];
+```
+
+With that config, `el.innerHTML = DOMPurify.sanitize(u)` was silent and `el.innerHTML = other.sanitize(u)` was reported, on both ESLint versions above.
+
+What it misses, from the table: computed keys such as `el['innerHTML']`, `srcdoc`, `Object.assign` with an `innerHTML` key, and jQuery's `.html()`.
+
+## eslint-plugin-browser-security (ours)
+
+We maintain this plugin, so weigh this section accordingly. The XSS rules, all linked to their pages:
+
+- [`no-innerhtml`](/docs/security/plugin-browser-security/rules/no-innerhtml): non-literal values written to `innerHTML`, `outerHTML`, `srcdoc`, `insertAdjacentHTML`, `document.write` and `writeln`, and `createContextualFragment`, including computed keys and `Object.assign`. This list comes from the rule source on `main` (commit `80e7983`); the rule's own page lists only `innerHTML` and `outerHTML`.
+- [`no-postmessage-innerhtml`](/docs/security/plugin-browser-security/rules/no-postmessage-innerhtml), [`no-websocket-innerhtml`](/docs/security/plugin-browser-security/rules/no-websocket-innerhtml), [`no-worker-message-innerhtml`](/docs/security/plugin-browser-security/rules/no-worker-message-innerhtml) and [`no-filereader-innerhtml`](/docs/security/plugin-browser-security/rules/no-filereader-innerhtml): the same sinks when the value arrives from a message event, a WebSocket, a Worker or a `FileReader`. `no-innerhtml` stands down on a value one of these rules can attribute, so a statement is reported once.
+- [`no-eval`](/docs/security/plugin-browser-security/rules/no-eval): `eval`, `new Function` and string arguments to `setTimeout` and `setInterval`.
+- [`require-postmessage-origin-check`](/docs/security/plugin-browser-security/rules/require-postmessage-origin-check), [`no-incomplete-url-sanitization`](/docs/security/plugin-browser-security/rules/no-incomplete-url-sanitization) and [`no-unescaped-url-parameter`](/docs/security/plugin-browser-security/rules/no-unescaped-url-parameter): adjacent checks on message origins, URL host and scheme tests, and URLs built from unescaped parameters. `no-unescaped-url-parameter` is not in `recommended` in `src/index.ts`, although its page says it warns there. We did not run it for this page.
+
+What it misses or gets wrong, and how we know:
+
+- **Sanitizers are trusted by name.** `no-innerhtml` accepts calls to functions named `DOMPurify.sanitize`, `sanitize`, `sanitizeHtml`, `xss`, `purify`, `escapeHtml`, `escapeHTML` and `escape` by default. In the run above, `el.innerHTML = other.sanitize(u)` was silent. Set `trustedSanitizers` to the names you actually use.
+- **Mozilla's tagged-template form is reported.** ``el.innerHTML = escapeHTML`<b>${userInput}</b>` `` was reported by `no-innerhtml`, because the tag is not a call it recognizes.
+- **Frameworks.** The rule page lists jQuery `.html()` and Angular `[innerHTML]` as not detected, and the table above confirms jQuery. For React, `react/no-danger` from `eslint-plugin-react` 7.37.5 reported `dangerouslySetInnerHTML` in a run on ESLint 10.13.0.
+- **Requirements.** The package declares Node `>=22.13.0` in `engines`, which `eslint-plugin-no-unsanitized` does not.
+
+### The xss preset has a gap
+
+`browserSecurity.configs.xss` enables only `no-innerhtml` and `no-eval`. Because `no-innerhtml` stands down on values it can attribute to a message event, a handler that writes `e.data` to `innerHTML` was reported by nothing under that preset in the run above, and reported by `no-postmessage-innerhtml` under `recommended`. Use `recommended`, or enable the four source-specific rules next to `xss`.
+
+## Where they overlap
+
+On the first six rows of the table both plugins report the same statement, so with both enabled in full a single `el.innerHTML = userInput` produces two messages. The third config above removes that by turning off `no-unsanitized/property` and limiting `no-unsanitized/method` to the two sinks ours does not report. Running only one of them also works. Which one to keep depends on what you already write: if your code uses Mozilla's `escapeHTML` template convention, keep `no-unsanitized`; if it calls DOMPurify and you would rather not list it, keep `browser-security`.
+
+The published CWE corpus run (2026-11-15, ESLint 10.14.0) has three vulnerable CWE-79 samples. `no-unsanitized` found two, Interlace's plugins together found two, `eslint-plugin-security` found one, and `eslint-plugin-sonarjs` found none. Three samples cannot rank plugins, and we wrote the corpus. Method and caveats are on [Use alongside eslint-plugin-security](/docs/getting-started/with-eslint-plugin-security#what-this-does-and-doesnt-show).
+
+## What none of them catch
+
+All of these rules read one file at a time and do not follow a value through function calls across files. A value that travels from a request to a template in another module needs taint analysis: CodeQL ships `js/xss`-family queries and Semgrep Code runs cross-file analysis, as covered in [alternatives to eslint-plugin-security](/docs/getting-started/eslint-plugin-security-alternatives). Server-side reflected XSS, such as `res.send(userInput)`, was not tested for this page.
+
+## Related
+
+- [Security plugins in one flat config](/docs/getting-started/security-plugins-one-flat-config) shows `no-unsanitized` and `browser-security` next to `eslint-plugin-security` and the Node plugins.
+- [`eslint-plugin-browser-security`](/docs/security/plugin-browser-security) lists every rule in the plugin.
+- [Flat config migration](/docs/getting-started/flat-config) covers moving off `.eslintrc`.
+
+{/* FAQ JSON-LD (suggested; each answer must match the page text when it is generated)
+Q: How do I detect XSS in JavaScript with ESLint?
+A: Add eslint-plugin-no-unsanitized or eslint-plugin-browser-security to eslint.config.js. Both report non-literal values assigned to innerHTML or passed to insertAdjacentHTML and document.write.
+Q: Does eslint-plugin-xss work with ESLint 9 or 10?
+A: Measured 2026-11-19: on ESLint 9.39.4 one of its two rules loaded and the other threw; on ESLint 10.15.0 both threw. Its last npm release is 0.1.12 from 2022-06-27.
+Q: Is eslint-plugin-no-unsanitized maintained?
+A: Version 4.1.5 was published 2026-02-19 and the package requires ESLint 9 or 10.
+Q: Can I use eslint-plugin-no-unsanitized and eslint-plugin-browser-security together?
+A: Yes, but both report the same innerHTML statements. Turn off no-unsanitized/property and limit no-unsanitized/method to import and setHTMLUnsafe to get one message per line.
+Q: Does eslint-plugin-security detect XSS?
+A: Not DOM XSS. In a 2026-11-19 run its recommended config reported none of the innerHTML or document.write statements; it flags Node patterns such as eval and child_process.
+*/}

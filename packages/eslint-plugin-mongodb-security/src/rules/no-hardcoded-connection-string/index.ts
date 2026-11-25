@@ -26,6 +26,38 @@ type RuleOptions = [Options?];
 
 const MONGODB_URI_PATTERN = /mongodb(\+srv)?:\/\/.+/i;
 
+/**
+ * Whether the URI names only this machine and carries no credentials:
+ * `mongodb://localhost:27017/app`, `mongodb://127.0.0.1/app`,
+ * `mongodb://[::1]/app`.
+ *
+ * It is the default every Mongo tutorial and `config/env/all.js` writes as the
+ * fallback behind an environment variable. There is no secret in it to leak
+ * and no remote host to pin, so reporting it under "hardcoded credentials"
+ * (CWE-798) is a false positive. Anything with userinfo (`user:pass@`), a
+ * remote host, or an empty host (a template that supplies it) is still
+ * reported.
+ */
+function isCredentialFreeLoopback(uri: string): boolean {
+  const authority = /^mongodb(?:\+srv)?:\/\/([^/?#]*)/i.exec(uri)?.[1];
+  if (authority === undefined || authority.includes('@')) return false;
+  const hosts = authority.split(',');
+  return hosts.every((entry) => {
+    const host = entry.startsWith('[')
+      ? entry.slice(0, entry.indexOf(']') + 1)
+      : entry.replace(/:\d*$/, '');
+    return (
+      host.toLowerCase() === 'localhost' ||
+      host === '[::1]' ||
+      /^127(?:\.\d{1,3}){3}$/.test(host)
+    );
+  });
+}
+
+function isHardcodedUri(text: string): boolean {
+  return MONGODB_URI_PATTERN.test(text) && !isCredentialFreeLoopback(text);
+}
+
 export const noHardcodedConnectionString = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-connection-string',
   meta: {
@@ -63,7 +95,7 @@ export const noHardcodedConnectionString = createRule<RuleOptions, MessageIds>({
     function checkLiteral(node: TSESTree.Literal) {
       if (
         typeof node.value === 'string' &&
-        MONGODB_URI_PATTERN.test(node.value)
+        isHardcodedUri(node.value)
       ) {
         context.report({
           node,
@@ -96,7 +128,7 @@ export const noHardcodedConnectionString = createRule<RuleOptions, MessageIds>({
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
         if (node.quasis.length > 0) {
           const firstQuasi = node.quasis[0].value.raw;
-          if (MONGODB_URI_PATTERN.test(firstQuasi)) {
+          if (isHardcodedUri(firstQuasi)) {
             context.report({
               node,
               messageId: 'hardcodedConnectionString',

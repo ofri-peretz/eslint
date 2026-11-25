@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-modernization",
-  "version": "4.0.1",
-  "description": "ESLint plugin for modernizing JavaScript \u2014 auto-fixes legacy patterns to ES2022+ (Array.at, template literals, EventTarget, Array.isArray).",
+  "version": "4.0.6",
+  "description": "ESLint modernization rules for JavaScript — auto-fixes legacy patterns to ES2022+ (Array.at, template literals, EventTarget, Array.isArray).",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./dist/src/index.js",
@@ -34,7 +34,8 @@
     "src/",
     "dist/",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "AGENTS.md"
   ],
   "keywords": [
     "eslint",
@@ -60,7 +61,7 @@
     "node": ">=22.13.0"
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.0.1"
+    "@interlace/eslint-devkit": "^2.0.4"
   },
   "scripts": {
     "build": "tsx ../../scripts/build-package.ts",

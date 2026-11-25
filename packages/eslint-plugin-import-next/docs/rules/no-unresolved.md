@@ -24,15 +24,22 @@ Not reported:
   resolver cannot judge;
 - a computed specifier (`import(name)`, `require(path)`);
 - a specifier listed in `ignore` (exactly, or as a path prefix; `*` matches
-  any run of characters);
+  any run of characters; an entry written as a regular expression, such as
+  `'\\.svg$'` or `'^@/'`, is matched as one);
+- a name in the `import/core-modules` setting (`electron`);
 - anything, when `allowUnresolved` is `true`.
 
 `extensions` replaces the file extensions tried for an extensionless relative
 specifier (default `.ts`, `.tsx`, `.js`, `.jsx`, `.d.ts`, `.json`).
 
-Every spelling is checked: `import`, `import type`, side-effect imports,
+Every runtime spelling is checked: `import`, side-effect imports,
 `export { a } from`, `export * from`, `import('x')`, `require('x')` and TS
 `import x = require('x')`.
+
+Type-only declarations are skipped, as in eslint-plugin-import: `import type`
+and `export type … from` are erased, so a module that is not installed is not a
+runtime failure. The declaration's own kind decides: `import { type A }` is a
+value declaration and is still checked.
 
 ```ts
 // ❌ Incorrect
@@ -64,18 +71,56 @@ import routes from 'virtual:routes';
         "items": {
           "type": "string"
         },
-        "description": "Modules/patterns to ignore during resolution."
+        "description": "Modules/patterns to ignore during resolution: exact or path prefix, `*` as a wildcard, or a regular expression."
       },
       "allowUnresolved": {
         "type": "boolean",
         "default": false,
         "description": "Allow unresolved imports in certain contexts."
+      },
+      "commonjs": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: check `require()` calls (absent: checked)."
+      },
+      "amd": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: check AMD `require([...])`/`define([...])` dependencies."
+      },
+      "esmodule": {
+        "type": "boolean",
+        "description": "eslint-plugin-import: check `import`/`export ... from`/`import()` (absent: checked)."
+      },
+      "caseSensitive": {
+        "type": "boolean",
+        "description": "Report a specifier whose casing differs from the file on disk, below the working directory."
+      },
+      "caseSensitiveStrict": {
+        "type": "boolean",
+        "description": "Like `caseSensitive`, for the whole path, above the working directory too."
       }
     },
     "additionalProperties": false
   }
 ]
 ```
+
+### eslint-plugin-import options
+
+A config carried over from `import/no-unresolved` loads, and its options mean
+what they meant there:
+
+| Option                | Meaning                                                                                                   |
+| --------------------- | --------------------------------------------------------------------------------------------------------- |
+| `commonjs`            | `false` skips `require()` and TS `import x = require()`. Absent or `true`: checked.                       |
+| `esmodule`            | `false` skips `import`, `export … from` and `import()`. Absent or `true`: checked.                        |
+| `amd`                 | `true` checks the dependency array of `require([…], fn)` and `define([…], fn)` (not `require`/`exports`). |
+| `caseSensitive`       | `true` reports a specifier whose casing differs from the file on disk, below the working directory.       |
+| `caseSensitiveStrict` | `true` checks the casing of the whole path, above the working directory too.                              |
+
+Two defaults differ from eslint-plugin-import, which this rule keeps when the
+option is absent: `require()` is checked (upstream needs `commonjs: true`),
+and casing is not (upstream's `caseSensitive` defaults to `true`). Set the
+option to get upstream's behaviour.
 
 ## Implementation
 

@@ -37,7 +37,11 @@ type MessageIds =
   | 'unsafeRecursion';
 
 export interface Options extends SecurityRuleOptions {
-  /** Maximum allowed loop iterations for static analysis */
+  /**
+   * Opt-in iteration budget. A literal bound is author-chosen, not input, so
+   * it is not CWE-400; set this to report literal bounds above it anyway.
+   * `0` (the default) turns the budget off.
+   */
   maxStaticIterations?: number;
 
   /** Variables that contain user input */
@@ -51,6 +55,34 @@ export interface Options extends SecurityRuleOptions {
 }
 
 type RuleOptions = [Options?];
+
+/** Request properties whose size the HTTP layer limits before a handler sees them. */
+const TRANSPORT_BOUNDED_COLLECTIONS: ReadonlySet<string> = new Set([
+  'multiValueHeaders',
+  'rawHeaders',
+]);
+
+/**
+ * Properties that carry what the client chose to send, not what the transport framed.
+ *
+ * @protocol-constant the property names Express, Fastify and Koa define on a request object for the client's payload; they are an API shape, not words a project would extend.
+ */
+const CLIENT_PAYLOAD_PROPERTIES: ReadonlySet<string> = new Set([
+  'body',
+  'query',
+  'params',
+  'payload',
+]);
+
+/** Does a member path pass through a client-payload property on its way to the root? */
+function pathReadsBody(node: TSESTree.Node): boolean {
+  let current: TSESTree.Node = node;
+  while (current.type === 'MemberExpression') {
+    if (CLIENT_PAYLOAD_PROPERTIES.has(propertyName(current) ?? '')) return true;
+    current = current.object;
+  }
+  return false;
+}
 
 export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
   name: 'no-unchecked-loop-condition',
@@ -102,11 +134,12 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       }),
       largeLoopBound: formatLLMMessage({
         icon: MessageIcons.SECURITY,
-        issueName: 'Large Loop Bound',
+        issueName: 'Iteration Budget Exceeded',
         cwe: 'CWE-400',
-        description: 'Loop may iterate excessively',
+        description:
+          'Literal loop bound exceeds the configured maxStaticIterations budget',
         severity: 'MEDIUM',
-        fix: 'Limit maximum iterations',
+        fix: 'Lower the bound or raise maxStaticIterations',
         documentationLink: 'https://cwe.mitre.org/data/definitions/400.html',
       }),
       unsafeRecursion: formatLLMMessage({
@@ -125,10 +158,10 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         properties: {
           maxStaticIterations: {
             type: 'number',
-            minimum: 100,
-            default: 10000,
+            minimum: 0,
+            default: 0,
             description:
-              'Literal iteration count above which a loop is reported',
+              'Opt-in budget: literal iteration count above which a loop is reported. 0 (the default) turns it off — a literal bound is not input.',
           },
           userInputVariables: {
             type: 'array',
@@ -182,7 +215,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      maxStaticIterations: 10000,
+      maxStaticIterations: 0,
       userInputVariables: [
         'req',
         'request',
@@ -568,6 +601,21 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           if (propertyName(node) === 'length') {
             return false;
           }
+          // Header collections are bounded before any handler runs: Node caps the
+          // request head at 16 KB by default and API Gateway at 10 KB, so a loop
+          // over `event.multiValueHeaders` or `req.rawHeaders` cannot be made to
+          // spin by the client. Like `.length`, the collection already exists at a
+          // size the transport allowed. Plain `headers` is deliberately not here:
+          // a framework context can build it from anything (see the
+          // ultimate-backend `ctx.headers` case, kept as a true positive).
+          // Only on the request itself: `req.body.rawHeaders` is a field the
+          // client wrote into the body, not the transport's header list.
+          if (
+            TRANSPORT_BOUNDED_COLLECTIONS.has(propertyName(node) ?? '') &&
+            !pathReadsBody(node.object)
+          ) {
+            return false;
+          }
           // The object decides: `req.body.count` is user input because `req`
           // is, which the recursion reaches.
           return checkExpression(node.object);
@@ -868,11 +916,19 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
     const isConstantlyTrue = (test: TSESTree.Expression): boolean =>
       test.type === 'Literal' && Boolean(test.value);
 
-    /** A literal iteration bound above `maxStaticIterations`, for `for` and `while` alike. */
+    /**
+     * A literal iteration bound above `maxStaticIterations`, for `for` and
+     * `while` alike. Opt-in: a bound written as a literal is chosen by the
+     * author, not reachable by input, so by default it is bounded and quiet —
+     * `for (let cp = 0; cp <= 0x10_ff_ff; cp++)` is every code point, once.
+     */
     const checkLargeBound = (
       node: TSESTree.WhileStatement | TSESTree.ForStatement,
       test: TSESTree.Expression,
     ): void => {
+      if (maxStaticIterations === 0) {
+        return;
+      }
       const estimatedIterations = estimateIterations(test);
       if (estimatedIterations && estimatedIterations > maxStaticIterations) {
         if (safetyChecker.isSafe(node, context)) {
@@ -894,7 +950,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       before() {
         const options = context.options[0] || {};
         ({
-          maxStaticIterations = 10000,
+          maxStaticIterations = 0,
           userInputVariables = [
             'req',
             'request',

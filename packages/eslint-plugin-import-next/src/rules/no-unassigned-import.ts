@@ -15,13 +15,36 @@ import {
   staticString,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import path from 'node:path';
 
 type MessageIds = 'unassignedImport' | 'sideEffectOnly' | 'missingAssignment';
 
 export interface Options {
   /** Allow specific modules to be imported without assignment */
   allowModules?: string[];
+  /**
+   * eslint-plugin-import: globs of the modules that may be imported without
+   * assignment. A package specifier is matched as written (`foo/**`); a
+   * relative or absolute one as the absolute path it names, against the glob
+   * as written or relative to the working directory (`src/styles/**`).
+   */
+  allow?: string[];
+  /**
+   * In eslint-plugin-import's schema, with no effect there or here: accepted
+   * so a carried-over config loads.
+   */
+  devDependencies?: boolean | string[];
+  optionalDependencies?: boolean | string[];
+  peerDependencies?: boolean | string[];
 }
+
+/** eslint-plugin-import's schema for its three no-op dependency keys. */
+const NO_OP = {
+  type: ['boolean', 'array'] as ('boolean' | 'array')[],
+  items: { type: 'string' as const },
+  description:
+    'Accepted for eslint-plugin-import compatibility; has no effect (as there).',
+};
 
 type RuleOptions = [Options?];
 
@@ -79,6 +102,15 @@ export const noUnassignedImport = createRule<RuleOptions, MessageIds>({
             description:
               'Allow specific modules to be imported without assignment.',
           },
+          allow: {
+            type: 'array',
+            items: { type: 'string' },
+            description:
+              'Globs of modules that may be imported without assignment: a package as written, a relative path as the absolute path it names.',
+          },
+          devDependencies: NO_OP,
+          optionalDependencies: NO_OP,
+          peerDependencies: NO_OP,
         },
         additionalProperties: false,
       },
@@ -92,15 +124,29 @@ export const noUnassignedImport = createRule<RuleOptions, MessageIds>({
 
   createOnce(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     let allowModules: string[];
+    let allow: string[];
+
+    /** eslint-plugin-import's `testIsAllow`. */
+    function allowedByGlob(importPath: string): boolean {
+      const target =
+        importPath.startsWith('.') || importPath.startsWith('/')
+          ? path.resolve(path.dirname(context.filename), importPath)
+          : importPath;
+      return allow.some(
+        (glob) =>
+          path.matchesGlob(target, glob) ||
+          path.matchesGlob(target, path.join(process.cwd(), glob)),
+      );
+    }
 
     function shouldAllow(importPath: string): boolean {
-      return allowModules.includes(importPath);
+      return allowModules.includes(importPath) || allowedByGlob(importPath);
     }
 
     return {
       before() {
         const [options] = context.options;
-        ({ allowModules = [] } = options || {});
+        ({ allowModules = [], allow = [] } = options || {});
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const importPath = node.source.value;

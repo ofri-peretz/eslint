@@ -1,5 +1,9 @@
 {
   "command": "npm run rule-cases -- --update",
   "note": "Rules with no described TP case, or no described TN/FP case. Shrink-only.",
-  "rules": ["reliability/no-jsdoc-terminator-in-example"]
+  "rules": [
+    "react-features/jsx-uses-react",
+    "react-features/jsx-uses-vars",
+    "reliability/no-jsdoc-terminator-in-example"
+  ]
 }

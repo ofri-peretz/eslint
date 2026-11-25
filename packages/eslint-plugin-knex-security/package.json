@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-knex-security",
-  "version": "2.0.1",
-  "description": "ESLint plugin for knex \u2014 detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials.",
+  "version": "2.0.4",
+  "description": "ESLint Knex security rules — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./dist/src/index.js",
@@ -35,7 +35,8 @@
     "dist/",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "AGENTS.md"
   ],
   "keywords": [
     "eslint",
@@ -82,7 +83,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.0.1"
+    "@interlace/eslint-devkit": "^2.0.4"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",

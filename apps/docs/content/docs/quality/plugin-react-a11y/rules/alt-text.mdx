@@ -3,7 +3,6 @@ title: alt-text
 description: "Enforce alt text on images and other visual elements that carry accessibility impact."
 tags: ['accessibility', 'a11y', 'react', 'wcag']
 category: quality
-cwe: CWE-252
 autofix: suggestions
 type_aware: false
 type_aware_status: unaware
@@ -66,10 +65,28 @@ The rule covers every element that conveys non-text content to sighted users:
 </object>
 ```
 
+## Options
+
+| Option | Type | Default | Status |
+| :-- | :-- | :-- | :-- |
+| `elements` | `string[]` | all four of `img`, `object`, `area`, `input[type="image"]` | Honoured, as in eslint-plugin-jsx-a11y. A kind left out is not checked, nor are the custom components listed for it. |
+| `img`, `object`, `area` | `string[]` | `[]` | Honoured: custom components checked as that element. |
+| `input[type="image"]` | `string[]` | `[]` | Honoured: jsx-a11y's spelling of `inputImage`, merged with it. |
+| `inputImage` | `string[]` | `[]` | Honoured. A listed component is checked whatever its `type`, as in jsx-a11y. |
+| `allowAriaLabel`, `allowAriaLabelledby` | `boolean` | `false` | Honoured (not in jsx-a11y). |
+
+```javascript
+{
+  rules: {
+    'react-a11y/alt-text': ['error', { elements: ['img', 'object'], img: ['Image'] }],
+  },
+}
+```
+
 ## Error Message Format
 
 ```text
-♿ REACT-A11Y CWE-252 | Image missing alt text | CRITICAL
+♿ REACT-A11Y | Image missing alt text | CRITICAL
    Fix: Add a descriptive `alt` attribute, or mark the image decorative with `role="presentation"` and `alt=""`.
 ```
 

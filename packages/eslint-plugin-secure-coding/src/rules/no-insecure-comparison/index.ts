@@ -20,6 +20,7 @@ import {
   isTestFilePath,
   propertyName,
   objectKeyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { createRule, createModuleEvidence } from '@interlace/eslint-devkit';
 
@@ -49,6 +50,33 @@ const fileUsesAstTooling = createModuleEvidence({
     'eslint',
   ],
 });
+
+/**
+ * Last words that make a field an identifier or a label of its record rather
+ * than its content: `userId`, `familyId`, `purpose`, `kind`, `type`, `status`,
+ * `createdAt`. Exact segments, compared against the field's last word only.
+ */
+const RECORD_METADATA_TAILS: readonly string[] = [
+  'id',
+  'ids',
+  'purpose',
+  'kind',
+  'type',
+  'status',
+  'at',
+];
+
+function isRecordMetadataField(
+  name: string,
+  tails: ReadonlySet<string>,
+): boolean {
+  const words = name
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean);
+  const last = words.at(-1)?.toLowerCase();
+  return last !== undefined && tails.has(last);
+}
 
 type MessageIds =
   | 'insecureComparison'
@@ -82,6 +110,15 @@ export interface Options {
    * error code.
    */
   reportLooseEquality?: boolean;
+
+  /**
+   * Last words of a field name that make it an identifier or a label of its
+   * record, so `token.userId` is judged by `userId` alone and not by the
+   * container's name. Default: `RECORD_METADATA_TAILS` (`id`, `ids`,
+   * `purpose`, `kind`, `type`, `status`, `at`). Replace it when a codebase
+   * stores a secret under one of those words.
+   */
+  recordMetadataTails?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -196,6 +233,13 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             description:
               'Report `==` between non-secret operands. Turn off to keep only the secret-comparison findings and leave generic type coercion to eqeqeq.',
           },
+          recordMetadataTails: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...RECORD_METADATA_TAILS],
+            description:
+              'Last words of a field name (`userId`, `purpose`) that make it a label of its record, judged by its own name rather than its container’s.',
+          },
         },
         additionalProperties: false,
       },
@@ -219,6 +263,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
       ignorePatterns: [],
       reportLooseEquality: true,
+      recordMetadataTails: [...RECORD_METADATA_TAILS],
     },
   ],
   createOnce(
@@ -228,6 +273,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
     let allowInTests: boolean;
     let ignorePatterns: string[];
     let reportLooseEquality: boolean;
+    let metadataTails: ReadonlySet<string>;
     let isTestFile: boolean;
     let sourceCode: Readonly<TSESLint.SourceCode>;
     let isCodemodFile: boolean;
@@ -272,6 +318,11 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       if (node.type === AST_NODE_TYPES.Literal)
         return typeof node.value === 'string';
       if (node.type === AST_NODE_TYPES.TemplateLiteral) return true;
+      // `typeof x` always evaluates to a string, so `"function" == typeof x`
+      // compares two strings and coerces nothing.
+      if (node.type === AST_NODE_TYPES.UnaryExpression) {
+        return node.operator === 'typeof';
+      }
       if (node.type !== AST_NODE_TYPES.Identifier) return false;
       // `var a = b; var b = a;` resolves forever without this — a stack overflow that
       // takes the whole ESLint run down, not just the rule. A cycle proves nothing about
@@ -300,7 +351,14 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         // A write we cannot read proves nothing, which is a refusal.
         return writes.every((ref) => {
           const written = ref.writeExpr;
-          return written != null && isStringTyped(written, seen);
+          // A destructured binding records the WHOLE initializer as its write
+          // (`const { length: size } = typeof input` makes `size` a number), so
+          // only a binding written directly can take the initializer's type.
+          const writer = ref.identifier.parent?.type;
+          const direct =
+            writer === AST_NODE_TYPES.VariableDeclarator ||
+            writer === AST_NODE_TYPES.AssignmentExpression;
+          return direct && written != null && isStringTyped(written, seen);
         });
       }
       return false;
@@ -456,6 +514,19 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             out.push(n.name);
             resolveIdentifier(n);
           } else if (n.type === 'MemberExpression') {
+            // `token.userId` is the user's id, a different value from the token,
+            // as `const { kind } = token` is below. A field whose last word says
+            // it is an identifier or a label of its record is named by that
+            // field alone: nestjs/authentication compares `token.userId` and
+            // `record.userId` (a row of `this.tokens`) with a user id.
+            const fieldName = propertyName(n);
+            if (
+              fieldName !== null &&
+              isRecordMetadataField(fieldName, metadataTails)
+            ) {
+              out.push(fieldName);
+              return;
+            }
             walk(n.object);
             // `req.headers['x-api-key']` names the same property as
             // `req.headers.xApiKey`, just spelled with brackets — so both
@@ -563,6 +634,269 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
        *
        * See CLAUDE.md, "A rule decides by evidence. Never by a name."
        */
+      /** The single-write binding a name was initialised with, if any. */
+      const singleInit = (
+        identifier: TSESTree.Identifier,
+      ): TSESTree.Expression | null => {
+        for (
+          let scope: TSESLint.Scope.Scope | null = scopeAtNode;
+          scope;
+          scope = scope.upper
+        ) {
+          const variable = scope.variables.find(
+            (v) => v.name === identifier.name,
+          );
+          if (!variable) continue;
+          const writes = variable.references.filter((ref) => ref.isWrite());
+          const def = variable.defs[0];
+          if (
+            variable.defs.length !== 1 ||
+            writes.length !== 1 ||
+            def.type !== 'Variable' ||
+            def.node.id.type !== AST_NODE_TYPES.Identifier
+          ) {
+            return null;
+          }
+          return def.node.init;
+        }
+        return null;
+      };
+
+      /** The variable a name resolves to from the comparison's scope. */
+      const variableOf = (
+        identifier: TSESTree.Identifier,
+      ): TSESLint.Scope.Variable | null => {
+        for (
+          let scope: TSESLint.Scope.Scope | null = scopeAtNode;
+          scope;
+          scope = scope.upper
+        ) {
+          const variable = scope.variables.find(
+            (v) => v.name === identifier.name,
+          );
+          if (variable) return variable;
+        }
+        return null;
+      };
+
+      /**
+       * Can a property of this binding change? `parts.signature = x` changes
+       * what `parts.signature` reads without reassigning `parts`, and so can a
+       * write through an alias: once the object is handed anywhere other than
+       * a property read (`const alias = parts`, `mutate(parts)`), its fields
+       * are no longer ours to vouch for.
+       */
+      const propertyWritten = (variable: TSESLint.Scope.Variable): boolean =>
+        variable.references.some((ref) => {
+          if (ref.isWrite()) return false;
+          let top: TSESTree.Node = ref.identifier;
+          while (
+            top.parent.type === AST_NODE_TYPES.MemberExpression &&
+            top.parent.object === top
+          ) {
+            top = top.parent;
+          }
+          // The bare binding, read as a value: it escapes.
+          if (top === ref.identifier) return true;
+          const holder = top.parent;
+          return (
+            (holder.type === AST_NODE_TYPES.AssignmentExpression &&
+              holder.left === top) ||
+            holder.type === AST_NODE_TYPES.UpdateExpression ||
+            (holder.type === AST_NODE_TYPES.UnaryExpression &&
+              holder.operator === 'delete')
+          );
+        });
+
+      /**
+       * Does this expression read the same value wherever it is written in the
+       * function? A parameter never assigned, or a binding written once, and
+       * fixed property reads from one. Equal source text is not enough on its
+       * own: `presented = expected` between two reads makes them differ.
+       */
+      const isStableValue = (
+        expr: TSESTree.Node,
+        readThrough = false,
+      ): boolean => {
+        switch (expr.type) {
+          case AST_NODE_TYPES.Literal:
+            return true;
+          case AST_NODE_TYPES.ChainExpression:
+            return isStableValue(expr.expression, readThrough);
+          case AST_NODE_TYPES.MemberExpression:
+            return (
+              (!expr.computed ||
+                expr.property.type === AST_NODE_TYPES.Literal) &&
+              isStableValue(expr.object, true)
+            );
+          case AST_NODE_TYPES.Identifier: {
+            const variable = variableOf(expr);
+            if (!variable || variable.defs.length !== 1) return false;
+            const writes = variable.references.filter((ref) =>
+              ref.isWrite(),
+            ).length;
+            // Read through a property, the property must not be written either.
+            if (readThrough && propertyWritten(variable)) return false;
+            return variable.defs[0].type === 'Parameter'
+              ? writes === 0
+              : writes === 1;
+          }
+          default:
+            return false;
+        }
+      };
+
+      const unwrapChainNode = (n: TSESTree.Node): TSESTree.Node =>
+        n.type === AST_NODE_TYPES.ChainExpression ? n.expression : n;
+
+      /** A static string argument's value (`'hex'` or `` `hex` ``), or null. */
+      const stringArg = (n: TSESTree.Node): string | null => staticString(n);
+
+      /**
+       * `encoded` is `decoded.toString(enc)` where `decoded` was written once as
+       * `Buffer.from(original, enc)`, and `original` is the same value at both
+       * places: a round trip through one encoding, which can only test whether
+       * `original` was already in canonical form.
+       */
+      const reEncodes = (
+        encoded: TSESTree.Expression,
+        original: TSESTree.Expression,
+      ): boolean => {
+        const call = unwrapChainNode(encoded);
+        if (call.type !== AST_NODE_TYPES.CallExpression) return false;
+        const callee = unwrapChainNode(call.callee);
+        if (
+          callee.type !== AST_NODE_TYPES.MemberExpression ||
+          propertyName(callee) !== 'toString' ||
+          callee.object.type !== AST_NODE_TYPES.Identifier ||
+          call.arguments.length !== 1
+        ) {
+          return false;
+        }
+        const encoding = stringArg(call.arguments[0]);
+        const init = singleInit(callee.object);
+        if (
+          encoding === null ||
+          init?.type !== AST_NODE_TYPES.CallExpression ||
+          init.callee.type !== AST_NODE_TYPES.MemberExpression ||
+          init.callee.object.type !== AST_NODE_TYPES.Identifier ||
+          init.callee.object.name !== 'Buffer' ||
+          propertyName(init.callee) !== 'from' ||
+          init.arguments.length !== 2 ||
+          stringArg(init.arguments[1]) !== encoding
+        ) {
+          return false;
+        }
+        // The buffer must reach this comparison untouched: any other read of
+        // it could have changed its bytes (`decoded.set(other)`) or handed it
+        // to code that does. Source order is not execution order (a loop runs
+        // a later line first), so every other read counts.
+        const usedBefore = variableOf(callee.object)?.references.some(
+          (ref) => !ref.isWrite() && ref.identifier !== callee.object,
+        );
+        return (
+          usedBefore === false &&
+          sourceCode.getText(init.arguments[0]) ===
+            sourceCode.getText(original) &&
+          isStableValue(original)
+        );
+      };
+
+      /** A call whose receiver and arguments are the same values at every read. */
+      const isRepeatableCall = (call: TSESTree.CallExpression): boolean => {
+        let callee: TSESTree.Node = unwrapChainNode(call.callee);
+        let throughMember = false;
+        while (callee.type === AST_NODE_TYPES.MemberExpression) {
+          if (callee.computed) return false;
+          throughMember = true;
+          callee = unwrapChainNode(callee.object);
+        }
+        // `stores.totp = other` between two `stores.totp.get()` reads swaps
+        // the receiver, so a receiver read through properties must not have
+        // them written.
+        return (
+          (callee.type === AST_NODE_TYPES.ThisExpression ||
+            isStableValue(callee, throughMember)) &&
+          call.arguments.every((arg) => isStableValue(arg))
+        );
+      };
+
+      /**
+       * Every `await <call>` this operand's value comes from, with the field
+       * path read from its result, or null when any part of it comes from
+       * something else.
+       */
+      const awaitedSources = (
+        expr: TSESTree.Node,
+        comparison: TSESTree.Node,
+      ): { call: string; path: string }[] | null => {
+        const sources: { call: string; path: string }[] = [];
+        // A choice whose condition also guards the comparison takes the branch
+        // the comparison sits in: in `c ? x === pick : y === pick` with
+        // `pick = c ? a : b`, the first comparison only ever sees `a`.
+        const sameCondition = (test: TSESTree.Node) => {
+          // Equal text is the same value only if nothing can change it in
+          // between: `useSecret = true` after the choice breaks the link.
+          if (!isStableValue(test)) return null;
+          const text = sourceCode.getText(test).replace(/\?\./g, '.');
+          let child: TSESTree.Node = comparison;
+          for (let up = comparison.parent; up; up = up.parent) {
+            if (
+              (up.type === AST_NODE_TYPES.ConditionalExpression ||
+                up.type === AST_NODE_TYPES.IfStatement) &&
+              child !== up.test &&
+              sourceCode.getText(up.test).replace(/\?\./g, '.') === text
+            ) {
+              return child === up.consequent ? 'consequent' : 'alternate';
+            }
+            child = up;
+          }
+          return null;
+        };
+        const visit = (
+          n: TSESTree.Node,
+          path: string,
+          depth: number,
+        ): boolean => {
+          // A binding chain this deep is a cycle or not worth following.
+          if (depth > 16) return false;
+          switch (n.type) {
+            case AST_NODE_TYPES.ChainExpression:
+              return visit(n.expression, path, depth + 1);
+            case AST_NODE_TYPES.MemberExpression: {
+              const name = propertyName(n);
+              return (
+                name !== null && visit(n.object, `.${name}${path}`, depth + 1)
+              );
+            }
+            case AST_NODE_TYPES.ConditionalExpression: {
+              const branch = sameCondition(n.test);
+              if (branch !== null) return visit(n[branch], path, depth + 1);
+              return (
+                visit(n.consequent, path, depth + 1) &&
+                visit(n.alternate, path, depth + 1)
+              );
+            }
+            case AST_NODE_TYPES.Identifier: {
+              const init = singleInit(n);
+              return init !== null && visit(init, path, depth + 1);
+            }
+            case AST_NODE_TYPES.AwaitExpression:
+              if (
+                n.argument.type !== AST_NODE_TYPES.CallExpression ||
+                !isRepeatableCall(n.argument)
+              ) {
+                return false;
+              }
+              sources.push({ call: sourceCode.getText(n.argument), path });
+              return true;
+            default:
+              return false;
+          }
+        };
+        return visit(expr, '', 0) && sources.length > 0 ? sources : null;
+      };
+
       const isPotentialSecret = (expr: TSESTree.Expression): boolean =>
         namesIn(expr)
           .flatMap(nameSegments)
@@ -591,8 +925,39 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         // `token === '--'` is a parser reading the option terminator. Comparing a secret
         // to a hardcoded string IS a finding, but a hardcoded-credential one (CWE-798),
         // which this rule deliberately does not make — see the split at the top.
+        // A `const` bound to a literal in this file is that literal with a name:
+        // `const NOT_FOUND = 'NEXT_NOT_FOUND'; error.digest === NOT_FOUND` compares
+        // against text the source already contains, which is no more a secret than
+        // the same text written inline. A `let`, a value read from the environment
+        // or a call result is not decided here, so those still report.
+        const isConstLiteral = (id: TSESTree.Identifier): boolean => {
+          for (
+            let scope: TSESLint.Scope.Scope | null = scopeAtNode;
+            scope;
+            scope = scope.upper
+          ) {
+            const variable = scope.variables.find((v) => v.name === id.name);
+            if (!variable) continue;
+            const def = variable.defs[0];
+            return (
+              variable.defs.length === 1 &&
+              def.type === 'Variable' &&
+              def.parent.kind === 'const' &&
+              // A destructured binding keeps the whole declarator as its
+              // definition: `const { token = process.env.T } = ''` is not `''`.
+              def.node.id.type === AST_NODE_TYPES.Identifier &&
+              def.node.init !== null &&
+              (def.node.init.type === AST_NODE_TYPES.Literal ||
+                (def.node.init.type === AST_NODE_TYPES.TemplateLiteral &&
+                  def.node.init.expressions.length === 0))
+            );
+          }
+          return false;
+        };
+
         const isNonSecretLiteral = (expr: TSESTree.Expression): boolean =>
           expr.type === AST_NODE_TYPES.Literal ||
+          (expr.type === AST_NODE_TYPES.Identifier && isConstLiteral(expr)) ||
           (expr.type === AST_NODE_TYPES.TemplateLiteral &&
             expr.expressions.length === 0) ||
           (expr.type === AST_NODE_TYPES.UnaryExpression &&
@@ -601,6 +966,41 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             expr.name === 'undefined');
 
         if (isNonSecretLiteral(node.left) || isNonSecretLiteral(node.right)) {
+          return;
+        }
+
+        // SKIP: one value against a re-encoding of itself. nestjs/authentication
+        // `jws.util.ts:306` decodes a JWS signature segment and checks that it
+        // re-encodes to the same text (`Buffer.from(parts[2], 'base64url')
+        // .toString('base64url') !== parts[2]`): a canonical-form check on the
+        // token the caller sent, with no second value to discover.
+        if (
+          reEncodes(node.left, node.right) ||
+          reEncodes(node.right, node.left)
+        ) {
+          return;
+        }
+
+        // SKIP: a stored value against a fresh read of the same store. The MFA
+        // service reads `await this.store.getTotp(userId)` twice and compares
+        // the secret between the reads, to notice a concurrent change. Both
+        // sides come from one store call; nothing the caller typed is on
+        // either. Only when every source on both sides is that same call.
+        // The two sides must also be able to name the same field: `record.secret`
+        // against `record.presented` reads one record and compares two values.
+        // Each side must resolve to one field, the same one; a choice between
+        // fields that no guard settles could compare two different values.
+        const leftSources = awaitedSources(node.left, node);
+        const rightSources = awaitedSources(node.right, node);
+        if (
+          leftSources !== null &&
+          rightSources !== null &&
+          new Set(
+            [...leftSources, ...rightSources].map(
+              (src) => `${src.call}${src.path}`,
+            ),
+          ).size === 1
+        ) {
           return;
         }
 
@@ -711,6 +1111,11 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           ignorePatterns = [],
           reportLooseEquality = true,
         } = options as Options);
+        const { recordMetadataTails = RECORD_METADATA_TAILS } =
+          options as Options;
+        metadataTails = new Set(
+          recordMetadataTails.map((word) => word.toLowerCase()),
+        );
 
         const filename = context.filename;
         isTestFile = allowInTests && isTestFilePath(filename);

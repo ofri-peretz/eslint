@@ -1,7 +1,7 @@
 name: Link Integrity Check
 
 # Triggers: T3 "promote" gate — ready_for_review or `run-full-ci` label, plus
-# weekly Friday cron for drift. See AGENTS.md "Promotion gate".
+# weekly Friday cron for drift. See docs/CI_AND_RELEASE.md "Promotion gate".
 
 on:
   pull_request:
@@ -66,6 +66,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: README "Used by" rows still ship our plugins
+        if: github.event_name != 'pull_request'
+        env:
+          USED_BY_LIVE: "1"
+        run: npx vitest run --config scripts/__tests__/vitest.config.mts scripts/__tests__/readme-used-by.lock.test.ts
 
       - name: Run link checker
         id: linkcheck

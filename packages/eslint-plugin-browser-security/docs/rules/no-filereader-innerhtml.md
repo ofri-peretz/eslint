@@ -4,7 +4,7 @@ description: "The rule provides LLM-optimized error messages (Compact 2-line for
 tags: ['security', 'browser']
 category: security
 severity: medium
-cwe: CWE-693
+cwe: CWE-79
 owasp: "A03:2021"
 autofix: false
 ---
@@ -15,7 +15,7 @@ autofix: false
 The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**CWE:** [CWE-79](https://cwe.mitre.org/data/definitions/79.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 ## Error Message Format

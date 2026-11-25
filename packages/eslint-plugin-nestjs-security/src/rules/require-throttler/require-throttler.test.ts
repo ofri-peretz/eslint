@@ -316,6 +316,32 @@ ruleTester.run('require-throttler (sensitive routes)', requireThrottler, {
         resetPassword() {}
       }
     `,
+    {
+      // BY DESIGN, and the doc says so: the Nest 12 guide fixture has
+      // `verifyEmail` under a class-level @UseGuards(AuthGuard) and this rule
+      // stayed silent on it. A route that needs credentials is not a
+      // brute-force target, so the missing throttler is a capacity decision.
+      name: 'a verify route under a class-level auth guard is behind authentication',
+      code: `
+        @Controller('account')
+        @UseGuards(AuthGuard)
+        class AccountController {
+          @Post('verify')
+          verifyEmail(@Body() dto: VerifyDto) {}
+        }
+      `,
+    },
+    {
+      name: 'the same route on a handler-level auth guard',
+      code: `
+        @Controller('account')
+        class AccountController {
+          @Post('verify')
+          @UseGuards(AuthGuard)
+          verifyEmail(@Body() dto: VerifyDto) {}
+        }
+      `,
+    },
     // 'search' and 'upload' are capacity concerns, not credential abuse.
     `
       @Controller('assets')
@@ -474,6 +500,17 @@ ruleTester.run('require-throttler (mutation audit)', requireThrottler, {
     },
   ]),
   invalid: nest([
+    {
+      name: 'the same verify route with no guard is a public brute-force target',
+      code: `
+        @Controller('account')
+        class AccountController {
+          @Post('verify')
+          verifyEmail(@Body() dto: VerifyDto) {}
+        }
+      `,
+      errors: [{ messageId: 'missingThrottler' }],
+    },
     {
       name: 'a guard that is not ThrottlerGuard does not throttle the route',
       code: `

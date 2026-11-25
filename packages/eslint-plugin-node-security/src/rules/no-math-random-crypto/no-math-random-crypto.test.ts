@@ -89,15 +89,18 @@ describe('no-math-random-crypto', () => {
 
       // Crypto-named variable
       {
+        name: 'a Math.random value bound to a token is a predictable credential',
         code: 'const token = Math.random().toString(36);',
         errors: [{ messageId: 'mathRandomCrypto' }],
       },
       {
+        name: 'a Math.random value bound to a session secret is a predictable credential',
         code: 'const sessionSecret = Math.random();',
         errors: [{ messageId: 'mathRandomCrypto' }],
       },
       // Benchmark TP lock: vuln_random_token (returned from a crypto-named fn)
       {
+        name: 'a Math.random value returned from a token-named function is a predictable credential',
         code: `export function vuln_random_token() {
   return Math.random().toString(36).substring(2);
 }`,
@@ -105,6 +108,7 @@ describe('no-math-random-crypto', () => {
       },
       // Benchmark TP lock: vuln_random_session
       {
+        name: 'a Math.random value returned from a session-named function is a predictable credential',
         code: `export function vuln_random_session() {
   return "session_" + Math.floor(Math.random() * 1000000);
 }`,
@@ -112,6 +116,7 @@ describe('no-math-random-crypto', () => {
       },
       // Crypto-named object property
       {
+        name: 'a Math.random value stored under an apiKey property is a predictable credential',
         code: 'const config = { apiKey: Math.random().toString(36) };',
         errors: [{ messageId: 'mathRandomCrypto' }],
       },
@@ -219,6 +224,7 @@ describe('no-math-random-crypto', () => {
       invalid: [
         // The archetype: a session token built one character at a time.
         {
+          name: 'a token accumulated one random character at a time',
           code: `const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
                  let token = '';
                  for (let i = 0; i < 32; i++) {

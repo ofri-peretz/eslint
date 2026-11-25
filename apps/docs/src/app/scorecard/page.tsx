@@ -13,6 +13,8 @@ import {
   orderResultsByFlagshipSpec,
 } from '@/lib/scorecard';
 import { InstallCell, StarButton } from '@/components/stats/cta';
+import { JsonLd } from '@/components/json-ld';
+import { topLevelJsonLd } from '@/lib/seo';
 
 // The page reads a JSON snapshot committed to the repo — pre-render once at
 // build time. Without this, Next treats the readFileSync as a dynamic input
@@ -95,6 +97,7 @@ export default function ScorecardPage() {
       tabIndex={-1}
       className="py-12 outline-hidden"
     >
+      <JsonLd data={topLevelJsonLd('Flagship Scorecard', '/scorecard')} />
       <Header />
 
       <ScoreSummary rows={rows} runAt={snapshot.runAt} />
@@ -242,7 +245,7 @@ export default function ScorecardPage() {
             <strong>Latency is single-shot today.</strong> For SLO-grade numbers
             we owe you median-of-N with confidence intervals (tracked on the{' '}
             <Link
-              href="/docs"
+              href="/docs/getting-started"
               className="text-fd-primary underline hover:no-underline"
             >
               roadmap

@@ -6,6 +6,7 @@ category: security
 cwe: CWE-918
 owasp: A10:2021
 autofix: suggestions
+severity: critical
 ---
 
 > **Keywords:** no-ssrf, SSRF, server-side request forgery, CWE-918, OWASP A10:2021, fetch, axios, http.request, internal services, ESLint rule
@@ -60,26 +61,75 @@ const r = await fetch(`${API_BASE}${userPath}`); // path traversal lets attacker
 
 ### ✅ Correct
 
+An allowlisted hostname is not enough on its own: DNS decides where the request
+goes, and a name that resolves to `127.0.0.1` or `169.254.169.254` today may
+not have yesterday. Resolve the name, reject private, loopback and link-local
+addresses, then connect to the address you checked — not to a second DNS
+answer:
+
 ```js
-import { URL } from 'node:url';
+import dns from 'node:dns/promises';
+import https from 'node:https';
+import net from 'node:net';
 
 const ALLOWED_HOSTS = new Set(['api.partner.example', 'cdn.partner.example']);
-const BLOCKED_CIDRS = [
-  '10.0.0.0/8',
-  '172.16.0.0/12',
-  '192.168.0.0/16',
-  '127.0.0.0/8',
-  '169.254.0.0/16',
-];
 
-function safeFetch(rawUrl) {
+const BLOCKED = new net.BlockList();
+for (const [network, prefix] of [
+  ['0.0.0.0', 8],
+  ['10.0.0.0', 8],
+  ['100.64.0.0', 10],
+  ['127.0.0.0', 8],
+  ['169.254.0.0', 16],
+  ['172.16.0.0', 12],
+  ['192.168.0.0', 16],
+]) {
+  BLOCKED.addSubnet(network, prefix, 'ipv4');
+}
+for (const [network, prefix] of [
+  ['::', 128],
+  ['::1', 128],
+  ['fc00::', 7],
+  ['fe80::', 10],
+]) {
+  BLOCKED.addSubnet(network, prefix, 'ipv6');
+}
+// No `::ffff:0:0/96` entry: BlockList already checks an IPv4-mapped address
+// (`::ffff:127.0.0.1`) against the IPv4 rules, and that entry would block
+// every IPv4 address.
+
+async function safeGet(rawUrl, onResponse) {
   const url = new URL(rawUrl);
   if (url.protocol !== 'https:') throw new Error('https only');
   if (!ALLOWED_HOSTS.has(url.hostname)) throw new Error('host not allowed');
-  // Resolve DNS before request; reject if the resolved IP sits in BLOCKED_CIDRS.
-  return fetch(url, { redirect: 'error' }); // refuse redirects to avoid TOCTOU
+
+  const addresses = await dns.lookup(url.hostname, { all: true });
+  if (
+    addresses.length === 0 ||
+    addresses.some(({ address, family }) =>
+      BLOCKED.check(address, family === 6 ? 'ipv6' : 'ipv4'),
+    )
+  ) {
+    throw new Error('host resolves to a private address');
+  }
+
+  // Pin the socket to the validated address. TLS still verifies the
+  // certificate against url.hostname, so the pin cannot be used to spoof it.
+  const [{ address, family }] = addresses;
+  const lookup = (_host, options, done) =>
+    options.all
+      ? done(null, [{ address, family }])
+      : done(null, address, family);
+
+  // https.get follows no redirects, so a 3xx cannot send it elsewhere.
+  return https.get(url, { lookup }, onResponse);
 }
 ```
+
+The limits are worth stating: this pins one request. A client that follows
+redirects (`fetch` by default) re-resolves at every hop, so either refuse
+redirects or validate each `Location` the same way. An HTTP proxy in between
+resolves the name itself.
 
 ### ✅ Also correct — no evidence of user flow
 

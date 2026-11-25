@@ -18,8 +18,6 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>
 
-> ⭐ If this plugin caught a real bug for you, [**star the repo**](https://github.com/ofri-peretz/eslint) — it's the signal that keeps these rules maintained.
-
 ## Description
 
 `oxlint-plugin-reliability` is the [oxlint](https://oxc.rs/docs/guide/usage/linter/js-plugins) and [Vite+](https://viteplus.dev/guide/lint) name for [`eslint-plugin-reliability`](https://www.npmjs.com/package/eslint-plugin-reliability). It carries the same rules under the same IDs (`reliability/<rule>`), always at the same version, because it re-exports that package rather than copying it. Installing it does not install ESLint.
@@ -190,11 +188,11 @@ Install [`eslint-plugin-reliability`](https://www.npmjs.com/package/eslint-plugi
 | [error-message](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/error-message?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)                                   |          |       |      | Enforce providing a message when creating built-in Error objects for better debugging. This rule is part of… | 🟢  |     |     |     | 💡  |     |
 | [no-await-in-loop](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-await-in-loop?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)                             |          |       |      | Disallow await inside loops without considering concurrency implications                                     | 🟢  |     |     |     | 💡  |     |
 | [no-jsdoc-terminator-in-example](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-jsdoc-terminator-in-example?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability) |          |       |      | Detect `*/` sequences inside JSDoc `@example` blocks that prematurely close the JSDoc comment.               | 🟢  |     |     |     | 💡  |     |
-| [no-missing-error-context](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-missing-error-context?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)             |          |       |      | ESLint Rule: no-missing-error-context with LLM-optimized suggestions and auto-fix capabilities.              | 🟢  |     |     |     | 💡  |     |
+| [no-missing-error-context](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-missing-error-context?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)             |          |       |      | Report a thrown value the code proves carries no message, or no stack trace when that is required.           | 🟢  |     |     |     | 💡  |     |
 | [no-missing-null-checks](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-missing-null-checks?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)                 | CWE-476  |       |      | ESLint Rule: no-missing-null-checks with LLM-optimized suggestions and auto-fix capabilities.                | 🟢  |     | ⚠️  |     | 💡  |     |
-| [no-silent-errors](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-silent-errors?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)                             |          |       |      | ESLint Rule: no-silent-errors with LLM-optimized suggestions and auto-fix capabilities.                      | 🟢  | 💼  |     |     | 💡  |     |
+| [no-silent-errors](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-silent-errors?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)                             |          |       |      | Report catch blocks that do nothing, so an error is never silently swallowed.                                | 🟢  | 💼  |     |     | 💡  |     |
 | [no-unhandled-promise](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-unhandled-promise?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)                     | CWE-1024 |       |      | Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This…  | 🟢  |     |     |     | 💡  |     |
-| [no-unsafe-type-narrowing](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-unsafe-type-narrowing?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)             |          |       |      | ESLint Rule: no-unsafe-type-narrowing with LLM-optimized suggestions and auto-fix capabilities.              | 🟢  |     |     |     | 💡  |     |
+| [no-unsafe-type-narrowing](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/no-unsafe-type-narrowing?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)             |          |       |      | Report double type assertions through unknown or any that bypass the type checker.                           | 🟢  |     |     |     | 💡  |     |
 | [require-network-timeout](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/require-network-timeout?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-reliability)               |          |       |      | Require timeout configuration for network requests. This rule is part of eslint-plugin-reliability and prov… | 🟢  | 💼  |     |     | 💡  |     |
 
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:START - Do not edit manually -->
@@ -246,11 +244,9 @@ Part of the **Interlace ESLint ecosystem** — AI-native rules with LLM-optimize
 
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:END -->
 
-## ⭐ Support & follow
+## Support
 
-If this plugin caught a real bug for you, **[star the repo](https://github.com/ofri-peretz/eslint)** — stars are the signal that keeps the Interlace ESLint ecosystem maintained — and **[follow the writeups on Dev.to](https://dev.to/ofri-peretz)** for the benchmarks and security research behind these rules.
-
-[![GitHub stars](https://img.shields.io/github/stars/ofri-peretz/eslint?style=social)](https://github.com/ofri-peretz/eslint)
+Found a false positive? [Open an issue](https://github.com/ofri-peretz/eslint/issues): that is a bug. If the plugin helped, a star on [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint) helps others find it.
 
 ## 📄 License
 

@@ -1,7 +1,7 @@
 {
   "name": "oxlint-plugin-prisma-security",
-  "version": "2.0.1",
-  "description": "The prisma-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-prisma-security.",
+  "version": "2.0.4",
+  "description": "Oxlint Prisma security rules for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals. Same rules and rule IDs as eslint-plugin-prisma-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./index.js",
@@ -74,6 +74,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-prisma-security": "2.0.1"
+    "eslint-plugin-prisma-security": "2.0.4"
   }
 }

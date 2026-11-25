@@ -3,8 +3,8 @@ title: no-unsafe-dynamic-require
 description: Disallows dynamic require() calls with non-literal arguments that could lead to security vulnerabilities
 tags: ['security', 'node']
 category: security
-severity: medium
-cwe: CWE-494
+severity: critical
+cwe: CWE-95
 autofix: false
 ---
 
@@ -15,7 +15,7 @@ autofix: false
 Disallows dynamic require() calls with non-literal arguments that could lead to security vulnerabilities
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-494](https://cwe.mitre.org/data/definitions/494.html)  
+**CWE:** [CWE-95](https://cwe.mitre.org/data/definitions/95.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Disallows dynamic `require()` calls with non-literal arguments that could lead to security vulnerabilities. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.

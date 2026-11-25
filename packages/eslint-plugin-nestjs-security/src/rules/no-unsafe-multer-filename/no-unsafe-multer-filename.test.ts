@@ -464,6 +464,46 @@ ruleTester.run(
           `const name = file.originalname; pick(names, (name) => cb(null, name));`,
         ),
       },
+      {
+        // @found mutation testing
+        name: 'FP: a nested function that destructures its own file reads a different file',
+        code: storage(
+          `others.forEach(({ file }) => cb(null, file.originalname));`,
+        ),
+      },
+      {
+        // @found mutation testing
+        name: 'FP: a nested function whose callback parameter has a default calls a different callback',
+        code: storage(
+          `save(file, (err, cb = noop) => cb(null, file.originalname)); cb(null, randomUUID());`,
+        ),
+      },
+      {
+        name: 'a nested pattern under originalname binds a piece of the name, not the name',
+        code: `diskStorage({ filename(req, { originalname: { length } }, cb) { cb(null, 'upload-' + length); } });`,
+      },
+      {
+        name: 'destructuring the client name binds its pieces, not the name',
+        code: storage(
+          `const { length } = file.originalname; cb(null, 'upload-' + length);`,
+        ),
+      },
+      {
+        name: 'storing the client name on an object does not taint the object',
+        code: storage(`meta.name = file.originalname; cb(null, meta);`),
+      },
+      {
+        name: 'assigning a server-made name to a local does not taint it',
+        code: storage(`let name; name = randomUUID(); cb(null, name);`),
+      },
+      {
+        name: 'storing the client name on this taints no local',
+        code: storage(`this.last = file.originalname; cb(null, randomUUID());`),
+      },
+      {
+        name: 'storing the client name on a property does not taint a local of the same name',
+        code: storage(`meta.name = file.originalname; cb(null, name);`),
+      },
     ]),
     invalid: [],
   },

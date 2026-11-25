@@ -38,14 +38,17 @@ describe('no-unsafe-deserialization', () => {
         },
         // Safe libraries
         {
+          name: 'a project-named safe parser is not a deserialization sink',
           code: 'const data = safeJsonParse(input);',
         },
         // Non-deserialization operations
         {
+          name: 'an ordinary call on input is not a deserializer',
           code: 'const result = calculate(input);',
         },
         // Validated input
         {
+          name: 'JSON.parse of validated input is not a deserialization sink',
           code: 'const cleanData = validateInput(req.body); const obj = JSON.parse(cleanData);',
         },
       ],
@@ -53,42 +56,87 @@ describe('no-unsafe-deserialization', () => {
     });
   });
 
-  describe('Invalid Code - Dangerous eval() Usage', () => {
+  describe('Invalid Code - Dangerous deserialize() Usage', () => {
     ruleTester.run('invalid - dangerous eval usage', noUnsafeDeserialization, {
       valid: [],
       invalid: [
         {
           name: 'eval on a request body',
-          code: 'eval(req.body.script);',
-          errors: [{ messageId: 'dangerousEvalUsage', suggestions: 1 }],
+          code: 'deserialize(req.body.script);',
+          errors: [{ messageId: 'unsafeDeserialization' }],
         },
         {
+          name: 'deserializing the content of a file the code reads is still untrusted data',
           code: `
             const fs = require('fs');
             const data = fs.readFileSync('data.json');
-            eval(data);
+            deserialize(data);
           `,
           // Even a literal-path file read should flag eval — file content can be tampered.
-          errors: [{ messageId: 'dangerousEvalUsage', suggestions: 1 }],
+          errors: [{ messageId: 'unsafeDeserialization' }],
         },
       ],
     });
   });
 
-  describe('Invalid Code - Dangerous Function Constructor', () => {
+  describe('eval() and the Function constructor belong to detect-eval-with-expression', () => {
+    // Code injection (CWE-95) is reported by node-security's
+    // detect-eval-with-expression. Reporting the same call here as CWE-502
+    // doubled every such finding in a combined run.
     ruleTester.run(
-      'invalid - dangerous Function constructor',
+      'valid - eval and Function are not deserialization',
+      noUnsafeDeserialization,
+      {
+        valid: [
+          {
+            name: 'eval on a request body is code injection, not deserialization',
+            code: 'eval(req.body.script);',
+          },
+          {
+            name: 'eval on a function parameter',
+            code: 'function run(code) { eval(code); }',
+          },
+          {
+            name: 'eval on an awaited response body',
+            code: 'async function f(res) { eval(await res.text()); }',
+          },
+          {
+            name: 'new Function on request input',
+            code: 'const func = new Function(req.body.input);',
+          },
+          {
+            name: 'Function called without new on request input',
+            code: 'const func = Function("a", "b", req.query.code);',
+          },
+          {
+            name: 'new Function inside a route handler',
+            code: 'app.post("/x", (req, res) => { new Function(req.body); });',
+          },
+          {
+            name: 'globalThis.eval on request input',
+            code: 'globalThis.eval(req.query.payload);',
+          },
+          {
+            name: 'window.eval on request input',
+            code: 'window.eval(req.body.code);',
+          },
+        ],
+        invalid: [],
+      },
+    );
+
+    ruleTester.run(
+      'invalid - a deserializer next to an eval still reports once, as deserialization',
       noUnsafeDeserialization,
       {
         valid: [],
         invalid: [
           {
-            code: 'const func = new Function(req.body.input);',
-            errors: [{ messageId: 'dangerousFunctionConstructor' }],
-          },
-          {
-            code: 'const func = Function("a", "b", req.query.code);',
-            errors: [{ messageId: 'dangerousFunctionConstructor' }],
+            name: 'only the unserialize call is reported, the eval beside it is not',
+            code: 'eval(req.body.a); unserialize(req.body.b);',
+            errors: [
+              { messageId: 'unsafeDeserialization', line: 1, column: 19 },
+            ],
           },
         ],
       },
@@ -115,6 +163,7 @@ describe('no-unsafe-deserialization', () => {
       invalid: [
         // The sink that IS dangerous, on the same method-name shape.
         {
+          name: 'js-yaml load of a request body can construct arbitrary objects',
           code: 'const yaml = require("js-yaml"); const obj = yaml.load(req.body.doc);',
           errors: [{ messageId: 'unsafeYamlParsing' }],
         },
@@ -123,11 +172,13 @@ describe('no-unsafe-deserialization', () => {
         // required the binding to be spelled `yaml` was reading a variable name,
         // not an interface, and this line was silent.
         {
+          name: 'js-yaml load of a request body document is unsafe deserialization',
           code: 'import jsyaml from "js-yaml"; export const obj = jsyaml.load(req.body.doc);',
           errors: [{ messageId: 'unsafeYamlParsing' }],
         },
         // REGRESSION LOCK — the named-import form js-yaml's own v4 README uses.
         {
+          name: 'a named js-yaml load import fed a request body is unsafe deserialization',
           code: 'import { load } from "js-yaml"; export const obj = load(req.body.doc);',
           errors: [{ messageId: 'unsafeDeserialization' }],
         },
@@ -194,47 +245,18 @@ describe('no-unsafe-deserialization', () => {
             const fs = require('fs');
             const data = fs.readFileSync('data.json'); 
             // data is marked untrusted by VariableDeclaration visitor
-            eval(data);
+            deserialize(data);
           `,
-            errors: [
-              {
-                messageId: 'dangerousEvalUsage',
-                suggestions: [
-                  {
-                    messageId: 'useSafeDeserializer',
-                    output: `
-            const fs = require('fs');
-            const data = fs.readFileSync('data.json'); 
-            // data is marked untrusted by VariableDeclaration visitor
-            JSON.parse(data);
-          `,
-                  },
-                ],
-              },
-            ],
+            errors: [{ messageId: 'unsafeDeserialization' }],
           },
           // Function parameter untrusted
           {
             code: `
             function process(input) {
-              eval(input);
+              deserialize(input);
             }
           `,
-            errors: [
-              {
-                messageId: 'dangerousEvalUsage',
-                suggestions: [
-                  {
-                    messageId: 'useSafeDeserializer',
-                    output: `
-            function process(input) {
-              JSON.parse(input);
-            }
-          `,
-                  },
-                ],
-              },
-            ],
+            errors: [{ messageId: 'unsafeDeserialization' }],
           },
         ],
       },
@@ -264,18 +286,14 @@ describe('no-unsafe-deserialization', () => {
       invalid: [
         // The eval-family sinks this rule exists for still report — including
         // the awaited form, which used to be SILENT while the plainer
-        // `eval(param)` reported. Reading a response body is remote bytes.
+        // `deserialize(param)` reported. Reading a response body is remote bytes.
         {
-          code: 'function run(code) { eval(code); }',
-          errors: [{ messageId: 'dangerousEvalUsage', suggestions: 1 }],
+          code: 'function run(code) { deserialize(code); }',
+          errors: [{ messageId: 'unsafeDeserialization' }],
         },
         {
-          code: 'async function f(res) { eval(await res.text()); }',
-          errors: [{ messageId: 'dangerousEvalUsage', suggestions: 1 }],
-        },
-        {
-          code: 'app.post("/x", (req, res) => { new Function(req.body); });',
-          errors: [{ messageId: 'dangerousFunctionConstructor' }],
+          code: 'async function f(res) { deserialize(await res.text()); }',
+          errors: [{ messageId: 'unsafeDeserialization' }],
         },
       ],
     });
@@ -289,7 +307,7 @@ describe('no-unsafe-deserialization', () => {
           code: `
             /** @safe */
             function test() {
-              const obj = eval(userInput);
+              const obj = deserialize(userInput);
             }
           `,
         },
@@ -317,7 +335,7 @@ describe('no-unsafe-deserialization', () => {
         {
           code: `
             const safeCode = "console.log('hello')";
-            eval(safeCode);
+            deserialize(safeCode);
           `,
         },
       ],
@@ -483,7 +501,7 @@ describe('no-unsafe-deserialization', () => {
       'coverage - destructured function param (id 29 FALSE)',
       noUnsafeDeserialization,
       {
-        valid: [{ code: 'function handler({data}) { eval(data); }' }],
+        valid: [{ code: 'function handler({data}) { deserialize(data); }' }],
         invalid: [],
       },
     );
@@ -569,8 +587,8 @@ describe('no-unsafe-deserialization', () => {
         valid: [],
         invalid: [
           {
-            code: 'const data = fs.readFileSync(dynamicPath); eval(data);',
-            errors: [{ messageId: 'dangerousEvalUsage', suggestions: 1 }],
+            code: 'const data = fs.readFileSync(dynamicPath); deserialize(data);',
+            errors: [{ messageId: 'unsafeDeserialization' }],
           },
         ],
       },
@@ -585,8 +603,8 @@ describe('no-unsafe-deserialization', () => {
         valid: [{ code: 'obj.prop = req.body.data;' }],
         invalid: [
           {
-            code: 'let data; data = req.body.payload; eval(data);',
-            errors: [{ messageId: 'dangerousEvalUsage', suggestions: 1 }],
+            code: 'let data; data = req.body.payload; deserialize(data);',
+            errors: [{ messageId: 'unsafeDeserialization' }],
           },
         ],
       },
@@ -817,7 +835,7 @@ describe('no-unsafe-deserialization — option differentials', () => {
   // function, which is why a leading line comment is enough.
   const ANNOTATED_EVAL = `
     // @appsec-reviewed
-    eval(req.body.code);
+    deserialize(req.body.code);
   `;
 
   ruleTester.run('option trustedAnnotations', noUnsafeDeserialization, {
@@ -832,7 +850,7 @@ describe('no-unsafe-deserialization — option differentials', () => {
       // just a comment and eval on request data reports.
       {
         code: ANNOTATED_EVAL,
-        errors: [{ messageId: 'dangerousEvalUsage', suggestions: 1 }],
+        errors: [{ messageId: 'unsafeDeserialization' }],
       },
     ],
   });
@@ -854,7 +872,7 @@ describe('no-unsafe-deserialization — option differentials', () => {
         options: [
           { trustedAnnotations: ['@appsec-reviewed'], strictMode: true },
         ],
-        errors: [{ messageId: 'dangerousEvalUsage', suggestions: 1 }],
+        errors: [{ messageId: 'unsafeDeserialization' }],
       },
     ],
   });
@@ -1034,19 +1052,18 @@ describe('the binding is the sink, not the name', () => {
     },
   );
 
-  /** The real global still reports. */
+  /** The real global is code injection: the owner rule reports it, this one does not. */
   ruleTester.run(
-    'invalid - the actual Function constructor',
+    'valid - the actual Function constructor is not deserialization',
     noUnsafeDeserialization,
     {
-      valid: [],
-      invalid: [
+      valid: [
         {
-          name: 'new Function on req.body code is reported',
+          name: 'the global Function constructor is code injection, owned elsewhere',
           code: 'new Function(req.body.code);',
-          errors: 1,
         },
       ],
+      invalid: [],
     },
   );
 });

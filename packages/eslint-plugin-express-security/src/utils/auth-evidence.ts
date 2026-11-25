@@ -19,9 +19,15 @@ import type { TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, propertyName } from '@interlace/eslint-devkit';
 import { readsPrincipal } from './index';
 
-/** Middleware whose name says "this request is authenticated". */
+/**
+ * Middleware whose name says "this request is authenticated".
+ *
+ * `logged_?in` is its own alternative: `isLoggedIn` / `loggedIn` /
+ * `ensureLoggedIn` are the most common spellings of the guard and contain
+ * neither `login` nor `auth`.
+ */
 export const AUTH_MIDDLEWARE =
-  /auth|jwt|passport|token|session|guard|protect|ensure|require|permit|acl|rbac|verify|login|identity|principal/i;
+  /auth|jwt|passport|token|session|guard|protect|ensure|require|permit|acl|rbac|verify|login|logged_?in|identity|principal/i;
 
 /**
  * The identifier names that make up a middleware *reference*.

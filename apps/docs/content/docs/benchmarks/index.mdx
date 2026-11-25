@@ -310,7 +310,11 @@ Full write-ups, each with the reproducible config:
 
 `eslint-plugin-import` finds zero cycles on the same codebase because it uses a fixed depth cap (default: 10) that misses deep dependency chains. `import-next/no-cycle` defaults to unlimited depth with a deduplication cache that keeps memory bounded.
 
-For full methodology and per-file breakdown, see the [import-next rule docs](/docs/imports/plugin-import-next/rules/no-cycle).
+For full methodology and per-file breakdown, see the [import-next rule docs](/docs/quality/plugin-import-next/rules/no-cycle).
+
+## Three vulnerable apps against eslint-plugin-security
+
+On 72 documented flaws in NodeGoat, DVNA and Juice Shop, our recommended presets reported 19 and `eslint-plugin-security` 4.2.1 reported 3. These are small training apps, we fixed rules after earlier runs, and AI sessions did the labelling. The method, per-app table, where `eslint-plugin-security` wins and every caveat are on [eslint-plugin-security alternative: measured on NodeGoat, DVNA and Juice Shop](/docs/getting-started/security-alternative-benchmark).
 
 ## What ILB is
 

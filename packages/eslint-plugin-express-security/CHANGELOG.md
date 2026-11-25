@@ -5,6 +5,101 @@ All notable changes to `eslint-plugin-express-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.3.3
+
+### Patch Changes
+
+- **🐛 Fix** — `require-csrf-protection` recognises an app-wide wrapper that hands the request to an imported csrf module. Found linting open-source Node apps.
+
+## 4.3.2
+
+### Patch Changes
+
+- **📚 Docs** — Getting Started now leads each plugin README, with the ESLint install line and a flat config that loads
+
+  The install block was below the Description and the doctrine, and on 17 of the 31 plugins there was no flat-config snippet on the page at all. `eslint-plugin-secure-coding`'s README showed `...securePlugin.configs.recommended`, which throws `TypeError: ... is not iterable` when pasted, because `configs.recommended` is one object. Every plugin README now opens with `npm install --save-dev eslint <plugin>` and `import { configs } from '<plugin>'` and `export default [configs.recommended]` in an `eslint.config.mjs`, then the Description. A test now loads that snippet in ESLint for every plugin.
+
+  The star banner above the first heading, the footer block with the star counter and the Dev.to ask are replaced by one `## Support` paragraph at the end: report a false positive, or star the repo if the plugin helped.
+
+  `eslint-plugin-import-next` opens with its drop-in grade, read from the newest `benchmarks/results/ilb-import-parity` result with its date: passes 2,035 of 2,135 (95.3%) of eslint-plugin-import 2.32.0's own test cases, measured 2026-11-19.
+
+  Eight taglines now say what the plugin flags instead of "security rules for X" (secure-coding, node-security, browser-security, nestjs-security, express-security, vercel-ai-security, react-a11y, import-next). `eslint-plugin-node-security` adds one proof line: the public repositories that list it, with the date they were checked.
+
+## 4.3.1
+
+### Patch Changes
+
+- **🐛 Fix** — `require-csrf-protection` finds the request by its binding, not by its name
+
+  Whether a handler reads a cookie, a session or the `Authorization` header is now decided against the handler's first parameter, whatever it is spelled (`(r, s) => r.cookies.sid`). A local variable that merely happens to be called `req` is no longer taken for the request.
+
+## 4.3.0
+
+### Minor Changes
+
+- **🐛 Fix** — `require-csrf-protection` reads which credential authorises a route; `no-insecure-cookie-options` reads Astro, Qwik City and Next cookie jars
+
+  `require-csrf-protection` stays quiet on a guard registered alone (`app.post('/x', security.denyAll())` handles nothing), on a bearer route (`passport.authenticate('bearer')`, `express-jwt` with its default token source, a handler that reads the `Authorization` header and no cookie), and on `cookie-parser` with nothing else: the parser fills `req.cookies` for any cookie, so it no longer counts as credential evidence by itself (a read of `req.cookies`, `res.cookie` or `req.session`, or a session store, still does). It reports where it used to abstain: a routes module that is handed to its importer (`module.exports = router`, `return router`, `export default router`) and renders documents is read as having the session its mounting module configures. Expect fewer findings on bearer-token apps that mount `cookie-parser` for a language cookie, and new findings on server-rendered routes files whose session lives in the entry file.
+
+  `no-insecure-cookie-options` now also judges `cookies.set(name, value, options)` for credential-named cookies in files that import `astro`, `@builder.io/qwik-city` or `next/headers`, whose jars add no attributes of their own. SvelteKit, Koa and `js-cookie` stay out. Expect new findings in Astro, Qwik City and Next projects.
+
+## 4.2.0
+
+### Minor Changes
+
+- **🐛 Fix** — treat an exported `(req, res)` handler that calls `res.redirect` / `render` / `sendStatus` / `sendFile` as Express evidence
+
+  A controller module defines handlers that a separate routes file registers
+  (`module.exports.redirect = function (req, res) { res.redirect(req.query.url) }`), so it has no `express`
+  import and no `app.get('/x', …)` of its own, and every rule in the plugin abstained on it, including
+  `no-user-controlled-redirect`. The handler is now the evidence: a two-parameter `req`/`res` function that is
+  exported (`module.exports`, `exports.x`, or a named ES export) and calls one of those four Express-only
+  response methods. Fastify (`request, reply`), Koa (`ctx`), an unexported helper, a `node:http` listener that
+  only calls `res.end` / `res.writeHead`, a `res.status().json()` handler and a default export (how a Next.js
+  API route is written) still do not open the gate. Expect new findings in files of that shape.
+
+## 4.1.0
+
+### Minor Changes
+
+- **🐛 Fix** — stop abstaining on route modules that receive `app` instead of importing express
+
+  The plugin skips a file unless it shows Express evidence, and a route module that exports
+  `(app, db) => { app.get(...) }` imports nothing and uses the two-argument `(req, res)` handler, so
+  every rule in the plugin stayed silent on it, `no-user-controlled-redirect` included. A handler
+  registered against a literal path with the `(req, res)` pair
+  (`app.get('/learn', guard, (req, res) => ...)`) now counts as Express evidence. Fastify
+  (`request, reply`), Koa (`ctx`), a bare `node:http` handler and `cache.get('/k', fn)` still do not
+  open the gate. Expect new findings in files of that shape.
+
+  `require-route-authentication` now recognises `isLoggedIn` / `loggedIn` / `ensureLoggedIn()` as
+  authentication guards. The name has neither `auth` nor `login` in it, so the most common spelling of
+  the guard read as no guard at all, which the wider gate would have turned into new false positives.
+
+## 4.0.4
+
+### Patch Changes
+
+- **📚 Docs** — ship an AGENTS.md that tells AI assistants how to enable the plugin and what each preset catches
+
+  Generated from the package's own presets and rules, so it cannot drift. `eslint-plugin-secure-coding`: the README no longer shows `...configs.recommended` spread into an array, which threw "not iterable".
+
+## 4.0.3
+
+### Patch Changes
+
+- **🐛 Fix** — `no-insecure-cookie-options` no longer reports, or crashes the lint run on, a `.cookie()` call with fewer than two arguments, such as a `secrets.cookie()` getter. Express's `res.cookie(name, value[, options])` always takes a name and a value.
+
+## 4.0.2
+
+### Patch Changes
+
+- **📚 Docs** — npm descriptions lead with what people search for
+
+  Each description now opens with the search phrase, such as "ESLint NestJS security rules — …" instead of "ESLint plugin for NestJS security — …". npm search ranks that opening phrase above download counts, so the old wording kept these packages out of the results for searches like "eslint security". The oxlint-plugin-* aliases open the same way, with "Oxlint". No rule or code changes.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.0.4`
+
 ## 4.0.1
 
 ### Patch Changes

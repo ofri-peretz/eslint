@@ -1,9 +1,179 @@
 {
-  "releaseCount": 1117,
+  "releaseCount": 1128,
   "packageCount": 66,
-  "entryCount": 2814,
+  "entryCount": 2826,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "oxlint-plugin-nestjs-security",
+      "short": "oxlint-plugin-nestjs-security",
+      "version": "4.2.0",
+      "date": "2026-11-12T17:48:26Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@4.2.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-nestjs-security",
+      "short": "eslint-plugin-nestjs-security",
+      "version": "4.2.0",
+      "date": "2026-11-12T17:44:28Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`require-upload-size-limit`, and `require-throttler` now asks for a bound guard",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-nestjs-security",
+      "short": "oxlint-plugin-nestjs-security",
+      "version": "4.1.1",
+      "date": "2026-11-12T16:56:12Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@4.1.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-nestjs-security",
+      "short": "eslint-plugin-nestjs-security",
+      "version": "4.1.1",
+      "date": "2026-11-12T16:54:40Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-missing-validation-pipe` no longer reports one named scalar",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-nestjs-security",
+      "short": "oxlint-plugin-nestjs-security",
+      "version": "4.1.0",
+      "date": "2026-11-12T09:30:11Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@4.1.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-nestjs-security",
+      "short": "eslint-plugin-nestjs-security",
+      "version": "4.1.0",
+      "date": "2026-11-12T09:27:47Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "NestJS 12 — Standard Schema validation and serialization, returned web responses",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "install alongside NestJS 12",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "6.1.0",
+      "date": "2026-11-12T08:25:03Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.1.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "6.1.0",
+      "date": "2026-11-12T08:23:28Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`no-unchecked-loop-condition` no longer reports a loop whose bound is a literal, such as `for (let cp = 0; cp <= 0x10_ff_ff; cp++)`. The author chose that number and no input reaches it, so it is not CWE-400. The literal-bound check (`largeLoopBound`) still exists as an iteration budget, but it is now opt-in: set `maxStaticIterations` to turn it on. Bounds read from user input, and infinite loops with no exit, are reported as before.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "2.0.3",
+      "date": "2026-11-08T10:34:00Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "vendor the AST and rule type declarations devkit uses",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "6.0.3",
+      "date": "2026-11-07T13:38:13Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.0.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "6.0.3",
+      "date": "2026-11-07T13:37:03Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-non-literal-fs-filename` reads `/* global */` directives the way ESLint does",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "oxlint-plugin-node-security",
       "short": "oxlint-plugin-node-security",

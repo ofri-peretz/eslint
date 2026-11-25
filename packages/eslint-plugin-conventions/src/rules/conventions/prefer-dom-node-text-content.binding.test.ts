@@ -32,7 +32,11 @@ const count = (code: string): number =>
       [
         {
           files: ['**/*.ts'],
-          languageOptions: { parser: tsParser as never, ecmaVersion: 2022, sourceType: 'module' },
+          languageOptions: {
+            parser: tsParser as never,
+            ecmaVersion: 2022,
+            sourceType: 'module',
+          },
           plugins: { c: { rules: { r: preferDomNodeTextContent as never } } },
           rules: { 'c/r': 'error' },
         },
@@ -42,12 +46,21 @@ const count = (code: string): number =>
     .filter((m) => m.ruleId === 'c/r').length;
 
 describe('reported whatever the element is called', () => {
-  it.each(['element', 'heading', 'title', 'banner', 'button', 'container', 'row'])(
-    'const %s = document.getElementById(...)',
-    (name) => {
-      expect(count(`const ${name} = document.getElementById("x");\nconst t = ${name}.innerText;`)).toBe(1);
-    },
-  );
+  it.each([
+    'element',
+    'heading',
+    'title',
+    'banner',
+    'button',
+    'container',
+    'row',
+  ])('const %s = document.getElementById(...)', (name) => {
+    expect(
+      count(
+        `const ${name} = document.getElementById("x");\nconst t = ${name}.innerText;`,
+      ),
+    ).toBe(1);
+  });
 });
 
 describe('reported however the element arrived', () => {

@@ -1,10 +1,10 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-11-05",
+  "generatedAt": "2026-11-24",
   "totalPlugins": 32,
-  "totalRules": 499,
-  "oxlintCompatible": 499,
+  "totalRules": 516,
+  "oxlintCompatible": 516,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -358,7 +358,7 @@
       "short": "conventions",
       "shim": "tools/oxlint-plugins/interlace-conventions.cjs",
       "subpath": "eslint-plugin-conventions/oxlint",
-      "ruleCount": 15,
+      "ruleCount": 20,
       "rules": [
         {
           "name": "conventions/analytics-event-naming",
@@ -446,6 +446,36 @@
         },
         {
           "name": "deprecation/no-deprecated-api",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "guidance/enforced-rule-in-prose",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "guidance/guidance-budget",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "guidance/no-duplicated-guidance",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "guidance/procedure-in-memory",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "guidance/subagent-declares-model",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -694,7 +724,7 @@
       "short": "import-next",
       "shim": "tools/oxlint-plugins/interlace-import-next.cjs",
       "subpath": "eslint-plugin-import-next/oxlint",
-      "ruleCount": 55,
+      "ruleCount": 58,
       "rules": [
         {
           "name": "consistent-type-specifier-style",
@@ -722,6 +752,12 @@
         },
         {
           "name": "enforce-import-order",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "enforce-node-protocol-usage",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -980,6 +1016,18 @@
         },
         {
           "name": "no-useless-path-segments",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-webpack-loader-syntax",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "order",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1444,7 +1492,7 @@
           "name": "prefer-at",
           "portability": "compatible",
           "blockers": [],
-          "isTypeAware": false
+          "isTypeAware": true
         },
         {
           "name": "prefer-event-target",
@@ -1642,7 +1690,7 @@
       "short": "nestjs-security",
       "shim": "tools/oxlint-plugins/interlace-nestjs-security.cjs",
       "subpath": "eslint-plugin-nestjs-security/oxlint",
-      "ruleCount": 10,
+      "ruleCount": 11,
       "rules": [
         {
           "name": "no-exposed-private-fields",
@@ -1699,6 +1747,12 @@
           "isTypeAware": false
         },
         {
+          "name": "require-upload-size-limit",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "require-validation-pipe-whitelist",
           "portability": "compatible",
           "blockers": [],
@@ -1711,7 +1765,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 43,
+      "ruleCount": 44,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1943,6 +1997,12 @@
         },
         {
           "name": "require-dependency-integrity",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-emitter-error-handler",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2401,7 +2461,7 @@
       "short": "react-features",
       "shim": "tools/oxlint-plugins/interlace-react-features.cjs",
       "subpath": "eslint-plugin-react-features/oxlint",
-      "ruleCount": 61,
+      "ruleCount": 68,
       "rules": [
         {
           "name": "component-api/no-arbitrary-token-class",
@@ -2494,6 +2554,12 @@
           "isTypeAware": false
         },
         {
+          "name": "react/forbid-foreign-prop-types",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "react/hooks-exhaustive-deps",
           "portability": "compatible",
           "blockers": [],
@@ -2524,6 +2590,12 @@
           "isTypeAware": false
         },
         {
+          "name": "react/jsx-no-comment-textnodes",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "react/jsx-no-duplicate-props",
           "portability": "compatible",
           "blockers": [],
@@ -2543,6 +2615,30 @@
         },
         {
           "name": "react/jsx-no-target-blank",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-no-undef",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-pascal-case",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-uses-react",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-uses-vars",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -2759,6 +2855,12 @@
         },
         {
           "name": "react/static-property-placement",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/style-prop-object",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3354,18 +3456,23 @@
     "conventions": [
       "analytics-event-naming",
       "consistent-existence-index-check",
+      "enforced-rule-in-prose",
       "expiring-todo-comments",
       "filename-case",
+      "guidance-budget",
       "no-commented-code",
       "no-console-spaces",
       "no-deprecated-api",
+      "no-duplicated-guidance",
       "no-json-schema-tags",
       "no-magic-numbers",
       "no-raw-cross-property-href",
       "prefer-code-point",
       "prefer-dependency-version-strategy",
       "prefer-dom-node-text-content",
+      "procedure-in-memory",
       "require-data-testid",
+      "subagent-declares-model",
       "utm-taxonomy"
     ],
     "drizzle-security": [
@@ -3415,6 +3522,7 @@
       "dynamic-import-chunkname",
       "enforce-dependency-direction",
       "enforce-import-order",
+      "enforce-node-protocol-usage",
       "enforce-team-boundaries",
       "export",
       "exports-last",
@@ -3458,6 +3566,7 @@
       "no-unresolved",
       "no-unused-modules",
       "no-useless-path-segments",
+      "no-webpack-loader-syntax",
       "order",
       "prefer-default-export",
       "prefer-direct-import",
@@ -3595,6 +3704,7 @@
       "no-unsafe-multer-filename",
       "require-guards",
       "require-throttler",
+      "require-upload-size-limit",
       "require-validation-pipe-whitelist"
     ],
     "node-security": [
@@ -3637,6 +3747,7 @@
       "prefer-native-crypto",
       "require-aead-tag-verification",
       "require-dependency-integrity",
+      "require-emitter-error-handler",
       "require-secure-credential-storage",
       "require-secure-deletion",
       "require-storage-encryption",
@@ -3733,15 +3844,21 @@
       "component-api/require-data-slot",
       "default-props-match-prop-types",
       "display-name",
+      "forbid-foreign-prop-types",
       "hooks-exhaustive-deps",
       "jsx-handler-names",
       "jsx-key",
       "jsx-max-depth",
       "jsx-no-bind",
+      "jsx-no-comment-textnodes",
       "jsx-no-duplicate-props",
       "jsx-no-literals",
       "jsx-no-script-url",
       "jsx-no-target-blank",
+      "jsx-no-undef",
+      "jsx-pascal-case",
+      "jsx-uses-react",
+      "jsx-uses-vars",
       "migration/react-class-to-hooks",
       "no-access-state-in-setstate",
       "no-adjacent-inline-elements",
@@ -3789,15 +3906,21 @@
       "react/checked-requires-onchange-or-readonly",
       "react/default-props-match-prop-types",
       "react/display-name",
+      "react/forbid-foreign-prop-types",
       "react/hooks-exhaustive-deps",
       "react/jsx-handler-names",
       "react/jsx-key",
       "react/jsx-max-depth",
       "react/jsx-no-bind",
+      "react/jsx-no-comment-textnodes",
       "react/jsx-no-duplicate-props",
       "react/jsx-no-literals",
       "react/jsx-no-script-url",
       "react/jsx-no-target-blank",
+      "react/jsx-no-undef",
+      "react/jsx-pascal-case",
+      "react/jsx-uses-react",
+      "react/jsx-uses-vars",
       "react/no-access-state-in-setstate",
       "react/no-adjacent-inline-elements",
       "react/no-arrow-function-lifecycle",
@@ -3834,6 +3957,7 @@
       "react/sort-comp",
       "react/state-in-constructor",
       "react/static-property-placement",
+      "react/style-prop-object",
       "react/void-dom-elements-no-children",
       "require-data-slot",
       "require-default-props",
@@ -3843,6 +3967,7 @@
       "sort-comp",
       "state-in-constructor",
       "static-property-placement",
+      "style-prop-object",
       "void-dom-elements-no-children"
     ],
     "reliability": [

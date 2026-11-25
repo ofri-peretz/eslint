@@ -151,10 +151,17 @@ jobs:
 
       - name: Claude Code Review
         if: steps.token.outputs.present == 'true'
-        uses: anthropics/claude-code-action@6d5ae526d25ce88daa2200be073e1a373167f064 # v1
+        uses: anthropics/claude-code-action@c84e279f859e2591391e95bd309286eb111c345f # v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           track_progress: true
+          # track_progress inlines every PR comment into the prompt. CodeRabbit
+          # posts long HTML reviews on every push, and on eslint#1574 they grew
+          # the prompt from 60K to 477K characters (362K of it CodeRabbit). The
+          # run then ends in under a second with is_error:true, $0 spent and no
+          # model call, and this required check blocks the merge. The reviewer
+          # reads the diff itself, so CodeRabbit's text adds nothing it needs.
+          exclude_comments_by_actor: 'coderabbitai[bot]'
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}

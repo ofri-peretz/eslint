@@ -20,7 +20,10 @@ describe('no-deprecated-buffer', () => {
         name: 'Buffer.alloc returns zero-filled memory',
         code: 'Buffer.alloc(1024)',
       },
-      { code: 'Buffer.allocUnsafe(512)' },
+      {
+        name: 'Buffer.allocUnsafe is the replacement API, not the deprecated constructor',
+        code: 'Buffer.allocUnsafe(512)',
+      },
       { code: 'Buffer.concat([a, b])' },
       { code: 'const buf = Buffer.from(data, "utf8")' },
 

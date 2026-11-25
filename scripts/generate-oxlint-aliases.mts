@@ -86,7 +86,10 @@ function renderManifest(short: string, plugin: PluginManifest): string {
   const manifest = {
     name: alias,
     version: plugin.version,
-    description: `The ${short} rules for oxlint and Vite+. Same rules and rule IDs as ${plugin.name}.`,
+    // npm search ranks the description's opening phrase, so the alias reuses
+    // the plugin's search-first wording with the engine swapped
+    // (scripts/__tests__/npm-search-description.lock.test.ts).
+    description: `${(plugin.description ?? `ESLint ${short} rules`).replace(/^ESLint /, 'Oxlint ')} Same rules and rule IDs as ${plugin.name}, for oxlint and Vite+.`,
     ...(PRIVATE.has(short) ? { private: true } : {}),
     type: 'commonjs',
     // index.js only re-exports the plugin; loading it changes nothing else.
@@ -253,7 +256,6 @@ function renderReadme(
       `${prefix}${alias}`,
     );
   }
-  const cta = /^> ⭐.*$/m.exec(src)?.[0] ?? '';
   // Some plugins keep the doctrine inside "Why"; it is placed once, below.
   const why = section(src, /^## Why[^\n]*$/m)
     .replace(/<!-- AUTO-GENERATED:DOCTRINE:START[\s\S]*?DOCTRINE:END -->/, '')
@@ -263,7 +265,8 @@ function renderReadme(
       .exec(src)?.[1]
       ?.trim() ?? '';
   const rules = section(src, /^## Rules$/m);
-  const support = section(src, /^## ⭐ Support & follow$/m);
+  // The plugin README's one star line, at the end (`## Support`, sync-readme-rules.ts).
+  const support = section(src, /^## Support$/m);
 
   const allRules = [...rules.matchAll(/^\| \[([a-z0-9-]+)\]\(/gm)].map(
     (m) => m[1],
@@ -314,7 +317,6 @@ None of these ${allRules.length} rules has an oxlint built-in equivalent. Every 
     header,
     tagline,
     aliasBadges,
-    cta,
     `## Description
 
 ${lead}\`${alias}\` is the [oxlint](https://oxc.rs/docs/guide/usage/linter/js-plugins) and [Vite+](https://viteplus.dev/guide/lint) name for [\`${plugin.name}\`](https://www.npmjs.com/package/${plugin.name}). It carries the same rules under the same IDs (\`${short}/<rule>\`), always at the same version, because it re-exports that package rather than copying it. Installing it does not install ESLint.`,
@@ -364,7 +366,7 @@ Install [\`${plugin.name}\`](https://www.npmjs.com/package/${plugin.name}) inste
 | Package | Version |
 | :--- | :--- |
 | oxlint | verified on \`${OXLINT_VERSION}\`: CI loads every rule ID through \`jsPlugins\` |
-| Vite+ | \`lint.jsPlugins\` in \`vite.config.ts\` |${node ? `\n| Node.js | \`${node}\` |` : ''}`,
+| Vite+ | \`lint.jsPlugins\` in \`vite.config.ts\` |${node ? `\n| Node.js | \`${node.replaceAll('|', '\\|')}\` |` : ''}`,
     unmark(rules),
     renderEcosystemTable(REGISTRY, alias),
     unmark(support),

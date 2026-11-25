@@ -43,7 +43,10 @@ describe('detect-eval-with-expression', () => {
           name: 'a plain function returning its argument evaluates nothing',
           code: 'function myFunction(data) { return data; }',
         },
-        'const result = calculateValue();',
+        {
+          name: 'a call to an ordinary function evaluates nothing',
+          code: 'const result = calculateValue();',
+        },
       ],
       invalid: [],
     });
@@ -62,14 +65,17 @@ describe('detect-eval-with-expression', () => {
             errors: [{ messageId: 'strategyRefactor' }],
           },
           {
+            name: 'eval of a template literal that interpolates a value is reported',
             code: 'eval(`code: ${value}`);',
             errors: [{ messageId: 'useTemplateLiteral' }],
           },
           {
+            name: 'eval of a variable expression is the sink this rule exists for',
             code: 'const result = eval(expression);',
             errors: [{ messageId: 'strategyRefactor' }],
           },
           {
+            name: 'eval of a function parameter is reported',
             code: `
             function process(code) {
               return eval(code);
@@ -90,10 +96,12 @@ describe('detect-eval-with-expression', () => {
         valid: [],
         invalid: [
           {
+            name: 'an arrow function that evaluates its parameter is reported',
             code: 'const runner = (code) => eval(code);',
             errors: [{ messageId: 'strategyRefactor' }],
           },
           {
+            name: 'eval() guarded by an if-block is still reported — the rule does not require eval to run unconditionally',
             code: `
             if (condition) {
               eval(code);
@@ -340,7 +348,10 @@ describe('detect-eval-with-expression', () => {
       {
         valid: [
           // eval with literal string is allowed by default (line 261)
-          'eval("literal string");',
+          {
+            name: 'eval of a double-quoted literal runs nothing the author did not write',
+            code: 'eval("literal string");',
+          },
           "eval('literal string');",
         ],
         invalid: [

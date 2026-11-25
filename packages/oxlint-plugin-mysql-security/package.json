@@ -1,7 +1,7 @@
 {
   "name": "oxlint-plugin-mysql-security",
-  "version": "2.0.1",
-  "description": "The mysql-security rules for oxlint and Vite+. Same rules and rule IDs as eslint-plugin-mysql-security.",
+  "version": "2.0.4",
+  "description": "Oxlint MySQL security rules for mysql2 and mysql — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials. Same rules and rule IDs as eslint-plugin-mysql-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./index.js",
@@ -73,6 +73,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-mysql-security": "2.0.1"
+    "eslint-plugin-mysql-security": "2.0.4"
   }
 }

@@ -5,4 +5,4 @@
 //               measure this rule's precision — it passes by construction.
 //               Its value is cross-rule: no OTHER rule may fire on it.
 // This MUST be flagged by secure-coding/no-unsafe-deserialization
-eval(req.body.script);
+serializer.deserialize(req.body.payload);

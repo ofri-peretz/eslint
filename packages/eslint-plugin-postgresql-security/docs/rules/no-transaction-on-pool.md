@@ -14,7 +14,7 @@ autofix: false
 Prevents running transaction commands directly on pool (must use dedicated client).
 <!-- @/rule-summary -->
 
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
+**CWE:** [CWE-662](https://cwe.mitre.org/data/definitions/662.html)
 
 Prevents running transaction commands directly on pool (must use dedicated client).
 

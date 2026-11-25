@@ -1,0 +1,103 @@
+{
+  "rule": "no-string-refs",
+  "source": "eslint-plugin-react@7.37.5 tests/lib/rules/no-string-refs.js (MIT)",
+  "cases": [
+    {
+      "kind": "valid",
+      "n": 3,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <div ref={`hello`}>Hello {this.props.name}</div>;\n          }\n        });\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 5,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <div ref={`hello`}>Hello {this.props.name}</div>;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 6,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <div ref={`hello${index}`}>Hello {this.props.name}</div>;\n          }\n        });\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 8,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <div ref={`hello${index}`}>Hello {this.props.name}</div>;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 18,
+      "code": "\n        var Hello = createReactClass({\n          componentDidMount: function() {\n          var component = this.refs.hello;\n          },\n          render: function() {\n            return <div ref={`hello${index}`}>Hello {this.props.name}</div>;\n          }\n        });\n      \n// features: [], parser: default, options: [{\"noTemplateLiterals\":true}], settings: {\"react\":{\"version\":\"18.3.0\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "noTemplateLiterals": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "version": "18.3.0"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 20,
+      "code": "\n        var Hello = createReactClass({\n          componentDidMount: function() {\n          var component = this.refs.hello;\n          },\n          render: function() {\n            return <div ref={`hello${index}`}>Hello {this.props.name}</div>;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"noTemplateLiterals\":true}], settings: {\"react\":{\"version\":\"18.3.0\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "noTemplateLiterals": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "version": "18.3.0"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    }
+  ]
+}

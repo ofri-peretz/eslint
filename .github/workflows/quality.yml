@@ -26,7 +26,7 @@ run-name: >-
 # everything else still finishes in ~30s.
 #
 # Caching: `./.github/actions/setup` hydrates node_modules and (where used)
-# the `.turbo` task cache. See AGENTS.md "Promotion gate" for the full model.
+# the `.turbo` task cache. See docs/CI_AND_RELEASE.md "Promotion gate" for the full model.
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
@@ -74,6 +74,43 @@ jobs:
         with:
           turbo-cache: 'false'
       - run: npm run oxlint
+
+  dogfood:
+    # Our security and quality plugins, built from this PR, over our own plugin
+    # source (eslint.dogfood.config.mjs). Fails on any rule at `error`; the first-run
+    # backlog is held at `warn` there with its counts, and ratchets back up.
+    name: Dogfood (our plugins on our source)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+      # The config imports the workspace plugins by name; build them (and, via
+      # `...`, eslint-devkit they depend on) so they load from dist/.
+      - run: >-
+          npx turbo run build
+          --filter='eslint-plugin-secure-coding...'
+          --filter='eslint-plugin-node-security...'
+          --filter='eslint-plugin-maintainability...'
+          --filter='eslint-plugin-reliability...'
+          --filter='eslint-plugin-conventions...'
+          --filter='eslint-plugin-operability...'
+          --filter='eslint-plugin-modernization...'
+          --filter='eslint-plugin-modularity...'
+          --filter='eslint-plugin-import-next...'
+          --filter='eslint-plugin-react-a11y...'
+          --filter='eslint-plugin-react-features...'
+      - run: npm run lint:dogfood
+      # The guidance preset over CLAUDE.md, AGENTS.md, skills and subagents, at
+      # `warn`; `--max-warnings` in the script is the ratchet — it may only go down.
+      - run: npm run lint:guidance
+      # truepass over every test file, through the root config (which imports
+      # react-a11y and react-features, built above). Its pre-existing findings
+      # are held in eslint-suppressions.json: a new one fails, a fixed one fails
+      # until pruned, so the counts only go down.
+      - run: npm run lint:truepass
 
   markdown:
     name: Markdown Lint
@@ -421,7 +458,7 @@ jobs:
       # Scans the checked-out tree only — no `npm ci`, so this sees committed
       # lockfiles and nothing from node_modules. Exits non-zero on any finding.
       - name: OSV — no known vulnerabilities in any committed lockfile
-        uses: google/osv-scanner-action/osv-scanner-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        uses: google/osv-scanner-action/osv-scanner-action@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
         with:
           scan-args: |-
             --config=./osv-scanner.toml
@@ -489,6 +526,7 @@ jobs:
     needs:
       [
         oxlint,
+        dogfood,
         markdown,
         changelog,
         workflows,
@@ -505,6 +543,7 @@ jobs:
       - name: Render gate report
         env:
           R_OXLINT: ${{ needs.oxlint.result }}
+          R_DOGFOOD: ${{ needs.dogfood.result }}
           R_MARKDOWN: ${{ needs.markdown.result }}
           R_CHANGELOG: ${{ needs.changelog.result }}
           R_WORKFLOWS: ${{ needs.workflows.result }}
@@ -528,7 +567,7 @@ jobs:
           }
 
           all_pass=true
-          for r in "$R_OXLINT" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_TAXONOMY" "$R_PUBLISH" "$R_LOCKFILE" "$R_SUPPLY" "$R_RECALL" "$R_BENCH_SIZE" "$R_FORMAT"; do
+          for r in "$R_OXLINT" "$R_DOGFOOD" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_TAXONOMY" "$R_PUBLISH" "$R_LOCKFILE" "$R_SUPPLY" "$R_RECALL" "$R_BENCH_SIZE" "$R_FORMAT"; do
             [ "$r" = "success" ] || all_pass=false
           done
           if $all_pass; then
@@ -543,6 +582,7 @@ jobs:
             echo "| Gate | Result | Notes |"
             echo "|---|---|---|"
             echo "| oxlint              | $(icon "$R_OXLINT") $R_OXLINT           | fast lint pass (Rust-native) |"
+            echo "| dogfood             | $(icon "$R_DOGFOOD") $R_DOGFOOD          | our plugins on our source |"
             echo "| Markdown lint       | $(icon "$R_MARKDOWN") $R_MARKDOWN       | \`markdownlint-cli2\` |"
             echo "| CHANGELOG present   | $(icon "$R_CHANGELOG") $R_CHANGELOG     | every published package has CHANGELOG.md |"
             echo "| Workflow + script locks | $(icon "$R_WORKFLOWS") $R_WORKFLOWS | \`lint-workflows.ts\` + \`scripts/__tests__\` |"

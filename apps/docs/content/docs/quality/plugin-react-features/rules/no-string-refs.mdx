@@ -95,6 +95,14 @@ function MyComponent() {
 }
 ```
 
+## Options
+
+| Option               | Type      | Default | Description |
+| -------------------- | --------- | ------- | ----------- |
+| `noTemplateLiterals` | `boolean` | `false` | Also report a template literal ref (``ref={`name`}``) |
+
+`this.refs` is reported only on `settings.react.version` before `18.3.0`, where it is the string-ref API; from 18.3 it is a plain, writable property. With no version configured the newest React is assumed.
+
 ## Related Rules
 
 - [`react-class-to-hooks`](./react-class-to-hooks) - Migrate to hooks

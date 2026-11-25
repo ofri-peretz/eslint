@@ -38,10 +38,10 @@ const POS = {
 module.exports = {
   rule: 'no-client-controlled-authorization',
   // Eq: 6 containers x 5 attrs x 2 spellings x 2 + headers 3 attrs x 3
-  // spellings x 2; 10 other positions x 2 containers x 2 attrs; +4 evidence
-  // variants x 2 containers (body/user role).
-  domain: 120 + 18 + 40 + 8,
-  traces: 9000,
+  // spellings x 2; 10 other positions x 2 containers x 2 attrs; +5 evidence
+  // variants x 2 containers (body/user role), the default one already counted.
+  domain: 120 + 18 + 40 + 10,
+  traces: 16000,
   key: (s) =>
     ['container', 'attr', 'pos', 'spell', 'extra', 'evidence']
       .map((k) => `${k}=${tag(s[k])}`)
@@ -63,8 +63,11 @@ module.exports = {
           ? `${base}.${ATTR[a]}`
           : `${base}['${ATTR[a]}']`;
     const body = [`  ${POS[tag(s.pos)](e)}`, '  res.sendStatus(200);'];
-    const route = (r) => [
-      `${r}.post('/admin/action', (req, res) => {`,
+    // A literal-path `(req, res)` registration is itself Express evidence
+    // (#1616: route modules receive `app` from their caller and import nothing),
+    // so the no-Express fixture registers on an imported path constant.
+    const route = (r, path = "'/admin/action'") => [
+      `${r}.post(${path}, (req, res) => {`,
       ...body,
       '});',
     ];
@@ -90,7 +93,18 @@ module.exports = {
         ...body,
         '}',
       ],
-      NoExpress: () => ["import { app } from './server';", ...route('app')],
+      NoExpress: () => [
+        "import { app } from './server';",
+        "import { ADMIN_ACTION } from './paths';",
+        ...route('app', 'ADMIN_ACTION'),
+      ],
+      // The NodeGoat shape: no import, `app` handed in by the caller, handler
+      // registered on a literal path.
+      RouteModule: () => [
+        'module.exports = (app) => {',
+        ...route('app').map((l) => `  ${l}`),
+        '};',
+      ],
     };
     return [...EVIDENCE[tag(s.evidence)](), ''].join('\n');
   },

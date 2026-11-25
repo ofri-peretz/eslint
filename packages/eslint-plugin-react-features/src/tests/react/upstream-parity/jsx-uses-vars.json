@@ -1,0 +1,423 @@
+{
+  "rule": "jsx-uses-vars",
+  "source": "eslint-plugin-react@7.37.5 tests/lib/rules/jsx-uses-vars.js (MIT)",
+  "cases": [
+    {
+      "kind": "valid",
+      "n": 0,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        function foo() {\n          var App;\n          var bar = React.render(<App/>);\n          return bar;\n        };\n        foo()\n      \n// features: [,no-ts-new], parser: default",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 2,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        var App;\n        React.render(<App/>);\n      \n// features: [,no-ts-new], parser: default",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 4,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        var a = 1;\n        React.render(<img src={a} />);\n      \n// features: [,no-ts-new], parser: default",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 6,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        var App;\n        function f() {\n          return <App />;\n        }\n        f();\n      \n// features: [,no-ts-new], parser: default",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 8,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        var App;\n        <App.Hello />\n      \n// features: [,no-ts-new], parser: default",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 10,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        class HelloMessage {};\n        <HelloMessage />\n      \n// features: [,no-ts-new], parser: default",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 12,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        class HelloMessage {\n          render() {\n            var HelloMessage = <div>Hello</div>;\n            return HelloMessage;\n          }\n        };\n        <HelloMessage />\n      \n// features: [,no-ts-new], parser: default",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 14,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        function foo() {\n          var App = { Foo: { Bar: {} } };\n          var bar = React.render(<App.Foo.Bar/>);\n          return bar;\n        };\n        foo()\n      \n// features: [,no-ts-new], parser: default",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 16,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        function foo() {\n          var App = { Foo: { Bar: { Baz: {} } } };\n          var bar = React.render(<App.Foo.Bar.Baz/>);\n          return bar;\n        };\n        foo()\n      \n// features: [,no-ts-new], parser: default",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 18,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        var object;\n        React.render(<object.Tag />);\n      \n// features: [,no-ts-new], parser: default",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 20,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        var object;\n        React.render(<object.tag />);\n      \n// features: [,no-ts-new], parser: default",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 0,
+      "code": "/* eslint react/jsx-uses-vars: 1 */ var App;\n// features: [], parser: default",
+      "errors": 1,
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 2,
+      "code": "/* eslint react/jsx-uses-vars: 1 */ var App;\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 3,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        var App;\n        var unused;\n        React.render(<App unused=\"\"/>);\n      \n// features: [], parser: default",
+      "errors": 1,
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 5,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        var App;\n        var unused;\n        React.render(<App unused=\"\"/>);\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 6,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        var App;\n        var Hello;\n        React.render(<App:Hello/>);\n      \n// features: [jsx namespace], parser: default",
+      "errors": 2,
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 7,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        var Button;\n        var Input;\n        React.render(<Button.Input unused=\"\"/>);\n      \n// features: [], parser: default",
+      "errors": 1,
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 9,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        var Button;\n        var Input;\n        React.render(<Button.Input unused=\"\"/>);\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 10,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        class unused {}\n      \n// features: [], parser: default",
+      "errors": 1,
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 12,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        class unused {}\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 13,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        class HelloMessage {\n          render() {\n            var HelloMessage = <div>Hello</div>;\n            return HelloMessage;\n          }\n        }\n      \n// features: [], parser: default",
+      "errors": 1,
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 15,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        class HelloMessage {\n          render() {\n            var HelloMessage = <div>Hello</div>;\n            return HelloMessage;\n          }\n        }\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 16,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        import {Hello} from 'Hello';\n        function Greetings() {\n          const Hello = require('Hello').default;\n          return <Hello />;\n        }\n        Greetings();\n      \n// features: [], parser: default",
+      "errors": 1,
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 18,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        import {Hello} from 'Hello';\n        function Greetings() {\n          const Hello = require('Hello').default;\n          return <Hello />;\n        }\n        Greetings();\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 19,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        var lowercase;\n        React.render(<lowercase />);\n      \n// features: [], parser: default",
+      "errors": 1,
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 21,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        var lowercase;\n        React.render(<lowercase />);\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 22,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        function Greetings(div) {\n          return <div />;\n        }\n        Greetings();\n      \n// features: [], parser: default",
+      "errors": 1,
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 24,
+      "code": "\n        /* eslint react/jsx-uses-vars: 1 */\n        function Greetings(div) {\n          return <div />;\n        }\n        Greetings();\n      \n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "coreRule": "no-unused-vars",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 0,
+      "code": "\n        /* eslint react/jsx-uses-vars:1 */\n        let App = <div />;\n        <App />;\n      \n// features: [,no-ts-new], parser: default",
+      "errors": 1,
+      "coreRule": "prefer-const",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 2,
+      "code": "\n        /* eslint react/jsx-uses-vars:1 */\n        let filters = 'foo';\n        <div>{filters}</div>;\n      \n// features: [,no-ts-new], parser: default",
+      "errors": 1,
+      "coreRule": "prefer-const",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    }
+  ]
+}

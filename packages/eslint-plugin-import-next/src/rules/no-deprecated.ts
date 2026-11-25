@@ -18,6 +18,14 @@ import {
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type ts from 'typescript';
 import { aliasSymbolFlag, loadTypeScript } from '../utils/typescript-peer';
+import { ExportMap, exportMapOf } from '../utils/export-map';
+import type { ExportMeta } from '../utils/export-map';
+import {
+  exportName,
+  PARSE_ERROR_MESSAGE,
+  referencesOf,
+  reportParseErrors,
+} from '../utils/export-map-rules';
 
 /**
  * @vocabulary `deprecated` is the JSDoc block tag. It is defined by JSDoc and
@@ -26,7 +34,12 @@ import { aliasSymbolFlag, loadTypeScript } from '../utils/typescript-peer';
  *
  * @see https://jsdoc.app/tags-deprecated
  */
-type MessageIds = 'deprecatedImport' | 'deprecatedExport' | 'deprecatedUsage';
+type MessageIds =
+  'deprecatedImport' | 'deprecatedExport' | 'deprecatedUsage' | 'parseError';
+
+/** The `@deprecated` tag of an export's doc, if it has one. */
+const deprecationOf = (meta: ExportMeta | null | undefined) =>
+  meta?.doc?.tags.find((tag) => tag.title === 'deprecated');
 
 export interface Options {
   /** Allow importing deprecated items (for migration periods) */
@@ -80,6 +93,7 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-deprecated.md',
       }),
+      parseError: PARSE_ERROR_MESSAGE,
     },
     schema: [
       {
@@ -141,6 +155,115 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
           checker: ts.TypeChecker;
         }
       | undefined;
+
+    /**
+     * Without type information, the other modules are parsed
+     * (`../utils/export-map`), as eslint-plugin-import does: the import
+     * bindings of deprecated exports, and the namespace imports whose
+     * members may be.
+     */
+    let deprecatedImports: Map<TSESLint.Scope.Variable, string>;
+    let namespaceImports: Map<
+      string,
+      { exports: ExportMap; reads: Set<TSESTree.Node> }
+    >;
+
+    /** Every import of the file, collected first: a use may come before it. */
+    function collectImports(program: TSESTree.Program) {
+      for (const node of program.body) {
+        if (node.type !== 'ImportDeclaration') continue;
+        const exports = exportMapOf(node.source.value, context);
+        if (!exports) continue;
+        if (
+          checkJSDoc &&
+          deprecationOf({ doc: exports.doc }) &&
+          !isAllowed(node.source.value)
+        ) {
+          context.report({
+            node,
+            messageId: 'deprecatedImport',
+            data: { name: node.source.value },
+          });
+        }
+        if (exports.errors.length > 0) {
+          reportParseErrors(context, node.source, node.source.value, exports);
+          continue;
+        }
+        for (const specifier of node.specifiers) {
+          if (specifier.type === 'ImportNamespaceSpecifier') {
+            if (exports.size()) {
+              namespaceImports.set(specifier.local.name, {
+                exports,
+                reads: referencesOf(context, specifier),
+              });
+            }
+            continue;
+          }
+          const imported =
+            specifier.type === 'ImportDefaultSpecifier'
+              ? 'default'
+              : exportName(specifier.imported);
+          const meta = exports.get(imported);
+          if (meta == null) continue;
+          if (meta.namespace) {
+            namespaceImports.set(specifier.local.name, {
+              exports: meta.namespace,
+              reads: referencesOf(context, specifier),
+            });
+          }
+          // The mark is the module's documentation: `checkJSDoc: false`
+          // turns it off.
+          if (!checkJSDoc || !deprecationOf(meta) || isAllowed(imported)) {
+            continue;
+          }
+          context.report({
+            node: specifier,
+            messageId: 'deprecatedImport',
+            data: { name: imported },
+          });
+          for (const variable of context.sourceCode.getDeclaredVariables(
+            specifier,
+          )) {
+            deprecatedImports.set(variable, imported);
+          }
+        }
+      }
+    }
+
+    /** `ns.old`, and `ns.deep.old` through a re-exported namespace. */
+    function checkNamespaceMember(
+      node: TSESTree.MemberExpression,
+      object: TSESTree.Identifier,
+    ) {
+      const binding = namespaceImports.get(object.name);
+      // Not the import: a parameter or local of the same name shadows it.
+      if (!binding?.reads.has(object)) return;
+      let exports: ExportMap | null | undefined = binding.exports;
+      let member: TSESTree.Node = node;
+      while (
+        exports instanceof ExportMap &&
+        member.type === 'MemberExpression'
+      ) {
+        if (member.computed) return;
+        // Not computed: the property is a plain name.
+        const name = (member.property as TSESTree.Identifier).name;
+        const meta = exports.get(name);
+        if (!meta) return;
+        if (checkJSDoc && deprecationOf(meta) && !isAllowed(name)) {
+          context.report({
+            node: member.property,
+            messageId: 'deprecatedExport',
+            data: { name },
+          });
+        }
+        exports = meta.namespace;
+        const parent: TSESTree.Node = member.parent;
+        if (parent.type !== 'MemberExpression' || parent.object !== member) {
+          return;
+        }
+        member = parent;
+      }
+    }
 
     function isAllowed(name: string): boolean {
       return allow.includes(name);
@@ -426,6 +549,8 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
         }
 
         deprecatedItems = new Map();
+        deprecatedImports = new Map();
+        namespaceImports = new Map();
         typed = undefined;
         // hasParserServices proves a program exists.
         if (hasParserServices(context)) {
@@ -437,6 +562,10 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
         }
 
         return true;
+      },
+
+      Program(node: TSESTree.Program) {
+        if (!typed) collectImports(node);
       },
 
       // Check for deprecated declarations in the current file
@@ -523,7 +652,11 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
 
       // `ns.old` / `ns['old']` through a namespace import.
       MemberExpression(node: TSESTree.MemberExpression) {
-        if (!typed || node.object.type !== 'Identifier') return;
+        if (node.object.type !== 'Identifier') return;
+        if (!typed) {
+          checkNamespaceMember(node, node.object);
+          return;
+        }
         const { checker } = typed;
         const member = propertyName(node);
         if (member === null || isAllowed(member)) return;
@@ -549,6 +682,16 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
       },
 
       'Program:exit'() {
+        // Each use of an imported deprecated binding, wherever it is.
+        for (const [variable, name] of deprecatedImports) {
+          for (const reference of variable.references) {
+            context.report({
+              node: reference.identifier,
+              messageId: 'deprecatedUsage',
+              data: { name },
+            });
+          }
+        }
         for (const [variable, info] of deprecatedItems) {
           for (const reference of variable.references) {
             reportReference(reference, info);

@@ -76,8 +76,10 @@ import {
   formatLLMMessage,
   MessageIcons,
   namesOneOf,
+  objectKeyName,
   propertyName,
   readsRequestShape,
+  resolveModuleBinding,
   unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import {
@@ -1218,9 +1220,25 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
       // protocol code a permanent finding.
       const covered = byteMapFor(call);
       let remaining = covered === null ? -1 : covered.length;
+      /** Set once a file read has filled the buffer from offset 0. */
+      let readCount: ReadCount | null = null;
 
       for (const use of uses) {
-        const kind = classifyUse(use.identifier as TSESTree.Identifier);
+        const identifier = use.identifier as TSESTree.Identifier;
+        if (readCount !== null) {
+          // After the read, every look at the buffer must stop at its count.
+          // Writes and metadata change nothing about what a read can see.
+          if (isReadUpTo(identifier, readCount)) continue;
+          if (isReadWhenFull(identifier, readCount)) continue;
+          if (classifyUse(identifier) === 'read') return false;
+          continue;
+        }
+        const filled = readIntoFromStart(identifier);
+        if (filled !== null) {
+          readCount = filled;
+          continue;
+        }
+        const kind = classifyUse(identifier);
         // Metadata reads disclose nothing, and a partial write is not a read —
         // neither settles the question, so keep looking for the first one that
         // does.
@@ -1237,7 +1255,317 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         }
         return kind === 'covering';
       }
-      return false;
+      return readCount !== null;
+    }
+
+    /**
+     * How the byte count of a file read is reached afterwards: the `const` a
+     * `readSync` returned or `bytesRead` was destructured into (`binding`), or
+     * the `const` an awaited `FileHandle.read` result was bound to, read as
+     * `<result>.bytesRead` (`result`).
+     */
+    type ReadCount = {
+      via: 'binding' | 'result';
+      variable: TSESLint.Scope.Variable;
+    };
+
+    /** The `const` variable a declarator binds under this name, if any. */
+    function constBinding(
+      declarator: TSESTree.Node,
+      id: TSESTree.Node,
+    ): TSESLint.Scope.Variable | null {
+      if (
+        declarator.type !== AST_NODE_TYPES.VariableDeclarator ||
+        declarator.parent.kind !== 'const' ||
+        id.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return null;
+      }
+      // A declarator always declares the identifier it binds.
+      return sourceCode
+        .getDeclaredVariables(declarator)
+        .find(
+          (variable) => variable.name === id.name,
+        ) as TSESLint.Scope.Variable;
+    }
+
+    /**
+     * Is this use the buffer argument of a file read that fills it from
+     * offset 0, and how is that read's byte count reached?
+     *
+     * Two spellings of Node's fs API, by their own signatures:
+     *
+     *   const n = fs.readSync(fd, buf, 0, len, pos);          // returns the count
+     *   const r = await handle.read(buf, 0, len, pos);        // { bytesRead, buffer }
+     *   const { bytesRead } = await handle.read(buf, 0, …);
+     *
+     * Both write bytes `[offset, offset + count)`. Only offset 0 — written,
+     * or omitted, which defaults to 0 — makes `[0, count)` the initialized
+     * prefix. The count must land in a `const`, or a later write could make
+     * the bound something else. A `FileHandle.read` that is not awaited is a
+     * promise, and `.bytesRead` on it is `undefined`.
+     */
+    function readIntoFromStart(
+      identifier: TSESTree.Identifier,
+    ): ReadCount | null {
+      const call = identifier.parent;
+      if (call.type !== AST_NODE_TYPES.CallExpression) return null;
+
+      // `fs.readSync(fd, buf, …)` — resolved to Node's fs, not a name match:
+      // a local `readSync` that returns a number without writing proves
+      // nothing about the buffer.
+      if (
+        isFsExport(call.callee, ['readSync']) &&
+        call.arguments[1] === identifier
+      ) {
+        const offset = offsetOf(call.arguments[2]);
+        if (offset !== 'start' && offset !== 0) return null;
+        const declarator = call.parent;
+        const variable = constBinding(
+          declarator,
+          (declarator as TSESTree.VariableDeclarator).id,
+        );
+        return variable === null ? null : { via: 'binding', variable };
+      }
+
+      // `fs.read(fd, buf, 0, len, pos, (err, bytesRead) => …)` — the callback
+      // spelling of the same read. The count is the callback's second
+      // parameter, and it counts only while nothing reassigns it.
+      if (
+        isFsExport(call.callee, ['read']) &&
+        call.arguments.length === 6 &&
+        call.arguments[1] === identifier
+      ) {
+        const offset = offsetOf(call.arguments[2]);
+        if (offset !== 'start' && offset !== 0) return null;
+        const callback = call.arguments[5] as TSESTree.Node;
+        if (
+          callback.type !== AST_NODE_TYPES.FunctionExpression &&
+          callback.type !== AST_NODE_TYPES.ArrowFunctionExpression
+        ) {
+          return null;
+        }
+        const count = callback.params[1];
+        if (count?.type !== AST_NODE_TYPES.Identifier) return null;
+        // Node passes the ORIGINAL buffer as the callback's third argument, so
+        // a third parameter that is read can hand out all of it whatever the
+        // count says. One that is never read (or absent) cannot.
+        const alias = callback.params[2];
+        if (
+          alias !== undefined &&
+          (alias.type !== AST_NODE_TYPES.Identifier ||
+            sourceCode
+              .getDeclaredVariables(callback)
+              .some(
+                (declared) =>
+                  declared.name === alias.name &&
+                  declared.references.length > 0,
+              ))
+        ) {
+          return null;
+        }
+        const variable = sourceCode
+          .getDeclaredVariables(callback)
+          .find((declared) => declared.name === count.name);
+        return variable !== undefined &&
+          variable.references.every((reference) => !reference.isWrite())
+          ? { via: 'binding', variable }
+          : null;
+      }
+
+      // `handle.read(buf, …)` on a FileHandle this file opened with
+      // `fs/promises` `open()` — again resolved, so an object of our own with
+      // a `read` method is not mistaken for one.
+      const callee = call.callee;
+      if (
+        callee.type !== AST_NODE_TYPES.MemberExpression ||
+        propertyName(callee) !== 'read' ||
+        call.arguments[0] !== identifier ||
+        !isOpenedFileHandle(callee.object)
+      ) {
+        return null;
+      }
+      const offset = offsetOf(call.arguments[1]);
+      if (offset !== 'start' && offset !== 0) return null;
+      if (call.parent.type !== AST_NODE_TYPES.AwaitExpression) return null;
+      const declarator = call.parent.parent;
+      if (declarator.type !== AST_NODE_TYPES.VariableDeclarator) return null;
+      const target = declarator.id;
+      if (target.type === AST_NODE_TYPES.ObjectPattern) {
+        // `const { bytesRead } = await handle.read(…)` — the count's own
+        // binding, and nothing else: `{ bytesRead, buffer }` hands the whole
+        // buffer out under a second name this walk does not follow.
+        const [property] = target.properties;
+        if (
+          target.properties.length !== 1 ||
+          property?.type !== AST_NODE_TYPES.Property ||
+          objectKeyName(property) !== 'bytesRead'
+        ) {
+          return null;
+        }
+        const variable = constBinding(declarator, property.value);
+        return variable === null ? null : { via: 'binding', variable };
+      }
+      const variable = constBinding(declarator, target);
+      // The result object is mutable and carries the buffer: every other use
+      // must be an unwritten `.bytesRead` read, or `r.bytesRead = 16` /
+      // `return r.buffer` would pass.
+      return variable !== null && onlyReadsBytesRead(variable)
+        ? { via: 'result', variable }
+        : null;
+    }
+
+    /** Does this callee resolve to an export of Node's `fs` at `path`? */
+    function isFsExport(
+      callee: TSESTree.Node,
+      path: readonly string[],
+    ): boolean {
+      const binding = resolveModuleBinding(callee, sourceCode.getScope(callee));
+      if (binding === undefined) return false;
+      const full =
+        binding.module === 'fs/promises' ||
+        binding.module === 'node:fs/promises'
+          ? ['promises', ...binding.path]
+          : binding.module === 'fs' || binding.module === 'node:fs'
+            ? binding.path
+            : null;
+      return full !== null && full.join('.') === path.join('.');
+    }
+
+    /** `const handle = await open(…)` with `open` from `fs/promises`. */
+    function isOpenedFileHandle(receiver: TSESTree.Node): boolean {
+      if (receiver.type !== AST_NODE_TYPES.Identifier) return false;
+      const variable = findVariable(sourceCode, receiver);
+      const def = variable?.defs[0];
+      if (
+        variable?.defs.length !== 1 ||
+        def?.type !== 'Variable' ||
+        def.parent.kind !== 'const' ||
+        def.node.init?.type !== AST_NODE_TYPES.AwaitExpression
+      ) {
+        return false;
+      }
+      const opened = def.node.init.argument;
+      return (
+        opened.type === AST_NODE_TYPES.CallExpression &&
+        isFsExport(opened.callee, ['promises', 'open'])
+      );
+    }
+
+    /** Is every use of the result, besides its declaration, `r.bytesRead` read? */
+    function onlyReadsBytesRead(variable: TSESLint.Scope.Variable): boolean {
+      return variable.references.every((reference) => {
+        if (reference.init) return true;
+        const member = reference.identifier.parent;
+        if (
+          member.type !== AST_NODE_TYPES.MemberExpression ||
+          member.object !== reference.identifier ||
+          propertyName(member) !== 'bytesRead'
+        ) {
+          return false;
+        }
+        const use = member.parent;
+        if (use.type === AST_NODE_TYPES.AssignmentExpression)
+          return use.left !== member;
+        if (use.type === AST_NODE_TYPES.UpdateExpression) return false;
+        return !(
+          use.type === AST_NODE_TYPES.UnaryExpression &&
+          use.operator === 'delete'
+        );
+      });
+    }
+
+    /** Does this expression read the count `readCount` describes? */
+    function isCount(node: TSESTree.Node, readCount: ReadCount): boolean {
+      if (readCount.via === 'binding') {
+        return (
+          node.type === AST_NODE_TYPES.Identifier &&
+          findVariable(sourceCode, node) === readCount.variable
+        );
+      }
+      return (
+        node.type === AST_NODE_TYPES.MemberExpression &&
+        node.object.type === AST_NODE_TYPES.Identifier &&
+        propertyName(node) === 'bytesRead' &&
+        findVariable(sourceCode, node.object) === readCount.variable
+      );
+    }
+
+    /**
+     * `count === buf.byteLength ? buf : buf.subarray(0, count)` — the read
+     * filled the whole buffer exactly when its count equals the buffer's
+     * length, so the arm taken on equality exposes only written bytes. The
+     * test has to compare THIS read's count with THIS buffer's own length, and
+     * the buffer has to sit in the arm that equality selects.
+     */
+    function isReadWhenFull(
+      identifier: TSESTree.Identifier,
+      readCount: ReadCount,
+    ): boolean {
+      const conditional = identifier.parent;
+      if (
+        conditional.type !== AST_NODE_TYPES.ConditionalExpression ||
+        conditional.test.type !== AST_NODE_TYPES.BinaryExpression
+      ) {
+        return false;
+      }
+      const test = conditional.test;
+      const equal = test.operator === '===' || test.operator === '==';
+      const unequal = test.operator === '!==' || test.operator === '!=';
+      if (
+        !(equal && conditional.consequent === identifier) &&
+        !(unequal && conditional.alternate === identifier)
+      ) {
+        return false;
+      }
+      const ownLength = (node: TSESTree.Node): boolean =>
+        node.type === AST_NODE_TYPES.MemberExpression &&
+        !node.computed &&
+        node.object.type === AST_NODE_TYPES.Identifier &&
+        findVariable(sourceCode, node.object) ===
+          findVariable(sourceCode, identifier) &&
+        (propertyName(node) === 'byteLength' ||
+          propertyName(node) === 'length');
+      const left = test.left as TSESTree.Node;
+      return (
+        (isCount(left, readCount) && ownLength(test.right)) ||
+        (ownLength(left) && isCount(test.right, readCount))
+      );
+    }
+
+    /**
+     * Is this use a read of the buffer that stops at the read's count —
+     * `buf.subarray(0, n)`, `buf.slice(0, n)`, `buf.toString(enc, 0, n)`?
+     */
+    function isReadUpTo(
+      identifier: TSESTree.Identifier,
+      readCount: ReadCount,
+    ): boolean {
+      const member = identifier.parent;
+      if (
+        member.type !== AST_NODE_TYPES.MemberExpression ||
+        member.object !== identifier
+      ) {
+        return false;
+      }
+      const call = member.parent;
+      if (call.type !== AST_NODE_TYPES.CallExpression || call.callee !== member)
+        return false;
+      const method = propertyName(member);
+      const args = call.arguments;
+      if (method === 'subarray' || method === 'slice') {
+        return (
+          args.length === 2 &&
+          offsetOf(args[0]) === 0 &&
+          isCount(args[1] as TSESTree.Node, readCount)
+        );
+      }
+      return (
+        method === 'toString' &&
+        args.length === 3 &&
+        offsetOf(args[1]) === 0 &&
+        isCount(args[2] as TSESTree.Node, readCount)
+      );
     }
 
     /**
