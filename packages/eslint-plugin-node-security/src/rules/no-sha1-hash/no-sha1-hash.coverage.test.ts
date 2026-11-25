@@ -26,6 +26,7 @@ describe('no-sha1-hash coverage gaps', () => {
       // allowInTests + test filename → both ImportDeclaration and
       // CallExpression listeners bail out despite sha1 usage.
       {
+        name: 'allowInTests plus a *.test.ts filename bails out the import and the call listener despite explicit sha1 usage',
         code: "import { sha1 } from 'crypto-hash';\nsha1('data');",
         options: [{ allowInTests: true }],
         filename: 'hash.test.ts',

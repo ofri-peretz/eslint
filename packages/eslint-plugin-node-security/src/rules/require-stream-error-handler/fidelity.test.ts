@@ -81,14 +81,14 @@ export function send(res: any) { new PassThrough().pipe(res); }`,
     ],
     invalid: [
       {
-        // @found reasoned from Duplex.fromWeb inheritance in #1712, not seen in real code
+        // @found Quint fidelity model (require_stream_error_handler.qnt)
         name: 'FN: PassThrough inherits Duplex.fromWeb, so its stream is a node stream with no listener',
         code: `import { PassThrough } from 'node:stream';
 export function save(body: any, res: any) { PassThrough.fromWeb(body).pipe(res); }`,
         errors: [{ messageId: 'unhandledStreamError', line: 2, column: 45 }],
       },
       {
-        // @found reasoned from Duplex.fromWeb inheritance in #1712, not seen in real code
+        // @found Quint fidelity model (require_stream_error_handler.qnt)
         name: 'FN: Transform inherits Duplex.fromWeb too',
         code: `import { Transform } from 'node:stream';
 export function save(body: any, res: any) { Transform.fromWeb(body).pipe(res); }`,

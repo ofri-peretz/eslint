@@ -31,6 +31,7 @@ describe('no-ssrf coverage gaps', () => {
     valid: [
       // new URL(x) in a preceding statement counts as validation
       {
+        name: 'a preceding `new URL(targetUrl)` statement counts as validation before the fetch',
         code: [
           'function callApi(targetUrl) {',
           '  const parsed = new URL(targetUrl);',
