@@ -266,8 +266,8 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
       }
       // Returned BINDINGS, not names: a same-named stream in a sibling
       // function is a different variable and is still judged on its own.
-      const variable = variableOf(node);
-      if (variable !== undefined && returned.has(variable)) return null;
+      // An unbound name (`bound` undefined) was never returned as a binding.
+      if (returned.has(bound as TSESLint.Scope.Variable)) return null;
       return node;
     }
 
@@ -389,9 +389,11 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
         // `return entry` in a nested function nobody calls hands nothing
         // over. And the binding must be assigned once, or the returned value
         // may not be the one that was piped into.
-        let owner: TSESTree.Node | undefined = node.parent;
+        // A CommonJS top-level `return` has no function: the walk ends at
+        // the Program, whose parent is null (not undefined) in some parsers.
+        let owner: TSESTree.Node | null | undefined = node.parent;
         while (
-          owner !== undefined &&
+          owner &&
           owner.type !== AST_NODE_TYPES.FunctionDeclaration &&
           owner.type !== AST_NODE_TYPES.FunctionExpression &&
           owner.type !== AST_NODE_TYPES.ArrowFunctionExpression

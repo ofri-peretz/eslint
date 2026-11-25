@@ -601,11 +601,11 @@
           "timeout": 5
         },
         "no-zip-slip": {
-          "score": 96.8,
-          "killed": 513,
-          "survived": 17,
+          "score": 97.3,
+          "killed": 587,
+          "survived": 16,
           "noCoverage": 0,
-          "timeout": 2
+          "timeout": 3
         },
         "prefer-native-crypto": {
           "score": 96.3,
@@ -657,11 +657,11 @@
           "timeout": 0
         },
         "require-stream-error-handler": {
-          "score": 96,
-          "killed": 196,
-          "survived": 7,
+          "score": 96.3,
+          "killed": 285,
+          "survived": 10,
           "noCoverage": 1,
-          "timeout": 1
+          "timeout": 3
         },
         "utils/const-value": {
           "score": 91.5,

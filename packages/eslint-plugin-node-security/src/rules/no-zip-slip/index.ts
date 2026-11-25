@@ -443,8 +443,9 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
     ): boolean => {
       let current: TSESTree.Node = arg;
       for (;;) {
-        const parent: TSESTree.Node | undefined = current.parent;
-        const kind = parent?.type;
+        // An argument or a call is never the Program, so it has a parent.
+        const parent = current.parent as TSESTree.Node;
+        const kind = parent.type;
         // The same spelling on both sides of one statement is one binding:
         // a statement cannot shadow a name inside itself.
         if (kind === 'AssignmentExpression') {

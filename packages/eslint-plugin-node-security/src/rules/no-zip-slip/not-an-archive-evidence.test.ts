@@ -143,6 +143,51 @@ describe('no-zip-slip — not an archive entry', () => {
         `,
       },
       {
+        name: 'an in-place normalize on a this member is the same statement',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          class Entry {
+            make() {
+              this.path = path.normalize(this.path);
+            }
+          }
+        `,
+      },
+      {
+        name: 'an in-place normalize through a literal index is the same statement',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          function make(entries) {
+            entries[0].path = path.normalize(entries[0].path);
+          }
+        `,
+      },
+      {
+        name: 'an in-place normalize through an identifier index is the same statement',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          function make(entries, k) {
+            entries[k].path = path.normalize(entries[k].path);
+          }
+        `,
+      },
+      {
+        name: 'an in-place normalize through a private field is the same statement',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          class Extractor {
+            #entry;
+            make() {
+              this.#entry.path = path.normalize(this.#entry.path);
+            }
+          }
+        `,
+      },
+      {
         name: 'a canonicalization through a named import of the path module is the same statement',
         code: `
           import { normalize } from 'node:path';

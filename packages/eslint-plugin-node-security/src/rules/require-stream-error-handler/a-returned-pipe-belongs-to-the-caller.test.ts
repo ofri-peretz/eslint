@@ -35,6 +35,21 @@ ruleTester.run(
   {
     valid: [
       {
+        name: 'an unbound stream name is covered by a listener on that name',
+        code: `
+          const fs = require('fs');
+          function a() {
+            const out = fs.createWriteStream('a');
+            out.on('error', () => {});
+            source.pipe(out);
+          }
+          function b() {
+            out.on('error', () => {});
+            source.pipe(out);
+          }
+        `,
+      },
+      {
         // @source nestjs/nest packages/platform-express/adapters/express-adapter.ts:829
         // @found real-source scan
         name: 'FP: a checking Transform returned through pipe()',
@@ -79,6 +94,47 @@ ruleTester.run(
             resolve();
             return entry;
           });
+        `,
+        errors: unhandled,
+      },
+      {
+        name: 'a forEach callback returning the stream hands it to no one',
+        code: `
+          const fs = require('fs');
+          [source].forEach(function (s) {
+            const entry = fs.createWriteStream('output');
+            s.pipe(entry);
+            return entry;
+          });
+        `,
+        errors: unhandled,
+      },
+      {
+        name: 'a top-level return in a CommonJS script hands the stream to no function',
+        code: `
+          const fs = require('fs');
+          const entry = fs.createWriteStream('output');
+          source.pipe(entry);
+          return entry;
+        `,
+        languageOptions: {
+          sourceType: 'script',
+          parserOptions: { ecmaFeatures: { globalReturn: true } },
+        },
+        errors: unhandled,
+      },
+      {
+        name: 'a same-named unbound stream in another function has no listener of its own',
+        code: `
+          const fs = require('fs');
+          function a() {
+            const out = fs.createWriteStream('a');
+            out.on('error', () => {});
+            source.pipe(out);
+          }
+          function b() {
+            source.pipe(out);
+          }
         `,
         errors: unhandled,
       },
