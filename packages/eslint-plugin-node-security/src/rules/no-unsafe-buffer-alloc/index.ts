@@ -709,13 +709,16 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
           // looks exactly like a safe constant. Taking "any write" instead
           // would invert it, reporting a value that has since been overwritten
           // with a literal.
+          // The scope manager records references in source order, so the
+          // last write before the use is the last one the filter keeps.
           const variable = findVariable(sourceCode, node);
-          const lastWrite = (variable?.references ?? [])
+          if (variable === null) return false;
+          const lastWrite = variable.references
             .map((reference) => reference.writeExpr)
-            .filter((write): write is TSESTree.Node => write != null)
-            .filter((write) => write.range[1] <= node.range[0])
-            .sort((a, b) => a.range[1] - b.range[1])
-            .at(-1);
+            .findLast(
+              (write): write is TSESTree.Node =>
+                write != null && write.range[1] <= node.range[0],
+            );
           return lastWrite !== undefined && readsWire(lastWrite, seen);
         }
         case AST_NODE_TYPES.MemberExpression:
@@ -878,7 +881,11 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         current;
         child = current, current = current.parent
       ) {
-        if (current.type === AST_NODE_TYPES.IfStatement) {
+        // `n <= MAX ? Buffer.alloc(n) : null` is the same guard as an `if`.
+        if (
+          current.type === AST_NODE_TYPES.IfStatement ||
+          current.type === AST_NODE_TYPES.ConditionalExpression
+        ) {
           if (child === current.consequent && capsWhenTrue(current.test, name))
             return true;
           if (child === current.alternate && capsWhenFalse(current.test, name))
@@ -1479,11 +1486,11 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     ): boolean {
       const binding = resolveModuleBinding(callee, sourceCode.getScope(callee));
       if (binding === undefined) return false;
+      // `resolveModuleBinding` has already stripped `node:`.
       const full =
-        binding.module === 'fs/promises' ||
-        binding.module === 'node:fs/promises'
+        binding.module === 'fs/promises'
           ? ['promises', ...binding.path]
-          : binding.module === 'fs' || binding.module === 'node:fs'
+          : binding.module === 'fs'
             ? binding.path
             : null;
       return full !== null && full.join('.') === path.join('.');
