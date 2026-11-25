@@ -17,7 +17,6 @@ import {
   findingsInSummary,
   isActedOn,
   latestMerged,
-  mergeScans,
   resolvePath,
 } from '../review-hit-rate';
 
@@ -113,39 +112,37 @@ describe('resolvePath', () => {
 });
 
 describe('latestMerged', () => {
-  const pr = (
-    number: number,
-    mergedAt: string | null,
-    updatedAt: string,
-    bot = false,
-  ) => ({ number, mergedAt, updatedAt, bot });
-
-  it('finds a PR created long ago but merged most recently', () => {
-    // Listed newest-updated first; #5 was opened before the others, merged last.
-    const list = [
-      pr(5, '2026-11-25T12:00:00Z', '2026-11-25T12:00:00Z'),
-      pr(40, '2026-11-25T11:00:00Z', '2026-11-25T11:00:00Z'),
-      pr(41, '2026-11-25T10:00:00Z', '2026-11-25T10:00:00Z'),
-    ];
-    expect(latestMerged(list, 2)).toEqual([5, 40]);
+  const pr = (number: number, mergedAt: string | null, bot = false) => ({
+    number,
+    mergedAt,
+    bot,
   });
 
-  it('waits for another page while a later PR could still have merged after the cut', () => {
-    const list = [
-      pr(40, '2026-11-25T11:00:00Z', '2026-11-25T11:00:00Z'),
-      pr(41, '2026-11-25T10:00:00Z', '2026-11-25T10:30:00Z'),
+  it('finds a PR opened long ago but merged most recently', () => {
+    const all = [
+      pr(41, '2026-11-25T10:00:00Z'),
+      pr(40, '2026-11-25T11:00:00Z'),
+      pr(5, '2026-11-25T12:00:00Z'),
     ];
-    expect(latestMerged(list, 2)).toBeNull();
+    expect(latestMerged(all, 2)).toEqual([5, 40]);
+  });
+
+  it('counts a PR read twice (a page shifted mid-read) once', () => {
+    const all = [
+      pr(40, '2026-11-25T11:00:00Z'),
+      pr(40, '2026-11-25T11:00:00Z'),
+      pr(39, '2026-11-25T10:00:00Z'),
+    ];
+    expect(latestMerged(all, 2)).toEqual([40, 39]);
   });
 
   it('skips bots and unmerged PRs', () => {
-    const list = [
-      pr(1, '2026-11-25T12:00:00Z', '2026-11-25T12:00:00Z', true),
-      pr(2, null, '2026-11-25T11:30:00Z'),
-      pr(3, '2026-11-25T11:00:00Z', '2026-11-25T11:00:00Z'),
-      pr(4, '2026-11-24T00:00:00Z', '2026-11-24T00:00:00Z'),
+    const all = [
+      pr(1, '2026-11-25T12:00:00Z', true),
+      pr(2, null),
+      pr(3, '2026-11-25T11:00:00Z'),
     ];
-    expect(latestMerged(list, 1)).toEqual([3]);
+    expect(latestMerged(all, 5)).toEqual([3]);
   });
 });
 
@@ -198,38 +195,5 @@ describe('isActedOn', () => {
         files,
       ),
     ).toBe(false);
-  });
-});
-
-describe('mergeScans', () => {
-  const pr = (number: number, mergedAt: string | null, updatedAt: string) => ({
-    number,
-    mergedAt,
-    updatedAt,
-    bot: false,
-  });
-
-  it('keeps a merged PR that moved onto a page already read during the scan', () => {
-    // First scan: #7 sat on a page not yet read, was commented on, and moved to page 1 (read).
-    const first = [
-      pr(40, '2026-11-25T11:00:00Z', '2026-11-25T11:00:00Z'),
-      pr(41, '2026-11-25T09:00:00Z', '2026-11-25T09:00:00Z'),
-    ];
-    const again = [
-      pr(7, '2026-11-25T11:30:00Z', '2026-11-25T12:05:00Z'),
-      pr(40, '2026-11-25T11:00:00Z', '2026-11-25T11:00:00Z'),
-    ];
-    expect(latestMerged(first, 1)).toEqual([40]);
-    expect(latestMerged(mergeScans(first, again), 1)).toEqual([7]);
-  });
-
-  it('lets the later read of a PR win', () => {
-    const merged = mergeScans(
-      [pr(1, null, '2026-11-25T09:00:00Z')],
-      [pr(1, '2026-11-25T10:00:00Z', '2026-11-25T10:00:00Z')],
-    );
-    expect(merged).toEqual([
-      pr(1, '2026-11-25T10:00:00Z', '2026-11-25T10:00:00Z'),
-    ]);
   });
 });

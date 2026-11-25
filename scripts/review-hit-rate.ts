@@ -83,40 +83,20 @@ export function resolvePath(path: string, prFiles: string[]): string | null {
 export interface ClosedPr {
   number: number;
   mergedAt: string | null;
-  updatedAt: string;
   bot: boolean;
 }
 
 /**
- * The n latest-merged non-bot PRs from closed PRs listed newest-UPDATED first, or null while a
- * later page could still hold one. Merging updates a PR, so updatedAt >= mergedAt: once the list
- * reaches PRs last updated before the n-th merge time, none further down can beat it.
+ * The n latest-merged non-bot PRs. Given every closed PR, so no paging order can hide one; a PR
+ * listed twice (a page shifted while it was read) counts once.
  */
-export function latestMerged(prs: ClosedPr[], n: number): number[] | null {
-  const merged = newestMerged(prs);
-  if (merged.length < n) return null;
-  const cutoff = merged[n - 1]!.mergedAt!;
-  const oldest = prs.reduce(
-    (min, p) => (p.updatedAt < min ? p.updatedAt : min),
-    prs[0]!.updatedAt,
-  );
-  return oldest < cutoff ? merged.slice(0, n).map((p) => p.number) : null;
-}
-
-const newestMerged = (prs: ClosedPr[]) =>
-  prs
+export function latestMerged(prs: ClosedPr[], n: number): number[] {
+  const byNumber = new Map(prs.map((p) => [p.number, p]));
+  return [...byNumber.values()]
     .filter((p) => p.mergedAt !== null && !p.bot)
-    .sort((a, b) => b.mergedAt!.localeCompare(a.mergedAt!));
-
-/**
- * One list from two reads of the same pages, the later read winning. A PR updated while the first
- * scan ran moves up onto a page already read and is skipped; the re-read of the pages updated
- * since the scan began holds it.
- */
-export function mergeScans(first: ClosedPr[], again: ClosedPr[]): ClosedPr[] {
-  const byNumber = new Map(first.map((p) => [p.number, p]));
-  for (const p of again) byNumber.set(p.number, p);
-  return [...byNumber.values()];
+    .sort((x, y) => y.mergedAt!.localeCompare(x.mergedAt!))
+    .slice(0, n)
+    .map((p) => p.number);
 }
 
 /** A finding is acted on when a commit dated after it touches the file it cites. */
@@ -146,59 +126,20 @@ function repo(): string {
   ).trim();
 }
 
-function closedPage(r: string, page: number): ClosedPr[] {
-  const batch = JSON.parse(
-    execFileSync(
-      'gh',
-      [
-        'api',
-        `repos/${r}/pulls?state=closed&sort=updated&direction=desc&per_page=100&page=${page}`,
-      ],
-      { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
-    ),
-  ) as {
-    number: number;
-    merged_at: string | null;
-    updated_at: string;
-    user: { type: string };
-  }[];
-  return batch.map((p) => ({
-    number: p.number,
-    mergedAt: p.merged_at,
-    updatedAt: p.updated_at,
-    bot: p.user.type === 'Bot',
-  }));
-}
-
 function lastMergedPrs(r: string, n: number): number[] {
-  // Bot PRs (release, data sync) are never reviewed; skip them so `--last 10` means 10 reviews.
-  // A minute of slack for clock skew between this machine and GitHub.
-  const scanStart = new Date(Date.now() - 60_000).toISOString();
-  let seen: ClosedPr[] = [];
-  let complete = false;
-  for (let page = 1; ; page++) {
-    const batch = closedPage(r, page);
-    seen.push(...batch);
-    if (latestMerged(seen, n)) break;
-    // The last page: every closed PR is in hand, so the newest merges are certain.
-    if (batch.length < 100) {
-      complete = true;
-      break;
-    }
-  }
-  // Re-read the pages holding anything updated since the scan began.
-  for (let page = 1; ; page++) {
-    const batch = closedPage(r, page);
-    seen = mergeScans(seen, batch);
-    const last = batch[batch.length - 1];
-    if (!last || last.updatedAt < scanStart || batch.length < 100) break;
-  }
-  const picked = complete ? null : latestMerged(seen, n);
-  return (
-    picked ??
-    newestMerged(seen)
-      .slice(0, n)
-      .map((p) => p.number)
+  // Every closed PR, in CREATION order: that order only changes when a PR is opened, which adds
+  // duplicates (deduplicated) and never hides one. Sorting by updated or merge time while paging
+  // let PRs move between pages mid-read. Bot PRs (release, data sync) are never reviewed.
+  const all = gh(
+    `repos/${r}/pulls?state=closed&sort=created&direction=desc&per_page=100`,
+  ) as { number: number; merged_at: string | null; user: { type: string } }[];
+  return latestMerged(
+    all.map((p) => ({
+      number: p.number,
+      mergedAt: p.merged_at,
+      bot: p.user.type === 'Bot',
+    })),
+    n,
   );
 }
 
