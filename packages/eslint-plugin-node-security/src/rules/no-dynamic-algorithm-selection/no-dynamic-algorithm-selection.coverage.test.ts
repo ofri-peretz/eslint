@@ -24,7 +24,10 @@ describe('no-dynamic-algorithm-selection coverage gaps', () => {
   ruleTester.run('no-dynamic-algorithm-selection', noDynamicAlgorithmSelection, {
     valid: [
       // Callee is not a MemberExpression → first guard returns
-      { code: 'doHash(algo);' },
+      {
+        name: 'doHash(algo) has a bare identifier callee, not a MemberExpression, so the first guard returns before inspecting the argument',
+        code: 'doHash(algo);',
+      },
       // Callee object is not an Identifier → second guard returns
       { code: 'getCrypto().createHash(algo);' },
       // A method chosen at RUNTIME names no crypto entry point
