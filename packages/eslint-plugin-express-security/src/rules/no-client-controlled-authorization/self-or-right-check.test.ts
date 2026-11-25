@@ -154,19 +154,136 @@ describe('no-client-controlled-authorization — self or right', () => {
       {
         name: 'a read through the request slot, and writes elsewhere on the request, do not invalidate the principal',
         code: withPassport(`
-          function handler(req, k) {
+          function handler(req) {
             passport.authenticate('jwt', (err, user) => {
               req.user = user;
               log(req.user.id);
               req.params.page = 2;
-              req[k].flag = true;
+              req['session'].flag = true;
               if (req.params.userId === user.id) return;
+            });
+          }
+        `),
+      },
+      {
+        name: 'a principal property read as a computed key in a pattern is not a write',
+        code: withPassport(`
+          function handler(req, arr) {
+            passport.authenticate('jwt', (err, user) => {
+              req.user = user;
+              ({ [user.id]: arr.x } = req.body);
+              if (req.params.userId === user.id) grant();
+            });
+          }
+        `),
+      },
+      {
+        name: 'a principal property read as a default value in a pattern is not a write',
+        code: withPassport(`
+          function handler(req, arr) {
+            passport.authenticate('jwt', (err, user) => {
+              req.user = user;
+              [arr.x = user.id] = req.body.ids;
+              if (req.params.userId === user.id) grant();
             });
           }
         `),
       },
     ],
     invalid: [
+      {
+        name: 'a for-of loop that assigns into a principal property is a write',
+        code: withPassport(`
+          function handler(req) {
+            passport.authenticate('jwt', (err, user) => {
+              req.user = user;
+              for (user.id of req.body.ids) log(user.id);
+              if (req.params.userId === user.id) grant();
+            });
+          }
+        `),
+        errors: [report],
+      },
+      {
+        name: 'an array destructuring into a principal property is a write',
+        code: withPassport(`
+          function handler(req, arr) {
+            passport.authenticate('jwt', (err, user) => {
+              req.user = user;
+              [user.id] = req.body.ids;
+              if (req.params.userId === user.id) grant();
+            });
+          }
+        `),
+        errors: [report],
+      },
+      {
+        name: 'a rest element into a principal property is a write',
+        code: withPassport(`
+          function handler(req, arr) {
+            passport.authenticate('jwt', (err, user) => {
+              req.user = user;
+              ({ ...user.extra } = req.body);
+              if (req.params.userId === user.id) grant();
+            });
+          }
+        `),
+        errors: [report],
+      },
+      {
+        name: 'a destructuring target with a default is still a write',
+        code: withPassport(`
+          function handler(req, arr) {
+            passport.authenticate('jwt', (err, user) => {
+              req.user = user;
+              [user.id = 0] = req.body.ids;
+              if (req.params.userId === user.id) grant();
+            });
+          }
+        `),
+        errors: [report],
+      },
+      {
+        name: 'a write through an alias of the principal may rewrite it',
+        code: withPassport(`
+          function handler(req) {
+            passport.authenticate('jwt', (err, user) => {
+              req.user = user;
+              const alias = user;
+              alias.id = req.body.userId;
+              if (req.params.userId === user.id) grant();
+            });
+          }
+        `),
+        errors: [report],
+      },
+      {
+        name: 'a write through a request key that does not resolve may reach the principal slot',
+        code: withPassport(`
+          function handler(req) {
+            passport.authenticate('jwt', (err, user) => {
+              req.user = user;
+              const slot = 'user';
+              req[slot].id = req.body.userId;
+              if (req.params.userId === user.id) grant();
+            });
+          }
+        `),
+        errors: [report],
+      },
+      {
+        name: 'a destructuring assignment into a principal property is a write',
+        code: withPassport(`
+          function handler(req) {
+            passport.authenticate('jwt', (err, user) => {
+              req.user = user;
+              ({ userId: user.id } = req.body);
+              if (req.params.userId === user.id) grant();
+            });
+          }
+        `),
+        errors: [report],
+      },
       {
         name: 'the same comparison with nothing stored on the request still reports',
         code: withPassport(`

@@ -419,6 +419,25 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
      * argument path calls ending in an assignment to the same binding and
      * property.
      */
+    /**
+     * Same text names the same member only when reading it has no side effect:
+     * `entries[i++].path` is a different entry on each side of the `=`. Plain
+     * identifiers, `this`, static properties and literal indexes are stable.
+     */
+    const isStableMember = (node: TSESTree.Node): boolean => {
+      if (node.type === 'Identifier' || node.type === 'ThisExpression') {
+        return true;
+      }
+      if (node.type !== 'MemberExpression') return false;
+      if (
+        node.computed &&
+        node.property.type !== 'Literal' &&
+        node.property.type !== 'Identifier'
+      ) {
+        return false;
+      }
+      return isStableMember(node.object);
+    };
     const isCanonicalizedInPlace = (
       arg: TSESTree.MemberExpression,
     ): boolean => {
@@ -436,6 +455,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           return (
             assignment.parent.type === 'ExpressionStatement' &&
             assignment.operator === '=' &&
+            isStableMember(arg) &&
             context.sourceCode.getText(assignment.left) ===
               context.sourceCode.getText(arg)
           );

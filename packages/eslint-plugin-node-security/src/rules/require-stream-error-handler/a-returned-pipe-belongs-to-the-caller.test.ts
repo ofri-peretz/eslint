@@ -70,6 +70,19 @@ ruleTester.run(
     ],
     invalid: [
       {
+        name: 'a Promise executor returning the stream hands it to no one',
+        code: `
+          const fs = require('fs');
+          new Promise((resolve) => {
+            const entry = fs.createWriteStream('output');
+            source.pipe(entry);
+            resolve();
+            return entry;
+          });
+        `,
+        errors: unhandled,
+      },
+      {
         name: 'a callback whose result forEach discards still reports',
         code: `
         import { createWriteStream } from 'node:fs';

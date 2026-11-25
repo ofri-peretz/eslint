@@ -129,8 +129,31 @@ describe('require-stream-error-handler — listener on the pipe result', () => {
           }
         `,
       },
+      {
+        name: 'a listener on a stream with no visible binding is recorded by name',
+        code: `
+          const fs = require('fs');
+          sharedOut.on('error', fail);
+          fs.createReadStream('a').on('error', fail).pipe(sharedOut);
+        `,
+      },
     ],
     invalid: [
+      {
+        name: "a chain listener on one function's out does not cover a same-named out in another",
+        code: `
+          const fs = require('fs');
+          function safe(src, fail) {
+            const out = fs.createWriteStream('a');
+            src.pipe(out).on('error', fail);
+          }
+          function unsafe(src) {
+            const out = fs.createWriteStream('b');
+            src.pipe(out);
+          }
+        `,
+        errors: reports,
+      },
       {
         name: 'a chain whose listener is not on "error" leaves the destination unhandled',
         code: `

@@ -169,17 +169,50 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
     // oxlint-disable-next-line consistent-function-scoping
     const readsHostInfo = (node: TSESTree.CallExpression): boolean => {
       let found = false;
-      for (const argument of node.arguments) {
-        if (
-          argument.type !== 'ArrowFunctionExpression' &&
-          argument.type !== 'FunctionExpression'
+      // Express takes handlers inline or in (nested) arrays of callbacks.
+      const handlers: TSESTree.Node[] = [];
+      const collect = (argument: TSESTree.Node | null): void => {
+        if (argument === null) return;
+        if (argument.type === 'ArrayExpression') {
+          argument.elements.forEach(collect);
+        } else if (
+          argument.type === 'ArrowFunctionExpression' ||
+          argument.type === 'FunctionExpression'
         ) {
-          continue;
+          handlers.push(argument);
         }
+      };
+      node.arguments.forEach(collect);
+      /** Is `name` bound to a declaration (not a configured global) at `child`? */
+      const isDeclared = (child: TSESTree.Node, name: string): boolean => {
+        for (
+          let s: ReturnType<typeof context.sourceCode.getScope> | null =
+            context.sourceCode.getScope(child);
+          s;
+          s = s.upper
+        ) {
+          if ((s.set.get(name)?.defs.length ?? 0) > 0) return true;
+        }
+        return false;
+      };
+      for (const argument of handlers) {
         walk(argument, (child) => {
           if (found || child.type !== 'Identifier') return;
           // `x.process` and `{ process: 1 }` name a property, not the global.
           const parent = child.parent;
+          // `globalThis.process` is the global, unless `globalThis` is shadowed.
+          if (
+            child.name === 'process' &&
+            parent?.type === 'MemberExpression' &&
+            parent.property === child &&
+            !parent.computed &&
+            parent.object.type === 'Identifier' &&
+            parent.object.name === 'globalThis' &&
+            !isDeclared(parent.object, 'globalThis')
+          ) {
+            found = true;
+            return;
+          }
           if (
             (parent?.type === 'MemberExpression' &&
               parent.property === child &&
@@ -194,14 +227,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
           // A variable with no definition is a configured GLOBAL (ESLint adds
           // `languageOptions.globals` to the global scope), not a declaration
           // that shadows it.
-          let declared = false;
-          for (let s: typeof scope | null = scope; s; s = s.upper) {
-            if ((s.set.get(child.name)?.defs.length ?? 0) > 0) {
-              declared = true;
-              break;
-            }
-          }
-          if (!declared) {
+          if (!isDeclared(child, child.name)) {
             found = child.name === 'process';
             return;
           }

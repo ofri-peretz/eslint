@@ -217,6 +217,8 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
     currentOptions,
   ) {
     let handled: Set<string>;
+    /** Bindings with an `'error'` listener, by identity, not by name. */
+    let handledVariables: Set<TSESLint.Scope.Variable>;
     let escaped: Set<string>;
     /** Destinations built in place that a chain-ending listener covers. */
     let handledNodes: Set<TSESTree.Node | null>;
@@ -253,7 +255,15 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
         return handledNodes.has(node) ? null : node;
       if (node.type !== AST_NODE_TYPES.Identifier) return null;
       if (!streamBindings.has(node.name)) return null;
-      if (handled.has(node.name) || escaped.has(node.name)) return null;
+      if (escaped.has(node.name)) return null;
+      const bound = variableOf(node);
+      if (
+        bound !== undefined
+          ? handledVariables.has(bound)
+          : handled.has(node.name)
+      ) {
+        return null;
+      }
       // Returned BINDINGS, not names: a same-named stream in a sibling
       // function is a different variable and is still judged on its own.
       const variable = variableOf(node);
@@ -308,12 +318,10 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
      * with `.on('error', reject)`, and the destination was reported as
      * having no listener.
      */
-    function listenedStream(
-      receiver: TSESTree.Node,
-    ): string | TSESTree.Node | null {
+    function listenedStream(receiver: TSESTree.Node): TSESTree.Node | null {
       let current: TSESTree.Node = receiver;
       for (;;) {
-        if (current.type === AST_NODE_TYPES.Identifier) return current.name;
+        if (current.type === AST_NODE_TYPES.Identifier) return current;
         if (
           current.type !== AST_NODE_TYPES.CallExpression ||
           current.callee.type !== AST_NODE_TYPES.MemberExpression
@@ -324,11 +332,9 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
         if (method === 'pipe') {
           const destination = current.arguments[0];
           if (destination === undefined) return null;
-          // A name for a binding; the node itself for a destination built in
-          // place (`src.pipe(fs.createWriteStream(p)).on('error', h)`).
-          return destination.type === AST_NODE_TYPES.Identifier
-            ? destination.name
-            : destination;
+          // A binding's identifier, or the node itself for a destination
+          // built in place (`src.pipe(fs.createWriteStream(p)).on('error', h)`).
+          return destination;
         }
         if (method === null || !LISTENER_METHODS.has(method)) return null;
         current = current.callee.object;
@@ -345,6 +351,7 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
 
         /** Names that appear with an `'error'` listener anywhere in this file. */
         handled = new Set<string>();
+        handledVariables = new Set();
         /**
          * Names handed to a call other than `.pipe()`: `attachHandlers(s)`,
          * `pipeline(s, res)`. The callee may attach the listener, and
@@ -391,7 +398,15 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
         ) {
           owner = owner.parent;
         }
+        // A callback's return goes to the callee, which may drop it: a
+        // Promise executor's `return entry` reaches no one.
+        const holder = owner?.parent;
+        const isCallback =
+          (holder?.type === AST_NODE_TYPES.CallExpression ||
+            holder?.type === AST_NODE_TYPES.NewExpression) &&
+          holder.arguments.includes(owner as TSESTree.CallExpressionArgument);
         if (
+          !isCallback &&
           owner === variable.scope.variableScope.block &&
           variable.references.filter((reference) => reference.isWrite())
             .length <= 1
@@ -425,8 +440,15 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
             event.value === 'error'
           ) {
             const listened = listenedStream(callee.object);
-            if (typeof listened === 'string') handled.add(listened);
-            else handledNodes.add(listened);
+            if (listened?.type === AST_NODE_TYPES.Identifier) {
+              // The variable, not the name: a same-named stream in another
+              // function is a different binding with its own listeners.
+              const variable = variableOf(listened);
+              if (variable !== undefined) handledVariables.add(variable);
+              else handled.add(listened.name);
+            } else {
+              handledNodes.add(listened);
+            }
           }
           return;
         }

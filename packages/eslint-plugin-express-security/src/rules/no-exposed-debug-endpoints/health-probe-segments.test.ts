@@ -77,8 +77,39 @@ describe('no-exposed-debug-endpoints — health probe segments', () => {
           app.get('/healthz', function (req, res, process) { res.json(fs && process); });
         `,
       },
+      {
+        name: 'a probe handler array that only answers a status is excused',
+        code: "import 'express'; app.get('/healthz', [(req, res) => res.sendStatus(200)]);",
+      },
+      {
+        name: 'a process property on another object, or a shadowed globalThis, is not the host',
+        code: `
+          import 'express';
+          app.get('/healthz', (req, res) => res.json(ctx.process));
+          function f(globalThis) { app.get('/livez', (req, res) => res.json(globalThis.process)); }
+        `,
+      },
+      {
+        name: 'a hole in a callback array is skipped',
+        code: "import 'express'; app.get('/healthz', [, (req, res) => res.sendStatus(200)]);",
+      },
     ],
     invalid: [
+      {
+        name: 'a probe whose handler sits in a callback array still reads the host',
+        code: "import 'express'; app.get('/healthz', [(req, res) => res.json(process.env)]);",
+        errors: report,
+      },
+      {
+        name: 'a probe whose handler sits in a nested callback array still reads the host',
+        code: "import 'express'; app.get('/healthz', [auth, [(req, res) => res.json(process.env)]]);",
+        errors: report,
+      },
+      {
+        name: 'process read through globalThis is the host',
+        code: "import 'express'; app.get('/healthz', (req, res) => res.json(globalThis.process.env));",
+        errors: report,
+      },
       {
         name: 'a plain /health route still reports',
         code: "import 'express'; app.get('/health', probe);",

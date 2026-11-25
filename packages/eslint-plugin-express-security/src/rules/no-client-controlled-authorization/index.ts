@@ -404,7 +404,7 @@ export const noClientControlledAuthorization = createRule<
     ): boolean {
       return variable.references.some((reference) => {
         let chain: TSESTree.Node = reference.identifier;
-        let first: string | null = null;
+        let firstLink: TSESTree.MemberExpression | null = null;
         let depth = 0;
         while (
           chain.parent?.type === AST_NODE_TYPES.MemberExpression &&
@@ -412,26 +412,76 @@ export const noClientControlledAuthorization = createRule<
         ) {
           chain = chain.parent;
           depth += 1;
-          first ??= staticPropertyName(chain as TSESTree.MemberExpression);
+          firstLink ??= chain as TSESTree.MemberExpression;
         }
-        if (depth === 0) return false;
-        // `req.user = user` is the STORE, not a mutation of what it stores:
-        // only a write BELOW the slot (`req.user.id = ...`) reaches the object.
-        if (
-          slots !== undefined &&
-          (depth < 2 || first === null || !slots.has(first))
-        ) {
-          return false;
+        if (depth === 0) {
+          // `const alias = user`: a write through the alias is not followed,
+          // so an object that escapes to another binding is not trusted.
+          return slots === undefined && aliased(reference.identifier);
         }
-        const use = chain.parent;
-        return (
-          (use?.type === AST_NODE_TYPES.AssignmentExpression &&
-            use.left === chain) ||
-          use?.type === AST_NODE_TYPES.UpdateExpression ||
-          (use?.type === AST_NODE_TYPES.UnaryExpression &&
-            use.operator === 'delete')
-        );
+        if (slots !== undefined) {
+          // `req.user = user` is the STORE, not a mutation of what it stores:
+          // only a write BELOW the slot (`req.user.id = ...`) reaches the
+          // object. A key that does not resolve (`req[slot].id`) may be a
+          // principal slot, so it counts.
+          if (depth < 2) return false;
+          const first = staticPropertyName(firstLink!);
+          if (first !== null && !slots.has(first)) return false;
+        }
+        return isWriteTarget(chain);
       });
+    }
+
+    /** Is `identifier` the whole value bound to another name? */
+    function aliased(identifier: TSESTree.Node): boolean {
+      const use = identifier.parent;
+      return (
+        (use?.type === AST_NODE_TYPES.VariableDeclarator &&
+          use.init === identifier) ||
+        (use?.type === AST_NODE_TYPES.AssignmentExpression &&
+          use.right === identifier &&
+          use.left.type !== AST_NODE_TYPES.MemberExpression)
+      );
+    }
+
+    /**
+     * Is `node` written: assigned, updated, deleted, or a target inside a
+     * destructuring assignment (`({ userId: user.id } = req.body)`)? A read
+     * in a computed key or a default value is not a target.
+     */
+    function isWriteTarget(node: TSESTree.Node): boolean {
+      let target: TSESTree.Node = node;
+      for (;;) {
+        const parent: TSESTree.Node | undefined = target.parent;
+        if (
+          parent?.type === AST_NODE_TYPES.Property &&
+          parent.value === target &&
+          parent.parent?.type === AST_NODE_TYPES.ObjectPattern
+        ) {
+          target = parent.parent;
+        } else if (
+          parent?.type === AST_NODE_TYPES.ArrayPattern ||
+          parent?.type === AST_NODE_TYPES.ObjectPattern ||
+          parent?.type === AST_NODE_TYPES.RestElement ||
+          (parent?.type === AST_NODE_TYPES.AssignmentPattern &&
+            parent.left === target)
+        ) {
+          target = parent;
+        } else {
+          break;
+        }
+      }
+      const use = target.parent;
+      return (
+        (use?.type === AST_NODE_TYPES.AssignmentExpression &&
+          use.left === target) ||
+        ((use?.type === AST_NODE_TYPES.ForOfStatement ||
+          use?.type === AST_NODE_TYPES.ForInStatement) &&
+          use.left === target) ||
+        use?.type === AST_NODE_TYPES.UpdateExpression ||
+        (use?.type === AST_NODE_TYPES.UnaryExpression &&
+          use.operator === 'delete')
+      );
     }
 
     function rootIdentifier(node: TSESTree.Node): TSESTree.Identifier | null {

@@ -199,6 +199,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // A test suite that pipes without an error listener really does crash the
     // runner, so this is a setting someone would reach for.
     {
+      name: 'allowInTests: false judges a test file like any other',
       code: 'fs.createReadStream(p).pipe(res);',
       filename: '/proj/stream.test.ts',
       options: [{ allowInTests: false }],

@@ -155,6 +155,28 @@ describe('no-zip-slip — not an archive entry', () => {
     ],
     invalid: [
       {
+        name: 'a receiver returned by a call may be a different object on each side of the assignment',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          function make(next) {
+            next().path = path.normalize(next().path);
+          }
+        `,
+        errors: [{ messageId: 'unvalidatedArchivePath' }],
+      },
+      {
+        name: 'a receiver with a side effect is a different member on each side of the assignment',
+        code: `
+          import path from 'path';
+          import AdmZip from 'adm-zip';
+          function make(entries, i) {
+            entries[i++].path = path.normalize(entries[i++].path);
+          }
+        `,
+        errors: [{ messageId: 'unvalidatedArchivePath' }],
+      },
+      {
         name: 'the same join in a file that imports an archive library still reports',
         code: `
           const path = require('path');
