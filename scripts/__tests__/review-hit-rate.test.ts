@@ -17,6 +17,7 @@ import {
   findingsInSummary,
   isActedOn,
   latestMerged,
+  mergeScans,
   resolvePath,
 } from '../review-hit-rate';
 
@@ -197,5 +198,38 @@ describe('isActedOn', () => {
         files,
       ),
     ).toBe(false);
+  });
+});
+
+describe('mergeScans', () => {
+  const pr = (number: number, mergedAt: string | null, updatedAt: string) => ({
+    number,
+    mergedAt,
+    updatedAt,
+    bot: false,
+  });
+
+  it('keeps a merged PR that moved onto a page already read during the scan', () => {
+    // First scan: #7 sat on a page not yet read, was commented on, and moved to page 1 (read).
+    const first = [
+      pr(40, '2026-11-25T11:00:00Z', '2026-11-25T11:00:00Z'),
+      pr(41, '2026-11-25T09:00:00Z', '2026-11-25T09:00:00Z'),
+    ];
+    const again = [
+      pr(7, '2026-11-25T11:30:00Z', '2026-11-25T12:05:00Z'),
+      pr(40, '2026-11-25T11:00:00Z', '2026-11-25T11:00:00Z'),
+    ];
+    expect(latestMerged(first, 1)).toEqual([40]);
+    expect(latestMerged(mergeScans(first, again), 1)).toEqual([7]);
+  });
+
+  it('lets the later read of a PR win', () => {
+    const merged = mergeScans(
+      [pr(1, null, '2026-11-25T09:00:00Z')],
+      [pr(1, '2026-11-25T10:00:00Z', '2026-11-25T10:00:00Z')],
+    );
+    expect(merged).toEqual([
+      pr(1, '2026-11-25T10:00:00Z', '2026-11-25T10:00:00Z'),
+    ]);
   });
 });
