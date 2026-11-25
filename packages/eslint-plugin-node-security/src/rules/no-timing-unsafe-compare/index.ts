@@ -76,6 +76,19 @@ export interface Options {
   reportLiteralComparands?: boolean;
 
   /**
+   * Also check browser modules. Default: `false`.
+   *
+   * A timing oracle needs the comparison to run where the attacker can time it:
+   * on a server answering their requests. A React, Vue, Svelte or Angular
+   * module runs in the user's own browser, and `event.sessionId !==
+   * selectedSessionId` in a socket handler there leaks nothing to anyone else.
+   * 30 of the 82 reports on a 40-app corpus were browser code of this kind
+   * (OpenWA's dashboard, Trilium's client, n8n's editor, Langfuse's sign-in
+   * page), none of them an oracle. See {@link isBrowserModule} for what counts.
+   */
+  includeBrowserCode?: boolean;
+
+  /**
    * Whole words whose presence in an identifier means a `secretPatterns` match
    * was a collision, not a secret. Default: `['author', 'authors', 'authored',
    * 'authoring', 'authorship', 'hashtag', 'hashtags', 'scheme', 'schemes']`.
@@ -103,6 +116,57 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
+
+/** UI frameworks whose modules run in the browser. */
+const BROWSER_FRAMEWORKS = new Set([
+  'react',
+  'react-dom',
+  'react-native',
+  'vue',
+  'svelte',
+  'preact',
+  'solid-js',
+  '@angular/core',
+]);
+/** Files that only exist as UI components. */
+const BROWSER_EXTENSION = /\.(?:tsx|jsx|vue|svelte)$/;
+
+/**
+ * Whether this module runs in the user's browser, where no remote attacker can
+ * time a comparison.
+ *
+ * `'use server'` wins over everything: a Next.js server action in a `.tsx`
+ * file runs on the server. Then `'use client'`, a component file extension, or
+ * an import of a UI framework (`react/jsx-runtime` and other subpaths count).
+ */
+export function isBrowserModule(
+  program: TSESTree.Program,
+  filename: string,
+): boolean {
+  const directives = new Set<string>();
+  for (const statement of program.body) {
+    if (statement.type !== AST_NODE_TYPES.ExpressionStatement) break;
+    if (statement.directive === undefined) break;
+    directives.add(statement.directive);
+  }
+  if (directives.has('use server')) return false;
+  if (directives.has('use client')) return true;
+  if (BROWSER_EXTENSION.test(filename)) return true;
+  return program.body.some(
+    (statement) =>
+      statement.type === AST_NODE_TYPES.ImportDeclaration &&
+      statement.importKind !== 'type' &&
+      BROWSER_FRAMEWORKS.has(packageName(statement.source.value)),
+  );
+}
+
+/** `@scope/name/sub` → `@scope/name`, `name/sub` → `name`. */
+function packageName(specifier: string): string {
+  const parts = specifier.split('/');
+  return specifier.startsWith('@')
+    ? parts.slice(0, 2).join('/')
+    : (parts[0] as string);
+}
 
 const DEFAULT_SECRET_PATTERNS = [
   // Common secret names (camelCase, snake_case, kebab-case)
@@ -783,6 +847,12 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
             description:
               'Report on a secret-looking name alone, without an attacker-controlled operand. Restores the pre-inversion behaviour.',
           },
+          includeBrowserCode: {
+            type: 'boolean',
+            default: false,
+            description:
+              "Also check browser modules ('use client', .tsx/.jsx/.vue/.svelte files, or modules importing react, vue, svelte, preact, solid-js or @angular/core). Off by default: a comparison in the user's own browser is not a remote timing oracle.",
+          },
           reportLiteralComparands: {
             type: 'boolean',
             default: false,
@@ -824,6 +894,9 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     let untrustedSources: string[];
     let reportUnverifiedComparisons: boolean;
     let reportLiteralComparands: boolean;
+    let includeBrowserCode: boolean;
+    /** The file is browser code and `includeBrowserCode` is off. */
+    let skipFile: boolean;
     let nonSecretWords: string[];
     let nonSecretTails: string[];
     let nonSecretWordSet: ReadonlySet<string>;
@@ -1744,6 +1817,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     }
 
     function checkBinaryExpression(node: TSESTree.BinaryExpression) {
+      if (skipFile) return;
       // Check for === or == comparisons
       if (
         node.operator !== '===' &&
@@ -1757,6 +1831,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     }
 
     function checkCallExpression(node: TSESTree.CallExpression) {
+      if (skipFile) return;
       const operands = comparisonOperands(node);
       if (!operands) return;
       checkComparison(node, operands[0], operands[1]);
@@ -1770,9 +1845,13 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
           untrustedSources = DEFAULT_UNTRUSTED_SOURCES,
           reportUnverifiedComparisons = false,
           reportLiteralComparands = false,
+          includeBrowserCode = false,
           nonSecretWords = [...DEFAULT_NON_SECRET_WORDS],
           nonSecretTails = [...DEFAULT_NON_SECRET_TAILS],
         } = options as Options);
+        skipFile =
+          !includeBrowserCode &&
+          isBrowserModule(context.sourceCode.ast, context.filename);
         // Lower-cased once. `identifierWords` already lower-cases what it returns,
         // so a user who writes `['Author']` must still match `postAuthorId` — the
         // built-ins are lower-case and the option has to behave identically.
