@@ -115,6 +115,20 @@ jwt.verify(token, 'demo123');`,
 jwt.sign(payload, 'changeme');`,
           errors: [{ messageId: 'weakSecret' }],
         },
+        // An empty fallback is a key, not a missing one: jose 5.10.0 verifies a
+        // token signed with '' and jsonwebtoken 8.5.1 accepts alg none with it.
+        {
+          name: 'an empty ?? fallback still reaches verify as the key',
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, process.env.JWT_SECRET ?? '');`,
+          errors: [{ messageId: 'shortSecret' }],
+        },
+        {
+          name: 'an empty || fallback still reaches sign as the key',
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, process.env.JWT_SECRET || '');`,
+          errors: [{ messageId: 'shortSecret' }],
+        },
       ],
     });
   });

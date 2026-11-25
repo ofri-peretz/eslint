@@ -275,6 +275,56 @@ describe('exportedValue', () => {
     expect(text(exportedValue(load(dir, 'cjs3.js'), 'via', parser))).toBe('8');
   });
 
+  it('reads a barrel of `export *`, where an explicit export wins', () => {
+    const barrel = files({
+      'index.ts': [
+        "export * from './a';",
+        "export * from './b';",
+        "export * as ns from './a';",
+        "export * from 'some-package';",
+        "export * from './missing';",
+        'export const shadowed = 0;',
+      ].join('\n'),
+      'a.ts':
+        'export const fromA = 1;\nexport const shadowed = 9;\nexport default 7;',
+      'b.ts': "export * from './c';",
+      'c.ts': 'export function fromC() { return 3; }',
+    });
+    const index = load(barrel, 'index.ts');
+    expect(text(exportedValue(index, 'fromA', parser))).toBe('1');
+    expect(text(exportedValue(index, 'fromC', parser))).toMatch(
+      /^function fromC/,
+    );
+    expect(text(exportedValue(index, 'shadowed', parser))).toBe('0');
+    // `export *` never carries `default`, and `export * as ns` binds only `ns`.
+    expect(exportedValue(index, 'default', parser)).toBeNull();
+    expect(exportedValue(index, 'absent', parser)).toBeNull();
+  });
+
+  it('lets an explicit export own its name, even with no value', () => {
+    const barrel = files({
+      'index.ts': [
+        "export * from './a';",
+        "export * from './b';",
+        "export * from './b';",
+        "export * as nsA from './a';",
+        "export * as gone from './missing';",
+        'export let unset;',
+      ].join('\n'),
+      'a.ts': 'export const unset = 1;\nexport const both = 1;',
+      'b.ts': 'export const both = 2;\nexport const onlyB = 3;',
+    });
+    const index = load(barrel, 'index.ts');
+    // `export let unset;` is the module's own `unset`, not a.ts's 1.
+    expect(exportedValue(index, 'unset', parser)).toBeNull();
+    // Two stars carrying `both` to different values: the name is ambiguous.
+    expect(exportedValue(index, 'both', parser)).toBeNull();
+    // The same star written twice is one value, not a conflict.
+    expect(text(exportedValue(index, 'onlyB', parser))).toBe('3');
+    expect(exportedValue(index, 'nsA', parser)?.node.type).toBe('Program');
+    expect(exportedValue(index, 'gone', parser)).toBeNull();
+  });
+
   it('stops a re-export chain at the depth bound', () => {
     const chain: Record<string, string> = { 'r0.ts': 'export const v = 1;' };
     for (let i = 1; i <= 12; i++)
@@ -449,6 +499,8 @@ describe('follow', () => {
     expect(landsOn('const a = make();\nprobe(a.w);')).toBe('a.w');
     expect(landsOn('probe(unknown());')).toBe('unknown()');
     expect(landsOn('probe(1);')).toBe('1');
+    expect(landsOn('function g() {}\ng = h;\nprobe(g);')).toBe('g');
+    expect(landsOn('class K {}\nK = J;\nprobe(K);')).toBe('K');
     expect(landsOn('const a = b;\nconst b = a;\nprobe(a);')).toMatch(/^[ab]$/);
   });
 
@@ -492,5 +544,31 @@ describe('follow', () => {
     expect(landsOn("import { none } from './cfg';\nprobe(none);", extra)).toBe(
       'none',
     );
+  });
+
+  it('stops at an exported binding its module writes again, through a barrel too', () => {
+    const extra = {
+      'helper.ts': [
+        'export function isDev() { return 1; }',
+        'isDev = () => 2;',
+        'export function kept() { return 3; }',
+        'export let mode = 4;',
+        'mode = 5;',
+        'export let fixed = 6;',
+      ].join('\n'),
+      'barrel.ts': "export * from './helper';",
+    };
+    expect(
+      landsOn("import { isDev } from './barrel';\nprobe(isDev);", extra),
+    ).toBe('isDev');
+    expect(
+      landsOn("import { kept } from './barrel';\nprobe(kept);", extra),
+    ).toBe('function kept() { return 3; }');
+    expect(
+      landsOn("import { mode } from './helper';\nprobe(mode);", extra),
+    ).toBe('mode');
+    expect(
+      landsOn("import { fixed } from './helper';\nprobe(fixed);", extra),
+    ).toBe('6');
   });
 });

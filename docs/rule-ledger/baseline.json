@@ -65,6 +65,7 @@
     "secure-coding/no-unchecked-loop-condition": [
       "duplicate-coverage"
     ],
+    "secure-coding/no-unguarded-uri-decode": [],
     "secure-coding/no-unlimited-resource-allocation": [
       "textual-matching"
     ],
@@ -136,6 +137,7 @@
       "nominal-inference-report",
       "unconfigurable-vocabulary"
     ],
+    "node-security/no-modulo-biased-random": [],
     "node-security/no-self-signed-certs": [],
     "node-security/no-sha1-hash": [
       "duplicate-coverage"

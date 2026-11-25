@@ -503,6 +503,168 @@ interface MutableContext {
   authMiddlewareTargets: Set<string>;
 }
 
+/** The bootstrap file, by name: where `app` is created and handed to helpers. */
+const BOOTSTRAP_FILE = /(?:^|[\\/])(?:main|bootstrap)\.ts$/;
+/** A project-local import: `./setup`, `src/config/app-validation`, `@/setup`. */
+const LOCAL_SPECIFIER = /^(?:\.{1,2}\/|src\/|@\/)/;
+/** `import <clause> from '<specifier>'`: the clause, then the specifier. */
+const IMPORT_FROM_RE = /\bimport\s+([^;'"]+)from\s*['"]([^'"]+)['"]/g;
+/** `import '<specifier>'`: a side-effect import, which runs the module. */
+const SIDE_EFFECT_IMPORT_RE = /\bimport\s*['"]([^'"]+)['"]/g;
+const IDENTIFIER = /^[A-Za-z_$][\w$]*$/;
+
+/**
+ * The local specifiers whose module `source` runs: side-effect imports, and
+ * value imports with a binding the file calls (`setupApp(app)`) or reads a
+ * member of (`setup.apply(app)`). `import type` brings in no code, and an
+ * import never called does not register anything on this app.
+ */
+function invokedLocalImports(source: string): string[] {
+  const code = withoutComments(source);
+  // Calls are read with string text dropped; the specifiers need it kept.
+  const calls = withoutComments(source, false);
+  const specifiers: string[] = [];
+  for (const [, specifier] of code.matchAll(SIDE_EFFECT_IMPORT_RE)) {
+    specifiers.push(specifier);
+  }
+  for (const [, clause, specifier] of code.matchAll(IMPORT_FROM_RE)) {
+    const names = importedNames(clause);
+    if (names.some((name) => isInvoked(calls, name))) {
+      specifiers.push(specifier);
+    }
+  }
+  return specifiers.filter((specifier) => LOCAL_SPECIFIER.test(specifier));
+}
+
+/** The local value bindings an import clause creates; none for `import type`. */
+function importedNames(clause: string): string[] {
+  const text = clause.trim();
+  if (/^type\s/.test(text)) return [];
+  const names: string[] = [];
+  const braceStart = text.indexOf('{');
+  const head = braceStart === -1 ? text : text.slice(0, braceStart);
+  for (const part of head.split(',')) {
+    const name = part.trim().replace(/^\*\s*as\s+/, '');
+    if (IDENTIFIER.test(name)) names.push(name);
+  }
+  if (braceStart !== -1) {
+    const body = text.slice(braceStart + 1, text.indexOf('}', braceStart));
+    for (const entry of body.split(',')) {
+      const words = entry.trim().split(/\s+/);
+      if (words[0] === 'type') continue;
+      const name = words[words.length - 1];
+      if (IDENTIFIER.test(name)) names.push(name);
+    }
+  }
+  return names;
+}
+
+/** Is `name` called, or a member of it read, anywhere in `source`? */
+function isInvoked(source: string, name: string): boolean {
+  const escaped = name.replace(/\$/g, '\\$');
+  return new RegExp(`(?<![\\w$.])${escaped}\\s*[(.]`).test(source);
+}
+
+/**
+ * `source` with its `//` and `/* *\/` comments blanked out. Quotes are skipped
+ * whole, so `'http://host'` is not read as a comment opener, and a template
+ * literal is skipped up to each `${`, whose code is read like any other (it
+ * can hold a comment too). With `keepText` false the text of strings and
+ * templates is dropped as well, so `'setupApp(app)'` in a log line is not a
+ * call. A regex literal holding a quote can throw this off; the cost is one
+ * helper scanned or missed, never a crash.
+ */
+function withoutComments(source: string, keepText = true): string {
+  let out = '';
+  let index = 0;
+  // One entry per open `${`: the `{` depth inside it, so its `}` is found.
+  const templates: number[] = [];
+  const copyTemplate = (): void => {
+    // `index` is just past a backtick or a `${…}`'s closing brace.
+    while (index < source.length && source[index] !== '`') {
+      if (source[index] === '$' && source[index + 1] === '{') {
+        out += '${';
+        index += 2;
+        templates.push(0);
+        return;
+      }
+      const step = source[index] === '\\' ? 2 : 1;
+      if (keepText) out += source.slice(index, index + step);
+      index += step;
+    }
+    out += source.slice(index, index + 1);
+    index += 1;
+  };
+  while (index < source.length) {
+    const char = source[index];
+    const next = source[index + 1];
+    if (char === '/' && next === '/') {
+      const end = source.indexOf('\n', index);
+      index = end === -1 ? source.length : end;
+      continue;
+    }
+    if (char === '/' && next === '*') {
+      const end = source.indexOf('*/', index + 2);
+      index = end === -1 ? source.length : end + 2;
+      out += ' ';
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      let end = index + 1;
+      while (end < source.length && source[end] !== char) {
+        end += source[end] === '\\' ? 2 : 1;
+      }
+      out += keepText ? source.slice(index, end + 1) : char + char;
+      index = end + 1;
+      continue;
+    }
+    out += char;
+    index += 1;
+    if (char === '`') {
+      copyTemplate();
+    } else if (templates.length > 0 && char === '{') {
+      templates[templates.length - 1] += 1;
+    } else if (templates.length > 0 && char === '}') {
+      if (templates[templates.length - 1] === 0) {
+        templates.pop();
+        copyTemplate();
+      } else {
+        templates[templates.length - 1] -= 1;
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * A pipe registered in a helper the bootstrap file imports.
+ *
+ * `main.ts` often hands `app` to `setupApp(app)` or `applyGlobalValidation(app)`
+ * in `setup.ts` or `config/app-validation.ts`, which no module-or-bootstrap
+ * file pattern names. One hop is enough for that shape and keeps the scan
+ * bounded: only files `main.ts` imports directly are read.
+ */
+function registerHelperPipes(
+  source: string,
+  file: string,
+  root: string,
+  into: MutableContext,
+): void {
+  if (into.hasGlobalValidationPipe) return;
+  // A commented-out `// setupApp(app);` runs nothing, and a helper whose only
+  // `useGlobalPipes` is in a comment registers nothing.
+  for (const specifier of invokedLocalImports(source)) {
+    const helper = readLocalModule(specifier, file, root);
+    if (
+      helper &&
+      USE_GLOBAL_PIPES_RE.test(withoutComments(helper.source, false))
+    ) {
+      into.hasGlobalValidationPipe = true;
+      return;
+    }
+  }
+}
+
 /** Scan a project root (uncached). */
 export function scanProject(
   root: string,
@@ -520,7 +682,11 @@ export function scanProject(
 
   for (const file of collectConfigFiles(root, limits)) {
     // An unreadable file reads as empty: nothing to learn from it.
-    analyzeSource(readFileSync(file) ?? '', file, root, accumulator);
+    const source = readFileSync(file) ?? '';
+    analyzeSource(source, file, root, accumulator);
+    if (BOOTSTRAP_FILE.test(file)) {
+      registerHelperPipes(source, file, root, accumulator);
+    }
   }
 
   const { sawAuthInModule, ...context } = accumulator;

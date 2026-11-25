@@ -28,6 +28,7 @@ const ruleTester = new RuleTester({
 const NAME_ONLY = [{ reportUnverifiedComparisons: true }];
 
 type InvalidCase = {
+  name?: string;
   code: string;
   errors: { messageId: string }[];
   options?: unknown[];
@@ -293,6 +294,7 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
       invalid: nameOnly([
         // === operator
         {
+          name: 'a token checked with === against a stored token leaks timing',
           code: 'if (token === storedToken) {}',
           errors: [{ messageId: 'timingUnsafeCompare' }],
         },

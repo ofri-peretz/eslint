@@ -195,7 +195,30 @@ export function isModuleExport(
       binding.path[0] === exportName
     );
   }
-  return node.type === AST_NODE_TYPES.Identifier && node.name === exportName;
+  if (node.type !== AST_NODE_TYPES.Identifier || node.name !== exportName) {
+    return false;
+  }
+  // `(ValidationPipe) => UsePipes(new ValidationPipe())` takes whatever the
+  // caller passes: a parameter is never the export, whatever it is called.
+  return !lookupVariable(node.name, scope)?.defs.some(
+    (def) => def.type === 'Parameter',
+  );
+}
+
+/** The variable a name resolves to, walking outward from `scope`. */
+function lookupVariable(
+  name: string,
+  scope: TSESLint.Scope.Scope,
+): TSESLint.Scope.Variable | undefined {
+  for (
+    let current: TSESLint.Scope.Scope | null = scope;
+    current;
+    current = current.upper
+  ) {
+    const variable = current.set.get(name);
+    if (variable) return variable;
+  }
+  return undefined;
 }
 
 /** The `CallExpression` behind a decorator, if it was invoked. */

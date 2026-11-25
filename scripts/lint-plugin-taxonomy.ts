@@ -115,6 +115,16 @@ const GRANDFATHERED: Grandfathered[] = [
       'above.',
   },
   {
+    file: 'eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/index.ts',
+    tokens: ['preact', 'react', 'svelte', 'vue'],
+    reason:
+      'Inverted, like no-sql-injection: the list is what the rule ABSTAINS on. A ' +
+      'module that imports a UI framework runs in the browser, where the attacker ' +
+      'is the user holding both operands, so a timing oracle has no remote ' +
+      'observer. The rule never gates on the framework being present; it stands ' +
+      'down for it, and `includeBrowserCode` restores the report.',
+  },
+  {
     file: 'eslint-plugin-node-security/src/rules/no-unsafe-buffer-alloc/index.ts',
     tokens: ['ioredis'],
     reason:
