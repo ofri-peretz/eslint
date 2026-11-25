@@ -43,6 +43,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   propertyName,
+  resolveModuleBinding,
   staticString,
 } from '@interlace/eslint-devkit';
 
@@ -221,6 +222,9 @@ function isAuthorizationDecision(node: TSESTree.Node): boolean {
   return false;
 }
 
+/** The slots a verifier stores the authenticated principal in (`req.user = user`). */
+const PRINCIPAL_SLOTS = new Set(['user', 'auth']);
+
 export const noClientControlledAuthorization = createRule<
   RuleOptions,
   MessageIds
@@ -271,6 +275,246 @@ export const noClientControlledAuthorization = createRule<
     currentOptions,
   ) {
     let extra: Set<string>;
+    /**
+     * Request binding -> bindings stored as its authenticated principal.
+     *
+     * `req.user = user`, where `user` is a PARAMETER of the callback
+     * `passport.authenticate('jwt', cb)` invokes, is the server telling the request
+     * who the caller is: a client cannot choose a callback's arguments. A
+     * comparison of a client-supplied id against that principal's own id
+     * (`req.params.userId !== user.id`) is the "self or holder of the right"
+     * check, not a decision on a value the client controls.
+     */
+    let principals: Map<TSESLint.Scope.Variable, Set<TSESLint.Scope.Variable>>;
+    let pending: (() => void)[];
+
+    function variableOf(
+      identifier: TSESTree.Identifier,
+    ): TSESLint.Scope.Variable | undefined {
+      for (
+        let scope: TSESLint.Scope.Scope | null =
+          context.sourceCode.getScope(identifier);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.set.get(identifier.name);
+        if (variable) return variable;
+      }
+      return undefined;
+    }
+
+    /**
+     * `(err, user, info)`: passport hands the authenticated user as the SECOND
+     * argument; `info` is strategy metadata that may be built from request
+     * data, and `err` is not a principal at all.
+     */
+    function isUserParameter(variable: TSESLint.Scope.Variable): boolean {
+      const definition = variable.defs[0];
+      const parameters = (definition.node as TSESTree.FunctionLike).params;
+      return parameters[1] === definition.name;
+    }
+
+    /** `passport.authenticate(...)`, with `passport` resolved to the module. */
+    function isPassportAuthenticate(call: TSESTree.Node | undefined): boolean {
+      if (call?.type !== AST_NODE_TYPES.CallExpression) return false;
+      const callee = call.callee;
+      if (
+        callee.type !== AST_NODE_TYPES.MemberExpression ||
+        propertyName(callee) !== 'authenticate'
+      ) {
+        return false;
+      }
+      return (
+        resolveModuleBinding(callee.object, context.sourceCode.getScope(call))
+          ?.module === 'passport'
+      );
+    }
+
+    /**
+     * Is `fn` the callback `passport.authenticate(strategy, options, fn)`
+     * calls with the verified user — passed directly, or the function a local
+     * factory returns and the factory's call is what gets passed
+     * (`verifyCallback(req, ...)`)?
+     *
+     * A parameter of an arbitrary function proves nothing: `check(req, req.body)`
+     * hands the client's own object in as `user`.
+     */
+    function isVerifierCallback(fn: TSESTree.Node): boolean {
+      // A function whose parent is the call can only be an argument of it:
+      // the callee of `passport.authenticate(...)` is a member expression.
+      if (isPassportAuthenticate(fn.parent)) return true;
+      // The factory: `(req) => (err, user) => {...}` or `function f() { return (err, user) => {...}; }`.
+      let factory: TSESTree.Node | undefined;
+      if (
+        fn.parent?.type === AST_NODE_TYPES.ArrowFunctionExpression &&
+        fn.parent.body === fn
+      ) {
+        factory = fn.parent;
+      } else if (fn.parent?.type === AST_NODE_TYPES.ReturnStatement) {
+        factory = fn.parent.parent;
+        while (
+          factory &&
+          factory.type !== AST_NODE_TYPES.FunctionDeclaration &&
+          factory.type !== AST_NODE_TYPES.FunctionExpression &&
+          factory.type !== AST_NODE_TYPES.ArrowFunctionExpression
+        ) {
+          factory = factory.parent;
+        }
+      }
+      if (factory === undefined) return false;
+      const holder =
+        factory.type === AST_NODE_TYPES.FunctionDeclaration
+          ? factory
+          : factory.parent?.type === AST_NODE_TYPES.VariableDeclarator
+            ? factory.parent
+            : undefined;
+      if (holder === undefined) return false;
+      const name =
+        holder.type === AST_NODE_TYPES.FunctionDeclaration
+          ? holder.id?.name
+          : holder.id.type === AST_NODE_TYPES.Identifier
+            ? holder.id.name
+            : undefined;
+      const variable = context.sourceCode
+        .getDeclaredVariables(holder)
+        .find((candidate) => candidate.name === name);
+      return (
+        variable?.references.some((reference) => {
+          const call = reference.identifier.parent;
+          return (
+            call?.type === AST_NODE_TYPES.CallExpression &&
+            call.callee === reference.identifier &&
+            isPassportAuthenticate(call.parent)
+          );
+        }) ?? false
+      );
+    }
+
+    /**
+     * Is a property reached THROUGH `variable` written (`user.id = ...`,
+     * `user.profile.id = ...`, `user.n++`, `delete user.role`)? The member
+     * chain is followed to its outermost link, so a nested write counts.
+     * `slots`, when given, limits the chains considered to those whose first
+     * property is one of them: for the request binding only `req.user...` /
+     * `req.auth...` reaches the principal.
+     */
+    function hasWriteThrough(
+      variable: TSESLint.Scope.Variable,
+      slots?: ReadonlySet<string>,
+    ): boolean {
+      return variable.references.some((reference) => {
+        let chain: TSESTree.Node = reference.identifier;
+        let firstLink: TSESTree.MemberExpression | null = null;
+        let depth = 0;
+        while (
+          chain.parent?.type === AST_NODE_TYPES.MemberExpression &&
+          chain.parent.object === chain
+        ) {
+          chain = chain.parent;
+          depth += 1;
+          firstLink ??= chain as TSESTree.MemberExpression;
+        }
+        if (depth === 0) {
+          // `const alias = user`: a write through the alias is not followed,
+          // so an object that escapes to another binding is not trusted.
+          return slots === undefined && aliased(reference.identifier);
+        }
+        if (slots !== undefined) {
+          // `req.user = user` is the STORE, not a mutation of what it stores:
+          // only a write BELOW the slot (`req.user.id = ...`) reaches the
+          // object. A key that does not resolve (`req[slot].id`) may be a
+          // principal slot, so it counts.
+          if (depth < 2) return false;
+          const first = staticPropertyName(firstLink!);
+          if (first !== null && !slots.has(first)) return false;
+        }
+        return isWriteTarget(chain);
+      });
+    }
+
+    /** Is `identifier` the whole value bound to another name? */
+    function aliased(identifier: TSESTree.Node): boolean {
+      const use = identifier.parent;
+      return (
+        (use?.type === AST_NODE_TYPES.VariableDeclarator &&
+          use.init === identifier) ||
+        (use?.type === AST_NODE_TYPES.AssignmentExpression &&
+          use.right === identifier &&
+          use.left.type !== AST_NODE_TYPES.MemberExpression)
+      );
+    }
+
+    /**
+     * Is `node` written: assigned, updated, deleted, or a target inside a
+     * destructuring assignment (`({ userId: user.id } = req.body)`)? A read
+     * in a computed key or a default value is not a target.
+     */
+    function isWriteTarget(node: TSESTree.Node): boolean {
+      let target: TSESTree.Node = node;
+      for (;;) {
+        const parent: TSESTree.Node | undefined = target.parent;
+        if (
+          parent?.type === AST_NODE_TYPES.Property &&
+          parent.value === target &&
+          parent.parent?.type === AST_NODE_TYPES.ObjectPattern
+        ) {
+          target = parent.parent;
+        } else if (
+          parent?.type === AST_NODE_TYPES.ArrayPattern ||
+          parent?.type === AST_NODE_TYPES.ObjectPattern ||
+          parent?.type === AST_NODE_TYPES.RestElement ||
+          (parent?.type === AST_NODE_TYPES.AssignmentPattern &&
+            parent.left === target)
+        ) {
+          target = parent;
+        } else {
+          break;
+        }
+      }
+      const use = target.parent;
+      return (
+        (use?.type === AST_NODE_TYPES.AssignmentExpression &&
+          use.left === target) ||
+        ((use?.type === AST_NODE_TYPES.ForOfStatement ||
+          use?.type === AST_NODE_TYPES.ForInStatement) &&
+          use.left === target) ||
+        use?.type === AST_NODE_TYPES.UpdateExpression ||
+        (use?.type === AST_NODE_TYPES.UnaryExpression &&
+          use.operator === 'delete')
+      );
+    }
+
+    function rootIdentifier(node: TSESTree.Node): TSESTree.Identifier | null {
+      let current: TSESTree.Node = node;
+      while (current.type === AST_NODE_TYPES.MemberExpression) {
+        current = current.object;
+      }
+      return current.type === AST_NODE_TYPES.Identifier ? current : null;
+    }
+
+    /**
+     * Is `member` compared for equality against the authenticated principal
+     * of the request it was read from?
+     */
+    function comparedToPrincipal(member: TSESTree.MemberExpression): boolean {
+      const comparison = member.parent;
+      if (
+        comparison?.type !== AST_NODE_TYPES.BinaryExpression ||
+        !['===', '!==', '==', '!='].includes(comparison.operator)
+      ) {
+        return false;
+      }
+      const other =
+        comparison.left === member ? comparison.right : comparison.left;
+      if (other.type !== AST_NODE_TYPES.MemberExpression) return false;
+      const requestRoot = rootIdentifier(member);
+      const otherRoot = rootIdentifier(other);
+      if (requestRoot === null || otherRoot === null) return false;
+      const request = variableOf(requestRoot);
+      const principal = variableOf(otherRoot);
+      if (request === undefined || principal === undefined) return false;
+      return principals.get(request)?.has(principal) ?? false;
+    }
 
     function isAuthorizationAttribute(
       property: string,
@@ -295,7 +539,46 @@ export const noClientControlledAuthorization = createRule<
         extra = new Set(
           (extraProperties ?? []).map((name) => name.toLowerCase()),
         );
+        principals = new Map();
+        pending = [];
         return true;
+      },
+      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        if (
+          node.operator !== '=' ||
+          node.left.type !== AST_NODE_TYPES.MemberExpression ||
+          node.left.object.type !== AST_NODE_TYPES.Identifier ||
+          node.right.type !== AST_NODE_TYPES.Identifier
+        ) {
+          return;
+        }
+        const slot = staticPropertyName(node.left);
+        if (slot === null || !PRINCIPAL_SLOTS.has(slot)) return;
+        const request = variableOf(node.left.object);
+        const value = variableOf(node.right);
+        // Only a parameter of a passport verifier callback that is never
+        // reassigned and has no property written: a `const user =
+        // req.body.user` is the client's word, a parameter of any other
+        // function can be handed the client's object, and a rewritten
+        // parameter or `user.id = req.body.id` may hold anything.
+        if (
+          request === undefined ||
+          value === undefined ||
+          value.defs[0]?.type !== 'Parameter' ||
+          value.references.some((reference) => reference.isWrite()) ||
+          hasWriteThrough(value) ||
+          hasWriteThrough(request, PRINCIPAL_SLOTS) ||
+          !isUserParameter(value) ||
+          !isVerifierCallback(value.defs[0].node)
+        ) {
+          return;
+        }
+        const stored = principals.get(request) ?? new Set();
+        stored.add(value);
+        principals.set(request, stored);
+      },
+      'Program:exit'() {
+        for (const report of pending) report();
       },
       CallExpression(node: TSESTree.CallExpression) {
         const header = headerAccessorName(node);
@@ -321,13 +604,18 @@ export const noClientControlledAuthorization = createRule<
         if (!isAuthorizationAttribute(property, container)) return;
         if (!isAuthorizationDecision(node)) return;
 
-        context.report({
-          node,
-          messageId: 'clientControlledAuthorization',
-          data: {
-            expression: context.sourceCode.getText(node),
-            property,
-          },
+        // Decided at the end of the file: the `req.user = user` that makes
+        // the other side a principal may sit after the comparison.
+        pending.push(() => {
+          if (comparedToPrincipal(node)) return;
+          context.report({
+            node,
+            messageId: 'clientControlledAuthorization',
+            data: {
+              expression: context.sourceCode.getText(node),
+              property,
+            },
+          });
         });
       },
     };

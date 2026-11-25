@@ -27,7 +27,7 @@ if (req.body.role === 'admin') {
 }
 ```
 
-There *is* an authorization check here. It reads the caller's claim about who they are and believes it. That is the difference between CWE-862 (missing authorization — no check) and **CWE-863 (incorrect authorization — the check is wrong)**, and it is why this pattern survives review: a reviewer scanning for "is there a role check?" finds one.
+There _is_ an authorization check here. It reads the caller's claim about who they are and believes it. That is the difference between CWE-862 (missing authorization — no check) and **CWE-863 (incorrect authorization — the check is wrong)**, and it is why this pattern survives review: a reviewer scanning for "is there a role check?" finds one.
 
 The rule reports when an authorization attribute is read off a client-controlled container — `req.body`, `req.query`, `req.params`, `req.headers`, `req.cookies` — and the value lands in a decision position:
 
@@ -48,13 +48,19 @@ Because that vocabulary is a **naming heuristic**, the rule ships as `warn` and 
 
 ```javascript
 // Role straight off the request body
-if (req.body.role === 'admin') { deleteEverything(); }
+if (req.body.role === 'admin') {
+  deleteEverything();
+}
 
 // Truthiness of a client-set flag
-if (req.query.isAdmin) { grant(); }
+if (req.query.isAdmin) {
+  grant();
+}
 
 // Negated guard clause — same trust, inverted
-if (!req.body.isAdmin) { return res.sendStatus(403); }
+if (!req.body.isAdmin) {
+  return res.sendStatus(403);
+}
 
 // Permission list supplied by the caller
 const ok = req.body.permissions.includes('billing:write');
@@ -63,15 +69,23 @@ const ok = req.body.permissions.includes('billing:write');
 const ok = ADMIN_ROLES.includes(req.body.role);
 
 // An identity header the client can set as easily as the proxy
-if (req.headers['x-user-role'] === 'owner') { grant(); }
-if (req.get('x-user-role') === 'owner') { grant(); } // same header via Express's accessor
+if (req.headers['x-user-role'] === 'owner') {
+  grant();
+}
+if (req.get('x-user-role') === 'owner') {
+  grant();
+} // same header via Express's accessor
 
 // Ownership decided on a client-supplied id
-if (req.params.userId === record.ownerId) { allow(); }
+if (req.params.userId === record.ownerId) {
+  allow();
+}
 
 // Same decision, switch syntax
 switch (req.body.role) {
-  case 'admin': adminAccess(); break;
+  case 'admin':
+    adminAccess();
+    break;
 }
 ```
 
@@ -79,9 +93,15 @@ switch (req.body.role) {
 
 ```javascript
 // The attribute comes from the verified session or token
-if (req.user.role === 'admin') { grant(); }
-if (req.auth.permissions.includes('billing:write')) { grant(); }
-if (req.session.isAdmin) { grant(); }
+if (req.user.role === 'admin') {
+  grant();
+}
+if (req.auth.permissions.includes('billing:write')) {
+  grant();
+}
+if (req.session.isAdmin) {
+  grant();
+}
 
 // Request input used for something other than an access decision
 const role = req.body.role;
@@ -92,17 +112,39 @@ res.json({ role: req.body.role });
 const requestedRole = req.body.role ?? 'viewer';
 
 // Ordinary request properties in a decision are not authorization
-if (req.query.page === '1') { first(); }
-if (req.headers['content-type'] === 'application/json') { parse(); }
+if (req.query.page === '1') {
+  first();
+}
+if (req.headers['content-type'] === 'application/json') {
+  parse();
+}
 ```
 
 If a proxy really is the only writer of an identity header, terminate it: strip the header at the edge, verify a signature on it, and read the verified value — not the raw header — in the app.
 
+## The "self or holder of the right" check
+
+`req.params.userId !== user.id` is not decided on client input when `user` is the
+**principal `passport.authenticate` handed its callback and the callback stored on this same
+request**. The evidence is a binding, resolved through scope and the module graph:
+
+- the parameter belongs to the callback that `passport.authenticate(...)` calls (`passport`
+  resolved to the module), passed inline or as the function a local factory returns when the
+  factory's call is what is passed (`verifyCallback(req, ...)`);
+- it is the callback's **second** parameter, the authenticated user (`info`, the third, is strategy metadata that may be built from request data);
+- the parameter is never reassigned and nothing below it is written, directly or through the request slot (`user.id = ...`, `user.profile.id = ...`, `req.user.id = ...`, `user.n++`, `delete user.role`);
+- it is stored as `req.user = user` / `req.auth = user` on the same request binding the client value was read from.
+
+A parameter of any other function proves nothing, since `check(req, req.body)` hands the client's
+own object in as `user`. A local copy of client input, a parameter stored on a different request,
+a rewritten parameter, a principal whose properties are overwritten, and a comparison against a
+second client value still report.
+
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `extraProperties` | `string[]` | — | Extra property names treated as authorization attributes |
+| Option            | Type       | Default | Description                                              |
+| ----------------- | ---------- | ------- | -------------------------------------------------------- |
+| `extraProperties` | `string[]` | —       | Extra property names treated as authorization attributes |
 
 ```json
 {
@@ -134,7 +176,9 @@ The following patterns are **not detected** due to static analysis limitations:
 ```typescript
 // ❌ NOT DETECTED
 const role = req.body.role;
-if (role === 'admin') { grant(); }
+if (role === 'admin') {
+  grant();
+}
 ```
 
 **Mitigation**: This is the most common shape in real code; treat the rule as a floor, not a proof.
@@ -145,7 +189,9 @@ if (role === 'admin') { grant(); }
 
 ```typescript
 // ❌ NOT DETECTED
-if (req.body[field] === 'admin') { grant(); }
+if (req.body[field] === 'admin') {
+  grant();
+}
 ```
 
 ### Attributes Outside The Vocabulary
@@ -154,7 +200,9 @@ if (req.body[field] === 'admin') { grant(); }
 
 ```typescript
 // ❌ NOT DETECTED — until `tier` is added to extraProperties
-if (req.body.tier === 'internal') { grant(); }
+if (req.body.tier === 'internal') {
+  grant();
+}
 ```
 
 ## Further Reading
