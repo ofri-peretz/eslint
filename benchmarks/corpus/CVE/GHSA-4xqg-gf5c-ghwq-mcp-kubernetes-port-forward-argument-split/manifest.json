@@ -1,0 +1,30 @@
+{
+  "cve": null,
+  "ghsa": "GHSA-4xqg-gf5c-ghwq",
+  "cwe": "CWE-088",
+  "owasp": "A03:2021",
+  "package": "mcp-server-kubernetes",
+  "vulnerableVersions": "<=3.4.0",
+  "fixedVersion": "3.5.0",
+  "summary": "port_forward built its kubectl command as one string and split it on spaces before spawn(), so a tool argument containing spaces smuggled extra kubectl flags (argument injection) even though no shell was involved.",
+  "publishedAt": null,
+  "fixCommit": "https://github.com/advisories/GHSA-4xqg-gf5c-ghwq",
+  "expectedPlugins": ["eslint-plugin-mcp-sdk-security"],
+  "expectedRules": ["mcp-sdk-security/no-command-injection-in-tool"],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "port-forward-split.js",
+        "description": "command.split(\" \") feeds spawn(cmd, args)"
+      }
+    ],
+    "safe": [
+      {
+        "file": "port-forward-args-array.js",
+        "description": "Arguments built as an array, one element per value"
+      }
+    ]
+  },
+  "fixtureMetadataRequired": true,
+  "notes": "Verified by diffing the published 3.4.0 and 3.5.0 tarballs (dist/tools/port_forward.js). 3.4.1 was never published. The rule reports this as CWE-78 command injection; argument injection (CWE-88) is the precise class. A message that names argument injection when the command comes from split() is a follow-up."
+}

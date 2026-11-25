@@ -1,0 +1,30 @@
+{
+  "cve": null,
+  "ghsa": "GHSA-gxw4-4fc5-9gr5",
+  "cwe": "CWE-078",
+  "owasp": "A03:2021",
+  "package": "figma-developer-mcp",
+  "vulnerableVersions": "<=0.6.2",
+  "fixedVersion": "0.6.3",
+  "summary": "The get_figma_data tool built its Figma API URL from the fileKey and nodeId tool arguments, and the curl fallback ran that URL inside an exec() shell string, so a crafted argument ran shell commands on the host.",
+  "publishedAt": null,
+  "fixCommit": "https://github.com/advisories/GHSA-gxw4-4fc5-9gr5",
+  "expectedPlugins": ["eslint-plugin-mcp-sdk-security"],
+  "expectedRules": ["mcp-sdk-security/no-command-injection-in-tool"],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "curl-fallback-exec.js",
+        "description": "Curl fallback interpolates the tool-derived URL into exec()"
+      }
+    ],
+    "safe": [
+      {
+        "file": "curl-fallback-execfile.js",
+        "description": "execFile with an argument array, and regex-pinned fileKey and nodeId"
+      }
+    ]
+  },
+  "fixtureMetadataRequired": true,
+  "notes": "Verified by diffing the published 0.6.2 and 0.6.3 tarballs: exec(`curl ... \"${url}\"`) became execFile(\"curl\", args) and the zod schema gained regex constraints. The advisory lists CWE-77; the corpus files it under CWE-078, the class the rule reports."
+}
