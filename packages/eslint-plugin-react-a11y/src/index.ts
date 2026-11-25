@@ -7,7 +7,8 @@
 /**
  * eslint-plugin-react-a11y
  * 
- * A comprehensive React accessibility ESLint plugin with 37 LLM-optimized rules
+ * A comprehensive React accessibility ESLint plugin with 37 LLM-optimized rules plus 3
+ * deprecated no-op stubs
  * for detecting and preventing accessibility violations in React/JSX code.
  * 
  * Features:
@@ -81,6 +82,11 @@ import { preferTagOverRole } from './rules/prefer-tag-over-role';
 // Scope rule
 import { scope } from './rules/scope';
 
+// Deprecated eslint-plugin-jsx-a11y rules, kept as no-ops so configs naming them load
+import { accessibleEmoji } from './rules/accessible-emoji';
+import { labelHasFor } from './rules/label-has-for';
+import { noOnchange } from './rules/no-onchange';
+
 
 /**
  * Collection of all accessibility ESLint rules
@@ -144,6 +150,12 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   
   // Scope rule
   'scope': scope,
+
+  // Deprecated upstream (eslint-plugin-jsx-a11y 6.10.2), no-ops here: they report
+  // nothing and exist so a config or disable comment naming them does not throw.
+  'accessible-emoji': accessibleEmoji,
+  'label-has-for': labelHasFor,
+  'no-onchange': noOnchange,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -167,6 +179,18 @@ export const plugin: TSESLint.FlatConfig.Plugin = {
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
+
+/**
+ * The deprecated jsx-a11y rules registered as no-ops. A static list on purpose:
+ * `configs.strict` must not read each rule's `meta`, which would load every rule
+ * module at import. `src/index.test.ts` fails if a rule with `meta.deprecated`
+ * is missing from this set, or a name in it is not registered.
+ */
+const DEPRECATED_STUBS: ReadonlySet<string> = new Set([
+  'accessible-emoji',
+  'label-has-for',
+  'no-onchange',
+]);
 
 /**
  * Same parser setting as eslint-plugin-jsx-a11y's flat presets
@@ -271,8 +295,13 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
     plugins: {
       'react-a11y': plugin,
     },
+    // Deprecated no-op stubs are not switched on: they report nothing. Excluded by
+    // name, not by reading `meta.deprecated`: that would invoke every lazy rule
+    // getter at import and defeat the build's deferred loading.
     rules: Object.fromEntries(
-      Object.keys(rules).map(ruleName => [`react-a11y/${ruleName}`, 'error'])
+      Object.keys(rules)
+        .filter((ruleName) => !DEPRECATED_STUBS.has(ruleName))
+        .map((ruleName) => [`react-a11y/${ruleName}`, 'error'])
     ),
   } satisfies TSESLint.FlatConfig.Config,
 

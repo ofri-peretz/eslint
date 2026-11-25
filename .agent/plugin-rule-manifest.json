@@ -1518,6 +1518,11 @@
       "environment": "node",
       "detection": "structural-pattern",
       "confidence": "enforcement"
+    },
+    "no-modulo-biased-random": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
     }
   },
   "eslint-plugin-openai-security": {
@@ -1639,6 +1644,11 @@
     }
   },
   "eslint-plugin-react-a11y": {
+    "accessible-emoji": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
     "anchor-ambiguous-text": {
       "environment": "universal",
       "detection": "structural-pattern",
@@ -1693,6 +1703,11 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "enforcement"
+    },
+    "label-has-for": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
     },
     "mouse-events-have-key-events": {
       "environment": "universal",
@@ -1755,6 +1770,11 @@
       "confidence": "review-prompt"
     },
     "no-noninteractive-tabindex": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "review-prompt"
+    },
+    "no-onchange": {
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "review-prompt"
@@ -2224,6 +2244,11 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in"
+    },
+    "no-unbounded-cause-recursion": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
     }
   },
   "eslint-plugin-secure-coding": {
@@ -2408,6 +2433,11 @@
       "deprecated": "Use express-security plugin instead — this rule requires Express route handler context"
     },
     "require-secure-defaults": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "opt-in"
+    },
+    "no-unguarded-uri-decode": {
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in"
