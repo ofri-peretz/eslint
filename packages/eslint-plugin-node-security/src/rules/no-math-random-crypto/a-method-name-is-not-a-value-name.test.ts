@@ -40,7 +40,10 @@ ruleTester.run(
   {
     valid: [
       // The corpus shape, both collision words.
-      `const api = { eth_getBlockTransactionCountByHash: async function (args, cb) { const ticket = hash(api_name + Math.random() + Date.now()); emit(ticket); } };`,
+      {
+        name: "the method name 'eth_getBlockTransactionCountByHash' contains 'Hash' but is an RPC method name, not evidence the Math.random() ticket is a cryptographic hash input (shardeum/json-rpc-server)",
+        code: `const api = { eth_getBlockTransactionCountByHash: async function (args, cb) { const ticket = hash(api_name + Math.random() + Date.now()); emit(ticket); } };`,
+      },
       `const api = { eth_getCode: async function (args, cb) { const ticket = hash(api_name + Math.random() + Date.now()); emit(ticket); } };`,
       // The same overreach one level out: a crypto-named CONST holding an object
       // whose method draws a random number for something else entirely.

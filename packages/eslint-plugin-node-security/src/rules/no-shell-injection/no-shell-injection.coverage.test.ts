@@ -25,7 +25,10 @@ describe('no-shell-injection coverage gaps', () => {
   ruleTester.run('no-shell-injection', noShellInjection, {
     valid: [
       // Computed member callee → property is not an Identifier, fnName stays null
-      { code: "cp['exec'](cmd + ' -la');" },
+      {
+        name: "a bracket-computed callee (cp['exec']) is not an Identifier property, so the method name resolves to null and the concatenated command is not matched",
+        code: "cp['exec'](cmd + ' -la');",
+      },
       // No arguments → firstArg undefined guard
       { code: 'exec();' },
       // Spread first argument → SpreadElement guard

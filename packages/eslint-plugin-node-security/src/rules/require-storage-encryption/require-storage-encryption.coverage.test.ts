@@ -29,9 +29,14 @@ describe('require-storage-encryption coverage gaps', () => {
         name: 'localStorage.setItem of an encrypt()-wrapped value is not reported',
         code: "localStorage.setItem('user', encrypt(user));",
       },
-      // CallExpression arg whose callee is a MemberExpression, plus a real
-      // encrypt() wrapper → exercises both callback operands
-      { code: "localStorage.setItem(keys.get('u'), encryptData(user));" },
+      // localStorage.setItem is Web Storage, not a file write — this rule's
+      // own isFileWrite gate returns before any encryption check runs, so this
+      // is valid regardless of the encryptData() wrapper (Web Storage is
+      // require-secure-credential-storage's sink, not this rule's).
+      {
+        name: 'localStorage.setItem is not a file write for this rule, so it is valid before the encryption-wrapper check is ever reached',
+        code: "localStorage.setItem(keys.get('u'), encryptData(user));",
+      },
     ],
     invalid: [],
   });

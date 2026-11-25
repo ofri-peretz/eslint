@@ -53,7 +53,10 @@ describe('no-buffer-overread coverage gaps', () => {
         name: 'readUInt8 at a constant offset without noAssert throws on overread and is not reported',
         code: 'export const f = (b) => b.readUInt8(0);',
       },
-      'export const f = (b) => b.readUIntBE(0, 4);',
+      {
+        name: 'readUIntBE at a constant offset without noAssert also throws on overread and is not reported',
+        code: 'export const f = (b) => b.readUIntBE(0, 4);',
+      },
       // `false` is the default spelled out, not a disabled check.
       'export const f = (b) => b.readUInt8(0, false);',
 
