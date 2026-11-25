@@ -25,6 +25,10 @@ ruleTester.run(
   noUnboundedCauseRecursion,
   {
     valid: [
+      // A cause read inside a callback argument is not passed on now.
+      `function walk(e) { walk(() => e.cause); }`,
+      // An undeclared name carries no cause we can see.
+      `function walk(e) { walk(globalCause); }`,
       // A recursion deferred to a callback runs on a fresh stack: no overflow.
       `function walk(e) { setTimeout(() => walk(e.cause)); }`,
       `function walk(e) { setTimeout(function () { walk(e.cause); }); }`,
@@ -98,6 +102,36 @@ ruleTester.run(
       `const { walk } = (e) => walk(e.cause);`,
     ],
     invalid: [
+      // Unresolved names are not guards.
+      {
+        code: `function walk(e) { log(GLOBAL.cause); walk(e.cause); }`,
+        errors: unbounded,
+      },
+      {
+        code: `function walk(e) { cache[k](e); walk(e.cause); }`,
+        errors: unbounded,
+      },
+      {
+        code: `function walk(e) { track(globalMemo, e); walk(e.cause); }`,
+        errors: unbounded,
+      },
+      {
+        code: `function walk(e) { e[MARKER] = 1; walk(e.cause); }`,
+        errors: unbounded,
+      },
+      {
+        code: `function walk(e) { if (KEY in e) return; walk(e.cause); }`,
+        errors: unbounded,
+      },
+      {
+        code: `function walk(e) { if (LIMIT > 3) return; walk(e.cause); }`,
+        errors: unbounded,
+      },
+      // A destructured walked parameter.
+      {
+        code: `function walk({ x }) { walk(x.cause); }`,
+        errors: unbounded,
+      },
       // A guard inside a nested function does not guard the outer walk.
       {
         code: `const cache = new WeakSet();

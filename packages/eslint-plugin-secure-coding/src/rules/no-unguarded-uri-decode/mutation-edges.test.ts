@@ -23,6 +23,12 @@ ruleTester.run(
   noUnguardedUriDecode,
   {
     valid: [
+      // searchParams values come out of the URL parser already decoded.
+      `function h(req) { const p = new URL(req.url, 'http://x').searchParams; return decodeURIComponent(p); }`,
+      // Computed keys name no known request input.
+      `function h(req, k) { return decodeURIComponent(req[k]); }`,
+      `function h(ctx, k) { return decodeURIComponent(ctx.request[k]); }`,
+      `function h(req, m) { return decodeURIComponent(req[m]("x")); }`,
       // A window property other than location is not the location.
       `decodeURIComponent(window.history.state);`,
       // An unknown global's .location is not the page location.
@@ -59,6 +65,15 @@ ruleTester.run(
       `decodeURI('/a%20b');`,
     ],
     invalid: [
+      // Optional chaining and a non-null assertion still carry the input.
+      {
+        code: `function h(req) { return decodeURIComponent(req?.url); }`,
+        errors: unguarded,
+      },
+      {
+        code: `function h(req) { return decodeURIComponent(req.url!); }`,
+        errors: unguarded,
+      },
       // document.location is the page location.
       {
         code: `decodeURIComponent(document.location.hash);`,

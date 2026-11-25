@@ -256,17 +256,19 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
 
     /** Is this typed array passed to `getRandomValues` anywhere? */
     function isFilledWithRandom(node: TSESTree.Identifier): boolean {
-      const variable = findVariable(context.sourceCode, node);
-      return (
-        variable?.references.some((ref) => {
-          const parent = ref.identifier.parent;
-          return (
-            parent?.type === AST_NODE_TYPES.CallExpression &&
-            parent.arguments[0] === ref.identifier &&
-            isCryptoExport(parent.callee, 'getRandomValues')
-          );
-        }) ?? false
-      );
+      // Only reached for a name singleInit already resolved.
+      const variable = findVariable(
+        context.sourceCode,
+        node,
+      ) as TSESLint.Scope.Variable;
+      return variable.references.some((ref) => {
+        const parent = ref.identifier.parent;
+        return (
+          parent?.type === AST_NODE_TYPES.CallExpression &&
+          parent.arguments[0] === ref.identifier &&
+          isCryptoExport(parent.callee, 'getRandomValues')
+        );
+      });
     }
 
     /** The element range of a random collection, or null if it is not one. */
@@ -407,7 +409,9 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
         node.type === AST_NODE_TYPES.TemplateLiteral &&
         node.expressions.length === 0
       ) {
-        return node.quasis[0]?.value.cooked ?? null;
+        // An untagged template always has one cooked quasi.
+        return (node.quasis[0] as TSESTree.TemplateElement).value
+          .cooked as string;
       }
       if (
         node.type === AST_NODE_TYPES.BinaryExpression &&
@@ -493,7 +497,8 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
         if (current.type === AST_NODE_TYPES.Program) return current;
         current = current.parent;
       }
-      return current ?? node;
+      // The Program encloses every node.
+      return current as TSESTree.Node;
     }
 
     /**
@@ -522,7 +527,7 @@ export const noModuloBiasedRandom = createRule<RuleOptions, MessageIds>({
               child &&
               typeof child === 'object' &&
               typeof (child as TSESTree.Node).type === 'string' &&
-              !(isFunction(child as TSESTree.Node) && child !== body)
+              !isFunction(child as TSESTree.Node)
             ) {
               visit(child as TSESTree.Node);
             }

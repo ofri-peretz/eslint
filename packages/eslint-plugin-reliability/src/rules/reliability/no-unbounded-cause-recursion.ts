@@ -257,10 +257,11 @@ export const noUnboundedCauseRecursion = createRule<RuleOptions, MessageIds>({
       fn: FunctionNode,
     ): { variable: TSESLint.Scope.Variable; id: TSESTree.Identifier } | null {
       if (fn.type !== AST_NODE_TYPES.ArrowFunctionExpression && fn.id) {
+        // A named function always declares its own name.
         const variable = context.sourceCode
           .getDeclaredVariables(fn)
-          .find((v) => v.name === fn.id!.name);
-        return variable ? { variable, id: fn.id } : null;
+          .find((v) => v.name === fn.id!.name) as TSESLint.Scope.Variable;
+        return { variable, id: fn.id };
       }
       const parent = fn.parent;
       if (
@@ -270,8 +271,10 @@ export const noUnboundedCauseRecursion = createRule<RuleOptions, MessageIds>({
       ) {
         const variable = context.sourceCode
           .getDeclaredVariables(parent)
-          .find((v) => v.name === (parent.id as TSESTree.Identifier).name);
-        return variable ? { variable, id: parent.id } : null;
+          .find(
+            (v) => v.name === (parent.id as TSESTree.Identifier).name,
+          ) as TSESLint.Scope.Variable;
+        return { variable, id: parent.id };
       }
       return null;
     }
@@ -368,8 +371,10 @@ export const noUnboundedCauseRecursion = createRule<RuleOptions, MessageIds>({
         const id =
           param?.type === AST_NODE_TYPES.AssignmentPattern ? param.left : param;
         if (id?.type !== AST_NODE_TYPES.Identifier) return;
-        const variable = params.find((v) => v.name === id.name);
-        if (variable) walked.add(variable);
+        // A parameter always declares its own name.
+        walked.add(
+          params.find((v) => v.name === id.name) as TSESLint.Scope.Variable,
+        );
       };
       for (const call of recursions) {
         if (call.arguments.some((a) => carriesCause(a))) {
