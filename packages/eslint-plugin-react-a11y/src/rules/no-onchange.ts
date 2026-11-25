@@ -31,7 +31,8 @@ export const noOnchange = createRule<RuleOptions, never>({
         'Deprecated no-op kept for eslint-plugin-jsx-a11y configs: onChange on a select is accessible today, so nothing is reported',
     },
     messages: {},
-    // Same shape as upstream's `generateObjSchema()`: an object, nothing required.
+    // Accepts what upstream's `generateObjSchema()` does: any object.
+    // The empty `properties` adds no constraint.
     schema: [{ type: 'object', properties: {} }],
   },
   defaultOptions: [{}],
