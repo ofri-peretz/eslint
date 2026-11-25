@@ -186,6 +186,16 @@ function holdsOnlyOutsideProduction(
   ) {
     return false;
   }
+  // A function some other function returned (`const isDev = makeGuard()`)
+  // is only the factory's last answer: an earlier `return () => true` may be
+  // the one that runs. Only a helper written as itself is read.
+  const parent = fn.node.parent;
+  if (
+    parent?.type === 'ReturnStatement' ||
+    (parent?.type === 'ArrowFunctionExpression' && parent.body === fn.node)
+  ) {
+    return false;
+  }
   // An async helper returns a Promise and a generator returns an iterator:
   // both are truthy objects, so `if (isDev())` runs in production too.
   if (fn.node.async || fn.node.generator) return false;

@@ -545,4 +545,30 @@ describe('follow', () => {
       'none',
     );
   });
+
+  it('stops at an exported binding its module writes again, through a barrel too', () => {
+    const extra = {
+      'helper.ts': [
+        'export function isDev() { return 1; }',
+        'isDev = () => 2;',
+        'export function kept() { return 3; }',
+        'export let mode = 4;',
+        'mode = 5;',
+        'export let fixed = 6;',
+      ].join('\n'),
+      'barrel.ts': "export * from './helper';",
+    };
+    expect(
+      landsOn("import { isDev } from './barrel';\nprobe(isDev);", extra),
+    ).toBe('isDev');
+    expect(
+      landsOn("import { kept } from './barrel';\nprobe(kept);", extra),
+    ).toBe('function kept() { return 3; }');
+    expect(
+      landsOn("import { mode } from './helper';\nprobe(mode);", extra),
+    ).toBe('mode');
+    expect(
+      landsOn("import { fixed } from './helper';\nprobe(fixed);", extra),
+    ).toBe('6');
+  });
 });

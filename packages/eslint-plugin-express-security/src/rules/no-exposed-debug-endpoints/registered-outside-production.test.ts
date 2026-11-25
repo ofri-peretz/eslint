@@ -124,6 +124,22 @@ if (process.env.NODE_ENV === 'development') { noop(); } else { app.get('/debug',
         errors: exposed,
       },
       {
+        name: 'a helper a factory returned may be an earlier return',
+        code: route(
+          'isDev()',
+          "function makeGuard() { if (flag) return () => true; return () => process.env.NODE_ENV === 'development'; }\nconst isDev = makeGuard();",
+        ),
+        errors: exposed,
+      },
+      {
+        name: 'a helper an arrow factory returned is not read either',
+        code: route(
+          'isDev()',
+          "const makeGuard = () => () => process.env.NODE_ENV === 'development';\nconst isDev = makeGuard();",
+        ),
+        errors: exposed,
+      },
+      {
         name: 'a helper reassigned after its declaration is not the declaration',
         code: route(
           'isDev()',

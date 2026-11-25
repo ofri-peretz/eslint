@@ -491,6 +491,20 @@ ruleTester.run(
         code: digestOf('const { body } = req;', 'body'),
       },
       {
+        name: 'a binding used twice is judged once and still the caller’s',
+        code: digestOf('const payload = req.body;', 'payload + payload'),
+      },
+      {
+        name: 'a literal and the body in separate updates',
+        code: `
+          import { createHash } from 'node:crypto';
+          function verify(req) {
+            const v = createHash('sha256').update('v1:').update(req.body).digest('hex');
+            return v === req.headers['x-hash'];
+          }
+        `,
+      },
+      {
         name: 'an awaited body read',
         code: digestOf('', 'await req.text()'),
       },
@@ -564,6 +578,35 @@ ruleTester.run(
       {
         name: 'a server value as a computed index',
         code: digestOf('', 'req.body[pepper]'),
+        errors: unsafe,
+      },
+      {
+        name: 'session state read through the request is the server’s',
+        code: digestOf('', 'req.session.apiToken'),
+        errors: unsafe,
+      },
+      {
+        name: 'a local String is not the built-in',
+        code: digestOf('const String = (x) => x + pepper;', 'String(req.body)'),
+        errors: unsafe,
+      },
+      {
+        name: 'a local JSON is not the built-in',
+        code: digestOf(
+          'const JSON = { stringify: (x) => x + pepper };',
+          'JSON.stringify(req.body)',
+        ),
+        errors: unsafe,
+      },
+      {
+        name: 'separate updates of a literal alone hide nothing but read no request',
+        code: `
+          import { createHash } from 'node:crypto';
+          function verify(req, pepper) {
+            const v = createHash('sha256').update('v1:').update(pepper).digest('hex');
+            return v === req.headers['x-hash'];
+          }
+        `,
         errors: unsafe,
       },
       {

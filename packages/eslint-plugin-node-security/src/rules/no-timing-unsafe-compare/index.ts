@@ -299,6 +299,15 @@ function packageName(specifier: string): string {
     : (parts[0] as string);
 }
 
+/**
+ * One `callerKnows` judgement: the bindings on the current path (a binding
+ * that reads itself stops) and the ones already judged.
+ */
+interface KnowsWalk {
+  path: Set<TSESLint.Scope.Variable>;
+  memo: Map<TSESLint.Scope.Variable, boolean>;
+}
+
 /** Global functions whose result holds only their arguments. */
 const PASS_THROUGH_FUNCTIONS: ReadonlySet<string> = new Set([
   'String',
@@ -1144,18 +1153,16 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
      * supply. A digest of the request alone is one the caller computes too.
      */
     function hashesHiddenInput(inputs: TSESTree.Node[]): boolean {
-      return inputs.some((input) => !callerSupplies(input));
-    }
-
-    /**
-     * Does the caller know all of this input? `req.body` does; so does
-     * `` `${req.body}:` ``. `req.body + SECRET` does not: one operand read
-     * the request, the other is the server's, and the digest hides it.
-     */
-    function callerSupplies(input: TSESTree.Node): boolean {
+      // The request has to be in it somewhere, and every input has to be the
+      // caller's: `.update('v1:').update(req.body)` is the caller's as much
+      // as `.update('v1:' + req.body)`; `.update(req.body).update(pepper)`
+      // is not.
+      const readsRequest = inputs.some((input) =>
+        digestOperands(input).some((operand) => readsUntrusted(operand)),
+      );
+      const walk: KnowsWalk = { path: new Set(), memo: new Map() };
       return (
-        digestOperands(input).some((operand) => readsUntrusted(operand)) &&
-        callerKnows(input, new Set())
+        !readsRequest || !inputs.every((input) => callerKnows(input, walk))
       );
     }
 
@@ -1168,37 +1175,37 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
      * `JSON.stringify`, `String`, `Buffer.from`, `encodeURIComponent`, or a
      * method on a value the caller knows (`req.rawBody.toString('utf8')`).
      */
-    function callerKnows(
-      node: TSESTree.Node,
-      seen: Set<TSESLint.Scope.Variable>,
-    ): boolean {
+    function callerKnows(node: TSESTree.Node, walk: KnowsWalk): boolean {
       const bare = unwrapTypeSyntax(node);
       switch (bare.type) {
         case AST_NODE_TYPES.Literal:
           return true;
         case AST_NODE_TYPES.TemplateLiteral:
-          return bare.expressions.every((part) => callerKnows(part, seen));
+          return bare.expressions.every((part) => callerKnows(part, walk));
         case AST_NODE_TYPES.BinaryExpression:
           return (
-            callerKnows(bare.left as TSESTree.Node, seen) &&
-            callerKnows(bare.right, seen)
+            callerKnows(bare.left as TSESTree.Node, walk) &&
+            callerKnows(bare.right, walk)
           );
         case AST_NODE_TYPES.AwaitExpression:
-          return callerKnows(bare.argument, seen);
+          return callerKnows(bare.argument, walk);
         case AST_NODE_TYPES.MemberExpression:
+          // `req.session.apiToken` reads through the request, but the
+          // server put it there: the caller does not know it.
           return (
             readsUntrusted(bare) &&
-            (!bare.computed || callerKnows(bare.property, seen))
+            !isServerHeld(bare) &&
+            (!bare.computed || callerKnows(bare.property, walk))
           );
         case AST_NODE_TYPES.Identifier:
-          return callerKnowsBinding(bare, seen);
+          return callerKnowsBinding(bare, walk);
         case AST_NODE_TYPES.CallExpression:
           return (
             bare.arguments.every(
               (argument) =>
                 argument.type !== AST_NODE_TYPES.SpreadElement &&
-                callerKnows(argument, seen),
-            ) && addsNothing(bare.callee, seen)
+                callerKnows(argument, walk),
+            ) && addsNothing(bare.callee, walk)
           );
         default:
           return false;
@@ -1208,7 +1215,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     /** A name: judged by its one write, or as a request root when unbound. */
     function callerKnowsBinding(
       node: TSESTree.Identifier,
-      seen: Set<TSESLint.Scope.Variable>,
+      walk: KnowsWalk,
     ): boolean {
       if (isImportedRoot(node)) return false;
       const variable = findVariable(sourceCode, node);
@@ -1220,18 +1227,31 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       }
       const writes = variable.references.filter((ref) => ref.isWrite());
       const written = writes.length === 1 ? writes[0].writeExpr : null;
-      if (written == null || seen.has(variable)) return false;
-      seen.add(variable);
-      return callerKnows(written, seen);
+      if (written == null || walk.path.has(variable)) return false;
+      const known = walk.memo.get(variable);
+      if (known !== undefined) return known;
+      // `path` holds the bindings being judged, so a binding that reads
+      // itself stops; `memo` keeps `payload + payload` and a chain of
+      // shared bindings from judging one twice.
+      walk.path.add(variable);
+      const knows = callerKnows(written, walk);
+      walk.path.delete(variable);
+      walk.memo.set(variable, knows);
+      return knows;
+    }
+
+    /** The global, not a binding this file declares under the same name. */
+    function isBuiltIn(node: TSESTree.Identifier): boolean {
+      return (findVariable(sourceCode, node)?.defs.length ?? 0) === 0;
     }
 
     /** A callee that returns only what its arguments (and receiver) hold. */
     function addsNothing(
       callee: TSESTree.Expression,
-      seen: Set<TSESLint.Scope.Variable>,
+      walk: KnowsWalk,
     ): boolean {
       if (callee.type === AST_NODE_TYPES.Identifier) {
-        return PASS_THROUGH_FUNCTIONS.has(callee.name);
+        return PASS_THROUGH_FUNCTIONS.has(callee.name) && isBuiltIn(callee);
       }
       if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
       const object = callee.object;
@@ -1239,9 +1259,9 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         object.type === AST_NODE_TYPES.Identifier &&
         PASS_THROUGH_METHODS.get(object.name) === propertyName(callee)
       ) {
-        return true;
+        return isBuiltIn(object);
       }
-      return callerKnows(object, seen);
+      return callerKnows(object, walk);
     }
 
     /**

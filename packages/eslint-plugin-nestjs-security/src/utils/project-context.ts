@@ -520,13 +520,16 @@ const IDENTIFIER = /^[A-Za-z_$][\w$]*$/;
  * import never called does not register anything on this app.
  */
 function invokedLocalImports(source: string): string[] {
+  const code = withoutComments(source);
+  // Calls are read with string text dropped; the specifiers need it kept.
+  const calls = withoutComments(source, false);
   const specifiers: string[] = [];
-  for (const [, specifier] of source.matchAll(SIDE_EFFECT_IMPORT_RE)) {
+  for (const [, specifier] of code.matchAll(SIDE_EFFECT_IMPORT_RE)) {
     specifiers.push(specifier);
   }
-  for (const [, clause, specifier] of source.matchAll(IMPORT_FROM_RE)) {
+  for (const [, clause, specifier] of code.matchAll(IMPORT_FROM_RE)) {
     const names = importedNames(clause);
-    if (names.some((name) => isInvoked(source, name))) {
+    if (names.some((name) => isInvoked(calls, name))) {
       specifiers.push(specifier);
     }
   }
@@ -566,10 +569,12 @@ function isInvoked(source: string, name: string): boolean {
  * `source` with its `//` and `/* *\/` comments blanked out. Quotes are skipped
  * whole, so `'http://host'` is not read as a comment opener, and a template
  * literal is skipped up to each `${`, whose code is read like any other (it
- * can hold a comment too). A regex literal holding a quote can throw this
- * off; the cost is one helper scanned or missed, never a crash.
+ * can hold a comment too). With `keepText` false the text of strings and
+ * templates is dropped as well, so `'setupApp(app)'` in a log line is not a
+ * call. A regex literal holding a quote can throw this off; the cost is one
+ * helper scanned or missed, never a crash.
  */
-function withoutComments(source: string): string {
+function withoutComments(source: string, keepText = true): string {
   let out = '';
   let index = 0;
   // One entry per open `${`: the `{` depth inside it, so its `}` is found.
@@ -584,7 +589,7 @@ function withoutComments(source: string): string {
         return;
       }
       const step = source[index] === '\\' ? 2 : 1;
-      out += source.slice(index, index + step);
+      if (keepText) out += source.slice(index, index + step);
       index += step;
     }
     out += source.slice(index, index + 1);
@@ -609,7 +614,7 @@ function withoutComments(source: string): string {
       while (end < source.length && source[end] !== char) {
         end += source[end] === '\\' ? 2 : 1;
       }
-      out += source.slice(index, end + 1);
+      out += keepText ? source.slice(index, end + 1) : char + char;
       index = end + 1;
       continue;
     }
@@ -648,9 +653,12 @@ function registerHelperPipes(
   if (into.hasGlobalValidationPipe) return;
   // A commented-out `// setupApp(app);` runs nothing, and a helper whose only
   // `useGlobalPipes` is in a comment registers nothing.
-  for (const specifier of invokedLocalImports(withoutComments(source))) {
+  for (const specifier of invokedLocalImports(source)) {
     const helper = readLocalModule(specifier, file, root);
-    if (helper && USE_GLOBAL_PIPES_RE.test(withoutComments(helper.source))) {
+    if (
+      helper &&
+      USE_GLOBAL_PIPES_RE.test(withoutComments(helper.source, false))
+    ) {
       into.hasGlobalValidationPipe = true;
       return;
     }

@@ -366,6 +366,16 @@ export function findProperty(
   return null;
 }
 
+/** How many writes the module-level binding `name` has (its initialiser counts). */
+function writesTo(name: string, module: ModuleInfo, env: Env): number {
+  // The module declares `name` (its export does), so the lookup finds it.
+  const variable = lookup(
+    name,
+    env.scopeOf(module.ast),
+  ) as TSESLint.Scope.Variable;
+  return variable.references.filter((reference) => reference.isWrite()).length;
+}
+
 /** The value `name` is exported as from `module` — `'default'` for the default export. */
 export function exportedValue(
   module: ModuleInfo,
@@ -390,7 +400,9 @@ export function exportedValue(
         // `export let token;` owns the name even with no initialiser: a star
         // re-export of another `token` never shadows it.
         if (declarator !== undefined) {
-          return declarator.init ? valueAt(declarator.init, env) : null;
+          return declarator.init && writesTo(name, module, env) <= 1
+            ? valueAt(declarator.init, env)
+            : null;
         }
       } else if (
         (declaration?.type === AST_NODE_TYPES.FunctionDeclaration ||
@@ -399,7 +411,11 @@ export function exportedValue(
           declaration?.type === AST_NODE_TYPES.TSInterfaceDeclaration) &&
         declaration.id?.name === name
       ) {
-        return valueAt(declaration, env);
+        // `export function isDev() {…}; isDev = () => true;` exports what the
+        // name holds, not the declaration. A declaration is not a write.
+        return writesTo(name, module, env) === 0
+          ? valueAt(declaration, env)
+          : null;
       }
       for (const specifier of statement.specifiers) {
         if (moduleExportName(specifier.exported) !== name) continue;

@@ -351,6 +351,14 @@ describe('scanProject — global provider registration', () => {
         "import { setupApp } from './setup';\nconst message = `${/* setupApp(app) */ ''}`;",
       ],
       [
+        'a call that is only text in a string',
+        "import { setupApp } from './setup';\nlog('setupApp(app)');",
+      ],
+      [
+        'a call that is only template text',
+        "import { setupApp } from './setup';\nlog(`run setupApp(app) ${step}`);",
+      ],
+      [
         'a call inside an unclosed block comment',
         "import { setupApp } from './setup';\n/* setupApp(app);",
       ],
@@ -376,6 +384,25 @@ describe('scanProject — global provider registration', () => {
           'export function setupApp(app) { app.useGlobalPipes(new ValidationPipe()); }',
       });
       expect(scanProject(root).hasGlobalValidationPipe).toBe(true);
+    });
+
+    it('reads a real call inside a template interpolation', () => {
+      const root = makeProject({
+        'src/main.ts':
+          "import { setupApp } from './setup';\nconst done = `${setupApp(app)}`;",
+        'src/setup.ts':
+          'export function setupApp(app) { app.useGlobalPipes(new ValidationPipe()); }',
+      });
+      expect(scanProject(root).hasGlobalValidationPipe).toBe(true);
+    });
+
+    it('does not count a helper whose only pipe is text in a string', () => {
+      const root = makeProject({
+        'src/main.ts': "import { setupApp } from './setup'; setupApp(app);",
+        'src/setup.ts':
+          "export function setupApp(app) { log('app.useGlobalPipes(new ValidationPipe())'); }",
+      });
+      expect(scanProject(root).hasGlobalValidationPipe).toBe(false);
     });
 
     it('does not count a helper whose only pipe is in a comment', () => {
