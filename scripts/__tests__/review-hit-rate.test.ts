@@ -17,6 +17,7 @@ import {
   findingsInSummary,
   isActedOn,
   latestMerged,
+  PR_LIST,
   resolvePath,
 } from '../review-hit-rate';
 
@@ -195,5 +196,14 @@ describe('isActedOn', () => {
         files,
       ),
     ).toBe(false);
+  });
+});
+
+describe('PR_LIST', () => {
+  // Any other filter or order lets a row leave or jump between pages while they are read.
+  it('lists every PR by creation time, so pages only gain rows', () => {
+    const q = new URLSearchParams(PR_LIST.split('?')[1]);
+    expect(q.get('state')).toBe('all');
+    expect(q.get('sort')).toBe('created');
   });
 });

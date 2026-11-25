@@ -87,7 +87,7 @@ export interface ClosedPr {
 }
 
 /**
- * The n latest-merged non-bot PRs. Given every closed PR, so no paging order can hide one; a PR
+ * The n latest-merged non-bot PRs. Given every PR, so no paging order can hide one; a PR
  * listed twice (a page shifted while it was read) counts once.
  */
 export function latestMerged(prs: ClosedPr[], n: number): number[] {
@@ -126,13 +126,22 @@ function repo(): string {
   ).trim();
 }
 
+/**
+ * Every PR in CREATION order. A PR never leaves `state=all` (closing, reopening and merging only
+ * change its fields), and the order only changes when a PR is opened, which pushes rows down: a
+ * duplicate, deduplicated, never a skipped row. `state=closed` lost a row when a PR was reopened
+ * mid-read; sorting by update or merge time let rows jump pages.
+ */
+export const PR_LIST =
+  'pulls?state=all&sort=created&direction=desc&per_page=100';
+
 function lastMergedPrs(r: string, n: number): number[] {
-  // Every closed PR, in CREATION order: that order only changes when a PR is opened, which adds
-  // duplicates (deduplicated) and never hides one. Sorting by updated or merge time while paging
-  // let PRs move between pages mid-read. Bot PRs (release, data sync) are never reviewed.
-  const all = gh(
-    `repos/${r}/pulls?state=closed&sort=created&direction=desc&per_page=100`,
-  ) as { number: number; merged_at: string | null; user: { type: string } }[];
+  // Bot PRs (release, data sync) are never reviewed.
+  const all = gh(`repos/${r}/${PR_LIST}`) as {
+    number: number;
+    merged_at: string | null;
+    user: { type: string };
+  }[];
   return latestMerged(
     all.map((p) => ({
       number: p.number,
