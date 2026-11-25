@@ -81,11 +81,24 @@ const ours = {
   'mongodb-security': 'eslint-plugin-mongodb-security',
   'sequelize-security': 'eslint-plugin-sequelize-security',
 };
+const tsVersion = require('typescript/package.json').version;
+// Same mapping as benchmarks/lib/toolchain.ts detectTsCompiler: TypeScript 6+
+// is the Go compiler.
+function tsCompilerFor(version) {
+  const major = Number.parseInt(String(version).split('.')[0], 10);
+  if (Number.isNaN(major)) return 'unknown';
+  return major >= 6 ? 'tsc-go' : 'tsc-classic';
+}
 const toolchain = {
   node: process.version,
   platform: `${process.platform}-${process.arch}`,
   eslint: require('eslint/package.json').version,
   tsParser: require('@typescript-eslint/parser/package.json').version,
+  // The vocabulary contract (benchmarks/lib/toolchain.ts validateToolchain)
+  // requires both; omitting them made every result file a fatal
+  // ilb:validate-results failure (scheduled benchmark run 45474907652).
+  typescript: tsVersion,
+  tsCompiler: tsCompilerFor(tsVersion),
   ourRepo: {
     head: sh('git', ['rev-parse', 'HEAD'], repoRoot),
     dirtyPackages: sh(

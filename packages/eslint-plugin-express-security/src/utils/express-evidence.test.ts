@@ -45,8 +45,14 @@ describe('fileUsesExpress', () => {
       ["import x from 'express-rate-limit';", 'a package sharing the prefix'],
       // Exercises the scoped-package root path: `@types/express` is types, not
       // a runtime Express, so the root is compared and rejected.
-      ["import type { Request } from '@types/express';", 'a scoped types package'],
-      ["import x from '@company/express-utils';", 'a scoped package with express in the name'],
+      [
+        "import type { Request } from '@types/express';",
+        'a scoped types package',
+      ],
+      [
+        "import x from '@company/express-utils';",
+        'a scoped package with express in the name',
+      ],
       ["require('./express');", 'a relative require'],
       ['require(name);', 'a non-literal require'],
       ['require();', 'a require with no arguments'],
@@ -78,11 +84,17 @@ describe('fileUsesExpress', () => {
     // false-positive problem this gate removes.
     it.each([
       ['http.createServer((req, res) => res.end());', 'node:http'],
-      ['export default function handler(req, res) { res.json({}); }', 'a Next.js API route'],
+      [
+        'export default function handler(req, res) { res.json({}); }',
+        'a Next.js API route',
+      ],
       ['const f = (req, res) => res.send("x");', 'a bare two-arg function'],
       ['function f(req, next) {}', 'the wrong second parameter'],
       ['function f(a, b, next) {}', 'the wrong first two parameters'],
-      ['function f(req, res, done) {}', 'a trailing parameter that is not `next`'],
+      [
+        'function f(req, res, done) {}',
+        'a trailing parameter that is not `next`',
+      ],
       ['function f(req, res, next, extra, more) {}', 'too many parameters'],
       ['function f({ req }, res, next) {}', 'a destructured parameter'],
     ])('%s → false (%s)', (code) => {
@@ -105,19 +117,27 @@ describe('fileUsesExpress', () => {
     // the two.
     it('an unshadowed require survives a shadowing binding elsewhere', () => {
       expect(
-        usesExpress("const express = require('express');\nfunction wrapper(require) {}"),
+        usesExpress(
+          "const express = require('express');\nfunction wrapper(require) {}",
+        ),
       ).toBe(true);
       expect(
-        usesExpress("function wrapper(require) {}\nconst express = require('express');"),
+        usesExpress(
+          "function wrapper(require) {}\nconst express = require('express');",
+        ),
       ).toBe(true);
       expect(
-        usesExpress("function outer() { const express = require('express'); }\nfunction w(require) {}"),
+        usesExpress(
+          "function outer() { const express = require('express'); }\nfunction w(require) {}",
+        ),
       ).toBe(true);
     });
 
     it('shadowing applies only inside the scope that binds it', () => {
       // Inner call is shadowed; there is no other evidence, so the file is out.
-      expect(usesExpress("function f(require) { require('express'); }")).toBe(false);
+      expect(usesExpress("function f(require) { require('express'); }")).toBe(
+        false,
+      );
       // A block-scoped `const require` shadows the rest of that block only.
       expect(
         usesExpress("{ const require = (m) => m; require('express'); }"),
@@ -126,10 +146,14 @@ describe('fileUsesExpress', () => {
 
     it('the other arms still apply when `require` is shadowed', () => {
       expect(
-        usesExpress("import express from 'express';\nfunction f(require) { require('express'); }"),
+        usesExpress(
+          "import express from 'express';\nfunction f(require) { require('express'); }",
+        ),
       ).toBe(true);
       expect(
-        usesExpress("function mw(req, res, next) { next(); }\nfunction f(require) { require('express'); }"),
+        usesExpress(
+          "function mw(req, res, next) { next(); }\nfunction f(require) { require('express'); }",
+        ),
       ).toBe(true);
     });
   });
@@ -172,13 +196,22 @@ describe('a (req, res) handler registered against a literal path', () => {
   });
 
   it.each([
-    ["http.createServer((req, res) => res.end());", 'no registration'],
-    ["cache.get('/key', (value, ttl) => value);", 'not a request/response pair'],
-    ["fastify.get('/x', (request, reply) => reply.send());", 'Fastify names its response reply'],
+    ['http.createServer((req, res) => res.end());', 'no registration'],
+    [
+      "cache.get('/key', (value, ttl) => value);",
+      'not a request/response pair',
+    ],
+    [
+      "fastify.get('/x', (request, reply) => reply.send());",
+      'Fastify names its response reply',
+    ],
     ["router.get('/x', (ctx) => {});", 'Koa handler'],
-    ["app.get(path, (req, res) => {});", 'path is not a literal'],
+    ['app.get(path, (req, res) => {});', 'path is not a literal'],
     ["app.get('items', (req, res) => {});", 'path does not start with a slash'],
-    ["app.get('/x', handler);", 'handler is a reference, not a (req, res) function'],
+    [
+      "app.get('/x', handler);",
+      'handler is a reference, not a (req, res) function',
+    ],
     ["app.get('/x', (res, req) => {});", 'parameters in the wrong order'],
     ["app.listen('/x', (req, res) => {});", 'not a route registrar'],
   ])('%s → false (%s)', (code) => {
@@ -203,31 +236,140 @@ describe('an exported (req, res) handler that calls an Express-only response met
   it.each([
     ['function go(req, res) { res.redirect("/x"); }', 'never exported'],
     ['const go = (req, res) => res.redirect("/x");', 'never exported'],
-    ['exports = function (req, res) { res.redirect("/x"); };', 'a bare `exports =` rebinds the local'],
-    ['exports.go = function (req, res) { res.end(); };', 'res.end is plain node:http'],
-    ['exports.go = function (req, res) { res.status(200).json({}); };', 'status/json are shared with Next.js'],
-    ['exports.go = function (req, res) { res[method]("/x"); };', 'a computed method names nothing'],
-    ['exports.go = function (req, res) { other.redirect("/x"); };', 'redirect on some other object'],
-    ['exports.go = function (req, res) { res.nested.redirect("/x"); };', 'redirect on a member of res'],
-    ['exports.go = function (request, reply) { reply.redirect("/x"); };', 'Fastify names'],
+    [
+      'exports = function (req, res) { res.redirect("/x"); };',
+      'a bare `exports =` rebinds the local',
+    ],
+    [
+      'exports.go = function (req, res) { res.end(); };',
+      'res.end is plain node:http',
+    ],
+    [
+      'exports.go = function (req, res) { res.status(200).json({}); };',
+      'status/json are shared with Next.js',
+    ],
+    [
+      'exports.go = function (req, res) { res[method]("/x"); };',
+      'a computed method names nothing',
+    ],
+    [
+      'exports.go = function (req, res) { other.redirect("/x"); };',
+      'redirect on some other object',
+    ],
+    [
+      'exports.go = function (req, res) { res.nested.redirect("/x"); };',
+      'redirect on a member of res',
+    ],
+    [
+      'exports.go = function (request, reply) { reply.redirect("/x"); };',
+      'Fastify names',
+    ],
     ['exports.go = function (ctx) { ctx.redirect("/x"); };', 'Koa'],
-    ['exports.go = function (a, b) { b.redirect("/x"); };', 'parameters not named req/res'],
-    ['exports.go = function (req, res, extra) { res.redirect("/x"); };', 'three parameters, not the middleware tail'],
+    [
+      'exports.go = function (a, b) { b.redirect("/x"); };',
+      'parameters not named req/res',
+    ],
+    [
+      'exports.go = function (req, res, extra) { res.redirect("/x"); };',
+      'three parameters, not the middleware tail',
+    ],
     ['exports.go = function (req) { res.redirect("/x"); };', 'one parameter'],
-    ['exports.go = function ({ query }, res) { res.redirect(query.url); };', 'destructured request'],
-    ['exports.go = function (req, { redirect }) { redirect("/x"); };', 'destructured response'],
-    ['x.exports.go = function (req, res) { res.redirect("/x"); };', 'not module.exports'],
-    ['exports.go = wrap(function (req, res) { res.redirect("/x"); });', 'wrapped in a call, not directly exported'],
-    ['module.exports = { go: wrap, other: function (req, res) { res.end(); } };', 'no Express-only call'],
-    ['local = { go: function (req, res) { res.redirect("/x"); } };', 'an object that is not exported'],
-    ['const go = function (req, res) { res.redirect("/x"); }; export { go };', 'a specifier export is not followed'],
+    [
+      'exports.go = function ({ query }, res) { res.redirect(query.url); };',
+      'destructured request',
+    ],
+    [
+      'exports.go = function (req, { redirect }) { redirect("/x"); };',
+      'destructured response',
+    ],
+    [
+      'x.exports.go = function (req, res) { res.redirect("/x"); };',
+      'not module.exports',
+    ],
+    [
+      'exports.go = wrap(function (req, res) { res.redirect("/x"); });',
+      'wrapped in a call, not directly exported',
+    ],
+    [
+      'module.exports = { go: wrap, other: function (req, res) { res.end(); } };',
+      'no Express-only call',
+    ],
+    [
+      'local = { go: function (req, res) { res.redirect("/x"); } };',
+      'an object that is not exported',
+    ],
+    [
+      'const go = function (req, res) { res.redirect("/x"); }; export { go };',
+      'a specifier export is not followed',
+    ],
   ])('%s → false (%s)', (code) => {
     expect(usesExpress(code)).toBe(false);
   });
 
   it('refuses a default export, which is how a Next.js API route is written', () => {
     expect(
-      usesExpress('export default function handler(req, res) { res.redirect("/x"); }'),
+      usesExpress(
+        'export default function handler(req, res) { res.redirect("/x"); }',
+      ),
     ).toBe(false);
+  });
+});
+
+/**
+ * A file that imports another server framework and no Express is that
+ * framework's file. ILB-Corpus-Truth run 45474907652 measured 25
+ * `no-missing-csrf-protection` findings in activepieces' Fastify controllers,
+ * which register `app.post('/', schema, async (req, res) => …)`: the same shape
+ * the route-registration arm takes as Express evidence.
+ */
+describe('fileUsesExpress — another server framework in the file', () => {
+  const fastifyController = [
+    "import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';",
+    'export const controller: FastifyPluginAsyncZod = async (app) => {',
+    "  app.post('/', CreateRequest, async (req, res) => res.status(201).send({}));",
+    '};',
+  ].join('\n');
+
+  it.each([
+    [fastifyController, 'a Fastify plugin (type-only Fastify import)'],
+    [
+      "import Fastify from 'fastify';\napp.get('/x', (req, res) => res.send(1));",
+      'fastify',
+    ],
+    [
+      "import cors from '@fastify/cors';\nfunction mw(req, res, next) { next(); }",
+      '@fastify/*, middleware shape',
+    ],
+    [
+      "import Router from '@koa/router';\nrouter.get('/x', (req, res) => {});",
+      'a Koa router',
+    ],
+    [
+      "const Koa = require('koa');\nfunction mw(req, res, next) { next(); }",
+      'a Koa require',
+    ],
+    [
+      "import { Hono } from 'hono';\nexport function go(req, res) { res.redirect('/x'); }",
+      'hono',
+    ],
+  ])('%s → false (%s)', (code) => {
+    expect(usesExpress(code)).toBe(false);
+  });
+
+  it.each([
+    [
+      "import express from 'express';\nimport fastify from 'fastify';\napp.get('/x', (req, res) => {});",
+      'an explicit Express import still counts',
+    ],
+    [
+      "import helmet from 'helmet';\napp.post('/x', (req, res) => {});",
+      'Connect middleware is not another framework',
+    ],
+    [
+      "import fastifyLike from './fastify';\napp.post('/x', (req, res) => {});",
+      'a relative path spelling the name',
+    ],
+  ])('%s → true (%s)', (code) => {
+    expect(usesExpress(code)).toBe(true);
   });
 });
