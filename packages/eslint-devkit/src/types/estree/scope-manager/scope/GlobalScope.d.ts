@@ -11,7 +11,6 @@ export declare class GlobalScope extends ScopeBase<ScopeType.global, TSESTree.Pr
  * The global scope has no parent.
  */
 null> {
-    private readonly implicit;
     constructor(scopeManager: ScopeManager, block: GlobalScope['block']);
     addVariables(names: string[]): void;
     close(scopeManager: ScopeManager): Scope | null;

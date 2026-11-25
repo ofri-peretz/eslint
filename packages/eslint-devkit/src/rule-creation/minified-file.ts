@@ -4,7 +4,7 @@
  * MIT license that can be found in the LICENSE file.
  */
 
-import type { TSESLint } from '@typescript-eslint/utils';
+import type { TSESLint } from '../types/estree/utils/index';
 
 /**
  * The average line length above which a file is machine-packed rather than

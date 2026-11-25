@@ -34,7 +34,7 @@
  * returning nothing when the node is not a reference at all (a property name,
  * a declaration id), which is a case several callers depend on.
  */
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
 type Scope = TSESLint.Scope.Scope;
 type Variable = TSESLint.Scope.Variable;
