@@ -45,7 +45,10 @@ ruleTester.run(
   {
     valid: [
       // 1. The thumbprint, stored under its own name…
-      `const thumbprint = crypto.createHash('sha1').update(certBuffer).digest('hex').toUpperCase();`,
+      {
+        name: "a certificate thumbprint named 'thumbprint' and stored sha1 (x5t, RFC 7515 §4.1.7) is the protocol's required algorithm, not a weakened security hash (ahaenggli/AzureAD-LDAP-wrapper)",
+        code: `const thumbprint = crypto.createHash('sha1').update(certBuffer).digest('hex').toUpperCase();`,
+      },
       // …and returned straight out of the function that computes it, where the
       // only name available is the function's.
       `function calculateThumbprint(certificate) { return crypto.createHash('sha1').update(certBuffer).digest('hex'); }`,

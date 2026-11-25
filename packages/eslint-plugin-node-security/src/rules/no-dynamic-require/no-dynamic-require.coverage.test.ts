@@ -29,16 +29,19 @@ describe('no-dynamic-require coverage gaps', () => {
     valid: [
       // config context: filename matches 'config' / 'webpack' / 'rollup'
       {
+        name: "allowContexts: ['config'] matches a filename containing 'config'",
         code: 'require(modulePath);',
         options: [{ allowContexts: ['config'] }],
         filename: '/proj/app.config.js',
       },
       {
+        name: "allowContexts: ['config'] matches a filename containing 'webpack'",
         code: 'require(modulePath);',
         options: [{ allowContexts: ['config'] }],
         filename: '/proj/webpack.js',
       },
       {
+        name: "allowContexts: ['config'] matches a filename containing 'rollup'",
         code: 'require(modulePath);',
         options: [{ allowContexts: ['config'] }],
         filename: '/proj/rollup.js',

@@ -57,7 +57,10 @@ describe('no-dynamic-dependency-loading — corpus regressions', () => {
   ruleTester.run('no-dynamic-dependency-loading', noDynamicDependencyLoading, {
     valid: [
       // A `.require` method on something that is not the CommonJS module.
-      { code: 'const m = loader.require(name);' },
+      {
+        name: "a .require() method on a local loader object merely looks like CommonJS require by name, but does not resolve to it",
+        code: 'const m = loader.require(name);',
+      },
       { code: 'const m = makeLoader().require(name);' },
       { code: 'const m = registry[key].require(name);' },
       { code: 'const m = module.main.require(name);' },
