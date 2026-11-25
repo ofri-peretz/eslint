@@ -128,7 +128,7 @@ withCanonicalDocsUrls('plugin-node-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-node-security',
-    version: '6.2.1',
+    version: '6.3.0',
   },
   rules,
 };

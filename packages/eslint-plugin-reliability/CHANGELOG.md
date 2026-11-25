@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-reliability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.1.0
+
+### Minor Changes
+
+- **✨ Feature** — new rule no-unbounded-cause-recursion (CWE-674). Reports a function that calls itself on `error.cause`, or maps itself over `error.errors`, with no visited set and no depth bound, so a cyclic cause throws RangeError. Not in `recommended`.
+
 ## 5.0.9
 
 ### Patch Changes

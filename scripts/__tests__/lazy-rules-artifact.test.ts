@@ -85,6 +85,27 @@ describe('lazy rule barrel (built artifact)', () => {
     expect(rulesLoadedOnRequire(FULLY_LAZY)).toBe(0);
   });
 
+  it('loads no rule module when react-a11y is required and its presets are read', () => {
+    // `configs.strict` is built at import. It once read every rule's
+    // `meta.deprecated` to skip the three no-op stubs, which invoked every lazy
+    // getter and loaded all 40 rule modules; it now skips them by name.
+    const pkg = 'eslint-plugin-react-a11y';
+    if (built(pkg) === null) return;
+    const probe = `
+      const plugin = require(${JSON.stringify(entryFor(pkg))});
+      const ruleModules = () =>
+        Object.keys(require.cache).filter((f) => f.includes('/dist/src/rules/')).length;
+      const afterRequire = ruleModules();
+      void plugin.configs.flagship;
+      void Object.keys(plugin.configs.strict.rules);
+      process.stdout.write(JSON.stringify({ afterRequire, afterConfigs: ruleModules() }));
+    `;
+    expect(JSON.parse(runProbe(probe))).toEqual({
+      afterRequire: 0,
+      afterConfigs: 0,
+    });
+  });
+
   it('still loads eagerly where a public re-export forces it', () => {
     if (built(RE_EXPORTING) === null) return;
     // `export { noAlgorithmNone } from './rules/...'` cannot be deferred, so
