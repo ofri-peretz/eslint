@@ -393,7 +393,7 @@
     "secure-coding/no-sql-injection": 83,
     "secure-coding/no-template-injection": 14,
     "secure-coding/no-unchecked-loop-condition": 101,
-    "secure-coding/no-unlimited-resource-allocation": 95,
+    "secure-coding/no-unlimited-resource-allocation": 94,
     "secure-coding/no-unsafe-deserialization": 96,
     "secure-coding/no-unsafe-regex-construction": 54,
     "secure-coding/no-weak-password-recovery": 56,

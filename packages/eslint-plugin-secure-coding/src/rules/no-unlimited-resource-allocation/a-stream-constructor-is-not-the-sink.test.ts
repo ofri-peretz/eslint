@@ -83,6 +83,22 @@ ruleTester.run(
         }
       `,
       },
+      {
+        // The documented heuristic (rule docs, "A Limit the Consumer Does Not
+        // Enforce"; #1686 wording note): the rule trusts that a consumer given
+        // a `limit` applies it. It cannot see into `readAll`, so this stays
+        // silent. If the rule ever starts checking the consumer, this case and
+        // that docs section change together.
+        name: 'a consumer handed a limit is trusted to enforce it (documented false negative)',
+        code: `
+        const zlib = require('zlib');
+        function read(req) {
+          const stream = zlib.createGunzip();
+          req.pipe(stream);
+          readAll(stream, { limit: '1mb' });
+        }
+      `,
+      },
     ],
     invalid: [
       {
