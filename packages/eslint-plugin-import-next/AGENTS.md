@@ -202,7 +202,7 @@ Everything in `recommended` plus 29 more (some shared rules run at a different s
 
 ### Rules in no preset
 
-Enable these by name (`'import-next/<rule>': 'error'`); README.md describes each: `no-webpack-loader-syntax`, `no-default-export`, `no-named-export`, `prefer-default-export`, `order`, `dynamic-import-chunkname`, `enforce-node-protocol-usage`, `enforce-team-boundaries`, `no-legacy-imports`, `require-import-approval`, `prefer-modern-api`.
+Enable these by name (`'import-next/<rule>': 'error'`); README.md describes each: `no-webpack-loader-syntax`, `no-default-export`, `no-named-export`, `prefer-default-export`, `order`, `imports-first`, `dynamic-import-chunkname`, `enforce-node-protocol-usage`, `enforce-team-boundaries`, `no-legacy-imports`, `require-import-approval`, `prefer-modern-api`.
 
 ## More
 

@@ -1,10 +1,10 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-11-24",
+  "generatedAt": "2026-11-25",
   "totalPlugins": 32,
-  "totalRules": 516,
-  "oxlintCompatible": 516,
+  "totalRules": 517,
+  "oxlintCompatible": 517,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -724,7 +724,7 @@
       "short": "import-next",
       "shim": "tools/oxlint-plugins/interlace-import-next.cjs",
       "subpath": "eslint-plugin-import-next/oxlint",
-      "ruleCount": 58,
+      "ruleCount": 59,
       "rules": [
         {
           "name": "consistent-type-specifier-style",
@@ -794,6 +794,12 @@
         },
         {
           "name": "group-exports",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "imports-first",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
