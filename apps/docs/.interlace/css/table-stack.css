@@ -1,0 +1,72 @@
+/**
+ * AUTO-GENERATED FILE — DO NOT EDIT DIRECTLY.
+ * Source: apps/interlace-docs-baseline/ in the agents repo.
+ * Edit there, then run `npm run sync` to redistribute.
+ * Local edits will be overwritten on next sync (or refused without --force).
+ */
+/* Tables fold into cards on a narrow column. Pairs with `config/rehype-table-stack.mjs`, which
+ * marks each table `data-stack` and labels every body cell with its column's header. Nothing
+ * changes on a wide screen. Ported from burgee's docs-chassis (`global.css`). */
+
+div:has(> table[data-stack]) {
+  container-type: inline-size;
+}
+
+@container (max-width: 30rem) {
+  table[data-stack],
+  table[data-stack] tbody,
+  table[data-stack] tr,
+  table[data-stack] td,
+  table[data-stack] th {
+    display: block;
+    width: 100%;
+  }
+
+  /* The header row is still there for a screen reader, which reads every cell's header from
+   * the explicit roles; on screen, each cell carries its own label instead. */
+  table[data-stack] thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  table[data-stack] tbody tr {
+    border: 1px solid var(--color-fd-border);
+    border-radius: 0.75rem;
+    background: var(--color-fd-card);
+    padding: 0.5rem 0.75rem;
+  }
+
+  table[data-stack] tbody tr + tr {
+    margin-top: 0.75rem;
+  }
+
+  table[data-stack] td,
+  table[data-stack] th {
+    border: 0;
+    background: transparent;
+    padding: 0.375rem 0;
+    /* `!important` only to beat the inline `style="text-align:right"` GFM writes for a
+     * right-aligned column: a number reads from the start once it sits under its label. */
+    text-align: start !important;
+    /* A long call breaks inside the card rather than pushing it wider than the column. */
+    overflow-wrap: anywhere;
+  }
+
+  table[data-stack] [data-label]::before {
+    content: attr(data-label) / '';
+    display: block;
+    margin-bottom: 0.125rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-fd-muted-foreground);
+  }
+
+  /* A row header (a row-labelled table's first cell) is the card's title. */
+  table[data-stack] th[scope='row'] {
+    font-weight: 600;
+  }
+}

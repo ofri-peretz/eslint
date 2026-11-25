@@ -24,6 +24,10 @@
    values never win here: every app override below carries !important. */
 @import '../../.interlace/css/brand.css';
 
+/* Tables fold into cards on a narrow column; `rehype-table-stack` marks them. Synced from
+   `interlace/docs-baseline/css/table-stack.css`. */
+@import '../../.interlace/css/table-stack.css';
+
 @custom-variant dark (&:is(.dark *));
 
 /* Scan fumadocs packages from app-level node_modules (symlinked to workspace root) */

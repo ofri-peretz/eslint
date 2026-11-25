@@ -7,6 +7,8 @@ import {
 import { transformerTwoslash } from 'fumadocs-twoslash';
 import { rehypeCodeDefaultOptions } from 'fumadocs-core/mdx-plugins';
 import { CODE_HIGHLIGHT_OPTIONS } from './src/lib/code-highlight';
+import { remarkInstallTabs } from './.interlace/config/remark-install-tabs.mjs';
+import { rehypeTableStack } from './.interlace/config/rehype-table-stack.mjs';
 
 // You can customise Zod schemas for frontmatter and `meta.json` here
 // see https://fumadocs.dev/docs/mdx/collections
@@ -25,6 +27,11 @@ export const docs = defineDocs({
 
 export default defineConfig({
   mdxOptions: {
+    // `npm install` fences become npm/pnpm/yarn/bun tabs; tables fold into cards on a
+    // narrow column (styles in `.interlace/css/table-stack.css`). Both from the docs
+    // baseline; locked by `src/__tests__/doc-components-lock.test.ts`.
+    remarkPlugins: [remarkInstallTabs],
+    rehypePlugins: [rehypeTableStack],
     // Never fetch external images at build time just to measure them — one
     // flaky third-party host (shields.io 502'd on PR #286) would otherwise
     // fail the whole prerender. External images render unsized through the
