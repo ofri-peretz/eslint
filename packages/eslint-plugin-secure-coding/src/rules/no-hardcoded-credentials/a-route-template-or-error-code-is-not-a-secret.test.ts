@@ -36,48 +36,76 @@ ruleTester.run(
   {
     valid: [
       // The Teable shape.
-      `export const GET_ACCESS_TOKEN = '/access-token/{id}';`,
-      `export const REFRESH_ACCESS_TOKEN = '/access-token/{id}/refresh';`,
-      `const apiKeyRoute = '/api-keys/{apiKeyId}/rotate';`,
+      {
+        name: 'an OpenAPI path template under a TOKEN name is a route, not a secret',
+        code: `export const GET_ACCESS_TOKEN = '/access-token/{id}';`,
+      },
+      {
+        name: 'a path template with a trailing segment is a route',
+        code: `export const REFRESH_ACCESS_TOKEN = '/access-token/{id}/refresh';`,
+      },
+      {
+        name: 'a path template with a camelCase slot is a route',
+        code: `const apiKeyRoute = '/api-keys/{apiKeyId}/rotate';`,
+      },
       // The Hoppscotch shape.
-      `export const INFRA_TOKEN_INVALID_TOKEN = 'infra_token/invalid_token';`,
-      `export const ACCESS_TOKEN_EXPIRED = 'access_token/expired';`,
-      `const errors = { secretMissing: 'auth/secret-missing' };`,
+      {
+        name: 'a slash-namespaced error code under a TOKEN name is not a secret',
+        code: `export const INFRA_TOKEN_INVALID_TOKEN = 'infra_token/invalid_token';`,
+      },
+      {
+        name: 'a two-part lowercase error code is not a secret',
+        code: `export const ACCESS_TOKEN_EXPIRED = 'access_token/expired';`,
+      },
+      {
+        name: 'an error code with a hyphen in an object value is not a secret',
+        code: `const errors = { secretMissing: 'auth/secret-missing' };`,
+      },
       // A part may hold several words.
-      `export const AUTH_TOKEN_EXPIRED = 'invalid_auth_token/expired';`,
+      {
+        name: 'an error code part may hold several underscored words',
+        code: `export const AUTH_TOKEN_EXPIRED = 'invalid_auth_token/expired';`,
+      },
     ],
     invalid: [
       // A segment in braces is a slot only when it is an identifier.
       {
+        name: 'a brace segment that is not an identifier is not a route slot',
         code: `const accessToken = '/token/{aB3xK9mQ2vL8pR4w!}';`,
         errors: 1,
       },
       // Digits are not an error code.
       {
+        name: 'a value with digits is not an error code',
         code: `const apiToken = 'tok_live/x9k2m4q8';`,
         errors: 1,
       },
       // A capital at the start or end of a part is not an error code.
       {
+        name: 'a capital at the start of a part is not an error code',
         code: `const apiToken = 'Token_x/invalid_token';`,
         errors: 1,
       },
       {
+        name: 'a capital at the end of a part is not an error code',
         code: `const apiToken = 'invalid_token/token_X';`,
         errors: 1,
       },
       // Mixed case is not an error code.
       {
+        name: 'a mixed-case value is not an error code',
         code: `const apiToken = 'aBcDeF/gHiJkL';`,
         errors: 1,
       },
       // A digit inside one part is not an error code.
       {
+        name: 'a digit inside one part is not an error code',
         code: `const authToken = 'invalid_tok9n/x';`,
         errors: 1,
       },
       // A password slot keeps reporting a slash phrase.
       {
+        name: 'a slash phrase in a password slot may be a passphrase',
         code: `const password = 'correct/horse/battery';`,
         errors: 1,
       },
