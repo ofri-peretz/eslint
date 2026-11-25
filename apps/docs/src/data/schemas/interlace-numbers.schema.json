@@ -38,7 +38,7 @@
         },
         "generatedAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date"
         }
     },
     "additionalProperties": false
