@@ -21,7 +21,7 @@ import {
 import { analyzeMongoScope } from '../../utils/receiver';
 import {
   fileUsesMongo,
-  isNativeCollectionHandle,
+  isNativeCollectionReceiver,
 } from '../../utils/mongo-evidence';
 
 type MessageIds = 'useLean' | 'suggestionAddLean';
@@ -142,8 +142,11 @@ export const requireLeanQueries = createRule<RuleOptions, MessageIds>({
         // positive whose suggestion produces code that throws.
         // `receiver.ts` cannot make this call: its `MONGO_HANDLE_NAME` matches
         // `db` and `collection` precisely *because* they are Mongo handles —
-        // it just can't tell which driver's.
-        if (isNativeCollectionHandle(node.callee.object)) {
+        // it just can't tell which driver's. The handle may also be held in a
+        // variable: `const assets = db.collection('assets'); assets.find(q)`.
+        if (
+          isNativeCollectionReceiver(node.callee.object, context.sourceCode.ast)
+        ) {
           return;
         }
 
