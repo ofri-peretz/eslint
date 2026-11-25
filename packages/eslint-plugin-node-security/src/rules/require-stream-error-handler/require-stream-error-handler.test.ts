@@ -46,7 +46,9 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // benchmarks/corpus/CWE-248/safe/pipeline-promises.js — pipeline() destroys
     // every stream and rejects. This is the fix the rule recommends, so
     // reporting it would be reporting the mitigation.
-    `
+    {
+      name: 'await pipeline() wrapped in try/catch destroys every stream and rejects — the fix this rule recommends, so reporting it would report the mitigation (CWE-248/pipeline-promises)',
+      code: `
       async function download(req, res) {
         try {
           await pipeline(fs.createReadStream('./uploads/' + req.params.id), res);
@@ -55,6 +57,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
         }
       }
     `,
+    },
     // The listener may be registered after the pipe: the file is judged whole,
     // so statement order is not the criterion.
     {
@@ -93,6 +96,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // A non-test filename with the exemption turned off still needs a real
     // finding to report — the option does not report by itself.
     {
+      name: 'allowInTests false does not report a handled stream by itself',
       code: "const s = fs.createReadStream(p); s.on('error', log); s.pipe(res);",
       filename: '/proj/stream.spec.ts',
       options: [{ allowInTests: false }],

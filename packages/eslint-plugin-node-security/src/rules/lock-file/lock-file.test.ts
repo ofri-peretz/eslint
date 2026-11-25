@@ -140,6 +140,7 @@ ruleTester.run('lock-file', lockFile, {
       ],
     },
     {
+      name: 'a project without package-lock.json is reported when packageManager is npm',
       code: 'const invalidOutside = 1',
       filename: projectWithoutLockFile(),
       options: [{ packageManager: 'npm' }],

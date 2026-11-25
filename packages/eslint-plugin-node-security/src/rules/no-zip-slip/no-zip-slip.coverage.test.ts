@@ -34,7 +34,10 @@ describe('no-zip-slip coverage gaps', () => {
   ruleTester.run('no-zip-slip', noZipSlip, {
     valid: [
       // Custom validation function wrapping the join
-      { code: 'validatePath(path.join(dest, entry.name));' },
+      {
+        name: 'a custom validatePath() wrapping the path.join() result counts as sanitization',
+        code: 'validatePath(path.join(dest, entry.name));',
+      },
       // path.basename() sanitization wrapping the join
       { code: 'const p = path.basename(path.join(dest, entry.name));' },
       // startsWith validation in the enclosing if-test
