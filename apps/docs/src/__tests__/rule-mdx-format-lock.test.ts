@@ -12,6 +12,8 @@
  *     `ESLint Rule: <name>. This rule is part of …`).
  *   - No description-duplicating lead paragraph.
  *   - Frontmatter `title:` matches the file slug.
+ *   - No emoji in `title:` / `description:`: they render into the OG image,
+ *     and @vercel/og fetches an emoji's glyph from a CDN during the build.
  *
  * Each failure prints the exact file + surface + message so the CI log
  * names the regression directly.
@@ -19,7 +21,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { resolve, join } from 'node:path';
-import { readFileSync, writeFileSync, mkdtempSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { validateRuleMdxFormat } from '../lib/eslint-validators/rule-mdx-format';
 import type { PluginEntry } from '../lib/eslint-validators/plugin-rule-source-drift';
@@ -43,6 +45,28 @@ function loadRegistry(): PluginEntry[] {
 }
 
 describe('rule MDX format lock', () => {
+  it('no rule MDX title or description carries an emoji (the OG image would fetch it)', () => {
+    const offenders: string[] = [];
+    for (const p of loadRegistry()) {
+      const dir = join(MONOREPO_ROOT, 'apps', 'docs', 'content', 'docs', p.pillar, `plugin-${p.slug}`, 'rules');
+      let files: string[] = [];
+      try {
+        files = readdirSync(dir).filter((f) => f.endsWith('.mdx'));
+      } catch {
+        continue;
+      }
+      for (const f of files) {
+        const head = readFileSync(join(dir, f), 'utf-8').split('\n').slice(0, 10);
+        for (const line of head) {
+          if (/^(title|description):/.test(line) && /\p{Extended_Pictographic}/u.test(line)) {
+            offenders.push(`${p.slug}/${f}: ${line}`);
+          }
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
   it('every rule MDX in the canonical registry passes structural invariants', () => {
     const plugins = loadRegistry();
     const findings = validateRuleMdxFormat({ monorepoRoot: MONOREPO_ROOT, plugins });

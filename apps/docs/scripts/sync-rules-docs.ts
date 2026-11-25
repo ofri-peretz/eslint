@@ -84,8 +84,8 @@ export function loadTypeAwarenessMap(tsvPath: string): Map<string, TypeStatus> |
 // glyphs and combining variation selectors don't form a malformed character
 // class (CodeQL: "Duplicate character in character class" on the prior
 // `[💼💡🔧🚨⚠️✅📊🔍🔧📝⏱️🔗]` form, where 🔧 appeared twice and U+FE0F
-// repeated across ⚠️ / ⏱️).
-const DOC_ICON_ALT = '💼|💡|🔧|🚨|⚠️|✅|📊|🔍|📝|⏱️|🔗';
+// repeated across ⚠️ / ⏱️). ❌ is eslint-doc-generator's deprecated-rule notice.
+const DOC_ICON_ALT = '❌|💼|💡|🔧|🚨|⚠️|✅|📊|🔍|📝|⏱️|🔗';
 const ICON_HEADER_LINE_RE = new RegExp(`^(?:${DOC_ICON_ALT}).*$\\n?`, 'gmu');
 const ICON_INLINE_RE = new RegExp(`(?:${DOC_ICON_ALT})`, 'gu');
 
