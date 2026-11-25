@@ -196,6 +196,7 @@ export const noUnguardedUriDecode = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Unguarded URI decode',
         cwe: 'CWE-248',
+        cvss: 5.3,
         description:
           '{{decoder}} throws URIError on a malformed escape such as "p%ss", and this argument is request or location input. Any client can send one and turn this call into a 500 or, outside an error boundary, a crash.',
         severity: 'MEDIUM',
@@ -206,6 +207,7 @@ export const noUnguardedUriDecode = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Malformed URI literal',
         cwe: 'CWE-248',
+        cvss: 5.3,
         description:
           '{{decoder}} throws URIError on this literal every time it runs: it holds a "%" that does not start a valid escape.',
         severity: 'MEDIUM',

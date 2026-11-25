@@ -41,11 +41,11 @@ A call to the global `decodeURIComponent` or `decodeURI` is reported when its ar
 
 Input is recognised by structure:
 
-| Source                       | Shapes                                                                                                           |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| A request parameter          | `req` / `request` / `ctx` declared in scope, and its `.url`, `.originalUrl`, `.path`, `.baseUrl`, `.params`, `.query`, `.headers`, `.cookies`; `req.get(name)`; Koa's `ctx.request.*` |
-| The page location            | the global `location`, `window.location`, `document.location`; `document.URL`, `document.cookie`, `document.referrer` |
-| Derived from either          | a string method that copies text (`split`, `slice`, `replace`, …), `\|\|`, `??`, `?:`, `+`, a template, `new URL(input).pathname`, or a variable whose initializer or destructuring source is one of these |
+| Source              | Shapes                                                                                                                                                                                                     |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A request parameter | `req` / `request` / `ctx` declared in scope, and its `.url`, `.originalUrl`, `.path`, `.baseUrl`, `.params`, `.query`, `.headers`, `.cookies`; `req.get(name)`; Koa's `ctx.request.*`                      |
+| The page location   | the global `location`, `window.location`, `document.location`; `document.URL`, `document.cookie`, `document.referrer`                                                                                      |
+| Derived from either | a string method that copies text (`split`, `slice`, `replace`, …), `\|\|`, `??`, `?:`, `+`, a template, `new URL(input).pathname`, or a variable whose initializer or destructuring source is one of these |
 
 A string literal is checked at lint time: one that fails to decode is reported as `malformedLiteral`, since it throws on every run.
 
