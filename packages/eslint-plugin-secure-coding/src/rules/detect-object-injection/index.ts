@@ -74,6 +74,18 @@
  *    treats a loop head as a write. Pattern DEFAULTS and computed pattern KEYS
  *    remain reads. SPEC.md N10; fixture vulnerable/15; duel 16/16, F1 100.0%
  *    (theirs 61.1%); lock tests fail 6/6 with the change reverted.
+ * 🔒 AMENDED 2026-11-25 — a NestJS sweep (240 findings, ~35 packages) found
+ *    four safe shapes reported, each a proof the rule already took elsewhere:
+ *    the index of `Object.values(x).forEach((v, i) => …)` (E8: the Object
+ *    listing statics return an Array, CreateArrayFromList); a slot of a const
+ *    list of string tuples, `for (const [lo, hi] of PAIRS)` (E4); `delete o[k]`
+ *    and `o[k]()` over a literal list, which the assignment path cleared and
+ *    the member path did not; and `delete o[k]` on `Object.create(null)` (G1).
+ *    Map/Set/URLSearchParams keys, lists that spell `__proto__`/`constructor`,
+ *    defaults, rests and spreads still report. SPEC B5 is unchanged: making
+ *    `delete CONST_LITERAL[k]` report was tried and dropped, it added three
+ *    NestJS false positives. Rescan 240 -> 231; duel 16/16, F1 100.0%; Quint
+ *    fidelity 40/40. Fixtures in `nestjs-sweep-proofs.test.ts`.
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * This rule's behaviour was derived from the SEMANTICS of the weakness, every
@@ -801,6 +813,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     let numericVarCache: WeakMap<object, boolean>;
     let numericVarInProgress: WeakSet<object>;
     let ARRAY_PRODUCING_METHODS: ReadonlySet<string>;
+    let OBJECT_LISTING_STATICS: ReadonlySet<string>;
     let ELEMENT_FIRST_ITERATORS: ReadonlySet<string>;
     let typeAliasUnions: Map<string, Set<string>>;
 
@@ -2042,6 +2055,14 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // `isDangerousPropertyAccess` below; the checks in between only clear.
       const propertyNode = node.property;
 
+      // SAFE: the key is bound from a const list of string literals, the same
+      // proof the assignment path takes. `delete o[k]` and `o[k]()` over that
+      // list reported while `o[k] = v` over it did not. Found on nest swagger
+      // lib/utils/nullable-to-oas31.util.ts:127.
+      if (isKeyFromLiteralAllowlist(propertyNode)) {
+        return false;
+      }
+
       // SAFE: key originates from for..in or Object.keys/entries iteration
       if (isForInOrObjectKeysKey(propertyNode)) {
         return false;
@@ -2233,9 +2254,39 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       source = withoutTypeAnnotation(source);
       if (source.type !== AST_NODE_TYPES.ArrayExpression) return false;
       if (source.elements.length === 0) return false;
-      return source.elements.every((element) => {
-        const text = element === null ? null : staticString(element);
+      /*
+       * `for (const [lo, hi] of PAIRS)` over a const list of string tuples:
+       * `hi` takes element 1 of each tuple, every one of them spelled in the
+       * file. Only a plain `[a, b]` pattern straight on the loop binding
+       * counts: a default (`[a = x]`) or a rest supplies a value from
+       * elsewhere, and nesting would need the same walk again. Found on nest
+       * swagger lib/utils/nullable-to-oas31.util.ts:126.
+       */
+      // -1 when the key is not one slot of a top-level `[a, b]` pattern: no
+      // tuple has an element there, so every tuple fails the proof.
+      const binding = def.name.parent;
+      const position =
+        binding?.type === AST_NODE_TYPES.ArrayPattern &&
+        binding.parent?.type === AST_NODE_TYPES.VariableDeclarator
+          ? binding.elements.indexOf(def.name)
+          : -1;
+      const isSafeKeyText = (element: TSESTree.Node | null | undefined) => {
+        // `staticString` is null for a hole or a missing slot.
+        const text = staticString(element);
         return text !== null && !dangerousProperties.includes(text);
+      };
+      return source.elements.every((element) => {
+        const tuple = element === null ? null : withoutTypeAnnotation(element);
+        if (tuple?.type !== AST_NODE_TYPES.ArrayExpression) {
+          return isSafeKeyText(element);
+        }
+        // A spread shifts every later slot, so the position proves nothing.
+        if (
+          tuple.elements.some((e) => e?.type === AST_NODE_TYPES.SpreadElement)
+        ) {
+          return false;
+        }
+        return isSafeKeyText(tuple.elements[position]);
       });
     };
 
@@ -2367,6 +2418,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           callee.object.name === 'Array'
         ) {
           return method === 'from' || method === 'of';
+        }
+        // `Object.values(x).forEach((v, i) => …)`: the Object statics that
+        // list an object build a fresh Array (ECMA-262 CreateArrayFromList),
+        // whatever `x` is. Found on nest platform-express multer.utils.ts:236.
+        if (
+          callee.object.type === AST_NODE_TYPES.Identifier &&
+          callee.object.name === 'Object'
+        ) {
+          return OBJECT_LISTING_STATICS.has(method);
         }
         return ARRAY_PRODUCING_METHODS.has(method);
       }
@@ -3094,6 +3154,12 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         if (isReadFromConstObjectLiteral(node)) {
           return;
         }
+        // `delete o[k]` on an `Object.create(null)` object: SPEC G1 exempts a
+        // prototypeless TARGET, and the assignment path already took that
+        // proof for `o[k] = v`. Found by the fidelity model's Delete position.
+        if (isPrototypelessObject(node.object)) {
+          return;
+        }
       } else if (isPrototypelessObject(node.object)) {
         // An INVOKED read is method injection only through the prototype: on a
         // const object literal `{ a, b }[k]()` still reaches `constructor`, so
@@ -3761,6 +3827,24 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
          * WHAT is reported in their favour — only delete an entry and re-assert the
          * false positive this exemption exists to remove.
          */
+        /**
+         * `Object` statics that return a fresh Array listing an object.
+         *
+         * @protocol-constant ECMA-262 fixes the return value of `Object.keys`,
+         * `Object.values`, `Object.entries`, `Object.getOwnPropertyNames` and
+         * `Object.getOwnPropertySymbols` as `CreateArrayFromList(...)`, an
+         * Array, for any argument. A fact about the language, not a vocabulary:
+         * an entry added here that does not return an Array would read a Map
+         * key as a numeric index.
+         */
+        OBJECT_LISTING_STATICS = new Set([
+          'keys',
+          'values',
+          'entries',
+          'getOwnPropertyNames',
+          'getOwnPropertySymbols',
+        ]);
+
         ARRAY_PRODUCING_METHODS = new Set([
           'split',
           'slice',
