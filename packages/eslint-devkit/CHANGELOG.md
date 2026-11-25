@@ -5,6 +5,32 @@ All notable changes to `@interlace/eslint-devkit` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.2.0
+
+### Minor Changes
+
+- **✨ Feature** — `@typescript-eslint/utils` is no longer a peer dependency
+
+  Devkit's published types now come from its own vendored declarations, so nothing in the package (runtime or types) needs `@typescript-eslint/utils` installed. Plugins built on devkit stay assignable to typescript-eslint's `FlatConfig.Plugin`, and a test checks that for every plugin.
+
+### Patch Changes
+
+- **🐛 Fix** — isTestFilePath recognises `.<kind>-spec` and `.<kind>-test` file names
+
+  `e2e-spec` was the only infixed name. nestjs/observe names its integration suite `*.int-spec.ts`, and `nestjs-security/require-guards` reported 189 times on the test controllers there. Any `.<word>-spec.` or `.<word>-test.` (hyphen or underscore) now counts; `src/int-spec.ts` and `src/inspect.ts` stay source.
+
+- **🧹 Chore** — published type declarations no longer import `@typescript-eslint/utils`
+
+  The `TSESTree`, `TSESLint`, `ParserServices` and `JSONSchema4` types now come from declarations devkit ships itself, generated from the same typescript-eslint version. The types are structurally identical, and no runtime code changed.
+
+- **🐛 Fix** — `no-cycle` skips unlisted extensions, ignored paths and commented imports
+
+  A file whose extension is not in `import/extensions` (or an `import/parsers` list), or whose path matches `import/ignore`, is no module and no longer closes a cycle: workadventure's `.svelte` components made 10 of its 32 extra findings. An `import "x"` inside a comment is no longer an edge (Babylon.js: its 1 extra, a doc comment; big-AGI: 1 of its 7). With neither setting every extension is still read.
+
+  Two differences stay and are documented: every import that closes a cycle is reported, where upstream reports the first through a shared module; and a plain `import { Interface }` is not an edge, where upstream reports it (`no_cycle.qnt` encodes this).
+
+  `@interlace/eslint-devkit`: the import graph cache takes an `ignoreTarget` predicate that drops an edge to a file the caller does not treat as a module, and `getFileImports` blanks comments (`blankComments`, exported) before reading imports.
+
 ## 2.1.2
 
 ### Patch Changes

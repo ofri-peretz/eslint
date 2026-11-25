@@ -5,6 +5,24 @@ All notable changes to `oxlint-plugin-react-features` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.4.4
+
+### Patch Changes
+
+- **🧹 Chore** — raise `@eslint-community/regexpp` to `^4.12.3` in secure-coding, and write jsx-no-script-url's scheme check without raw control bytes
+
+  secure-coding now requires `@eslint-community/regexpp` `^4.12.3` (was `^4.10.0`). react-features' `jsx-no-script-url` skips leading code units at or below U+0020 and drops tab, LF and CR in code instead of a regex with raw C0 bytes in its source, so oxlint's `no-control-regex` passes. It reports the same values as before.
+
+- **🐛 Fix** — jsx-key matches eslint-plugin-react's defaults and reports only returned list items
+
+  On ServerKit (`frontend/src`, 804 files) `react/jsx-key` reported 86 hits that eslint-plugin-react 7.37.5 does not (78 index keys, 8 fragments), 0 after this change.
+
+  - `warnUnstableKeys` now defaults to `false`. Upstream's `jsx-key` has no index-key check (that is `no-array-index-key`); set `warnUnstableKeys: true` to keep the report.
+  - A shorthand fragment returned from a `map` / `Array.from` callback is reported only with `checkFragmentShorthand: true` (upstream `jsx-key.js:101`), as the same fragment in an array literal already was.
+  - An element, fragment or `createElement` call is judged as a list item only when it is the callback's arrow body or a `return` argument (through the branches of `?:` and the right side of `&&` / `||`). One bound to a variable, passed as an argument or nested in another element (`const body = <>...</>; return <li key={i}>{body}</li>`) is no longer reported as a keyless item.
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-react-features@2.4.4`
+
 ## 2.4.3
 
 ### Patch Changes

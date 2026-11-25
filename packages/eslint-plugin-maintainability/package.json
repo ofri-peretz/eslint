@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-maintainability",
-  "version": "4.0.7",
+  "version": "4.0.8",
   "description": "ESLint maintainability rules — limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors.",
   "type": "commonjs",
   "sideEffects": false,
@@ -70,7 +70,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.0.4"
+    "@interlace/eslint-devkit": "^2.2.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",

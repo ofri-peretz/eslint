@@ -5,6 +5,16 @@ All notable changes to `eslint-plugin-mcp-sdk-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.3
+
+### Patch Changes
+
+- **🧹 Chore** — published type declarations no longer import `@typescript-eslint/utils`
+
+  The `TSESTree`, `TSESLint`, `ParserServices` and `JSONSchema4` types now come from declarations devkit ships itself, generated from the same typescript-eslint version. The types are structurally identical, and no runtime code changed.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.2.0`
+
 ## 2.1.2
 
 ### Patch Changes

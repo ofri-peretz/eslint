@@ -5,6 +5,27 @@ All notable changes to `eslint-plugin-mongodb-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 10.1.3
+
+### Patch Changes
+
+- **🐛 Fix** — `require-lean-queries` skips a native collection held in a variable
+
+  `.lean()` is a Mongoose query modifier. The native driver has no `.lean()`, so the rule already stayed silent on
+  `db.collection('assets').find(…)`. It did not recognise the same collection bound to a variable first, which is how
+  migrate-mongo scripts and DAO modules use the driver:
+
+  ```js
+  const assetsCollection = db.collection('assets');
+  const assets = await assetsCollection.find({ name: /glb/i }).toArray();
+  ```
+
+  The rule reported that query and suggested appending `.lean()`, which would throw at runtime. It now uses the same
+  bound-handle tracking as the file gate (`isNativeCollectionReceiver`). A Mongoose model queried in the same file is
+  still reported.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.2.0`
+
 ## 10.1.2
 
 ### Patch Changes
