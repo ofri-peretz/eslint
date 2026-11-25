@@ -44,6 +44,22 @@ function check(token) {
   jwt.verify(token, String(getKey(claims.kid)), { algorithms: ['HS256'] });
 }`,
       },
+      {
+        name: 'a table indexed by a claim is a lookup, like getKey(claims.kid)',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, keys[claims.kid], { algorithms: ['HS256'] });
+}`,
+      },
+      {
+        name: 'an awaited fetch keyed by a claim is a lookup',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, await fetchKey(claims.iss), { algorithms: ['HS256'] });
+}`,
+      },
     ],
     invalid: [
       {
@@ -79,6 +95,60 @@ function check(token) {
 function check(token) {
   const claims = jwt.decode(token);
   jwt.verify(token, claims.secret.toString(), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: '.trim() of a claim used as the key is the claim used as the key',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, claims.secret.trim(), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'Number() of a claim used as the key is the claim used as the key',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, Number(claims.secret), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'BigInt() of a claim used as the key is the claim used as the key',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, BigInt(claims.secret), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'new String() of a claim used as the key is the claim used as the key',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, new String(claims.secret), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'Buffer.alloc() sized by a claim is not a lookup of it',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, Buffer.alloc(claims.size), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'a claim read from a table entry is still a claim: claims[name]',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, claims[name], { algorithms: ['HS256'] });
 }`,
         errors: [{ messageId: 'decodeWithoutVerify' }],
       },

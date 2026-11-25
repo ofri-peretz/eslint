@@ -580,6 +580,14 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
     ): boolean => {
       if (viaCall && insideKey(node, verify)) return true;
       const parent = node.parent!;
+      if (
+        parent.type === 'MemberExpression' &&
+        parent.computed &&
+        parent.property === node
+      ) {
+        // `keys[claims.kid]`: the claim indexes a table, a lookup like a call.
+        return reachesKey(parent, verify, after, true);
+      }
       if (TRANSPARENT.has(parent.type)) {
         return reachesKey(parent, verify, after, viaCall);
       }
