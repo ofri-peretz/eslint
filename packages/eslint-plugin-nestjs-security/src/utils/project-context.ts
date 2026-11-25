@@ -556,14 +556,33 @@ function isInvoked(source: string, name: string): boolean {
 }
 
 /**
- * `source` with its `//` and `/* *\/` comments blanked out. Quotes and
- * template literals are skipped whole, so `'http://host'` is not read as a
- * comment opener. A regex literal holding a quote can throw this off; the
- * cost is one helper scanned or missed, never a crash.
+ * `source` with its `//` and `/* *\/` comments blanked out. Quotes are skipped
+ * whole, so `'http://host'` is not read as a comment opener, and a template
+ * literal is skipped up to each `${`, whose code is read like any other (it
+ * can hold a comment too). A regex literal holding a quote can throw this
+ * off; the cost is one helper scanned or missed, never a crash.
  */
 function withoutComments(source: string): string {
   let out = '';
   let index = 0;
+  // One entry per open `${`: the `{` depth inside it, so its `}` is found.
+  const templates: number[] = [];
+  const copyTemplate = (): void => {
+    // `index` is just past a backtick or a `${…}`'s closing brace.
+    while (index < source.length && source[index] !== '`') {
+      if (source[index] === '$' && source[index + 1] === '{') {
+        out += '${';
+        index += 2;
+        templates.push(0);
+        return;
+      }
+      const step = source[index] === '\\' ? 2 : 1;
+      out += source.slice(index, index + step);
+      index += step;
+    }
+    out += source.slice(index, index + 1);
+    index += 1;
+  };
   while (index < source.length) {
     const char = source[index];
     const next = source[index + 1];
@@ -578,7 +597,7 @@ function withoutComments(source: string): string {
       out += ' ';
       continue;
     }
-    if (char === '"' || char === "'" || char === '`') {
+    if (char === '"' || char === "'") {
       let end = index + 1;
       while (end < source.length && source[end] !== char) {
         end += source[end] === '\\' ? 2 : 1;
@@ -589,6 +608,18 @@ function withoutComments(source: string): string {
     }
     out += char;
     index += 1;
+    if (char === '`') {
+      copyTemplate();
+    } else if (templates.length > 0 && char === '{') {
+      templates[templates.length - 1] += 1;
+    } else if (templates.length > 0 && char === '}') {
+      if (templates[templates.length - 1] === 0) {
+        templates.pop();
+        copyTemplate();
+      } else {
+        templates[templates.length - 1] -= 1;
+      }
+    }
   }
   return out;
 }

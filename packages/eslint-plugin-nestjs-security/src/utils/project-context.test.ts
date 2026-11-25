@@ -316,6 +316,10 @@ describe('scanProject — global provider registration', () => {
         "import { setupApp } from './setup';\n/* setupApp(app); */ const done = true;",
       ],
       [
+        'a call commented out inside a template interpolation',
+        "import { setupApp } from './setup';\nconst message = `${/* setupApp(app) */ ''}`;",
+      ],
+      [
         'a call inside an unclosed block comment',
         "import { setupApp } from './setup';\n/* setupApp(app);",
       ],
@@ -333,8 +337,9 @@ describe('scanProject — global provider registration', () => {
         'src/main.ts': [
           "import { setupApp } from './setup';",
           "const url = 'http://host/*'; const quote = \"it\\'s // fine\";",
-          'const path = `a//b`;',
+          'const path = `a//b\\` ${{ a: { b: 1 } }.a.b} ${`in${1}ner`}/*x*/`;',
           'setupApp(app); // done',
+          'const open = `unterminated',
         ].join('\n'),
         'src/setup.ts':
           'export function setupApp(app) { app.useGlobalPipes(new ValidationPipe()); }',
