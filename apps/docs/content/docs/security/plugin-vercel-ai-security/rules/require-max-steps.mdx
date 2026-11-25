@@ -1,6 +1,6 @@
 ---
 title: require-max-steps
-description: "This rule identifies tool-calling AI SDK calls whose step limit does not bound the loop: a hasToolCall-only stopWhen, Infinity, or a limit read from the request"
+description: "This rule identifies tool-calling AI SDK calls whose step limit does not bound the loop: a hasToolCall-only stopWhen, Infinity, or a limit read from the request."
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -15,6 +15,8 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Prevents unbounded tool calling loops in multi-step agents.
+
+This rule identifies tool-calling AI SDK calls whose step limit does not bound the loop: a hasToolCall-only stopWhen, Infinity, or a limit read from the request
 
 ## 📊 Rule Details
 

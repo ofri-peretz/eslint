@@ -84,8 +84,8 @@ export function loadTypeAwarenessMap(tsvPath: string): Map<string, TypeStatus> |
 // glyphs and combining variation selectors don't form a malformed character
 // class (CodeQL: "Duplicate character in character class" on the prior
 // `[💼💡🔧🚨⚠️✅📊🔍🔧📝⏱️🔗]` form, where 🔧 appeared twice and U+FE0F
-// repeated across ⚠️ / ⏱️).
-const DOC_ICON_ALT = '💼|💡|🔧|🚨|⚠️|✅|📊|🔍|📝|⏱️|🔗';
+// repeated across ⚠️ / ⏱️). ❌ is eslint-doc-generator's deprecated-rule notice.
+const DOC_ICON_ALT = '❌|💼|💡|🔧|🚨|⚠️|✅|📊|🔍|📝|⏱️|🔗';
 const ICON_HEADER_LINE_RE = new RegExp(`^(?:${DOC_ICON_ALT}).*$\\n?`, 'gmu');
 const ICON_INLINE_RE = new RegExp(`(?:${DOC_ICON_ALT})`, 'gu');
 
@@ -159,6 +159,19 @@ function cleanDescription(raw: string): string {
     .trim();
 }
 
+/**
+ * Cut a description to `max` characters at a sentence end, else at a word end
+ * with an ellipsis, so a page never ends mid-word ("this plugin does the ").
+ */
+export function clip(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const head = text.slice(0, max);
+  const sentence = head.lastIndexOf('. ');
+  if (sentence >= 30) return head.slice(0, sentence + 1);
+  const word = head.slice(0, max - 1).lastIndexOf(' ');
+  return `${head.slice(0, word > 0 ? word : max - 1).trimEnd()}…`;
+}
+
 export function convertMdToMdx(
   mdContent: string,
   fileName: string,
@@ -195,7 +208,7 @@ export function convertMdToMdx(
       !row.startsWith('>') &&
       row.length > 20
     );
-    if (firstParagraph) description = cleanDescription(firstParagraph).slice(0, 160);
+    if (firstParagraph) description = clip(cleanDescription(firstParagraph), 160);
   }
 
   // Build ONE frontmatter: the source's own fields (minus title/description,
