@@ -7,6 +7,7 @@
 import type { ResolverFactory as OxcResolverFactory } from 'oxc-resolver';
 import { fileExistsSync, findFileUpward, statSync } from '../node/fs';
 import { getDirname, joinPath, resolvePath } from '../node/path';
+import { clearFallbackCache, resolveWithoutOxc } from './resolver-fallback';
 import {
   resolveWithExternalResolvers,
   ResolverSetting,
@@ -51,43 +52,42 @@ const oxcResolverCache = new Map<
 // imports. As a hard dependency it was downloaded by all 21 consumers. It is
 // now an OPTIONAL peer, loaded on first use rather than at module load, so
 // importing this devkit no longer requires the binary to be present.
-// NOTE: `clearResolverCache()` deliberately does NOT reset this. In production
-// there is no reason to unload the factory. In tests it matters: patching
-// `Module._load` to simulate a missing peer AFTER something already resolved
-// will not raise MissingResolverPeerError, because `factoryRef` is still set
-// and `require('oxc-resolver')` never re-executes. Use `vi.resetModules()`
-// (see resolver-optional-peer.test.ts), not `clearResolverCache()`.
+// NOTE: `clearResolverCache()` deliberately does NOT reset this. In tests,
+// simulate a missing peer with `vi.resetModules()` plus a patched
+// `Module._load` (see resolver-optional-peer.test.ts), not `clearResolverCache()`.
 let factoryRef: typeof OxcResolverFactory | undefined;
+let factoryMissing = false;
 
 /**
- * Thrown when the optional `oxc-resolver` peer is not installed.
- *
- * This is deliberately its own class: `resolveModule` swallows resolution
- * failures and returns `null` (an unresolvable import is normal), and a
- * missing peer must NOT disappear down that path — it would turn every
- * import into a silent non-resolution instead of a fixable install error.
+ * @deprecated The resolver no longer throws this; it falls back to a
+ * dependency-free resolver when `oxc-resolver` is absent. Kept only so
+ * existing imports keep compiling.
  */
 export class MissingResolverPeerError extends Error {
   override readonly name = 'MissingResolverPeerError';
 }
 
-function loadResolverFactory(): typeof OxcResolverFactory {
+/**
+ * Load the optional `oxc-resolver` peer, or return `null` when it is not
+ * installed. When it is absent, `resolveModule` falls back to the
+ * dependency-free resolver in `./resolver-fallback`.
+ */
+function loadResolverFactory(): typeof OxcResolverFactory | null {
   if (factoryRef) {
     return factoryRef;
+  }
+  if (factoryMissing) {
+    return null;
   }
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports -- deliberate lazy load of an optional peer
     factoryRef = (require('oxc-resolver') as typeof import('oxc-resolver'))
       .ResolverFactory;
-  } catch (cause) {
-    throw new MissingResolverPeerError(
-      'Import resolution requires the optional peer dependency "oxc-resolver", ' +
-        'which is not installed. Install it alongside this plugin:\n\n' +
-        '  npm install --save-dev oxc-resolver\n',
-      { cause },
-    );
+    return factoryRef;
+  } catch {
+    factoryMissing = true;
+    return null;
   }
-  return factoryRef;
 }
 
 // Per-directory tsconfig cache: maps a directory to its nearest tsconfig.json.
@@ -139,7 +139,7 @@ function findTsconfigPath(fromFile: string): string | null {
 function getOxcResolver(
   options: ResolverOptions,
   fromFile: string,
-): InstanceType<typeof OxcResolverFactory> {
+): InstanceType<typeof OxcResolverFactory> | null {
   const extensions = options.extensions || [
     '.ts',
     '.tsx',
@@ -187,6 +187,7 @@ function getOxcResolver(
   }
 
   const ResolverFactory = loadResolverFactory();
+  if (!ResolverFactory) return null;
   const resolver = new ResolverFactory(resolverOptions);
   oxcResolverCache.set(key, resolver);
 
@@ -424,6 +425,16 @@ export function resolveModule(
     const resolver = getOxcResolver(options, fromFile);
     const context = getDirname(fromFile);
 
+    if (!resolver) {
+      // Optional peer `oxc-resolver` is not installed: Node-only fallback.
+      return resolveWithoutOxc(
+        importPath,
+        fromFile,
+        findTsconfigPath(fromFile),
+        options,
+      );
+    }
+
     try {
       const result = resolver.sync(context, importPath);
       if (result && result.path) {
@@ -436,12 +447,7 @@ export function resolveModule(
 
     // No resolver succeeded
     return null;
-  } catch (error) {
-    // A missing optional peer is a setup error the user must fix — never let
-    // it masquerade as "this import doesn't resolve".
-    if (error instanceof MissingResolverPeerError) {
-      throw error;
-    }
+  } catch {
     // Resolution failed with unexpected error
     return null;
   }
@@ -460,4 +466,5 @@ export function clearResolverCache() {
   }
   oxcResolverCache.clear();
   tsconfigPathCache.clear();
+  clearFallbackCache();
 }
