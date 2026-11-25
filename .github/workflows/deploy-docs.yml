@@ -84,6 +84,15 @@ jobs:
           # old revisions), which is all `git log -- <path>` needs.
           fetch-depth: 0
           filter: blob:none
+      # Production ships only commits already on main, whatever `ref` was dispatched with.
+      - name: Production deploys only commits on main
+        if: inputs.environment == 'production'
+        run: |
+          git fetch --no-tags --filter=blob:none origin main
+          git merge-base --is-ancestor HEAD FETCH_HEAD || {
+            echo "::error::Production deploys only commits on main; $(git rev-parse --short HEAD) is not. Dispatch environment=preview for any other ref."
+            exit 1
+          }
       - uses: ./.github/actions/setup
         with:
           turbo-cache: 'false'

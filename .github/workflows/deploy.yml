@@ -56,6 +56,14 @@ jobs:
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
+      # Production ships only main: a dispatch from any other branch fails here.
+      - name: Production deploys only from main
+        if: inputs.target == 'production' && github.ref != 'refs/heads/main'
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          echo "::error::Production deploys only from main, not ${REF}. Dispatch target=preview for any other branch."
+          exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Composite setup: node from .nvmrc + cached node_modules + cached
@@ -66,7 +74,7 @@ jobs:
       # restore in seconds and the deploy lands well under 5 min total.
       - uses: ./.github/actions/setup
         with:
-          next-cache: "true"
+          next-cache: 'true'
 
       - name: Resolve Vercel project for "${{ inputs.app }}"
         id: project
