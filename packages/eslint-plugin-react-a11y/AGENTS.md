@@ -139,6 +139,10 @@ Same rules as `recommended`.
 - `no-aria-hidden-on-focusable` (error): Enforce that aria-hidden="true" is not used on focusable elements.
 - `mouse-events-have-key-events` (error): Enforce that onMouseOver/onMouseOut are accompanied by onFocus/onBlur.
 
+### Rules in no preset
+
+Enable these by name (`'react-a11y/<rule>': 'error'`); README.md describes each: `accessible-emoji`, `label-has-for`, `no-onchange`.
+
 ## More
 
 - Docs: https://eslint.interlace.tools/docs/quality/plugin-react-a11y
