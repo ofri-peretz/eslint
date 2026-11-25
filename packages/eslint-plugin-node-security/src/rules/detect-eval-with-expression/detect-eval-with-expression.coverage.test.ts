@@ -27,7 +27,10 @@ describe('detect-eval-with-expression coverage gaps', () => {
   ruleTester.run('detect-eval-with-expression', detectEvalWithExpression, {
     valid: [
       // NewExpression that is not `new Function` → guard falls through
-      { code: 'const controller = new AbortController();' },
+      {
+        code: 'const controller = new AbortController();',
+        name: 'constructing an AbortController evaluates no code',
+      },
     ],
     invalid: [],
   });

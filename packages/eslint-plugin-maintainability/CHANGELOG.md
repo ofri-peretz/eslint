@@ -5,6 +5,42 @@ All notable changes to `eslint-plugin-maintainability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.7
+
+### Patch Changes
+
+- **🐛 Fix** — AGENTS.md lists the rules in no preset by name on one line (README.md describes each), so the file an agent loads stays inside its guidance budget.
+
+## 4.0.6
+
+### Patch Changes
+
+- **🐛 Fix** — stop reporting re-thrown errors and the classic module wrapper
+
+  `no-missing-error-context` accepts `throw res.error` / `throw this.reason`. `no-unreadable-iife` accepts the classic `(function () { ...; module.exports = x; }());` module wrapper.
+
+## 4.0.5
+
+### Patch Changes
+
+- **🐛 Fix** — `no-silent-errors` accepts a catch that says why it is empty
+
+  Defaults `allowWithComment` to `true`, as ESLint core `no-empty` does. A comment inside the block that gives a reason in prose (three or more words, not a placeholder), or a same-line comment after the closing brace, documents the catch. A bare `catch {}`, `// Empty` and `/* handle later */` still report. Set `allowWithComment: false` to restore the old behaviour.
+
+## 4.0.4
+
+### Patch Changes
+
+- **📚 Docs** — Getting Started now leads each plugin README, with the ESLint install line and a flat config that loads
+
+  The install block was below the Description and the doctrine, and on 17 of the 31 plugins there was no flat-config snippet on the page at all. `eslint-plugin-secure-coding`'s README showed `...securePlugin.configs.recommended`, which throws `TypeError: ... is not iterable` when pasted, because `configs.recommended` is one object. Every plugin README now opens with `npm install --save-dev eslint <plugin>` and `import { configs } from '<plugin>'` and `export default [configs.recommended]` in an `eslint.config.mjs`, then the Description. A test now loads that snippet in ESLint for every plugin.
+
+  The star banner above the first heading, the footer block with the star counter and the Dev.to ask are replaced by one `## Support` paragraph at the end: report a false positive, or star the repo if the plugin helped.
+
+  `eslint-plugin-import-next` opens with its drop-in grade, read from the newest `benchmarks/results/ilb-import-parity` result with its date: passes 2,035 of 2,135 (95.3%) of eslint-plugin-import 2.32.0's own test cases, measured 2026-11-19.
+
+  Eight taglines now say what the plugin flags instead of "security rules for X" (secure-coding, node-security, browser-security, nestjs-security, express-security, vercel-ai-security, react-a11y, import-next). `eslint-plugin-node-security` adds one proof line: the public repositories that list it, with the date they were checked.
+
 ## 4.0.3
 
 ### Patch Changes

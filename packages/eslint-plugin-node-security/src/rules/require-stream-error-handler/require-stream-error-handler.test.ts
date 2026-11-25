@@ -70,7 +70,10 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
       name: 'a stream with a once error listener before pipe is not reported',
       code: "const s = fs.createReadStream(p); s.once('error', log); s.pipe(res);",
     },
-    "const s = fs.createReadStream(p); s.addListener('error', log); s.pipe(res);",
+    {
+      name: 'a stream with an addListener error listener before pipe is not reported',
+      code: "const s = fs.createReadStream(p); s.addListener('error', log); s.pipe(res);",
+    },
     // Test files are exempt by default.
     {
       name: 'a stream whose path is not request-derived',
@@ -82,6 +85,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // source and filename: that pair is what proves the option decides
     // something rather than merely being read.
     {
+      name: 'allowInTests silences an unhandled pipe in a test file',
       code: 'fs.createReadStream(p).pipe(res);',
       filename: '/proj/stream.test.ts',
       options: [{ allowInTests: true }],
@@ -98,9 +102,15 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     "const s = createReadStream(p); s.on('error', log); s.pipe(res);",
     // A bare identifier with no visible binding: the handler may be attached in
     // another module. Unproven is not unhandled.
-    'incoming.pipe(outgoing);',
+    {
+      name: 'two bare names with no visible binding are not provably unhandled',
+      code: 'incoming.pipe(outgoing);',
+    },
     // A name bound to something that is not a stream constructor.
-    'const s = getStream(); s.pipe(res);',
+    {
+      name: 'a stream returned by an unknown factory is not provably a stream constructor',
+      code: 'const s = getStream(); s.pipe(res);',
+    },
     // A computed callee names no method statically, so it constructs nothing
     // this rule can identify.
     'const s = factories[kind](p); s.pipe(res);',

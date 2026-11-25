@@ -21,6 +21,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
+  AST_NODE_TYPES,
   createRule,
   nameHasAnyWord,
   namesOneOf,
@@ -482,6 +483,23 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
       fn.body.body.length === 1 && fn.body.body[0].type === 'ReturnStatement';
 
     /**
+     * Does this function RENDER — return a JSX element or fragment from its own
+     * body? A React component (`function ResetPassword()`) draws the form that
+     * posts the token to the server; the token it reads from the URL is the
+     * server's to expire and rate-limit, and nothing in the component mints one.
+     * Only the function's own top-level `return`s count, not a nested callback's.
+     */
+    const rendersJsx = (fn: TSESTree.FunctionDeclaration): boolean =>
+      fn.body.body.some((statement) => {
+        if (statement.type !== AST_NODE_TYPES.ReturnStatement) return false;
+        const value = statement.argument;
+        return (
+          value?.type === AST_NODE_TYPES.JSXElement ||
+          value?.type === AST_NODE_TYPES.JSXFragment
+        );
+      });
+
+    /**
      * Check if token has expiration
      */
     const hasTokenExpiration = (
@@ -626,6 +644,7 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
         if (
           isRecoveryRelated(functionName) &&
           !isDeclarationOnly(node) &&
+          !rendersJsx(node) &&
           handlesRecoveryCredential(node)
         ) {
           // Check for token expiration
@@ -691,7 +710,14 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
             if (arg.type === 'Literal') {
               continue;
             }
-            const argText = sourceCode.getText(arg).toLowerCase();
+            // A template's own words are prose. Only what it interpolates can
+            // be the credential, so judge the holes, not the sentence around
+            // them: `A wrong password reset code was entered from ${ip}`.
+            const argText = (
+              arg.type === AST_NODE_TYPES.TemplateLiteral
+                ? arg.expressions.map((e) => sourceCode.getText(e)).join(' ')
+                : sourceCode.getText(arg)
+            ).toLowerCase();
 
             // Check if logging recovery-related sensitive data
             if (

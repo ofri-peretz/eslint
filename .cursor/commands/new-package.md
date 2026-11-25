@@ -66,7 +66,6 @@ The release workflow detects which path applies based on the package name and pu
 
 - [ ] Root [`README.md`](../../README.md) Available Packages table includes the new package in the right section (Security / Code Quality / Supporting)
 - [ ] [`ARCHITECTURE.md`](../../ARCHITECTURE.md) "Bird's-eye" tree mentions the new package if it's load-bearing
-- [ ] [`AGENTS.md`](../../AGENTS.md) Repository Overview table updated if the new package fits the headline plugins
 
 ## 7. Pre-Release Verification
 

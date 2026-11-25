@@ -1,0 +1,52 @@
+{
+  "apps/docs/e2e/a11y.spec.ts": {
+    "truepass/no-fixed-sleep": {
+      "count": 2
+    }
+  },
+  "apps/docs/e2e/articles.spec.ts": {
+    "truepass/no-fixed-sleep": {
+      "count": 22
+    }
+  },
+  "apps/docs/e2e/deploy-smoke.spec.ts": {
+    "truepass/no-fixed-sleep": {
+      "count": 1
+    }
+  },
+  "apps/docs/e2e/layout.spec.ts": {
+    "truepass/no-fixed-sleep": {
+      "count": 8
+    }
+  },
+  "apps/docs/playwright.config.ts": {
+    "truepass/no-test-retry": {
+      "count": 1
+    }
+  },
+  "apps/docs/src/__tests__/code-block-labeller-lock.test.tsx": {
+    "truepass/no-fixed-sleep": {
+      "count": 1
+    }
+  },
+  "packages/eslint-devkit/src/messaging/formatters-ai.test.ts": {
+    "truepass/no-unexplained-skip": {
+      "count": 2
+    }
+  },
+  "packages/eslint-plugin-conventions/src/tests/conventions/expiring-todo-comments.test.ts": {
+    "truepass/no-unexplained-skip": {
+      "count": 4
+    }
+  },
+  "packages/eslint-plugin-import-next/src/tests/no-cycle-integration.test.ts": {
+    "truepass/no-unexplained-skip": {
+      "count": 1
+    }
+  },
+  "packages/eslint-plugin-import-next/src/tests/no-relative-packages-integration.test.ts": {
+    "truepass/no-unexplained-skip": {
+      "count": 1
+    }
+  }
+}

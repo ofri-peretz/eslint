@@ -1,0 +1,551 @@
+{
+  "rule": "jsx-key",
+  "source": "eslint-plugin-react@7.37.5 tests/lib/rules/jsx-key.js (MIT)",
+  "cases": [
+    {
+      "kind": "valid",
+      "n": 63,
+      "code": "<App key=\"keyBeforeSpread\" {...{}} />;\n// features: [], parser: default, options: [{\"checkKeyMustBeforeSpread\":true}]",
+      "options": [
+        {
+          "checkKeyMustBeforeSpread": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 65,
+      "code": "<App key=\"keyBeforeSpread\" {...{}} />;\n// features: [], parser: @typescript-eslint/parser, options: [{\"checkKeyMustBeforeSpread\":true}]",
+      "options": [
+        {
+          "checkKeyMustBeforeSpread": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 66,
+      "code": "<div key=\"keyBeforeSpread\" {...{}} />;\n// features: [], parser: default, options: [{\"checkKeyMustBeforeSpread\":true}]",
+      "options": [
+        {
+          "checkKeyMustBeforeSpread": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 68,
+      "code": "<div key=\"keyBeforeSpread\" {...{}} />;\n// features: [], parser: @typescript-eslint/parser, options: [{\"checkKeyMustBeforeSpread\":true}]",
+      "options": [
+        {
+          "checkKeyMustBeforeSpread": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 88,
+      "code": "React.Children.toArray([1, 2 ,3].map(x => <App />));\n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 90,
+      "code": "React.Children.toArray([1, 2 ,3].map(x => <App />));\n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 91,
+      "code": "\n        import { Children } from \"react\";\n        Children.toArray([1, 2 ,3].map(x => <App />));\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 93,
+      "code": "\n        import { Children } from \"react\";\n        Children.toArray([1, 2 ,3].map(x => <App />));\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 94,
+      "code": "\n        import Act from 'react';\n        import { Children as ReactChildren } from 'react';\n\n        const { Children } = Act;\n        const { toArray } = Children;\n\n        Act.Children.toArray([1, 2 ,3].map(x => <App />));\n        Act.Children.toArray(Array.from([1, 2 ,3], x => <App />));\n        Children.toArray([1, 2 ,3].map(x => <App />));\n        Children.toArray(Array.from([1, 2 ,3], x => <App />));\n        // ReactChildren.toArray([1, 2 ,3].map(x => <App />));\n        // ReactChildren.toArray(Array.from([1, 2 ,3], x => <App />));\n        // toArray([1, 2 ,3].map(x => <App />));\n        // toArray(Array.from([1, 2 ,3], x => <App />));\n      \n// features: [], parser: default, settings: {\"react\":{\"pragma\":\"Act\",\"fragment\":\"Frag\"}}",
+      "settings": {
+        "react": {
+          "pragma": "Act",
+          "fragment": "Frag"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 96,
+      "code": "\n        import Act from 'react';\n        import { Children as ReactChildren } from 'react';\n\n        const { Children } = Act;\n        const { toArray } = Children;\n\n        Act.Children.toArray([1, 2 ,3].map(x => <App />));\n        Act.Children.toArray(Array.from([1, 2 ,3], x => <App />));\n        Children.toArray([1, 2 ,3].map(x => <App />));\n        Children.toArray(Array.from([1, 2 ,3], x => <App />));\n        // ReactChildren.toArray([1, 2 ,3].map(x => <App />));\n        // ReactChildren.toArray(Array.from([1, 2 ,3], x => <App />));\n        // toArray([1, 2 ,3].map(x => <App />));\n        // toArray(Array.from([1, 2 ,3], x => <App />));\n      \n// features: [], parser: @typescript-eslint/parser, settings: {\"react\":{\"pragma\":\"Act\",\"fragment\":\"Frag\"}}",
+      "settings": {
+        "react": {
+          "pragma": "Act",
+          "fragment": "Frag"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 0,
+      "code": "[<App />];\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 2,
+      "code": "[<App />];\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 3,
+      "code": "[<App {...key} />];\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 5,
+      "code": "[<App {...key} />];\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 6,
+      "code": "[<App key={0}/>, <App />];\n// features: [], parser: default",
+      "errors": 1,
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 8,
+      "code": "[<App key={0}/>, <App />];\n// features: [], parser: @typescript-eslint/parser",
+      "errors": 1,
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 40,
+      "code": "[1, 2, 3].map(x => <>{x}</>);\n// features: [fragment], parser: default, options: [{\"checkFragmentShorthand\":true}], settings: {\"react\":{\"pragma\":\"Act\",\"fragment\":\"Frag\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "checkFragmentShorthand": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "pragma": "Act",
+          "fragment": "Frag"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 42,
+      "code": "[1, 2, 3].map(x => <>{x}</>);\n// features: [fragment], parser: @typescript-eslint/parser, options: [{\"checkFragmentShorthand\":true}], settings: {\"react\":{\"pragma\":\"Act\",\"fragment\":\"Frag\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "checkFragmentShorthand": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "pragma": "Act",
+          "fragment": "Frag"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 43,
+      "code": "[<></>];\n// features: [fragment], parser: default, options: [{\"checkFragmentShorthand\":true}], settings: {\"react\":{\"pragma\":\"Act\",\"fragment\":\"Frag\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "checkFragmentShorthand": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "pragma": "Act",
+          "fragment": "Frag"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 45,
+      "code": "[<></>];\n// features: [fragment], parser: @typescript-eslint/parser, options: [{\"checkFragmentShorthand\":true}], settings: {\"react\":{\"pragma\":\"Act\",\"fragment\":\"Frag\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "checkFragmentShorthand": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "pragma": "Act",
+          "fragment": "Frag"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 46,
+      "code": "[<App {...obj} key=\"keyAfterSpread\" />];\n// features: [], parser: default, options: [{\"checkKeyMustBeforeSpread\":true}], settings: {\"react\":{\"pragma\":\"Act\",\"fragment\":\"Frag\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "checkKeyMustBeforeSpread": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "pragma": "Act",
+          "fragment": "Frag"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 48,
+      "code": "[<App {...obj} key=\"keyAfterSpread\" />];\n// features: [], parser: @typescript-eslint/parser, options: [{\"checkKeyMustBeforeSpread\":true}], settings: {\"react\":{\"pragma\":\"Act\",\"fragment\":\"Frag\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "checkKeyMustBeforeSpread": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "pragma": "Act",
+          "fragment": "Frag"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 49,
+      "code": "[<div {...obj} key=\"keyAfterSpread\" />];\n// features: [], parser: default, options: [{\"checkKeyMustBeforeSpread\":true}], settings: {\"react\":{\"pragma\":\"Act\",\"fragment\":\"Frag\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "checkKeyMustBeforeSpread": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "pragma": "Act",
+          "fragment": "Frag"
+        }
+      },
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 51,
+      "code": "[<div {...obj} key=\"keyAfterSpread\" />];\n// features: [], parser: @typescript-eslint/parser, options: [{\"checkKeyMustBeforeSpread\":true}], settings: {\"react\":{\"pragma\":\"Act\",\"fragment\":\"Frag\"}}",
+      "errors": 1,
+      "options": [
+        {
+          "checkKeyMustBeforeSpread": true
+        }
+      ],
+      "settings": {
+        "react": {
+          "pragma": "Act",
+          "fragment": "Frag"
+        }
+      },
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 52,
+      "code": "\n        const spans = [\n          <span key=\"notunique\"/>,\n          <span key=\"notunique\"/>,\n        ];\n      \n// features: [], parser: default, options: [{\"warnOnDuplicates\":true}]",
+      "errors": 2,
+      "options": [
+        {
+          "warnOnDuplicates": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 54,
+      "code": "\n        const spans = [\n          <span key=\"notunique\"/>,\n          <span key=\"notunique\"/>,\n        ];\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"warnOnDuplicates\":true}]",
+      "errors": 2,
+      "options": [
+        {
+          "warnOnDuplicates": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 55,
+      "code": "\n        const div = (\n          <div>\n            <span key=\"notunique\"/>\n            <span key=\"notunique\"/>\n          </div>\n        );\n      \n// features: [], parser: default, options: [{\"warnOnDuplicates\":true}]",
+      "errors": 2,
+      "options": [
+        {
+          "warnOnDuplicates": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 57,
+      "code": "\n        const div = (\n          <div>\n            <span key=\"notunique\"/>\n            <span key=\"notunique\"/>\n          </div>\n        );\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"warnOnDuplicates\":true}]",
+      "errors": 2,
+      "options": [
+        {
+          "warnOnDuplicates": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 67,
+      "code": "\n        const TestCase = () => {\n          const list = [1, 2, 3, 4, 5];\n\n          return (\n            <div>\n              {list.map(x => <div {...spread} key={x} />)}\n            </div>\n          );\n        };\n      \n// features: [], parser: default, options: [{\"checkKeyMustBeforeSpread\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "checkKeyMustBeforeSpread": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 69,
+      "code": "\n        const TestCase = () => {\n          const list = [1, 2, 3, 4, 5];\n\n          return (\n            <div>\n              {list.map(x => <div {...spread} key={x} />)}\n            </div>\n          );\n        };\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"checkKeyMustBeforeSpread\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "checkKeyMustBeforeSpread": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    }
+  ]
+}

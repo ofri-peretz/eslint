@@ -37,10 +37,12 @@ describe('no-improper-type-validation', () => {
         },
         // Non-user-input typeof checks are valid
         {
+          name: 'typeof string is not the object test, so there is no null or array hole',
           code: 'if (typeof value === "string" && value.length > 0) { /* process */ }',
         },
         // Safe type guards
         {
+          name: 'Number.isNaN on a conversion is a numeric check, not a typeof test',
           code: 'if (Number.isNaN(Number(value))) { /* handle NaN */ }',
         },
         {

@@ -5,6 +5,43 @@ All notable changes to `eslint-plugin-browser-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.5
+
+### Patch Changes
+
+- **🐛 Fix** — Found linting open-source Node apps: `require-postmessage-origin-check` skips `navigator.serviceWorker` message listeners, and `no-client-side-auth-logic` skips a confirm-password comparison of two fields of one object.
+
+## 3.1.4
+
+### Patch Changes
+
+- **🐛 Fix** — require-postmessage-origin-check false positive on worker.js
+
+  A worker entry file named exactly `worker.<ext>`, with no
+  `<name>.worker.<ext>` prefix, was not recognized as a worker.
+
+## 3.1.3
+
+### Patch Changes
+
+- **🐛 Fix** — allow Google's documented tokeninfo GET in query-credential rule
+
+  `no-credentials-in-query-params` no longer reports `?id_token=` / `?access_token=` on `oauth2.googleapis.com/tokeninfo`, which is a GET with no body form.
+
+## 3.1.2
+
+### Patch Changes
+
+- **📚 Docs** — Getting Started now leads each plugin README, with the ESLint install line and a flat config that loads
+
+  The install block was below the Description and the doctrine, and on 17 of the 31 plugins there was no flat-config snippet on the page at all. `eslint-plugin-secure-coding`'s README showed `...securePlugin.configs.recommended`, which throws `TypeError: ... is not iterable` when pasted, because `configs.recommended` is one object. Every plugin README now opens with `npm install --save-dev eslint <plugin>` and `import { configs } from '<plugin>'` and `export default [configs.recommended]` in an `eslint.config.mjs`, then the Description. A test now loads that snippet in ESLint for every plugin.
+
+  The star banner above the first heading, the footer block with the star counter and the Dev.to ask are replaced by one `## Support` paragraph at the end: report a false positive, or star the repo if the plugin helped.
+
+  `eslint-plugin-import-next` opens with its drop-in grade, read from the newest `benchmarks/results/ilb-import-parity` result with its date: passes 2,035 of 2,135 (95.3%) of eslint-plugin-import 2.32.0's own test cases, measured 2026-11-19.
+
+  Eight taglines now say what the plugin flags instead of "security rules for X" (secure-coding, node-security, browser-security, nestjs-security, express-security, vercel-ai-security, react-a11y, import-next). `eslint-plugin-node-security` adds one proof line: the public repositories that list it, with the date they were checked.
+
 ## 3.1.1
 
 ### Patch Changes

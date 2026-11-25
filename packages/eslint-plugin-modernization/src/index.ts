@@ -38,7 +38,7 @@ withCanonicalDocsUrls('plugin-modernization', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-modernization',
-    version: '4.0.4',
+    version: '4.0.6',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

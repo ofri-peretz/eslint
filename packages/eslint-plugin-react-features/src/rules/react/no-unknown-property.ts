@@ -7,502 +7,75 @@
 /**
  * ESLint Rule: no-unknown-property
  * Disallow unknown DOM properties in JSX
+ *
+ * Judged against eslint-plugin-react's own test cases (see
+ * `src/tests/react/upstream-parity/no-unknown-property.json`). The property
+ * table, its per-tag restrictions and the React-version gates live in
+ * `utils/dom-properties.ts`.
+ *
+ * @see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/no-unknown-property.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  ARIA_ATTRIBUTES,
+  ATTRIBUTE_TAGS,
+  CASE_INSENSITIVE_NAMES,
+  DOM_ATTRIBUTE_NAMES,
+  SVG_ATTRIBUTE_NAMES,
+  knownPropertyNames,
+} from '../../utils/dom-properties';
+import { getReactVersion } from '../../utils/react-settings';
 
-type MessageIds = 'noUnknownProperty';
+type MessageIds =
+  | 'noUnknownProperty'
+  | 'invalidPropOnTag'
+  | 'dataLowercaseRequired'
+  | 'invalidNamespacedProp';
 
-// React accepts the XML namespace attributes on SVG and they are spelled
-// exactly like this. Their absence made every inline `<svg xmlns=…>` — the
-// standard output of every icon exporter — report as unknown.
-// Each of these is verified present in react-dom's property table. An
-// earlier revision also listed `xmlnsXml`, which is NOT there — it was
-// pattern-matched from the others rather than checked, and a made-up
-// attribute in an allow-list costs recall silently.
-const XML_ATTRIBUTES = [
-  'xmlns',
-  'xmlnsXlink',
-  'xmlLang',
-  'xmlBase',
-  'xmlSpace',
+type Options = [
+  { ignore?: readonly string[]; requireDataLowercase?: boolean }?,
 ];
 
-const VALID_DOM_PROPERTIES = new Set([
-  ...XML_ATTRIBUTES,
-  // HTML attributes
-  'accept',
-  'acceptCharset',
-  'accessKey',
-  'action',
-  'allowFullScreen',
-  'allowTransparency',
-  'alt',
-  'async',
-  'autoComplete',
-  'autoFocus',
-  'autoPlay',
-  'capture',
-  'cellPadding',
-  'cellSpacing',
-  'challenge',
-  'charSet',
-  'checked',
-  'cite',
-  'classID',
-  'className',
-  'colSpan',
-  'cols',
-  'content',
-  'contentEditable',
-  'contextMenu',
-  'controls',
-  'coords',
-  'crossOrigin',
-  'data',
-  'dateTime',
-  'decoding',
-  'default',
-  'defer',
-  'dir',
-  'disabled',
-  'download',
-  'draggable',
-  'encType',
-  'fetchPriority',
-  'form',
-  'formAction',
-  'formEncType',
-  'formMethod',
-  'formNoValidate',
-  'formTarget',
-  'frameBorder',
-  'headers',
-  'height',
-  'hidden',
-  'high',
-  'href',
-  'hrefLang',
-  'htmlFor',
-  'httpEquiv',
-  'icon',
-  'id',
-  'inputMode',
-  'integrity',
-  'is',
-  'keyParams',
-  'keyType',
-  'kind',
-  'label',
-  'lang',
-  'list',
-  'loading',
-  'loop',
-  'low',
-  'manifest',
-  'marginHeight',
-  'marginWidth',
-  'max',
-  'maxLength',
-  'media',
-  'mediaGroup',
-  'method',
-  'min',
-  'minLength',
-  'multiple',
-  'muted',
-  'name',
-  'noValidate',
-  'nonce',
-  'open',
-  'optimum',
-  'pattern',
-  'placeholder',
-  'poster',
-  'preload',
-  'profile',
-  'radioGroup',
-  'readOnly',
-  'rel',
-  'required',
-  'reversed',
-  'role',
-  'rowSpan',
-  'rows',
-  'sandbox',
-  'scope',
-  'scoped',
-  'scrolling',
-  'seamless',
-  'selected',
-  'shape',
-  'size',
-  'sizes',
-  'span',
-  'spellCheck',
-  'src',
-  'srcDoc',
-  'srcLang',
-  'srcSet',
-  'start',
-  'step',
-  'style',
-  'summary',
-  'tabIndex',
-  'target',
-  'title',
-  'type',
-  'useMap',
-  'value',
-  'width',
-  'wmode',
-  'wrap',
+const has = (table: object, key: string): boolean =>
+  Object.prototype.hasOwnProperty.call(table, key);
 
-  // React-specific attributes
-  'children',
-  'dangerouslySetInnerHTML',
-  'key',
-  'ref',
-  'suppressContentEditableWarning',
-  'suppressHydrationWarning',
+/** `data-*` as React and the DOM accept it: no `xml` prefix, and no `:` in the name. */
+const isValidDataAttribute = (name: string): boolean =>
+  !/^data-xml/i.test(name) && /^data-[^:]*$/.test(name);
 
-  // SVG attributes
-  'accentHeight',
-  'accumulate',
-  'additive',
-  'alignmentBaseline',
-  'allowReorder',
-  'alphabetic',
-  'amplitude',
-  'arabicForm',
-  'ascent',
-  'attributeName',
-  'attributeType',
-  'autoReverse',
-  'azimuth',
-  'baseFrequency',
-  'baselineShift',
-  'baseProfile',
-  'bbox',
-  'begin',
-  'bias',
-  'by',
-  'calcMode',
-  'capHeight',
-  'clip',
-  'clipPath',
-  'clipPathUnits',
-  'clipRule',
-  'colorInterpolation',
-  'colorInterpolationFilters',
-  'colorProfile',
-  'colorRendering',
-  'contentScriptType',
-  'contentStyleType',
-  'cursor',
-  'cx',
-  'cy',
-  'd',
-  'decelerate',
-  'descent',
-  'diffuseConstant',
-  'direction',
-  'display',
-  'divisor',
-  'dominantBaseline',
-  'dur',
-  'dx',
-  'dy',
-  'edgeMode',
-  'elevation',
-  'enableBackground',
-  'end',
-  'exponent',
-  'externalResourcesRequired',
-  'fill',
-  'fillOpacity',
-  'fillRule',
-  'filter',
-  'filterRes',
-  'filterUnits',
-  'floodColor',
-  'floodOpacity',
-  'focusable',
-  'fontFamily',
-  'fontSize',
-  'fontSizeAdjust',
-  'fontStretch',
-  'fontStyle',
-  'fontVariant',
-  'fontWeight',
-  'format',
-  'from',
-  'fx',
-  'fy',
-  'g1',
-  'g2',
-  'glyphName',
-  'glyphOrientationHorizontal',
-  'glyphOrientationVertical',
-  'glyphRef',
-  'gradientTransform',
-  'gradientUnits',
-  'hanging',
-  'horizAdvX',
-  'horizOriginX',
-  'ideographic',
-  'imageRendering',
-  'in',
-  'in2',
-  'intercept',
-  'k',
-  'k1',
-  'k2',
-  'k3',
-  'k4',
-  'kernelMatrix',
-  'kernelUnitLength',
-  'kerning',
-  'keyPoints',
-  'keySplines',
-  'keyTimes',
-  'lengthAdjust',
-  'letterSpacing',
-  'lightingColor',
-  'limitingConeAngle',
-  'local',
-  'markerEnd',
-  'markerHeight',
-  'markerMid',
-  'markerStart',
-  'markerUnits',
-  'markerWidth',
-  'mask',
-  'maskContentUnits',
-  'maskUnits',
-  'mathematical',
-  'mode',
-  'numOctaves',
-  'offset',
-  'opacity',
-  'operator',
-  'order',
-  'orient',
-  'orientation',
-  'origin',
-  'overflow',
-  'overlinePosition',
-  'overlineThickness',
-  'paintOrder',
-  'panose1',
-  'pathLength',
-  'patternContentUnits',
-  'patternTransform',
-  'patternUnits',
-  'pointerEvents',
-  'points',
-  'pointsAtX',
-  'pointsAtY',
-  'pointsAtZ',
-  'preserveAlpha',
-  'preserveAspectRatio',
-  'primitiveUnits',
-  'r',
-  'radius',
-  'refX',
-  'refY',
-  'renderingIntent',
-  'repeatCount',
-  'repeatDur',
-  'requiredExtensions',
-  'requiredFeatures',
-  'restart',
-  'result',
-  'rotate',
-  'rx',
-  'ry',
-  'scale',
-  'seed',
-  'shapeRendering',
-  'slope',
-  'spacing',
-  'specularConstant',
-  'specularExponent',
-  'speed',
-  'spreadMethod',
-  'startOffset',
-  'stdDeviation',
-  'stemh',
-  'stemv',
-  'stitchTiles',
-  'stopColor',
-  'stopOpacity',
-  'strikethroughPosition',
-  'strikethroughThickness',
-  'string',
-  'stroke',
-  'strokeDasharray',
-  'strokeDashoffset',
-  'strokeLinecap',
-  'strokeLinejoin',
-  'strokeMiterlimit',
-  'strokeOpacity',
-  'strokeWidth',
-  'surfaceScale',
-  'systemLanguage',
-  'tableValues',
-  'targetX',
-  'targetY',
-  'textAnchor',
-  'textDecoration',
-  'textLength',
-  'textRendering',
-  'to',
-  'transform',
-  'u1',
-  'u2',
-  'underlinePosition',
-  'underlineThickness',
-  'unicode',
-  'unicodeBidi',
-  'unicodeRange',
-  'unitsPerEm',
-  'vAlphabetic',
-  'values',
-  'vectorEffect',
-  'version',
-  'vertAdvY',
-  'vertOriginX',
-  'vertOriginY',
-  'vHanging',
-  'vIdeographic',
-  'viewBox',
-  'viewTarget',
-  'visibility',
-  'vMathematical',
-  'widths',
-  'wordSpacing',
-  'writingMode',
-  'x',
-  'x1',
-  'x2',
-  'xChannelSelector',
-  'xHeight',
-  'xlinkActuate',
-  'xlinkArcrole',
-  'xlinkHref',
-  'xlinkRole',
-  'xlinkShow',
-  'xlinkTitle',
-  'xlinkType',
-  'xmlBase',
-  'xmlLang',
-  'xmlSpace',
-  'y',
-  'y1',
-  'y2',
-  'yChannelSelector',
-  'z',
-  'zoomAndPan',
+/**
+ * Does this `is` attribute make the element a customized built-in
+ * (`<div is="x-y">`)? `is={null}`, `is={undefined}` and `is={false}` do not:
+ * React renders an ordinary element and still validates its props.
+ */
+const makesCustomElement = (attr: TSESTree.JSXAttribute): boolean => {
+  const value = attr.value;
+  if (value?.type !== 'JSXExpressionContainer') return true;
+  const expr = value.expression;
+  return !(
+    (expr.type === 'Literal' &&
+      (expr.value === null || expr.value === false)) ||
+    (expr.type === 'Identifier' && expr.name === 'undefined')
+  );
+};
 
-  // Event handlers
-  'onAbort',
-  'onAnimationEnd',
-  'onAnimationIteration',
-  'onAnimationStart',
-  'onAuxClick',
-  'onBeforeInput',
-  'onBlur',
-  'onCanPlay',
-  'onCanPlayThrough',
-  'onChange',
-  'onClick',
-  'onCompositionEnd',
-  'onCompositionStart',
-  'onCompositionUpdate',
-  'onContextMenu',
-  'onCopy',
-  'onCut',
-  'onDoubleClick',
-  'onDrag',
-  'onDragEnd',
-  'onDragEnter',
-  'onDragExit',
-  'onDragLeave',
-  'onDragOver',
-  'onDragStart',
-  'onDrop',
-  'onDurationChange',
-  'onEmptied',
-  'onEncrypted',
-  'onEnded',
-  'onError',
-  'onFocus',
-  'onFocusIn',
-  'onFocusOut',
-  'onFormData',
-  'onGotPointerCapture',
-  'onInput',
-  'onInvalid',
-  'onKeyDown',
-  'onKeyPress',
-  'onKeyUp',
-  'onLoad',
-  'onLoadStart',
-  'onLoadedData',
-  'onLoadedMetadata',
-  'onLostPointerCapture',
-  'onMouseDown',
-  'onMouseEnter',
-  'onMouseLeave',
-  'onMouseMove',
-  'onMouseOut',
-  'onMouseOver',
-  'onMouseUp',
-  'onPaste',
-  'onPause',
-  'onPlay',
-  'onPlaying',
-  'onPointerCancel',
-  'onPointerDown',
-  'onPointerEnter',
-  'onPointerLeave',
-  'onPointerMove',
-  'onPointerOut',
-  'onPointerOver',
-  'onPointerUp',
-  'onProgress',
-  'onRateChange',
-  'onReset',
-  'onResize',
-  'onScroll',
-  'onSeeked',
-  'onSeeking',
-  'onSelect',
-  'onStalled',
-  'onSubmit',
-  'onSuspend',
-  'onTimeUpdate',
-  'onToggle',
-  'onTouchCancel',
-  'onTouchEnd',
-  'onTouchMove',
-  'onTouchStart',
-  'onTransitionEnd',
-  'onVolumeChange',
-  'onWaiting',
-  'onWheel',
-]);
+/** A name written in lowercase, without a hyphen, and not a customized built-in (`is="x-y"`). */
+const isHostTag = (opening: TSESTree.JSXOpeningElement): boolean =>
+  opening.name.type === 'JSXIdentifier' &&
+  /^[a-z][^-]*$/.test(opening.name.name) &&
+  !opening.attributes.some(
+    (a) =>
+      a.type === 'JSXAttribute' &&
+      a.name.type === 'JSXIdentifier' &&
+      a.name.name === 'is' &&
+      makesCustomElement(a),
+  );
 
-const REACT_PROPS = new Set([
-  'defaultChecked',
-  'defaultValue',
-  'suppressContentEditableWarning',
-  'suppressHydrationWarning',
-]);
+const docs = 'https://react.dev/learn/writing-markup-with-jsx#html-attributes';
 
-export const noUnknownProperty = createRule<[], MessageIds>({
+export const noUnknownProperty = createRule<Options, MessageIds>({
   name: 'no-unknown-property',
   meta: {
     interop: {
@@ -514,8 +87,26 @@ export const noUnknownProperty = createRule<[], MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-unknown-property.md',
       description: 'Disallow unknown DOM properties',
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          ignore: { type: 'array', items: { type: 'string' } },
+          requireDataLowercase: { type: 'boolean', default: false },
+        },
+        additionalProperties: false,
+      },
+    ],
     messages: {
+      dataLowercaseRequired: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Uppercase data-* Attribute',
+        description:
+          "React does not recognize data-* props with uppercase characters on a DOM element. Found '{{name}}', use '{{lowerCaseName}}' instead",
+        severity: 'MEDIUM',
+        fix: 'Write the data-* attribute name in lowercase',
+        documentationLink: docs,
+      }),
       noUnknownProperty: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Unknown DOM Property',
@@ -523,65 +114,132 @@ export const noUnknownProperty = createRule<[], MessageIds>({
           '`{{propName}}` is not a DOM property of `<{{elementName}}>`',
         severity: 'MEDIUM',
         fix: 'Use standard DOM properties or data attributes (data-*)',
-        documentationLink:
-          'https://react.dev/learn/writing-markup-with-jsx#html-attributes',
+        documentationLink: docs,
+      }),
+      invalidNamespacedProp: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Namespaced DOM Property',
+        description:
+          'Invalid DOM property `{{propName}}`. Did you mean `{{suggestion}}`?',
+        severity: 'MEDIUM',
+        fix: 'Write the camelCase form React expects',
+        documentationLink: docs,
+      }),
+      invalidPropOnTag: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'DOM Property On The Wrong Tag',
+        description:
+          '`{{propName}}` is only allowed on: {{allowedTags}}; found on `<{{elementName}}>`',
+        severity: 'MEDIUM',
+        fix: 'Move it to a tag that supports it, or drop it',
+        documentationLink: docs,
       }),
     },
   },
-  defaultOptions: [],
-  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
+  defaultOptions: [{}],
+  createOnce(context: TSESLint.RuleContext<MessageIds, Options>, options) {
+    let ignore: ReadonlySet<string>;
+    let requireDataLowercase = false;
+    let known: readonly string[];
+
     return {
+      before() {
+        const [config] = options();
+        ignore = new Set(config?.ignore);
+        requireDataLowercase = config?.requireDataLowercase ?? false;
+        known = knownPropertyNames(getReactVersion(context));
+      },
       JSXAttribute(node: TSESTree.JSXAttribute) {
-        // Only host (DOM) elements have a fixed property set. Custom
-        // components (<Box />, <Motion.div />) accept arbitrary props.
-        const elementName = node.parent.name;
-        if (
-          elementName.type !== 'JSXIdentifier' ||
-          !/^[a-z]/.test(elementName.name)
-        ) {
-          return;
-        }
+        const written = context.sourceCode.getText(node.name);
+        if (ignore.has(written)) return;
 
-        // A CUSTOM ELEMENT defines its own attributes, and React passes them
-        // through verbatim rather than checking them against the DOM.
-        //
-        // The check above catches custom COMPONENTS by their capital letter,
-        // but a web component is lowercase — `<altcha-widget>` — and looked
-        // like a host element. The HTML spec requires a hyphen in every custom
-        // element name, which is exactly the signal needed.
-        //
-        // This was the second false-positive class on the corpus: every
-        // attribute of okta-signin-widget's `<altcha-widget>` — `floating`,
-        // `hidefooter`, `challengeurl`, `onverified`, `customfetch`,
-        // `strings` — reported as an unknown DOM property.
-        if (elementName.name.includes('-')) {
-          return;
-        }
+        // `<Foo.bar />` takes whatever props it likes
+        if (node.parent.name.type === 'JSXMemberExpression') return;
 
-        if (node.name.type === 'JSXIdentifier') {
-          const propName = node.name.name;
+        // Some spellings are read in any casing (`charset`, `webkitdirectory`).
+        const name =
+          CASE_INSENSITIVE_NAMES.find(
+            (n) => n.toLowerCase() === written.toLowerCase(),
+          ) ?? written;
 
-          // Skip React-specific props and data attributes
-          if (
-            REACT_PROPS.has(propName) ||
-            propName.startsWith('data-') ||
-            propName.startsWith('aria-')
-          ) {
-            return;
-          }
-
-          // Check if it's a valid DOM property
-          if (!VALID_DOM_PROPERTIES.has(propName)) {
+        if (isValidDataAttribute(name)) {
+          // Held to it on components too: React drops an uppercase `data-*`
+          // prop from the DOM wherever it lands.
+          if (requireDataLowercase && name !== name.toLowerCase()) {
             context.report({
-              node: node.name,
-              messageId: 'noUnknownProperty',
-              // Naming it is the difference between a finding someone can act
-              // on and one they have to go hunting for: the message read
-              // "Unknown DOM property detected" with no indication of which.
-              data: { propName, elementName: elementName.name },
+              node,
+              messageId: 'dataLowercaseRequired',
+              data: { name: written, lowerCaseName: written.toLowerCase() },
             });
           }
+          return;
         }
+
+        if (ARIA_ATTRIBUTES.has(name)) return;
+
+        const tag =
+          node.parent.name.type === 'JSXIdentifier'
+            ? node.parent.name.name
+            : '';
+
+        // `<fbt>` and `<fbs>` take free-form props.
+        if (tag === 'fbt' || tag === 'fbs') return;
+
+        // Only host (DOM) elements have a fixed property set. Components
+        // (`<Box />`), web components (`<x-widget>`) and customized built-ins
+        // (`<div is="x-y">`) pass props through.
+        if (!isHostTag(node.parent)) return;
+
+        // A name that is right on some tags only
+        if (has(ATTRIBUTE_TAGS, name)) {
+          const allowed = ATTRIBUTE_TAGS[name];
+          if (!allowed.includes(tag)) {
+            context.report({
+              node,
+              messageId: 'invalidPropOnTag',
+              data: {
+                propName: written,
+                elementName: tag,
+                allowedTags: allowed.join(', '),
+              },
+            });
+          }
+          return;
+        }
+
+        // Is it a near miss of a standard name?
+        const standard = has(DOM_ATTRIBUTE_NAMES, name)
+          ? DOM_ATTRIBUTE_NAMES[name]
+          : has(SVG_ATTRIBUTE_NAMES, name)
+            ? SVG_ATTRIBUTE_NAMES[name]
+            : known.find((k) => k.toLowerCase() === name.toLowerCase());
+
+        if (standard === name) return;
+
+        // React rejects the namespaced SVG spellings (`xlink:href`, `xml:lang`)
+        // and wants the camelCase form; eslint-plugin-react does the same.
+        if (node.name.type === 'JSXNamespacedName') {
+          if (standard && standard !== name) {
+            context.report({
+              node,
+              messageId: 'invalidNamespacedProp',
+              data: { propName: written, suggestion: standard },
+            });
+          }
+          // Any other namespaced name is XML the renderer passes through,
+          // unless it is a `data-*` attempt, which the data-attribute grammar
+          // rules out (`data-x:y`).
+          if (!written.startsWith('data-')) return;
+        }
+
+        context.report({
+          node,
+          messageId: 'noUnknownProperty',
+          data: {
+            propName: written,
+            elementName: tag,
+          },
+        });
       },
     };
   },

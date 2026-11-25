@@ -1,0 +1,40 @@
+---
+title: procedure-in-memory
+description: 'Disallow long numbered procedures in always-loaded agent guidance; move them to a skill'
+tags: ['quality', 'conventions', 'agents', 'markdown']
+category: quality
+autofix: false
+---
+
+> Move long numbered procedures out of always-loaded guidance into a skill
+
+<!-- @rule-summary -->
+
+Disallow long numbered procedures in always-loaded agent guidance; move them to a skill
+<!-- @/rule-summary -->
+
+## Rule Details
+
+A procedure is needed when its task runs. `CLAUDE.md`, `AGENTS.md` and `GEMINI.md` are read on every
+session. A numbered list longer than `maxSteps` (default 5) in one of them is a skill paying rent in
+the wrong place.
+
+A list is a run of numbered items (`1.` or `1)`); blank lines and indented continuation lines do not
+end it. Lists inside code fences are not read.
+
+## Options
+
+```json
+{ "maxSteps": 5 }
+```
+
+## Examples
+
+### ❌ Incorrect
+
+A seven-step release checklist in `CLAUDE.md`.
+
+### ✅ Correct
+
+The checklist in `.claude/skills/release/SKILL.md`, and in `CLAUDE.md` at most one line that names
+the skill.

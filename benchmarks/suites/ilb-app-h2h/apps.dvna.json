@@ -1,0 +1,20 @@
+{
+  "dvna": {
+    "repo": "https://github.com/appsecco/dvna.git",
+    "commit": "9ba473add536f66ac9007966acb2a775dd31277a",
+    "commitDate": "2023-11-08",
+    "license": "MIT (LICENSE file at the pin: The MIT License, Copyright (c) 2023 Appsecco Ltd.; package.json says MIT)",
+    "stack": "Express, Sequelize 4 over MySQL (mysql2), plain JavaScript (CommonJS), EJS views",
+    "truthSource": "origin/fixes (a separate 2017 history: 'Inital unfixed commit' 82365c6 then 16 numbered 'Fix #N' commits, each a mechanical fix hunk) plus docs/solution/*.md at the pin, which document the vulnerabilities added after 2017 (XXE, insecure deserialization) and carry vulnerable-code snippets",
+    "truthNote": "origin/fixes has NO merge base with the pin, so 'git diff <pin>...origin/fixes' fails. The mechanical source is each Fix commit's removed lines, located by text in the pin's files.",
+    "truthFile": "truth/dvna.json",
+    "lintGlobs": [
+      "server.js",
+      "config/**/*.js",
+      "core/**/*.js",
+      "models/**/*.js",
+      "routes/**/*.js"
+    ],
+    "ignoreNote": "public/** and docs/** excluded; views/*.ejs are templates and not linted by either side"
+  }
+}

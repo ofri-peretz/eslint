@@ -1,0 +1,114 @@
+---
+title: 'eslint-plugin-security alternative: measured on NodeGoat, DVNA and Juice Shop'
+description: 'eslint-plugin-security 4.2.1 vs our plugins on 72 documented flaws in NodeGoat, DVNA and Juice Shop, with Wilson intervals, where it wins and every caveat.'
+icon: BarChart3
+---
+
+We ran `eslint-plugin-security` 4.2.1 and our security plugins over three deliberately vulnerable Node apps, [OWASP NodeGoat](https://github.com/OWASP/NodeGoat), [DVNA](https://github.com/appsecco/dvna) and [OWASP Juice Shop](https://github.com/juice-shop/juice-shop), and graded both against 72 vulnerabilities their maintainers documented. Our recommended presets reported 19 of the 72 and `eslint-plugin-security` reported 3. It found nothing that ours missed on these rows, and neither found 53 of the 72. We wrote the plugins, the truth tables and the harness, fixed rules after earlier runs of these same apps, and used AI sessions as the labellers; read [the caveats](#caveats-read-these-before-citing-a-number) before you quote anything here.
+
+**Measured 2026-11-20 on ESLint 10.13.0, Node 24.12.0, macOS arm64. Last updated 2026-11-20.**
+
+## The result
+
+Recall is the share of the 72 documented flaws that a config reported at the right line for the right reason. Intervals are Wilson 95%.
+
+| Config                                           | Documented flaws found (of 72) | Recall | Wilson 95%    |
+| :----------------------------------------------- | -----------------------------: | -----: | :------------ |
+| A: `eslint-plugin-security` 4.2.1, `recommended` |                              3 |   4.2% | 1.4 to 11.5%  |
+| B: our three recommended presets                 |                             19 |  26.4% | 17.6 to 37.6% |
+| C: B plus the app's database plugin              |                             20 |  27.8% | 18.8 to 39.0% |
+
+The intervals for A and B do not overlap, so the gap is larger than the noise at this sample size. The gap between B and C is one row (NodeGoat's `$where` injection, found by `mongodb-security`) and is inside the noise. `sequelize-security` added nothing on DVNA or Juice Shop; the driver plugins add little here. We do not turn the 19 against 3 into a multiple: 72 rows from three small apps is too few to carry one.
+
+Among the 17 rows a purely syntactic rule could in principle flag (the `lintable = y` rows), B found 14 (82.4%, 59.0 to 93.8%) and A found 3 (17.6%, 6.2 to 41.0%). The 17-row denominator is a judgement by whoever wrote the truth tables (us); it is not an independent count.
+
+### The three configs
+
+| Label | What was linted with                                                                                                                     |
+| :---- | :--------------------------------------------------------------------------------------------------------------------------------------- |
+| A     | `eslint-plugin-security` 4.2.1 from npm, `recommended`. Turning every rule on gives the same findings on all three apps.                 |
+| B     | `eslint-plugin-secure-coding` 6.4.1, `eslint-plugin-node-security` 6.1.1 and `eslint-plugin-express-security` 4.3.2, each `recommended`. |
+| C     | B plus `eslint-plugin-mongodb-security` 10.1.1 (NodeGoat) or `eslint-plugin-sequelize-security` 2.0.4 (DVNA, Juice Shop).                |
+
+## Per app
+
+| App (documented flaws) | Recall A |  Recall B |  Recall C | Strict precision A / B / C (findings)  | Findings per 1,000 lines A / B / C |
+| :--------------------- | -------: | --------: | --------: | :------------------------------------- | :--------------------------------- |
+| NodeGoat (20)          |     2/20 |      4/20 |      5/20 | 50.0% / 60.0% / 58.3% (8 / 10 / 12)    | 4.6 / 5.7 / 6.9                    |
+| DVNA (19)              |     1/19 |      9/19 |      9/19 | 25.0% / 73.9% / 73.9% (4 / 23 / 23)    | 5.2 / 30.1 / 30.1                  |
+| Juice Shop (33)        |     0/33 |      6/33 |      6/33 | 0.0% / 7.4% / 7.4% (159 / 81 / 81)     | 6.8 / 3.5 / 3.5                    |
+| **All three (72)**     | **3/72** | **19/72** | **20/72** | 2.9% / 25.4% / 25.9% (171 / 114 / 116) | 6.6 / 4.4 / 4.5                    |
+
+Per-app recall for B with Wilson 95%: NodeGoat 20.0% (8.1 to 41.6%), DVNA 47.4% (27.3 to 68.3%), Juice Shop 18.2% (8.6 to 34.4%). For A: NodeGoat 10.0% (2.8 to 30.1%), DVNA 5.3% (0.9 to 24.6%), Juice Shop 0% (0 to 10.4%).
+
+Strict precision counts a finding as correct only when it lands on a documented flaw at the right line for the right reason; a real vulnerability that is not on the list counts as wrong. Pooled strict precision is 25.4% for B (18.3 to 34.1%) and 2.9% for A (1.3 to 6.7%). **Do not read either as an accuracy score**; the [Juice Shop floor](#caveats-read-these-before-citing-a-number) below explains why. Per-app precision intervals are wide (B on NodeGoat 31.3 to 83.2%, on DVNA 53.5 to 87.5%, on Juice Shop 3.4 to 15.2%), and on NodeGoat and DVNA the intervals for A and B overlap, so the direction is visible and the ordering is not established. Without Juice Shop, B found 13 of 39 rows (33.3%, 20.6 to 49.0%) and A found 3 of 39 (7.7%, 2.7 to 20.3%).
+
+Pooled figures are sums of counts, not a composite score. There is no F1.
+
+## Where `eslint-plugin-security` wins
+
+- **Speed.** It was the faster run on every app. Single runs, in milliseconds: on NodeGoat A 287 and B 832, on DVNA A 193 and B 339, on Juice Shop A 1,270 and B 1,439. B's first run in each app includes a cold load, and one run is not a benchmark, so we state the direction and no multiple.
+- **Volume on one small app.** On DVNA it reported 5.2 findings per 1,000 lines against our 30.1, which is less for you to read. On NodeGoat the counts are close (4.6 against 5.7 for B), and on Juice Shop we reported fewer (3.5 against 6.8).
+- **Precision on NodeGoat before our fixes.** At the first graded run, strict precision on NodeGoat was 50.0% for A against 41.7% for B and 35.7% for C. It reversed to 50.0%, 60.0% and 58.3% after rule fixes written because of this very app, and the intervals overlap either way. We report both because the first number is the one that was not tuned to the app.
+- **Not graded here, and still true in its favour:** it is a far older and more widely installed package, with an established base of people who already know which of its rules to triage. We did not re-measure download counts or documentation completeness for this page.
+
+## What we still miss
+
+Both configs miss 53 of the 72 rows. Of the 17 flaws a syntactic rule could in principle flag, B missed three: NodeGoat's `$where` injection (NG-02, found only with C), reflected XSS (NG-09) and cleartext transport (NG-13). A missed 14.
+
+One Juice Shop row, JS-30 (a rate limit keyed on the spoofable `X-Forwarded-For` header), counts as a miss because our `no-permissive-trust-proxy` rule reports line 374 and the documented line is 378. A second labeller counted that kind of near-line hit; if it counted here, B would be 20 of 72. We kept the exact-line rule we set before the run.
+
+## Caveats: read these before citing a number
+
+1. **We fixed rules after earlier runs on all three apps, so none of these is a clean out-of-sample test.** PR [#1616](https://github.com/ofri-peretz/eslint/pull/1616) fixed rule gaps the first NodeGoat run exposed, [#1620](https://github.com/ofri-peretz/eslint/pull/1620) fixed gaps the first DVNA run exposed, and [#1623](https://github.com/ofri-peretz/eslint/pull/1623) fixed noise and gaps found while running this harness, including the CSRF noise that dominated our first Juice Shop findings. Before any of that rule work the same build would have found 13 of 72 (18.1%): NodeGoat 3, DVNA 6, Juice Shop 4. The truth tables for all three apps were frozen before the first run on that app, and the harness checks that order from the commit history. That proves the answer key was not edited after seeing results. It does not prove the rules were not tuned afterwards, and they were.
+2. **The labellers are AI sessions, not people.** Two Claude sessions labelled the findings from the earlier build (495 config-findings, 334 unique rule, file and line keys). They agreed on true positive versus not with a Cohen's kappa of 0.976 pooled, but only 0.779 when the labels had three classes (correct, real but unlisted, wrong), and 0.519 on three classes for Juice Shop alone. Agreement shows the instrument is repeatable, not that a person would agree. The second labeller had seen part of the Juice Shop truth table. Each truth table was written by one author, and nobody re-derived them. **No human has reviewed the labels at the time of writing.** The kappa figures belong to the earlier build; the numbers on this page come from a re-run in which a finding counts as correct only by the mechanical rule (right line, right rule class), so the "real but unlisted" category was not tracked for new findings and we quote strict precision only.
+3. **The apps are small training apps.** 24, 12 and 279 files, and 1,745, 764 and 23,459 lines: textbook vulnerabilities in code written to be vulnerable. This measures recall on documented training-app flaws and says nothing about your production code. We have a different, older measurement on 20 real projects; it used different plugin versions and is not blended in here, see [benchmarks](/docs/benchmarks).
+4. **Half the rows are invisible to a linter.** 36 of the 72 rows (NodeGoat 9 of 20, DVNA 5 of 19, Juice Shop 22 of 33) are missing controls, business logic, dependency versions, YAML, Solidity or Terraform that no ESLint rule can see. Of the other 36, we judged 17 clearly lintable (`y`) and 19 possibly (`maybe`). That column is a judgement. The ceiling for any ESLint plugin on this set is at most 36 of 72, and for a purely syntactic rule set 17 of 72.
+5. **Juice Shop precision is a floor, not an accuracy.** The app is vulnerable throughout, and its maintainers marked a line for only 37 of its 118 challenges. Strict precision therefore counts every finding away from a marked line as wrong, including the ones that describe a real weakness. That is why B reads 7.4% there and why the pooled figure sits well below what a reviewer reading each finding would call useful. We do not quote a lenient figure for this run.
+6. **Truth lines are judgement.** NodeGoat's come from its tutorial prose, DVNA's from fix commits and docs, Juice Shop's from the maintainers' markers.
+7. **The counts are small.** The A against B recall gap at 72 rows is outside noise. The B against C gap (one row) and every per-app precision ordering are inside it.
+8. **The build was local.** Plugins were imported by path from a local build of the `main` branch at commit `ea9fe2131`; the harness refuses to load our plugins from `node_modules`. The package versions equal the latest on npm on 2026-11-20, and the only change under `packages/` on `main` since the release commit of those versions is a test-model update ([#1633](https://github.com/ofri-peretz/eslint/pull/1633)).
+
+## Reproduce it
+
+The harness is in the repository at [`benchmarks/suites/ilb-app-h2h`](https://github.com/ofri-peretz/eslint/tree/main/benchmarks/suites/ilb-app-h2h): the truth tables, the class map from vulnerability class to the rules that count as the right reason, the three configs, the runner and the freeze check. It was merged without squashing (each commit kept, in order) because the freeze check reads the commit order: truth tables and configs before the run that uses them. Results are in [`benchmarks/results/ilb-app-h2h`](https://github.com/ofri-peretz/eslint/tree/main/benchmarks/results/ilb-app-h2h), and the three files behind this page are `nodegoat.rev4.json`, `dvna.rev3.json` and `juiceshop.rev2.json`.
+
+```bash
+git clone https://github.com/ofri-peretz/eslint.git && cd eslint
+npm ci
+npx turbo run build --filter=eslint-plugin-secure-coding --filter=eslint-plugin-node-security \
+  --filter=eslint-plugin-express-security --filter=eslint-plugin-mongodb-security \
+  --filter=eslint-plugin-sequelize-security
+
+node benchmarks/suites/ilb-app-h2h/run.mjs --app nodegoat  --out benchmarks/results/ilb-app-h2h/nodegoat.rev4.json
+node benchmarks/suites/ilb-app-h2h/run.mjs --app dvna      --out benchmarks/results/ilb-app-h2h/dvna.rev3.json
+node benchmarks/suites/ilb-app-h2h/run.mjs --app juiceshop --out benchmarks/results/ilb-app-h2h/juiceshop.rev2.json
+node benchmarks/suites/ilb-app-h2h/freeze-check.mjs nodegoat   # also: dvna, juiceshop
+node benchmarks/suites/ilb-app-h2h/pooled.mjs                  # writes benchmarks/results/ilb-app-h2h/summary.json
+```
+
+Each run clones the app at its pinned commit into a scratch directory and refuses any other checkout, a stale plugin build, a plugin resolved from `node_modules`, or a version of `eslint-plugin-security` other than 4.2.1. If you rebuild from a later `main`, your numbers will move with the rules; that is the point of the harness, and results from rules changed after seeing these apps count as fix-and-retest.
+
+The labels from the two AI labellers are not in the harness: it does not yet read a second labeller's file, so the kappa figures above were computed outside it and cannot be recomputed from the repository.
+
+## Exact versions and pins
+
+| Item                               | Version or commit                                       |
+| :--------------------------------- | :------------------------------------------------------ |
+| `eslint-plugin-security`           | 4.2.1 (npm)                                             |
+| `eslint-plugin-secure-coding`      | 6.4.1 (local build of `main` at `ea9fe2131`)            |
+| `eslint-plugin-node-security`      | 6.1.1 (same build)                                      |
+| `eslint-plugin-express-security`   | 4.3.2 (same build)                                      |
+| `eslint-plugin-mongodb-security`   | 10.1.1 (same build; NodeGoat)                           |
+| `eslint-plugin-sequelize-security` | 2.0.4 (same build; DVNA and Juice Shop)                 |
+| ESLint, Node                       | 10.13.0, 24.12.0 (macOS arm64)                          |
+| NodeGoat                           | `c5cb68a7084e4ae7dcc60e6a98768720a81841e8` (Apache-2.0) |
+| DVNA                               | `9ba473add536f66ac9007966acb2a775dd31277a` (MIT)        |
+| Juice Shop                         | `c9f99228d9d56afb5f5ca7925376292f7fa44b13` (MIT)        |
+| Run date                           | 2026-11-20                                              |
+
+Same parser block and ignores for every config, no file silently ignored, 0 parse errors; Juice Shop runs through `@typescript-eslint/parser` for both sides (279 of 279 files linted). A finding counts only at the right line for the right reason; the unit is the file, line and rule ID.
+
+## What to do with this
+
+The measurement fits the advice on [Use alongside eslint-plugin-security](/docs/getting-started/with-eslint-plugin-security): keep it, and add ours next to it for the rows it does not report. For the other tools in this space, see [eslint-plugin-security alternatives](/docs/getting-started/eslint-plugin-security-alternatives); for how the two sets of rules coexist in one config, see [Security plugins in one flat config](/docs/getting-started/security-plugins-one-flat-config).

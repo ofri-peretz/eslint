@@ -36,6 +36,7 @@ ruleTester.run('no-credentials-in-query-params', noCredentialsInQueryParams, {
     // prefix, so `: token=${maskToken(t)}` matched. Wrong twice: not a URL,
     // and the value is redacted.
     {
+      name: 'a masked token in a debug log line is not a URL',
       code: 'outputDebug(`Loaded session for ${store}: token=${maskToken(session.accessToken)}`)',
     },
     {
@@ -44,7 +45,10 @@ ruleTester.run('no-credentials-in-query-params', noCredentialsInQueryParams, {
     },
     // The prefix requirement now matches the Literal branch: a bare `token=`
     // with no `?` or `&` before it is not a query parameter.
-    { code: 'const msg = `status: token=${x}`' },
+    {
+      name: 'a bare token= with no ? or & before it is not a query parameter',
+      code: 'const msg = `status: token=${x}`',
+    },
     // A longer parameter that merely ENDS in a sensitive name is not that
     // parameter: `?stateToken=` is OAuth state, not `?token=`.
     { code: 'const url = `${base}/sso/idps/${id}?stateToken=${stateHandle}`' },

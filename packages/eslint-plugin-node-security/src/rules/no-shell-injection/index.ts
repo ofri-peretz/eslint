@@ -170,7 +170,7 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-shell-injection.md',
       description:
-        'Disallow string concatenation or template expressions in shell command arguments (CWE-78)',
+        'Disallow concatenated or templated shell command arguments (CWE-78)',
       cwe: 'CWE-78',
       cvss: 9.8,
     },

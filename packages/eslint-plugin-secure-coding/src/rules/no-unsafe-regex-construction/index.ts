@@ -519,8 +519,62 @@ function isSameObjectPair(
   return a !== null && a === root(flags);
 }
 
+/**
+ * Is every value this flags expression can take written out in the source?
+ *
+ * A literal is. So is a conditional whose two branches are, recursively:
+ * `caseSensitive ? "u" : "iu"` (ESLint's own `no-restricted-imports` and
+ * `no-warning-comments`) can only ever be one of two known flag sets. Anything
+ * else — a variable, a concatenation, a substituted template, a ternary with
+ * one open leaf — is assembled at runtime.
+ */
+function isClosedFlagSet(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+  seen: Set<TSESLint.Scope.Variable> = new Set(),
+): boolean {
+  if (staticString(node) !== null) return true;
+  if (node.type === 'ConditionalExpression') {
+    return (
+      isClosedFlagSet(node.consequent, sourceCode, seen) &&
+      isClosedFlagSet(node.alternate, sourceCode, seen)
+    );
+  }
+  // `const flags = "iu"` — a const is written once, so its initializer IS its
+  // value (ESLint's no-warning-comments).
+  if (node.type === 'Identifier') {
+    for (
+      let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+      scope;
+      scope = scope.upper
+    ) {
+      const variable = scope.variables.find((v) => v.name === node.name);
+      if (!variable) continue;
+      // `undefined` the global is no flags at all: `new RegExp(s, cond ? undefined : "i")`
+      // is one of two known flag sets. A binding the file declares under that
+      // name is something else, and falls through to the const check.
+      if (node.name === 'undefined' && variable.defs.length === 0) return true;
+      if (seen.has(variable) || variable.defs.length !== 1) return false;
+      seen.add(variable);
+      const def = variable.defs[0];
+      return (
+        def.type === 'Variable' &&
+        def.parent?.kind === 'const' &&
+        def.node.id.type === 'Identifier' &&
+        def.node.init !== null &&
+        isClosedFlagSet(def.node.init, sourceCode, seen)
+      );
+    }
+    // No scope declares it (a runtime that does not model globals as
+    // variables): it is the global `undefined`.
+    if (node.name === 'undefined') return true;
+  }
+  return false;
+}
+
 function hasDynamicFlags(
   node: TSESTree.CallExpression | TSESTree.NewExpression,
+  sourceCode: TSESLint.SourceCode,
 ): boolean {
   // Check second argument (flags)
   if (node.arguments.length > 1) {
@@ -528,7 +582,7 @@ function hasDynamicFlags(
     // Flags built at runtime are the concern here regardless of provenance —
     // `new RegExp(p, item.flags)` can silently add `g`/`y` and change matching
     // semantics. A string literal is fine.
-    return !(staticString(flagsNode) !== null);
+    return !isClosedFlagSet(flagsNode, sourceCode);
   }
 
   return false;
@@ -784,7 +838,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
       // also unreadable — that is the case where nothing about the resulting
       // regex is known, and it is the one worth a word.
       if (
-        hasDynamicFlags(node) &&
+        hasDynamicFlags(node, context.sourceCode) &&
         !isRegexClone(patternNode) &&
         !isSameObjectPair(patternNode, node.arguments[1] as TSESTree.Node)
       ) {

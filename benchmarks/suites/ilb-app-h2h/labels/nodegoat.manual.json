@@ -1,0 +1,23 @@
+{
+  "_comment": "Manual verdicts for findings the mechanical labeller marked FP (not on a truth line). Single labeller (the fixer agent), NOT blind, NOT double-labelled: the plan's blind two-labeller step (section 6.2) is still to do. Only unlisted-real / undecidable need an entry; every other non-TP stays FP with the default reason. Rev 1b (2026-11-21): the two ZAP-key verdicts changed from FP to unlisted-real.",
+  "app/routes/session.js:143:secure-coding/no-redos-vulnerable-regex": {
+    "verdict": "unlisted-real",
+    "reason": "EMAIL_RE = /^[\\S]+@[\\S]+\\.[\\S]+$/ is reachable from unauthenticated POST /signup (email is regex-tested after the other fields pass; email has no length cap). Input '@'.repeat(n) fails the match after quadratic backtracking: measured 2000 chars 2 ms, 4000 chars 8 ms, 8000 chars 31 ms (Node 24, V8 irregexp), so a 100 KB body (body-parser default limit) costs about 5 s of event-loop time. A real, undocumented ReDoS."
+  },
+  "config/env/development.js:6:secure-coding/no-hardcoded-credentials": {
+    "verdict": "unlisted-real",
+    "reason": "zapApiKey is a committed random-looking 26-character literal (a hard-coded credential in source). Label corrected from FP on the coordinator's review (2026-11-21, rev 1b). Impact is bounded (a local OWASP ZAP scanner key in developer configs, not documented in the NodeGoat tutorial), so it is unlisted-real, not a truth-table hit: strict precision still counts it as FP, lenient counts it as TP."
+  },
+  "config/env/test.js:6:secure-coding/no-hardcoded-credentials": {
+    "verdict": "unlisted-real",
+    "reason": "zapApiKey is a committed random-looking 26-character literal (a hard-coded credential in source). Label corrected from FP on the coordinator's review (2026-11-21, rev 1b). Impact is bounded (a local OWASP ZAP scanner key in developer configs, not documented in the NodeGoat tutorial), so it is unlisted-real, not a truth-table hit: strict precision still counts it as FP, lenient counts it as TP."
+  },
+  "Gruntfile.js:166:node-security/no-shell-injection": {
+    "verdict": "FP",
+    "reason": "exec() command is built from process.env.NODE_ENV or a CLI argument of a developer-run grunt task (db-reset). No attacker-controlled input reaches it."
+  },
+  "Gruntfile.js:165:security/detect-child-process": {
+    "verdict": "FP",
+    "reason": "Same grunt db-reset task as above: developer-run, no remote input."
+  }
+}

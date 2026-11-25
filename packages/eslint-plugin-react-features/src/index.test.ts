@@ -24,11 +24,15 @@ describe('eslint-plugin-react-features plugin interface', () => {
     expect(ruleKeys).toContain('performance/no-unnecessary-rerenders');
     expect(ruleKeys).toContain('react/no-direct-mutation-state');
 
+    // Bumped from 130 to 136 when style-prop-object, jsx-pascal-case and
+    // forbid-foreign-prop-types were added (flat and `react/` names each).
+    // Bumped from 122 to 130 when the four JSX scope rules (jsx-uses-react,
+    // jsx-uses-vars, jsx-no-undef, jsx-no-comment-textnodes) were added.
     // Bumped from 106 → 122 on 2026-05-16 when 8 component-api rules
     // (R5/R6/R8/R18/R19 + no-default-test-id, no-wrapper-sub-component,
     // no-kind-prop-discriminator) were added and registered under both
     // flat and `component-api/` namespaces.
-    expect(ruleKeys.length).toBe(122);
+    expect(ruleKeys.length).toBe(136);
   });
 
   it('should export rules matching plugin.rules', () => {

@@ -35,6 +35,9 @@ Reported, however the module is named (a named or renamed import, a default or n
 - react's `createClass` and `PropTypes` (removed in React 16);
 - the lifecycle methods `componentWillMount`, `componentWillReceiveProps`, `componentWillUpdate` and their `UNSAFE_` forms, on a class that extends React's `Component` / `PureComponent` (a method, an arrow property or a quoted key).
 
+**Differs from eslint-plugin-react 7.37.5:** `ReactDOM.findDOMNode` is still reported (2 upstream cases), because
+React warns on it from 18.3.
+
 Not reported: the same names on a local object or function, imported from another module, or declared on a class that is not a React component; a bare `render(…)` the file never imports.
 
 ## Examples

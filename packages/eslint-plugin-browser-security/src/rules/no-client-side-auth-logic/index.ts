@@ -26,6 +26,29 @@ import {
 type MessageIds = 'violationDetected';
 
 /**
+ * Two different properties read off the same plain identifier:
+ * `form.password` and `form.repeat`.
+ */
+function isSiblingFieldPair(
+  left: TSESTree.Node,
+  right: TSESTree.Node,
+): boolean {
+  if (left.type !== 'MemberExpression' || right.type !== 'MemberExpression') {
+    return false;
+  }
+  const leftName = propertyName(left);
+  const rightName = propertyName(right);
+  return (
+    left.object.type === 'Identifier' &&
+    right.object.type === 'Identifier' &&
+    left.object.name === right.object.name &&
+    leftName !== null &&
+    rightName !== null &&
+    leftName !== rightName
+  );
+}
+
+/**
  * Is this operand a presence/flag constant rather than a credential?
  *
  * `if (ionFormField.secret === true)` is a *rendering* decision — okta's
@@ -235,6 +258,10 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
       const right = test.right as TSESTree.Node;
       const leftIsCredential = isCredentialRead(left);
       if (!leftIsCredential && !isCredentialRead(right)) return false;
+      // `form.password !== form.repeat`: two fields of ONE object compared with
+      // each other are the confirm-password check of a form. A stored credential
+      // lives on a different object than the value typed against it.
+      if (isSiblingFieldPair(left, right)) return false;
       // The value the credential is measured against. When both sides read a
       // credential, either one answers.
       return !isFlagComparand(leftIsCredential ? right : left);

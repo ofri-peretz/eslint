@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-reliability",
-  "version": "5.0.3",
+  "version": "5.0.8",
   "description": "ESLint reliability rules for runtime safety — enforces error handling, network timeouts, null checks, and safe type narrowing.",
   "type": "commonjs",
   "sideEffects": false,

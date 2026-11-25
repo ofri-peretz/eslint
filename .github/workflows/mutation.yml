@@ -50,7 +50,7 @@ permissions:
 jobs:
   mutate:
     name: Mutate rule sources
-    # Draft PRs are WIP; the promote model in AGENTS.md runs heavy gates when a
+    # Draft PRs are WIP; the promote model in docs/CI_AND_RELEASE.md runs heavy gates when a
     # PR is ready for review.
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest

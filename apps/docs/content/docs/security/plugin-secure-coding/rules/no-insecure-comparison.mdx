@@ -157,6 +157,7 @@ const result = a === b ? 1 : 0; // ✅ Type and value match
 | `allowInTests` | `boolean` | `false` | Allow insecure comparison in test files |
 | `ignorePatterns` | `string[]` | `[]` | Additional patterns to ignore |
 | `reportLooseEquality` | `boolean` | `true` | Report `==` between non-secret operands. Turn off to keep only the secret-comparison findings and leave generic type coercion to eqeqeq. |
+| `recordMetadataTails` | `string[]` | `['id', 'ids', 'purpose', 'kind', 'type', 'status', 'at']` | Last words of a field name that make it an identifier or label of its record, so `token.userId` is judged by `userId` and not by `token`. Replace the list if your code stores a secret under one of these words. |
 
 ### Example Configuration
 
@@ -251,3 +252,15 @@ nothing to report:
 expression, a name written more than once. A variable reassigned between its declaration
 and the comparison can hold anything by the time the comparison runs, so it stays a
 finding.
+
+### Secret-named containers that hold no secret
+
+The timing finding is about comparing a secret. Three shapes read like one and are not:
+
+| Code | Why it is silent |
+| --- | --- |
+| `token.userId === userId` | The field's last word (`Id`) makes it an identifier of the record. The container's name does not make it a secret. See `recordMetadataTails`. |
+| `signature.toString('base64url') !== parts[2]` | `signature` was written once as `Buffer.from(parts[2], 'base64url')`: a value compared with its own round trip through one encoding is a canonical-form check, not a timing oracle. |
+| `latest.secret === record.secret` | The same field from two reads of the same store call, with arguments that cannot change between them, compared to notice a concurrent change. |
+
+The token value of a record compared with presented input, such as `token.value === presented.tokenValue`, still reports.

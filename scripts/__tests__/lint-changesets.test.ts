@@ -364,3 +364,76 @@ describe('CS009 — cross-package scope', () => {
     expect(rules(lint(dir, PRIVACY))).not.toContain('CS009');
   });
 });
+
+describe('CS010 — foreign rule ownership (#1688)', () => {
+  const JWT = 'eslint-plugin-jwt-security';
+  const NODE = 'eslint-plugin-node-security';
+  const SECURE = 'eslint-plugin-secure-coding';
+
+  it('reports a multi-package changeset naming a rule none of its packages own', () => {
+    // The shape that shipped: a changeset bumped jwt-security and
+    // node-security, but its body described secure-coding's own
+    // detect-object-injection — a rule neither listed package registers, so
+    // both CHANGELOGs advertised a fix neither of them shipped.
+    write(
+      'foreign.md',
+      `'${JWT}': patch\n'${NODE}': patch`,
+      'fix: tighten a detection\n\n' +
+        '`detect-object-injection` no longer flags a const dispatch table.',
+    );
+    const found = rules(lint(dir, PRIVACY));
+    expect(found).toContain('CS010');
+    expect(found).not.toContain('CS009');
+  });
+
+  it('reports a rule named only in the title, not just the body', () => {
+    // parse() splits the title out of `body` entirely, so a scan that only
+    // reads `body` misses a rule named in a one-line summary with no body
+    // paragraph at all.
+    write(
+      'foreign-title.md',
+      `'${JWT}': patch\n'${NODE}': patch`,
+      'fix: tighten `detect-object-injection`',
+    );
+    expect(rules(lint(dir, PRIVACY))).toContain('CS010');
+  });
+
+  it('does not report when every named rule belongs to a listed package', () => {
+    write(
+      'in-scope.md',
+      `'${JWT}': patch\n'${NODE}': patch`,
+      'fix: two detections we were missing\n\n' +
+        '`crypto.pseudoRandomBytes()` is now reported by `no-math-random-crypto`.\n\n' +
+        '`no-decode-without-verify` and `require-expiration` skip test files.',
+    );
+    expect(rules(lint(dir, PRIVACY))).not.toContain('CS010');
+  });
+
+  it('never reports a single-package changeset, whatever it names', () => {
+    write(
+      'single.md',
+      `'${JWT}': patch`,
+      'fix: tighten a detection\n\n' +
+        '`detect-object-injection` no longer flags a const dispatch table.',
+    );
+    expect(rules(lint(dir, PRIVACY))).not.toContain('CS010');
+  });
+
+  it('reports even when the listed packages also mix each other’s rules (CS009 and CS010 are independent)', () => {
+    write(
+      'both.md',
+      `'${JWT}': patch\n'${NODE}': patch\n'${SECURE}': patch`,
+      'fix: three detections\n\n' +
+        '`no-math-random-crypto` (node-security) and ' +
+        '`no-decode-without-verify` (jwt-security) were tightened; ' +
+        '`detect-object-injection` was also touched.',
+    );
+    // detect-object-injection is secure-coding's own rule and secure-coding
+    // IS listed here, so this fixture only exercises CS009 (cross-contamination
+    // among listed packages) — included to document the two checks compose
+    // without interfering, not to assert CS010 on its own.
+    const found = rules(lint(dir, PRIVACY));
+    expect(found).toContain('CS009');
+    expect(found).not.toContain('CS010');
+  });
+});

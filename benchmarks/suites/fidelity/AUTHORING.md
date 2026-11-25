@@ -98,6 +98,13 @@ keep those domains small. `settings` works with or without `files`.
 `imports.cjs` renders every import spelling (`importOf(form, spec)`) for the
 import-next models.
 
+## Rules that lint Markdown
+
+A rule that reads agent guidance (`CLAUDE.md`, `SKILL.md`, `.claude/agents/*.md`)
+sets `markdown: true`: the input is linted with `@eslint/markdown`'s
+`markdown/gfm` language, and `filename` (an `.md` path) decides what kind of
+file it is. `files` and `config` work as for any other model.
+
 ## When the model and the rule disagree
 
 Decide which one is wrong, from the rule's documented contract:

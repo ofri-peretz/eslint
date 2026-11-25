@@ -1,0 +1,582 @@
+{
+  "rule": "no-children-prop",
+  "source": "eslint-plugin-react@7.37.5 tests/lib/rules/no-children-prop.js (MIT)",
+  "cases": [
+    {
+      "kind": "valid",
+      "n": 111,
+      "code": "<MyComponent children={() => {}} />;\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 113,
+      "code": "<MyComponent children={() => {}} />;\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 114,
+      "code": "<MyComponent children={function() {}} />;\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 116,
+      "code": "<MyComponent children={function() {}} />;\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 117,
+      "code": "<MyComponent children={async function() {}} />;\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 119,
+      "code": "<MyComponent children={async function() {}} />;\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 120,
+      "code": "<MyComponent children={function* () {}} />;\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 122,
+      "code": "<MyComponent children={function* () {}} />;\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 123,
+      "code": "React.createElement(MyComponent, {children: () => {}});\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 125,
+      "code": "React.createElement(MyComponent, {children: () => {}});\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 126,
+      "code": "React.createElement(MyComponent, {children: function() {}});\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 128,
+      "code": "React.createElement(MyComponent, {children: function() {}});\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 129,
+      "code": "React.createElement(MyComponent, {children: async function() {}});\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 131,
+      "code": "React.createElement(MyComponent, {children: async function() {}});\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 132,
+      "code": "React.createElement(MyComponent, {children: function* () {}});\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "valid",
+      "n": 134,
+      "code": "React.createElement(MyComponent, {children: function* () {}});\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 45,
+      "code": "<MyComponent>{() => {}}</MyComponent>;\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 47,
+      "code": "<MyComponent>{() => {}}</MyComponent>;\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 48,
+      "code": "<MyComponent>{function() {}}</MyComponent>;\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 50,
+      "code": "<MyComponent>{function() {}}</MyComponent>;\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 51,
+      "code": "<MyComponent>{async function() {}}</MyComponent>;\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 53,
+      "code": "<MyComponent>{async function() {}}</MyComponent>;\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 54,
+      "code": "<MyComponent>{function* () {}}</MyComponent>;\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 56,
+      "code": "<MyComponent>{function* () {}}</MyComponent>;\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 57,
+      "code": "React.createElement(MyComponent, {}, () => {});\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 59,
+      "code": "React.createElement(MyComponent, {}, () => {});\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 60,
+      "code": "React.createElement(MyComponent, {}, function() {});\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 62,
+      "code": "React.createElement(MyComponent, {}, function() {});\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 63,
+      "code": "React.createElement(MyComponent, {}, async function() {});\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 65,
+      "code": "React.createElement(MyComponent, {}, async function() {});\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 66,
+      "code": "React.createElement(MyComponent, {}, function* () {});\n// features: [], parser: default, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 68,
+      "code": "React.createElement(MyComponent, {}, function* () {});\n// features: [], parser: @typescript-eslint/parser, options: [{\"allowFunctions\":true}]",
+      "errors": 1,
+      "options": [
+        {
+          "allowFunctions": true
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    }
+  ]
+}

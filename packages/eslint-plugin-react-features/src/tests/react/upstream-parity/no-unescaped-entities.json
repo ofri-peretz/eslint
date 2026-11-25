@@ -1,0 +1,181 @@
+{
+  "rule": "no-unescaped-entities",
+  "source": "eslint-plugin-react@7.37.5 tests/lib/rules/no-unescaped-entities.js (MIT)",
+  "cases": [
+    {
+      "kind": "invalid",
+      "n": 3,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <>foo & bar</>;\n          }\n        });\n      \n// features: [fragment], parser: default, options: [{\"forbid\":[\"&\"]}]",
+      "errors": 1,
+      "options": [
+        {
+          "forbid": ["&"]
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 5,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <>foo & bar</>;\n          }\n        });\n      \n// features: [fragment], parser: @typescript-eslint/parser, options: [{\"forbid\":[\"&\"]}]",
+      "errors": 1,
+      "options": [
+        {
+          "forbid": ["&"]
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 6,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <span>foo & bar</span>;\n          }\n        });\n      \n// features: [], parser: default, options: [{\"forbid\":[\"&\"]}]",
+      "errors": 1,
+      "options": [
+        {
+          "forbid": ["&"]
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 8,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <span>foo & bar</span>;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"forbid\":[\"&\"]}]",
+      "errors": 1,
+      "options": [
+        {
+          "forbid": ["&"]
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 9,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <span>foo & bar</span>;\n          }\n        });\n      \n// features: [], parser: default, options: [{\"forbid\":[{\"char\":\"&\",\"alternatives\":[\"&amp;\"]}]}]",
+      "errors": 1,
+      "options": [
+        {
+          "forbid": [
+            {
+              "char": "&",
+              "alternatives": ["&amp;"]
+            }
+          ]
+        }
+      ],
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 11,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <span>foo & bar</span>;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser, options: [{\"forbid\":[{\"char\":\"&\",\"alternatives\":[\"&amp;\"]}]}]",
+      "errors": 1,
+      "options": [
+        {
+          "forbid": [
+            {
+              "char": "&",
+              "alternatives": ["&amp;"]
+            }
+          ]
+        }
+      ],
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      }
+    },
+    {
+      "kind": "invalid",
+      "n": 0,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <div>'</div>;\n          }\n        });\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 2,
+      "code": "\n        var Hello = createReactClass({\n          render: function() {\n            return <div>'</div>;\n          }\n        });\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 1
+    },
+    {
+      "kind": "invalid",
+      "n": 12,
+      "code": "\n        <script>window.foo = \"bar\"</script>\n      \n// features: [], parser: default",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 2
+    },
+    {
+      "kind": "invalid",
+      "n": 14,
+      "code": "\n        <script>window.foo = \"bar\"</script>\n      \n// features: [], parser: @typescript-eslint/parser",
+      "parser": "@typescript-eslint/parser",
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "errors": 2
+    }
+  ]
+}

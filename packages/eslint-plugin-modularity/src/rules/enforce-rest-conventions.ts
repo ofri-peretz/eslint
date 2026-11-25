@@ -195,6 +195,17 @@ export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
         const [options = {}] = currentOptions();
         ({ checkStatusCodes = true, checkResourceNaming = true } =
           options || {});
+        // A test registers throwaway routes named for the case it exercises
+        // (`/multi-cookie`, `/error`); a fixture app has no public surface for
+        // naming advice to improve. Filename only: a `test/` directory is not
+        // exempted, because plenty of source lives under one.
+        if (
+          /\.(test|spec)\.[cm]?[jt]sx?$/.test(context.filename) ||
+          /(^|[\\/])__tests__[\\/]/.test(context.filename)
+        ) {
+          return false;
+        }
+        return true;
       },
       CallExpression: checkCallExpression,
     };

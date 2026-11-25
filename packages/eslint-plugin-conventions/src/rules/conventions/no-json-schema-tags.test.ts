@@ -293,14 +293,11 @@ describe('no-json-schema-tags', () => {
       ],
     });
 
-    ruleTester.run(
-      'invalid - multiple JSON Schema tags',
-      noJsonSchemaTags,
-      {
-        valid: [],
-        invalid: [
-          {
-            code: `
+    ruleTester.run('invalid - multiple JSON Schema tags', noJsonSchemaTags, {
+      valid: [],
+      invalid: [
+        {
+          code: `
               /**
                * Port number.
                * @minimum 1024
@@ -309,13 +306,13 @@ describe('no-json-schema-tags', () => {
                */
               const port = 3000;
             `,
-            errors: [
-              {
-                messageId: 'jsonSchemaTag',
-                suggestions: [
-                  {
-                    messageId: 'moveToDescription',
-                    output: `
+          errors: [
+            {
+              messageId: 'jsonSchemaTag',
+              suggestions: [
+                {
+                  messageId: 'moveToDescription',
+                  output: `
               /**
                * Port number.
                * @maximum 65535
@@ -323,15 +320,15 @@ describe('no-json-schema-tags', () => {
                */
               const port = 3000;
             `,
-                  },
-                ],
-              },
-              {
-                messageId: 'jsonSchemaTag',
-                suggestions: [
-                  {
-                    messageId: 'moveToDescription',
-                    output: `
+                },
+              ],
+            },
+            {
+              messageId: 'jsonSchemaTag',
+              suggestions: [
+                {
+                  messageId: 'moveToDescription',
+                  output: `
               /**
                * Port number.
                * @minimum 1024
@@ -339,98 +336,89 @@ describe('no-json-schema-tags', () => {
                */
               const port = 3000;
             `,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-    );
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
   });
 
   describe('Options — additionalForbiddenTags', () => {
-    ruleTester.run(
-      'options - custom forbidden tags',
-      noJsonSchemaTags,
-      {
-        valid: [
-          // Default tags still pass when not present
-          {
-            code: `
+    ruleTester.run('options - custom forbidden tags', noJsonSchemaTags, {
+      valid: [
+        // Default tags still pass when not present
+        {
+          code: `
               /**
                * @param x - input
                */
               function foo(x) {}
             `,
-            options: [{ additionalForbiddenTags: ['customTag'] }],
-          },
-        ],
-        invalid: [
-          // Custom tag is now forbidden
-          {
-            code: `
+          options: [{ additionalForbiddenTags: ['customTag'] }],
+        },
+      ],
+      invalid: [
+        // Custom tag is now forbidden
+        {
+          code: `
               /**
                * @customTag some value
                */
               function foo() {}
             `,
-            options: [{ additionalForbiddenTags: ['customTag'] }],
-            errors: [
-              {
-                messageId: 'jsonSchemaTag',
-                suggestions: [
-                  {
-                    messageId: 'moveToDescription',
-                    output: `
+          options: [{ additionalForbiddenTags: ['customTag'] }],
+          errors: [
+            {
+              messageId: 'jsonSchemaTag',
+              suggestions: [
+                {
+                  messageId: 'moveToDescription',
+                  output: `
               /**
                */
               function foo() {}
             `,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-    );
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
   });
 
   describe('Suggestions', () => {
-    ruleTester.run(
-      'suggestion - move to description',
-      noJsonSchemaTags,
-      {
-        valid: [],
-        invalid: [
-          {
-            code: `
+    ruleTester.run('suggestion - move to description', noJsonSchemaTags, {
+      valid: [],
+      invalid: [
+        {
+          code: `
               /**
                * The age.
                * @minimum 0
                */
               const age = 25;
             `,
-            errors: [
-              {
-                messageId: 'jsonSchemaTag',
-                suggestions: [
-                  {
-                    messageId: 'moveToDescription',
-                    output: `
+          errors: [
+            {
+              messageId: 'jsonSchemaTag',
+              suggestions: [
+                {
+                  messageId: 'moveToDescription',
+                  output: `
               /**
                * The age.
                */
               const age = 25;
             `,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-    );
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
   });
 });

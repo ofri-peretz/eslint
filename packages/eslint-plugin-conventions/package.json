@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-conventions",
-  "version": "7.0.3",
+  "version": "7.3.0",
   "description": "ESLint conventions rules for team code — enforces filename case, magic-number bans, commented-out code, expiring TODOs, and deprecated-API usage.",
   "type": "commonjs",
   "sideEffects": false,
@@ -57,6 +57,7 @@
     "@interlace/eslint-devkit": "^2.0.4"
   },
   "devDependencies": {
+    "@eslint/markdown": "^9.0.0",
     "@typescript-eslint/parser": "^8.68.0",
     "@typescript-eslint/rule-tester": "^8.68.0"
   },

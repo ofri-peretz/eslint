@@ -26,6 +26,7 @@
         "detect-xss-eslint-flat-config",
         "security-plugins-one-flat-config",
         "eslint-plugin-security-alternatives",
+        "security-alternative-benchmark",
         "nestjs-security-linting-eslint-oxlint-nest-12",
         "upgrade-eslint-10-eslint-plugin-import",
         "eslint-plugin-react-eslint-10",

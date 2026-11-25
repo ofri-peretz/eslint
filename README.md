@@ -12,6 +12,45 @@
   Every finding ships with a CWE, an OWASP mapping, and the fix.
 </p>
 
+SQL and NoSQL injection, XSS sinks, JWT misuse, NestJS and Express hardening, AI SDK misuse, and an
+ESLint 10 drop-in for `eslint-plugin-import`. Each plugin installs on its own, for ESLint or oxlint.
+
+## Install one plugin, catch a real bug
+
+```bash
+npm i -D eslint eslint-plugin-postgresql-security
+```
+
+```js
+// eslint.config.mjs
+import pg from 'eslint-plugin-postgresql-security';
+
+export default [pg.configs.recommended];
+```
+
+```js
+// app.js
+import { Pool } from 'pg';
+const pool = new Pool();
+
+export async function getUser(id) {
+  return pool.query(`SELECT * FROM users WHERE id = '${id}'`); // ← interpolated
+}
+```
+
+```text
+app.js
+  5:21  error  🔒 Unsafe SQL query construction detected (template literal). | CRITICAL
+   Fix: Use parameterized queries ($1, $2) instead of interpolating values.
+   https://owasp.org/www-community/attacks/SQL_Injection   postgresql-security/no-unsafe-query
+```
+
+That message is the whole thesis. **Severity** so you can triage it, **the fix** so
+a human doesn't have to go looking, and **a citation** so an LLM asked to "fix the
+lint errors" produces a parameterized query instead of a plausible-looking escape
+helper. Machine-readable equivalents ship via the
+[SARIF formatter](./packages/eslint-formatter-sarif) for GitHub code scanning.
+
 <!-- Trust signals — every badge here is computed from a live source, not hand-set. -->
 <p align="center">
   <a href="https://github.com/ofri-peretz/eslint/actions/workflows/quality.yml"><img src="https://github.com/ofri-peretz/eslint/actions/workflows/quality.yml/badge.svg?branch=main" alt="Quality Gate" /></a>
@@ -49,42 +88,6 @@
 </p>
 
 ---
-
-## Install one plugin, catch a real bug
-
-```bash
-npm i -D eslint eslint-plugin-postgresql-security
-```
-
-```js
-// eslint.config.mjs
-import pg from 'eslint-plugin-postgresql-security';
-
-export default [pg.configs.recommended];
-```
-
-```js
-// app.js
-import { Pool } from 'pg';
-const pool = new Pool();
-
-export async function getUser(id) {
-  return pool.query(`SELECT * FROM users WHERE id = '${id}'`); // ← interpolated
-}
-```
-
-```text
-app.js
-  5:21  error  🔒 Unsafe SQL query construction detected (template literal). | CRITICAL
-   Fix: Use parameterized queries ($1, $2) instead of interpolating values.
-   https://owasp.org/www-community/attacks/SQL_Injection   postgresql-security/no-unsafe-query
-```
-
-That message is the whole thesis. **Severity** so you can triage it, **the fix** so
-a human doesn't have to go looking, and **a citation** so an LLM asked to "fix the
-lint errors" produces a parameterized query instead of a plausible-looking escape
-helper. Machine-readable equivalents ship via the
-[SARIF formatter](./packages/eslint-formatter-sarif) for GitHub code scanning.
 
 ## Ask your AI assistant to set it up
 
@@ -134,7 +137,7 @@ Using one of these plugins in a public repository and want it listed? Open an is
 
 <!-- AUTO-GENERATED:NUMBERS:START - Do not edit manually -->
 
-**31 published plugins · 499 rules** — 22 security plugins (291 rules), 7 code-quality plugins (110 rules), 2 React plugins (98 rules). <sub>Counts generated 2026-11-18 from the source tree — never hand-typed.</sub>
+**31 published plugins · 512 rules** — 22 security plugins (292 rules), 7 code-quality plugins (115 rules), 2 React plugins (105 rules). <sub>Counts generated 2026-11-24 from the source tree — never hand-typed.</sub>
 
 <!-- AUTO-GENERATED:NUMBERS:END -->
 
@@ -145,12 +148,12 @@ that match your stack; ignore the other twenty-eight.
 
 ### 🔒 Security — languages, platforms & SDKs
 
-<sub>19 plugins · 238 rules</sub>
+<sub>19 plugins · 239 rules</sub>
 
 | Package                                                                                                | Rules | What it catches                                                                                                                                                                                                                                                                         | Docs                                                                                                                                        | Downloads                                                                                              |
 | :----------------------------------------------------------------------------------------------------- | ----: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------- |
 | [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)       |    46 | Detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps                                                                                                                                                                 | [docs](https://eslint.interlace.tools/docs/security/plugin-browser-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)    | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-browser-security?style=flat-square&label=)    |
-| [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security)             |    43 | Detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto                                                                                                                                             | [docs](https://eslint.interlace.tools/docs/security/plugin-node-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)       | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-node-security?style=flat-square&label=)       |
+| [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security)             |    44 | Detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto                                                                                                                                             | [docs](https://eslint.interlace.tools/docs/security/plugin-node-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)       | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-node-security?style=flat-square&label=)       |
 | [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)             |    35 | Detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs                                                                                                                                                        | [docs](https://eslint.interlace.tools/docs/security/plugin-secure-coding?utm_source=github&utm_medium=referral&utm_campaign=monorepo)       | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-secure-coding?style=flat-square&label=)       |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security)   |    19 | Detects prompt injection, system-prompt leaks, hardcoded API keys, and unvalidated model output in generateText and streamText                                                                                                                                                          | [docs](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)  | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security?style=flat-square&label=)  |
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security)       |    16 | Detects NoSQL operator injection, unsafe queries and regex, hardcoded connection strings, and missing TLS                                                                                                                                                                               | [docs](https://eslint.interlace.tools/docs/security/plugin-mongodb-security?utm_source=github&utm_medium=referral&utm_campaign=monorepo)    | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-mongodb-security?style=flat-square&label=)    |
@@ -189,11 +192,11 @@ that match your stack; ignore the other twenty-eight.
 
 ### ✨ Code quality
 
-<sub>6 plugins · 52 rules</sub>
+<sub>6 plugins · 57 rules</sub>
 
 | Package                                                                                        | Rules | What it catches                                                                                                   | Docs                                                                                                                                   | Downloads                                                                                          |
 | :--------------------------------------------------------------------------------------------- | ----: | :---------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------- |
-| [`eslint-plugin-conventions`](https://www.npmjs.com/package/eslint-plugin-conventions)         |    15 | Enforces filename case, magic-number bans, commented-out code, expiring TODOs, and deprecated-API usage           | [docs](https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-conventions?style=flat-square&label=)     |
+| [`eslint-plugin-conventions`](https://www.npmjs.com/package/eslint-plugin-conventions)         |    20 | Enforces filename case, magic-number bans, commented-out code, expiring TODOs, and deprecated-API usage           | [docs](https://eslint.interlace.tools/docs/quality/plugin-conventions?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-conventions?style=flat-square&label=)     |
 | [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability) |    12 | Limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors | [docs](https://eslint.interlace.tools/docs/quality/plugin-maintainability?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-maintainability?style=flat-square&label=) |
 | [`eslint-plugin-reliability`](https://www.npmjs.com/package/eslint-plugin-reliability)         |     9 | Enforces error handling, network timeouts, null checks, and safe type narrowing                                   | [docs](https://eslint.interlace.tools/docs/quality/plugin-reliability?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-reliability?style=flat-square&label=)     |
 | [`eslint-plugin-modularity`](https://www.npmjs.com/package/eslint-plugin-modularity)           |     6 | Enforces DDD value objects and anemic-model checks, naming, REST conventions, and utility isolation               | [docs](https://eslint.interlace.tools/docs/quality/plugin-modularity?utm_source=github&utm_medium=referral&utm_campaign=monorepo)      | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-modularity?style=flat-square&label=)      |
@@ -202,11 +205,11 @@ that match your stack; ignore the other twenty-eight.
 
 ### ⚛️ React
 
-<sub>2 plugins · 98 rules</sub>
+<sub>2 plugins · 105 rules</sub>
 
 | Package                                                                                      | Rules | What it catches                                                                                          | Docs                                                                                                                                  | Downloads                                                                                         |
 | :------------------------------------------------------------------------------------------- | ----: | :------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------ |
-| [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) |    61 | Prop-types, JSX correctness, render performance, and class-to-hooks migration for modern React codebases | [docs](https://eslint.interlace.tools/docs/quality/plugin-react-features?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-react-features?style=flat-square&label=) |
+| [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) |    68 | Prop-types, JSX correctness, render performance, and class-to-hooks migration for modern React codebases | [docs](https://eslint.interlace.tools/docs/quality/plugin-react-features?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-react-features?style=flat-square&label=) |
 | [`eslint-plugin-react-a11y`](https://www.npmjs.com/package/eslint-plugin-react-a11y)         |    37 | WCAG 2.1 rules for ARIA, alt text, keyboard interaction, and focus management, with auto-fixes           | [docs](https://eslint.interlace.tools/docs/quality/plugin-react-a11y?utm_source=github&utm_medium=referral&utm_campaign=monorepo)     | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-react-a11y?style=flat-square&label=)     |
 
 <!-- AUTO-GENERATED:PACKAGE_TABLE:END -->

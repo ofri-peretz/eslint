@@ -1,0 +1,104 @@
+{
+  "comment": "Juice Shop classes, merged over truth/class-map.json. Written before any Juice Shop run from rule names and docs; the incumbent column is built by hand from its rule docs (it has no injection, XSS, redirect, directory-listing or credential rules). An empty list means no rule of that plugin set claims the class. The 'right place, wrong reason' scoring applies to findings inside a truth region from a rule outside the class (for example http:// literal rules on the redirect allowlist).",
+  "classes": {
+    "sql-injection": {
+      "ours": [
+        "secure-coding/no-sql-injection",
+        "sequelize-security/no-unsafe-query"
+      ],
+      "incumbent": []
+    },
+    "nosql-injection": {
+      "ours": [
+        "mongodb-security/no-unsafe-where",
+        "mongodb-security/no-unsafe-query",
+        "mongodb-security/no-operator-injection",
+        "secure-coding/no-sql-injection"
+      ],
+      "incumbent": []
+    },
+    "xss-bypass-sanitizer": {
+      "ours": [
+        "secure-coding/no-improper-sanitization",
+        "secure-coding/no-disabled-template-escaping"
+      ],
+      "incumbent": []
+    },
+    "open-redirect-allowlist": {
+      "ours": ["express-security/no-user-controlled-redirect"],
+      "incumbent": []
+    },
+    "weak-password-hash": {
+      "ours": ["node-security/no-weak-hash-algorithm"],
+      "incumbent": []
+    },
+    "directory-listing": {
+      "ours": ["express-security/no-static-root-exposure"],
+      "incumbent": []
+    },
+    "header-trust-rate-limit": {
+      "ours": [
+        "express-security/no-permissive-trust-proxy",
+        "express-security/require-rate-limiting"
+      ],
+      "incumbent": []
+    },
+    "mass-assignment": {
+      "ours": ["sequelize-security/no-mass-assignment"],
+      "incumbent": []
+    },
+    "exposed-endpoint": {
+      "ours": ["express-security/no-exposed-debug-endpoints"],
+      "incumbent": []
+    },
+    "missing-access-control": {
+      "ours": [
+        "express-security/require-route-authentication",
+        "secure-coding/no-missing-authentication",
+        "secure-coding/require-backend-authorization",
+        "secure-coding/no-privilege-escalation"
+      ],
+      "incumbent": []
+    },
+    "broken-access-control-logic": {
+      "ours": [],
+      "incumbent": []
+    },
+    "insecure-allowlist-url": {
+      "ours": [],
+      "incumbent": []
+    },
+    "prompt-injection": {
+      "ours": [],
+      "incumbent": []
+    },
+    "authz-flaw": {
+      "ours": [],
+      "incumbent": []
+    },
+    "client-route-guard": {
+      "ours": [],
+      "incumbent": []
+    },
+    "security-through-obscurity": {
+      "ours": [],
+      "incumbent": []
+    },
+    "docker-image": {
+      "ours": [],
+      "incumbent": []
+    },
+    "iac-leaked-key": {
+      "ours": [],
+      "incumbent": []
+    },
+    "security-question": {
+      "ours": [],
+      "incumbent": []
+    },
+    "smart-contract": {
+      "ours": [],
+      "incumbent": []
+    }
+  }
+}

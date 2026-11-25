@@ -5,6 +5,126 @@ All notable changes to `eslint-plugin-react-a11y` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.0
+
+### Minor Changes
+
+- **✨ Feature** — eslint-plugin-jsx-a11y's own preset options load, `flatConfigs`, README migration notes
+
+  The option objects in eslint-plugin-jsx-a11y 6.10.2's `recommended` and `strict` presets (`src/index.js`) used to
+  throw "Unexpected property" when enabled. They load now, under a `jsx-a11y` plugin key or this plugin's own.
+
+  Honoured, and tested with cases ported from upstream's test files:
+
+  - `alt-text`: `elements` (a kind left out is not checked) and the `input[type="image"]` key (merged with `inputImage`).
+    A component listed for `input[type="image"]` or `inputImage` is now checked whatever its `type`, as in jsx-a11y; it
+    used to need `type="image"`.
+  - `mouse-events-have-key-events`: `hoverInHandlers` and `hoverOutHandlers`.
+  - `no-static-element-interactions`: `allowExpressionValues`.
+  - `no-noninteractive-element-interactions`: element keys (`body`, `iframe`, `img`, ...) list handlers allowed on that
+    element. Role-named keys such as `alert` and `dialog` are accepted and, as upstream, match nothing.
+  - `control-has-associated-label`: `depth` accepts 0 and above, clamped to 25.
+
+  Accepted and not read: `control-has-associated-label` `includeRoles`. jsx-a11y 6.10.2 declares no such key in the
+  rule schema and reads it nowhere, so it changes no result there either.
+
+  Every preset now sets `languageOptions.parserOptions.ecmaFeatures.jsx` and a config `name`, and `flatConfigs.recommended`
+  and `flatConfigs.strict` are exported as aliases of `configs.recommended` and `configs.strict`.
+
+  README: `react-a11y/img-requires-alt` is `alt-text`, the stray CWE-252 cell on `alt-text` is gone, and a "Migrating from
+  eslint-plugin-jsx-a11y" section states what is and is not compatible. Still not done: `aria-proptypes`, the deprecated
+  `accessible-emoji`, `label-has-for` and `no-onchange`, and `settings['jsx-a11y']`.
+
+## 3.0.10
+
+### Patch Changes
+
+- **🐛 Fix** — `no-missing-aria-labels` accepts a button or link whose text is a JSX expression
+
+  `<button>{_('Open')}</button>`, `<button>{t('save')}</button>`, `<a>{label ?? 'Back'}</a>` and a template literal with
+  an expression are named by their children at runtime. Any expression child now counts as text, as in
+  eslint-plugin-jsx-a11y, except one proven to render nothing: `undefined`, `null`, `void 0`, a boolean, a blank string,
+  an element, or a conditional or logical expression of those. That was most of the 485 hits on readest/readest.
+  `role-supports-aria-props` accepts `aria-posinset`, `aria-setsize` and `aria-expanded` on role `tab` (aria-query).
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.1.2`
+
+## 3.0.9
+
+### Patch Changes
+
+- **🐛 Fix** — `no-missing-aria-labels`: no longer reports `<button><img alt="Save" /></button>`. An intrinsic `<img>` or `<area>` with a non-empty (or dynamic) `alt` names its parent, as `control-has-associated-label` already agreed. An empty or missing `alt`, `aria-hidden`, and a hidden wrapper still report.
+
+## 3.0.8
+
+### Patch Changes
+
+- **🐛 Fix** — an empty descendant and a ternary between text literals in accessible-name checks
+
+  - `control-has-associated-label` and `no-missing-aria-labels` no longer treat
+    an empty intrinsic descendant (`<label><span /></label>`) as label content —
+    a `<span>` with nothing inside gives a screen reader nothing to announce. A
+    custom component descendant still counts, since its render output isn't
+    visible here.
+  - `no-missing-aria-labels` now also recognizes a ternary between two
+    text-like expressions (`{on ? "Turn off" : "Turn on"}`) as text content,
+    closing a gap in the prior fix for text-like expression children.
+
+## 3.0.7
+
+### Patch Changes
+
+- **🐛 Fix** — Fix false positives found linting popular React packages.
+
+  - `no-missing-aria-labels`: an `aria-hidden="true"` control is not in the accessibility tree and needs no name; a `<button>` is named by text in a descendant element (`<button><span>Sign in</span></button>`), unless that element is `aria-hidden`; and a control whose `id` equals the `htmlFor` of a `<label>` with content in the same JSX tree is named, whether the value is a static string or the same template literal written twice. A label with no content, a different template, a label in a nested function, and a `<select>` with only options still report.
+  - `control-has-associated-label`: the same `id` / `htmlFor` naming is recognised.
+
+## 3.0.6
+
+### Patch Changes
+
+- **🐛 Fix** — false positives in react-a11y label/anchor rules and react-features prop/runtime rules
+
+  - `control-has-associated-label` no longer reports a hidden input
+    (`<input type="hidden">`) or any control with a spread attribute
+    (`<input {...props} />`), whose label the call site cannot see.
+  - `no-missing-aria-labels` no longer reports a spread-prop input for the
+    same reason.
+  - `label-has-associated-control` no longer reports a spread-prop label
+    (`<label {...props} />`).
+  - `anchor-has-content` and `control-has-associated-label` no longer report
+    an element passed as a render-prop/`asChild` value
+    (`<Button render={<a href="/docs" />}>`), which is not rendered as
+    written.
+  - `no-is-prefix-prop` (R8) no longer reports `isXxx: boolean` fields on a
+    plain data interface/type alias that is never a component's props —
+    only a type whose own name ends in `Props`.
+  - `react-in-jsx-scope` now also reads `settings.react.runtime: 'automatic'`
+    as a project-wide opt-out, not only a per-file `@jsxRuntime automatic`
+    comment.
+
+## 3.0.5
+
+### Patch Changes
+
+- **📚 Docs** — Getting Started now leads each plugin README, with the ESLint install line and a flat config that loads
+
+  The install block was below the Description and the doctrine, and on 17 of the 31 plugins there was no flat-config snippet on the page at all. `eslint-plugin-secure-coding`'s README showed `...securePlugin.configs.recommended`, which throws `TypeError: ... is not iterable` when pasted, because `configs.recommended` is one object. Every plugin README now opens with `npm install --save-dev eslint <plugin>` and `import { configs } from '<plugin>'` and `export default [configs.recommended]` in an `eslint.config.mjs`, then the Description. A test now loads that snippet in ESLint for every plugin.
+
+  The star banner above the first heading, the footer block with the star counter and the Dev.to ask are replaced by one `## Support` paragraph at the end: report a false positive, or star the repo if the plugin helped.
+
+  `eslint-plugin-import-next` opens with its drop-in grade, read from the newest `benchmarks/results/ilb-import-parity` result with its date: passes 2,035 of 2,135 (95.3%) of eslint-plugin-import 2.32.0's own test cases, measured 2026-11-19.
+
+  Eight taglines now say what the plugin flags instead of "security rules for X" (secure-coding, node-security, browser-security, nestjs-security, express-security, vercel-ai-security, react-a11y, import-next). `eslint-plugin-node-security` adds one proof line: the public repositories that list it, with the date they were checked.
+
+## 3.0.4
+
+### Patch Changes
+
+- **🐛 Fix** — click-events-have-key-events no longer reports onClick on a custom component
+
+  `<Button onClick={go}>` was reported even though `Button` is a component, not a DOM element — it may already render a native `<button>` and be keyboard-operable, and there is no way to see that from the call site. The rule now only checks intrinsic (lower-case) elements, matching upstream `jsx-a11y/click-events-have-key-events`.
+
 ## 3.0.3
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-openai-security",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "ESLint OpenAI SDK security rules — catches dangerouslyAllowBrowser, hardcoded API keys, and system prompts assembled from untrusted input.",
   "type": "commonjs",
   "sideEffects": false,

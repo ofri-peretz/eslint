@@ -5,6 +5,81 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.11
+
+### Patch Changes
+
+- **🐛 Fix** — no-unresolved skips type-only imports and re-exports, as eslint-plugin-import does
+
+  `import type { X } from 'pkg'` and `export type { X } from 'pkg'` are erased, so a package that is not installed is not a resolution failure. eslint-plugin-import returns before resolving when the declaration's `importKind` or `exportKind` is `type` (no-unresolved.js:33, v2.32.0); import-next only allowed this for `@types/*`. An inline `import { type X }` is a value declaration upstream and is still resolved. 72 of 75 extra findings on workadventure were `import type` lines (workadventure/workadventure).
+
+## 4.1.10
+
+### Patch Changes
+
+- **🐛 Fix** — AGENTS.md lists the rules in no preset by name on one line (README.md describes each), so the file an agent loads stays inside its guidance budget.
+
+## 4.1.9
+
+### Patch Changes
+
+- **🐛 Fix** — Fix three false positives from the issue backlog.
+
+  - `no-hardcoded-credentials`: an ambiguous "common password" keyword match
+    (e.g. the string `'password'`) now needs the enclosing slot's own category
+    to actually say "password" (or an unclassified-but-credential-ish name),
+    not merely to end in some unrelated credential word — a route-name list
+    like `SENSITIVE_ROUTE_TOKENS` no longer reports the word `'password'` as a
+    credential (#1557).
+  - `no-missing-null-checks`: a `const` already narrowed truthy by a ternary
+    stays narrowed inside a nested callback declared in the narrowed arm — the
+    binding can never be reassigned before the callback runs. A `let` or a
+    parameter gives no such guarantee and still reports (#1564).
+  - `no-extraneous-dependencies`: a tsconfig `@/` path alias
+    (`"paths": { "@/*": ["./src/*"] }`, the create-next-app / shadcn
+    convention) is never a scoped package — npm scopes need at least one
+    character after `@` — so it is no longer reported as missing when an
+    unmodelled resolver is configured (#1551).
+
+## 4.1.8
+
+### Patch Changes
+
+- **🐛 Fix** — no-empty-named-blocks no longer autofixes a load-bearing import
+
+  An empty `import type {}` beside a same-file `declare module` is what
+  binds that block as an augmentation rather than a fresh ambient module.
+  Still reported, and still offered as a suggestion, but no longer
+  autofixed when a `declare module` for the same specifier exists.
+
+## 4.1.7
+
+### Patch Changes
+
+- **📚 Docs** — Getting Started now leads each plugin README, with the ESLint install line and a flat config that loads
+
+  The install block was below the Description and the doctrine, and on 17 of the 31 plugins there was no flat-config snippet on the page at all. `eslint-plugin-secure-coding`'s README showed `...securePlugin.configs.recommended`, which throws `TypeError: ... is not iterable` when pasted, because `configs.recommended` is one object. Every plugin README now opens with `npm install --save-dev eslint <plugin>` and `import { configs } from '<plugin>'` and `export default [configs.recommended]` in an `eslint.config.mjs`, then the Description. A test now loads that snippet in ESLint for every plugin.
+
+  The star banner above the first heading, the footer block with the star counter and the Dev.to ask are replaced by one `## Support` paragraph at the end: report a false positive, or star the repo if the plugin helped.
+
+  `eslint-plugin-import-next` opens with its drop-in grade, read from the newest `benchmarks/results/ilb-import-parity` result with its date: passes 2,035 of 2,135 (95.3%) of eslint-plugin-import 2.32.0's own test cases, measured 2026-11-19.
+
+  Eight taglines now say what the plugin flags instead of "security rules for X" (secure-coding, node-security, browser-security, nestjs-security, express-security, vercel-ai-security, react-a11y, import-next). `eslint-plugin-node-security` adds one proof line: the public repositories that list it, with the date they were checked.
+
+## 4.1.6
+
+### Patch Changes
+
+- **🐛 Fix** — three false positives and one crash reported by adopters
+
+  - `no-hardcoded-credentials` no longer reports a template placeholder name under a key called `token`. `Replacement.create({ token: 'unsubscribeUrl', value })` (stamhoofd/stamhoofd EmailBuilder.ts and exampleReplacements.ts, four disables) was read as a high-entropy blob because the word check rejected four consonants in a row, which `unsubscribe`, `subscribe`, `construct` and `abstract` all contain. The limit is now five. A value with digits or a real key shape under `token` still reports.
+  - `no-sensitive-data-exposure` no longer reports `` `unexpected key type: ${privateKey.type}` `` (honojs/hono `src/utils/jwt/jws.ts:110`). `type`, `algorithm`, `extractable` and `usages` are CryptoKey's own attributes and cannot carry the key; `privateKey`, `privateKey.pem` and `privateKey.value` still report.
+  - `import-next/no-default-export` no longer throws on `export default class {}` in plain JavaScript. espree gives a class no `decorators` field and the 4.1.2 autofix read its `length`.
+
+- **📚 Docs** — the npm description and keywords now say what people search for
+
+  The description reads "ESLint import rules — eslint-plugin-import replacement for ESLint 10 (and 8, 9)", keeps the 95% measurement and says flat config only; the "3.1x faster" claim is out of the one-line description. Five keywords added: `eslint-plugin-import-replacement`, `eslint-10`, `eslint10`, `flat-config`, `peer-dependency`. No code change.
+
 ## 4.1.5
 
 ### Patch Changes

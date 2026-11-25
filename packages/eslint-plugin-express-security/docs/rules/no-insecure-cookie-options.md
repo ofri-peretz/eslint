@@ -47,6 +47,14 @@ Required flags:
 - `secure: true` - Cookie only sent over HTTPS
 - `sameSite: 'strict'` or `'lax'` - CSRF protection
 
+### Framework cookie jars
+
+The rule also reads `cookies.set(name, value, options)` in files that import Astro (`astro`, `astro:*`), Qwik City
+(`@builder.io/qwik-city`) or `next/headers`, whose jars write only the attributes they are given. Only a
+credential-named cookie (`token`, `session`, `sid`, `auth`, `jwt`, `secret`, `credential`, `password`, `login` as a word
+of the name) is judged, and only for `httpOnly` and `secure`. SvelteKit and Koa default `httpOnly` on and `js-cookie`
+runs in the browser, so a bare `cookies.set` with no such import is not reported.
+
 ## Examples
 
 ### ❌ Incorrect

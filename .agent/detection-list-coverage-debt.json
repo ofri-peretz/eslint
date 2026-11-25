@@ -211,21 +211,12 @@
   ],
   "packages/eslint-plugin-node-security/src/rules/no-buffer-overread/index.ts#DEFAULT_BUFFER_METHODS": [
     "readBigInt64BE",
-    "readBigInt64LE",
-    "readBigUInt64LE",
     "readDoubleBE",
-    "readDoubleLE",
     "readFloatBE",
-    "readFloatLE",
     "readInt16BE",
-    "readInt16LE",
-    "readInt32BE",
     "readInt32LE",
-    "readInt8",
-    "readIntBE",
     "readIntLE",
-    "readUIntLE",
-    "writeUInt32LE"
+    "readUIntLE"
   ],
   "packages/eslint-plugin-node-security/src/rules/no-math-random-crypto/index.ts#CRYPTO_WORDS": [
     "cipher",
@@ -313,14 +304,7 @@
     "row",
     "tablist",
     "toolbar",
-    "tree",
     "treegrid"
-  ],
-  "packages/eslint-plugin-react-a11y/src/rules/no-noninteractive-element-interactions.ts#INTERACTIVE_HANDLERS": [
-    "onKeyPress",
-    "onKeyUp",
-    "onMouseDown",
-    "onMouseUp"
   ],
   "packages/eslint-plugin-react-a11y/src/rules/no-static-element-interactions.ts#INTERACTIVE_HANDLERS": [
     "onKeyDown",
@@ -343,8 +327,7 @@
     "notreal",
     "redacted",
     "tbd",
-    "todo",
-    "yours"
+    "todo"
   ],
   "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-credentials/index.ts#PUBLISHABLE_VENDORS": [
     "bugsnag-js",
@@ -450,7 +433,6 @@
     "xml2json"
   ],
   "packages/eslint-plugin-secure-coding/src/rules/no-xxe-injection/index.ts#DEFAULT_XML_PARSE_METHODS": [
-    "parseStringPromise",
     "parseXmlAsync"
   ],
   "packages/eslint-plugin-secure-coding/src/rules/require-backend-authorization/index.ts#DEFAULT_AUTH_PROPERTIES": [

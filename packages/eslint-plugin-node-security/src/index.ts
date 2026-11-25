@@ -53,6 +53,7 @@ import { requireAeadTagVerification } from './rules/require-aead-tag-verificatio
 import { noUnboundedDecompression } from './rules/no-unbounded-decompression';
 import { noInsecureHttpParser } from './rules/no-insecure-http-parser';
 import { requireStreamErrorHandler } from './rules/require-stream-error-handler';
+import { requireEmitterErrorHandler } from './rules/require-emitter-error-handler';
 
 import { TSESLint, withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
@@ -109,6 +110,7 @@ export const rules: Record<
   'no-unbounded-decompression': noUnboundedDecompression,
   'no-insecure-http-parser': noInsecureHttpParser,
   'require-stream-error-handler': requireStreamErrorHandler,
+  'require-emitter-error-handler': requireEmitterErrorHandler,
 };
 
 /**
@@ -124,7 +126,7 @@ withCanonicalDocsUrls('plugin-node-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-node-security',
-    version: '6.0.7',
+    version: '6.2.0',
   },
   rules,
 };

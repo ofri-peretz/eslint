@@ -38,14 +38,17 @@ describe('no-unsafe-deserialization', () => {
         },
         // Safe libraries
         {
+          name: 'a project-named safe parser is not a deserialization sink',
           code: 'const data = safeJsonParse(input);',
         },
         // Non-deserialization operations
         {
+          name: 'an ordinary call on input is not a deserializer',
           code: 'const result = calculate(input);',
         },
         // Validated input
         {
+          name: 'JSON.parse of validated input is not a deserialization sink',
           code: 'const cleanData = validateInput(req.body); const obj = JSON.parse(cleanData);',
         },
       ],
@@ -63,6 +66,7 @@ describe('no-unsafe-deserialization', () => {
           errors: [{ messageId: 'unsafeDeserialization' }],
         },
         {
+          name: 'deserializing the content of a file the code reads is still untrusted data',
           code: `
             const fs = require('fs');
             const data = fs.readFileSync('data.json');
@@ -159,6 +163,7 @@ describe('no-unsafe-deserialization', () => {
       invalid: [
         // The sink that IS dangerous, on the same method-name shape.
         {
+          name: 'js-yaml load of a request body can construct arbitrary objects',
           code: 'const yaml = require("js-yaml"); const obj = yaml.load(req.body.doc);',
           errors: [{ messageId: 'unsafeYamlParsing' }],
         },
@@ -167,11 +172,13 @@ describe('no-unsafe-deserialization', () => {
         // required the binding to be spelled `yaml` was reading a variable name,
         // not an interface, and this line was silent.
         {
+          name: 'js-yaml load of a request body document is unsafe deserialization',
           code: 'import jsyaml from "js-yaml"; export const obj = jsyaml.load(req.body.doc);',
           errors: [{ messageId: 'unsafeYamlParsing' }],
         },
         // REGRESSION LOCK — the named-import form js-yaml's own v4 README uses.
         {
+          name: 'a named js-yaml load import fed a request body is unsafe deserialization',
           code: 'import { load } from "js-yaml"; export const obj = load(req.body.doc);',
           errors: [{ messageId: 'unsafeDeserialization' }],
         },

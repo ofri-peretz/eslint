@@ -190,6 +190,44 @@ function isStaticStringNode(node: TSESTree.Node): boolean {
 }
 
 /**
+ * `Function('return this')` — the portable way to ask the engine for the global
+ * object (lodash, core-js, regenerator-runtime, Vite's env.ts). The body is
+ * fixed, there is nothing to steer, and it takes no parameters. Only that probe:
+ * `return this`, `return globalThis`, with an optional strict-mode prologue and
+ * a trailing semicolon. Any other literal body is a program and is judged as one.
+ */
+// Quote characters are written \x22 / \x27 so the audit's comment stripper (which
+// keeps string literals) is not fooled into reading the rest of the file as one.
+const GLOBAL_PROBE =
+  /^\s*(?:[\x22\x27]use strict[\x22\x27]\s*;\s*)?return\s+(?:this|globalThis)\s*;?\s*$/;
+function isGlobalObjectProbe(
+  args: readonly TSESTree.CallExpressionArgument[],
+): boolean {
+  if (args.length !== 1) return false;
+  // `null` (an argument that is not a static string) has no `match`.
+  return staticString(args[0])?.match(GLOBAL_PROBE) != null;
+}
+
+/**
+ * `new Function('s', 'return import(s)')` — the standard way to keep a
+ * TypeScript or bundler build from rewriting `import()` into `require()` when
+ * loading an ESM-only package from CommonJS. The body is fixed, its one
+ * parameter is the specifier, and the only thing it does is what `import(s)`
+ * written directly does, which this rule does not report. Exactly one
+ * parameter, and a body that is `return import(<that parameter>)`.
+ */
+const DYNAMIC_IMPORT_BODY =
+  /^\s*return\s+import\(\s*([A-Za-z_$][\w$]*)\s*\)\s*;?\s*$/;
+function isDynamicImportWrapper(
+  args: readonly TSESTree.CallExpressionArgument[],
+): boolean {
+  if (args.length !== 2) return false;
+  const parameter = staticString(args[0]);
+  const body = staticString(args[1])?.match(DYNAMIC_IMPORT_BODY);
+  return parameter !== null && body != null && body[1] === parameter.trim();
+}
+
+/**
  * Generate refactoring steps based on pattern.
  * Module-scope so it is directly unit-testable (Layer-2).
  */
@@ -259,7 +297,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-eval-with-expression.md',
       description:
-        'Detects strings turned into running code — eval(variable), the Function constructor, and the vm / vm2 sinks that are mistaken for sandboxes',
+        'Detects strings turned into running code: eval(variable), the Function constructor, and vm / vm2 sinks mistaken for sandboxes',
       cwe: 'CWE-95',
       cvss: 9.8,
       confidence: 'high',
@@ -551,6 +589,17 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         // drop-in gate measured on this rule.
         if (node.arguments.length === 0) return;
 
+        // `Function('return this')` asks for the global object; see GLOBAL_PROBE.
+        if (evalName === 'Function' && isGlobalObjectProbe(node.arguments)) {
+          return;
+        }
+
+        // `Function('s', 'return import(s)')` is `import(s)` spelled so a build
+        // leaves it alone; see DYNAMIC_IMPORT_BODY.
+        if (evalName === 'Function' && isDynamicImportWrapper(node.arguments)) {
+          return;
+        }
+
         // Skip a program the author wrote out when literals are allowed —
         // including one hop of single-write constant, the same reading the vm
         // sinks use.
@@ -614,6 +663,8 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         node.callee.type === 'Identifier' &&
         node.callee.name === 'Function' &&
         isGlobalBinding(node.callee) &&
+        !isGlobalObjectProbe(node.arguments) &&
+        !isDynamicImportWrapper(node.arguments) &&
         // `new Function('price', 'total = price * 2')` is an eval-like sink
         // whose parameters and body the author wrote out: with literals
         // allowed, it is as exempt as `eval('…')`.
@@ -770,6 +821,47 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       return constructed !== null && VM2_SANDBOX_CONSTRUCTORS.has(constructed);
     };
 
+    /** Does this subtree contain `<x> instanceof SyntaxError`? */
+    const testsForSyntaxError = (current: unknown): boolean => {
+      if (current === null || typeof current !== 'object') return false;
+      if (Array.isArray(current)) return current.some(testsForSyntaxError);
+      const candidate = current as TSESTree.Node;
+      if (
+        candidate.type === 'BinaryExpression' &&
+        candidate.operator === 'instanceof' &&
+        candidate.right.type === 'Identifier' &&
+        candidate.right.name === 'SyntaxError' &&
+        // The built-in, not a class the file declares under the same name.
+        isGlobalBinding(candidate.right)
+      ) {
+        return true;
+      }
+      return Object.entries(candidate).some(
+        ([key, value]) => key !== 'parent' && testsForSyntaxError(value),
+      );
+    };
+
+    /** `try { new Script(src); } catch (e) { … e instanceof SyntaxError … }` */
+    const isSyntaxProbe = (node: TSESTree.NewExpression): boolean => {
+      if (node.parent?.type !== 'ExpressionStatement') return false;
+      for (
+        let current: TSESTree.Node | undefined = node.parent;
+        current?.parent;
+        current = current.parent
+      ) {
+        const enclosing: TSESTree.Node = current.parent;
+        if (
+          enclosing.type === 'TryStatement' &&
+          enclosing.block === current &&
+          enclosing.handler !== null
+        ) {
+          return testsForSyntaxError(enclosing.handler);
+        }
+        if (/Function/.test(enclosing.type)) return false;
+      }
+      return false;
+    };
+
     const judgeVmSites = (): void => {
       const sandboxes = new Set<string>();
       for (const candidate of vm2SandboxCandidates) {
@@ -802,6 +894,15 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       }
 
       for (const node of pendingVmNews) {
+        // `try { new vm.Script(src); … } catch (e) { if (!(e instanceof
+        // SyntaxError)) … }` compiles and throws the result away, and the
+        // handler is there to learn whether the source parsed. Nothing holds
+        // the script, so nothing can ever run it: a syntax probe
+        // (`@nestjs/swagger` `lib/swagger-ui/helpers.ts`). Both halves are
+        // required. A discarded script with no SyntaxError handler is still
+        // reported, and so is a script that is kept, chained
+        // (`.runInContext`) or passed on.
+        if (isSyntaxProbe(node)) continue;
         const name = trailingName(node.callee);
         const vmCtor = resolveModuleMember(
           node.callee,

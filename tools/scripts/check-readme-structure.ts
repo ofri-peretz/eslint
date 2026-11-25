@@ -60,11 +60,12 @@ const packages = fs
 // own — they are three lines between the DOCTRINE markers, under `## Description`.
 // Philosophy said nothing a reader could act on; the section-shaped replacements
 // that followed cost three table-of-contents entries for one thought. The reference
-// is the NestJS npm README: tagline, short Description, then the install command.
+// is the NestJS npm README: tagline, then the install command and a working config,
+// then the Description (README audit 2026-11-20: the install block was 79 to 133 lines down).
 // `scripts/sync-readme-rules.ts` generates them, so they cannot drift across packages.
 const REQUIRED_ORDER = [
-  '## Description',
   '## Getting Started',
+  '## Description',
   '## ⚙️ Configuration Presets',
   '## 📦 Compatibility',
   '## Rules',
@@ -150,7 +151,7 @@ function checkPlugin(pkg: string): Violation | null {
   // order too: Interlace -> ecosystem -> oxlint -> ESLint. Positions are read
   // from the prelude only — a stray mention further down the README must not
   // be able to satisfy the ordering.
-  const prelude = content.slice(0, content.indexOf('## Description') + 1 || content.length);
+  const prelude = content.slice(0, content.search(/^## /m) + 1 || content.length);
   const at = (name: string) => prelude.indexOf(`/logos/${name}.svg`);
   const iInterlace = at('interlace');
   const iOxlint = at('oxlint');

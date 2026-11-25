@@ -24,67 +24,66 @@ const ruleTester = new RuleTester({
 });
 
 describe('no-raw-cross-property-href', () => {
-  ruleTester.run(
-    'no-raw-cross-property-href',
-    noRawCrossPropertyHref,
-    {
-      valid: [
-        // Relative href is internal navigation.
-        { name: 'a relative in-property link', code: '<a href="/docs">docs</a>;' },
-        { code: '<a href="#section">jump</a>;' },
-        // Third-party hosts (not in the cross-property list) pass.
-        { code: '<a href="https://github.com/ofri-peretz/eslint">gh</a>;' },
-        { code: '<a href="https://npmjs.com/package/eslint">npm</a>;' },
-        { code: '<a href="https://dev.to/ofriperetzdev">blog</a>;' },
-        { code: '<a href="https://example.com/path">x</a>;' },
-        // Expression-wrapped href is the escape hatch — buildUtmHref result.
-        {
-          code: '<a href={buildUtmHref("https://eslint.interlace.tools/", opts)}>x</a>;',
-        },
-        {
-          code: 'const u = "https://eslint.interlace.tools/"; <a href={u}>x</a>;',
-        },
-        // Non-href JSX attribute is ignored.
-        {
-          code: '<img src="https://ds.interlace.tools/logo.png" alt="x" />;',
-        },
-        // Malformed URL string is not flagged.
-        { code: '<a href="not a url">x</a>;' },
-      ],
-      invalid: [
-        {
-          name: 'a hard-coded absolute URL to another property',
-          code: '<a href="https://eslint.interlace.tools/docs">x</a>;',
-          errors: [{ messageId: 'rawCrossPropertyHref' }],
-        },
-        {
-          code: '<a href="https://ds.interlace.tools/components/button">x</a>;',
-          errors: [{ messageId: 'rawCrossPropertyHref' }],
-        },
-        {
-          code: '<a href="https://serverless.interlace.tools/">x</a>;',
-          errors: [{ messageId: 'rawCrossPropertyHref' }],
-        },
-        {
-          code: '<a href="https://storybook.interlace.tools/">x</a>;',
-          errors: [{ messageId: 'rawCrossPropertyHref' }],
-        },
-        {
-          code: '<a href="https://interlace.tools/">x</a>;',
-          errors: [{ messageId: 'rawCrossPropertyHref' }],
-        },
-        {
-          code: '<a href="https://ofriperetz.dev/articles">x</a>;',
-          errors: [{ messageId: 'rawCrossPropertyHref' }],
-        },
-        // Casing of the host is normalized.
-        {
-          code: '<a href="https://ESLint.Interlace.Tools/docs">x</a>;',
-          errors: [{ messageId: 'rawCrossPropertyHref' }],
-        },
-      ],
-    },
-  );
+  ruleTester.run('no-raw-cross-property-href', noRawCrossPropertyHref, {
+    valid: [
+      // Relative href is internal navigation.
+      {
+        name: 'a relative in-property link',
+        code: '<a href="/docs">docs</a>;',
+      },
+      { code: '<a href="#section">jump</a>;' },
+      // Third-party hosts (not in the cross-property list) pass.
+      { code: '<a href="https://github.com/ofri-peretz/eslint">gh</a>;' },
+      { code: '<a href="https://npmjs.com/package/eslint">npm</a>;' },
+      { code: '<a href="https://dev.to/ofriperetzdev">blog</a>;' },
+      { code: '<a href="https://example.com/path">x</a>;' },
+      // Expression-wrapped href is the escape hatch — buildUtmHref result.
+      {
+        code: '<a href={buildUtmHref("https://eslint.interlace.tools/", opts)}>x</a>;',
+      },
+      {
+        code: 'const u = "https://eslint.interlace.tools/"; <a href={u}>x</a>;',
+      },
+      // Non-href JSX attribute is ignored.
+      {
+        code: '<img src="https://ds.interlace.tools/logo.png" alt="x" />;',
+      },
+      // Malformed URL string is not flagged.
+      { code: '<a href="not a url">x</a>;' },
+    ],
+    invalid: [
+      {
+        name: 'a hard-coded absolute URL to another property',
+        code: '<a href="https://eslint.interlace.tools/docs">x</a>;',
+        errors: [{ messageId: 'rawCrossPropertyHref' }],
+      },
+      {
+        code: '<a href="https://ds.interlace.tools/components/button">x</a>;',
+        errors: [{ messageId: 'rawCrossPropertyHref' }],
+      },
+      {
+        code: '<a href="https://serverless.interlace.tools/">x</a>;',
+        errors: [{ messageId: 'rawCrossPropertyHref' }],
+      },
+      {
+        code: '<a href="https://storybook.interlace.tools/">x</a>;',
+        errors: [{ messageId: 'rawCrossPropertyHref' }],
+      },
+      {
+        code: '<a href="https://interlace.tools/">x</a>;',
+        errors: [{ messageId: 'rawCrossPropertyHref' }],
+      },
+      {
+        code: '<a href="https://ofriperetz.dev/articles">x</a>;',
+        errors: [{ messageId: 'rawCrossPropertyHref' }],
+      },
+      // Casing of the host is normalized.
+      {
+        code: '<a href="https://ESLint.Interlace.Tools/docs">x</a>;',
+        errors: [{ messageId: 'rawCrossPropertyHref' }],
+      },
+    ],
+  });
 });
 
 describe('no-raw-cross-property-href: the href in an expression container', () => {

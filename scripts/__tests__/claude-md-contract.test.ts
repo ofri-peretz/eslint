@@ -52,14 +52,21 @@ const SCRIPTS: Record<string, string> = JSON.parse(
   readFileSync(join(ROOT, 'package.json'), 'utf8'),
 ).scripts;
 
-/** Every `name:` a workflow job declares, at job indentation. */
+/**
+ * The context each workflow job reports under: its `name:` when it declares one, else its id
+ * (an unnamed job such as `review` is displayed, and required, by its id).
+ */
 function workflowJobNames(): Set<string> {
   const dir = join(ROOT, '.github', 'workflows');
   const names = new Set<string>();
   for (const file of readdirSync(dir).filter((f) => /\.ya?ml$/.test(f))) {
     const text = readFileSync(join(dir, file), 'utf8');
-    for (const match of text.matchAll(/^ {4}name:\s*(.+)$/gm)) {
-      names.add(match[1].trim().replace(/^['"]|['"]$/g, ''));
+    const jobs = text.slice(text.search(/^jobs:\s*$/m));
+    const blocks = jobs.split(/^ {2}(?=[A-Za-z0-9_-]+:\s*$)/m).slice(1);
+    for (const block of blocks) {
+      const id = block.slice(0, block.indexOf(':'));
+      const named = /^ {4}name:\s*(.+)$/m.exec(block);
+      names.add(named ? named[1].trim().replace(/^['"]|['"]$/g, '') : id);
     }
   }
   return names;
@@ -67,7 +74,7 @@ function workflowJobNames(): Set<string> {
 
 /** The check names CLAUDE.md presents as the required set. */
 function documentedChecks(): string[] {
-  const from = DOC.indexOf('Branch protection requires exactly two contexts');
+  const from = DOC.search(/Branch protection requires exactly \w+ contexts/);
   expect(
     from,
     'Neither CLAUDE.md nor ship-a-pr/SKILL.md states which contexts branch protection requires',
@@ -92,6 +99,23 @@ describe('CLAUDE.md describes checks that exist', () => {
       'CLAUDE.md names these as required checks and no workflow declares a ' +
         'job by that name. An agent polling for one waits forever.',
     ).toEqual([]);
+  });
+
+  it('lists exactly the checks setup-branch-protection.sh declares', () => {
+    // The skill said "exactly two contexts" for months after `review` became the
+    // third. The script is the declaration that is re-checked against GitHub, so
+    // the prose is held to it rather than to anyone's memory.
+    const script = readFileSync(
+      join(ROOT, 'scripts', 'setup-branch-protection.sh'),
+      'utf8',
+    );
+    const declared = /^REQUIRED_CHECKS='(.+)'$/m.exec(script);
+    expect(
+      declared,
+      'no REQUIRED_CHECKS line in setup-branch-protection.sh',
+    ).not.toBeNull();
+    const required: string[] = JSON.parse(declared![1]);
+    expect([...documentedChecks()].sort()).toEqual([...required].sort());
   });
 
   it('names the heavy gate, which is the one that blocks', () => {

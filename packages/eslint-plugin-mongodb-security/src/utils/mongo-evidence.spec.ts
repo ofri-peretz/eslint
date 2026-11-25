@@ -22,7 +22,11 @@ import { describe, it, expect } from 'vitest';
 import { parse } from '@typescript-eslint/parser';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
-import { fileUsesMongo, isNativeCollectionHandle } from './mongo-evidence';
+import {
+  fileUsesMongo,
+  fileUsesMongoose,
+  isNativeCollectionHandle,
+} from './mongo-evidence';
 
 function usesMongo(code: string): boolean {
   return fileUsesMongo(parse(code) as unknown as TSESTree.Program);
@@ -231,5 +235,76 @@ describe('fileUsesMongo: collection handle held in a variable', () => {
     ],
   ])('rejects %s', (_label, code) => {
     expect(usesMongo(code)).toBe(false);
+  });
+});
+
+/**
+ * `fileUsesMongoose` is the Mongoose-only subset of the gate. A rule about a
+ * Mongoose feature (middleware hooks) asks it instead of `fileUsesMongo`, so
+ * every arm that only proves the native driver must say no here and every arm
+ * that proves Mongoose must say yes. Each package entry is its own row so that
+ * removing it from the list fails exactly one test.
+ */
+describe('fileUsesMongoose', () => {
+  const parseProgram = (code: string): TSESTree.Program =>
+    parse(code) as unknown as TSESTree.Program;
+  const usesMongoose = (code: string): boolean =>
+    fileUsesMongoose(parseProgram(code));
+
+  it.each([
+    ['mongoose', `import mongoose from 'mongoose';`],
+    ['@nestjs/mongoose', `import { InjectModel } from '@nestjs/mongoose';`],
+    ['@typegoose/typegoose', `import { prop } from '@typegoose/typegoose';`],
+    ['a mongoose-* plugin', `import paginate from 'mongoose-paginate-v2';`],
+    ['a *-mongoose plugin', `import plm from 'passport-local-mongoose';`],
+    ['a re-export', `export * from 'mongoose';`],
+    ['a named re-export', `export { Schema } from 'mongoose';`],
+    ['require', `const m = require('mongoose');`],
+    ['a dynamic import', `async function f() { return import('mongoose'); }`],
+    ['import-equals', `import m = require('mongoose');`],
+    ['a binding named mongoose', `const mongoose = require('./config/db');`],
+    ['new Schema', `const s = new Schema({ name: String });`],
+    ['new mongoose.Schema', `const s = new db.Schema({ name: String });`],
+    ['Types.ObjectId', `const id = Types.ObjectId(raw);`],
+    ['.lean()', `const rows = await Query.find({}).lean();`],
+  ])('is Mongoose: %s', (_name, code) => {
+    expect(usesMongoose(code)).toBe(true);
+  });
+
+  it.each([
+    ['the mongodb driver', `import { MongoClient } from 'mongodb';`],
+    ['mongodb through require', `const { MongoClient } = require('mongodb');`],
+    ['bson', `import { ObjectId } from 'bson';`],
+    ['connect-mongo', `import MongoStore from 'connect-mongo';`],
+    ['mongodb-client-encryption', `import 'mongodb-client-encryption';`],
+    ['new ObjectId()', `const id = new ObjectId(raw);`],
+    ['a connection string', `const uri = 'mongodb://localhost:27017/app';`],
+    [
+      'a chained native collection call',
+      `countlyDb.collection('apps').updateOne({ _id: id }, { $set: s }, cb);`,
+    ],
+    [
+      'a Schema from another library',
+      `import { Schema } from 'avsc';\nnew Schema({ name: String });`,
+    ],
+    ['a relative import', `import { User } from './models/user';`],
+    ['nothing', `const x = 1;`],
+  ])('is not Mongoose: %s', (_name, code) => {
+    expect(usesMongoose(code)).toBe(false);
+  });
+
+  it('answers a second ask for the same program from its cache', () => {
+    const ast = parseProgram(`import mongoose from 'mongoose';`);
+    expect(fileUsesMongoose(ast)).toBe(true);
+    expect(fileUsesMongoose(ast)).toBe(true);
+  });
+
+  it('keeps the wider gate open for the native-only evidence', () => {
+    expect(usesMongo(`import { MongoClient } from 'mongodb';`)).toBe(true);
+    expect(usesMongo(`const id = new ObjectId(raw);`)).toBe(true);
+    expect(usesMongo(`const uri = 'mongodb://h/db';`)).toBe(true);
+    expect(
+      usesMongo(`db.collection('apps').updateOne({ _id: id }, {}, cb);`),
+    ).toBe(true);
   });
 });

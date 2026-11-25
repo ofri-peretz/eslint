@@ -71,4 +71,5 @@ A sample can be found by more than one plugin, so these add up to more than 74.
 
 - **We wrote this corpus.** It measures the cases our rules were built for, so it says more about what Interlace covers than about how often each tool is right on your code.
 - **On real code, both are noisy.** On 20 open-source projects (3.04M lines), Interlace's `recommended` findings were right 28.6% of the time and `eslint-plugin-security`'s 13.0% (24 findings sampled per side). See [benchmarks](/docs/benchmarks).
+- **On three vulnerable apps:** a separate run on NodeGoat, DVNA and Juice Shop, graded against documented flaws, with the caveats, is on [eslint-plugin-security alternative: measured on NodeGoat, DVNA and Juice Shop](/docs/getting-started/security-alternative-benchmark).
 - **Reproduce it:** `npm run ilb:cwe-corpus` in [ofri-peretz/eslint](https://github.com/ofri-peretz/eslint). The run behind this page is [`benchmarks/results/ilb-cwe-corpus/2026-11-15.json`](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/results/ilb-cwe-corpus/2026-11-15.json), against `eslint-plugin-security` 4.2.1.
