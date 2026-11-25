@@ -5,7 +5,8 @@
  */
 
 /**
- * Regression lock: `oxc-resolver` is an OPTIONAL peer dependency.
+ * Regression lock: `oxc-resolver` is an OPTIONAL peer dependency, and its
+ * absence degrades to a Node-only fallback instead of an error.
  *
  * It ships a ~1.5 MB native NAPI binary that exactly one plugin in this
  * ecosystem actually needs, so it is loaded lazily rather than at module load.
@@ -13,8 +14,9 @@
  *
  *   1. Importing the resolver module must NOT require the binary — otherwise
  *      every consumer is back to downloading it.
- *   2. When the binary is genuinely missing, the failure must be an actionable
- *      install instruction, not a raw MODULE_NOT_FOUND from deep in a lint run.
+ *   2. When the binary is genuinely missing, resolution must still work for the
+ *      common shapes (node_modules, tsconfig paths) via the fallback resolver.
+ *      This replaces the earlier contract that threw MissingResolverPeerError.
  */
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { Module } from 'node:module';
@@ -59,24 +61,58 @@ describe('oxc-resolver optional peer', () => {
     expect(typeof mod.clearResolverCache).toBe('function');
   });
 
-  it('throws an actionable install error when the peer is absent', async () => {
-    const { resolveModule, clearResolverCache, MissingResolverPeerError } =
-      await import('./resolver');
+  it('falls back to Node resolution when the peer is absent', async () => {
+    const { resolveModule, clearResolverCache } = await import('./resolver');
 
     clearResolverCache();
     hideOxcResolver();
 
-    // A bare specifier can't take the relative-path fast path, so this
-    // reaches the lazy load.
-    const attempt = () => resolveModule('some-bare-package', __filename);
+    // Contract change (was: throw MissingResolverPeerError). A missing optional
+    // peer no longer disables import resolution: bare specifiers resolve through
+    // Node's own resolver, and unresolvable ones still return null.
+    expect(resolveModule('vitest', __filename)).toBeTruthy();
+    expect(
+      resolveModule('definitely-not-installed-pkg', __filename),
+    ).toBeNull();
+  });
 
-    // Critically: it must THROW, not return null. `resolveModule` swallows
-    // ordinary resolution failures, and a missing peer disappearing down that
-    // path would silently disable every import rule instead of telling the
-    // user to install it.
-    expect(attempt).toThrow(MissingResolverPeerError);
-    expect(attempt).toThrow(/optional peer dependency "oxc-resolver"/);
-    expect(attempt).toThrow(/npm install --save-dev oxc-resolver/);
+  it('fallback honours tsconfig paths and ESM-only exports', async () => {
+    const { mkdtempSync, mkdirSync, writeFileSync, realpathSync } =
+      await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'devkit-fallback-')));
+    mkdirSync(join(root, 'src/lib'), { recursive: true });
+    mkdirSync(join(root, 'node_modules/esm-only/dist'), { recursive: true });
+    writeFileSync(
+      join(root, 'tsconfig.json'),
+      '{ // comment\n "compilerOptions": { "baseUrl": ".", "paths": { "@lib/*": ["src/lib/*"], }, }, }',
+    );
+    writeFileSync(join(root, 'src/lib/util.ts'), '');
+    writeFileSync(join(root, 'src/main.ts'), '');
+    writeFileSync(
+      join(root, 'node_modules/esm-only/package.json'),
+      '{"name":"esm-only","exports":{".":{"import":"./dist/index.mjs"}}}',
+    );
+    writeFileSync(join(root, 'node_modules/esm-only/dist/index.mjs'), '');
+
+    hideOxcResolver();
+    const { resolveModule, clearResolverCache } = await import('./resolver');
+    clearResolverCache();
+    const from = join(root, 'src/main.ts');
+    expect(resolveModule('@lib/util', from)).toBe(
+      join(root, 'src/lib/util.ts'),
+    );
+    expect(resolveModule('esm-only', from)).toBe(
+      join(root, 'node_modules/esm-only/dist/index.mjs'),
+    );
+  });
+
+  it('still exports the deprecated MissingResolverPeerError class', async () => {
+    const { MissingResolverPeerError } = await import('./resolver');
+    const err = new MissingResolverPeerError('x');
+    expect(err).toBeInstanceOf(Error);
+    expect(err.name).toBe('MissingResolverPeerError');
   });
 
   it('resolves normally when the peer IS installed', async () => {
