@@ -20,6 +20,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
@@ -65,8 +66,14 @@ describe('claude-code-review.yml hands the reviewer the triggered checklist', ()
 });
 
 describe('.claude/settings.json', () => {
+  // The committed blob, not the working copy: in CI's scripts suite the working-copy file was
+  // read without its `permissions` block although the checked-out commit had it (PR 1795).
+  // The lock is about what the repo ships, so read what the repo holds.
   const settings = JSON.parse(
-    readFileSync(join(ROOT, '.claude/settings.json'), 'utf8'),
+    execFileSync('git', ['show', 'HEAD:.claude/settings.json'], {
+      cwd: ROOT,
+      encoding: 'utf8',
+    }),
   ) as { permissions?: { deny?: string[] } };
 
   it.each(['Read(./.env)', 'Read(./.env.local)', 'Read(./**/.env)'])(
