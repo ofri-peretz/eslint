@@ -109,6 +109,10 @@ const claims = jwt.decode(token);
 if (claims.admin) elevate();
 req.user = claims;
 jwt.verify(token, key, { algorithms: ['HS256'] });
+
+// ❌ reported: the claim is the key, so the attacker picks it
+const claims = jwt.decode(token);
+jwt.verify(token, claims.secret, { algorithms: ['HS256'] });
 ```
 
 The analysis follows the claims inside one function, through member reads,

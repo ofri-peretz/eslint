@@ -127,6 +127,33 @@ function check(token) {
 }`,
       },
       {
+        name: 'a read of the binding before the decode is not derived from it',
+        code: `${jsonwebtoken}
+function check(token) {
+  let claims;
+  log(claims);
+  claims = jwt.decode(token);
+  jwt.verify(token, key, { algorithms: ['HS256'] });
+}`,
+      },
+      {
+        name: 'a lookup through new, read for the key',
+        code: `${jsonwebtoken}
+function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, new Keys(claims.tenant).secret, { algorithms: ['HS256'] });
+}`,
+      },
+      {
+        name: 'a claim read into a local that nothing uses before the verify',
+        code: `${jsonwebtoken}
+function check(token) {
+  const tenant = jwt.decode(token).tenant;
+  jwt.verify(token, key, { algorithms: ['HS256'] });
+  return tenant;
+}`,
+      },
+      {
         name: 'an alias of the claims that is only read after the verify',
         code: `${jsonwebtoken}
 function check(token) {
@@ -236,14 +263,6 @@ class S {
       algorithms: ['RS256'],
     });
   }
-}`,
-      },
-      {
-        name: 'a claim choosing between two keys inside the key argument',
-        code: `${jsonwebtoken}
-function check(token) {
-  const claims = jwt.decode(token);
-  jwt.verify(token, claims.admin ? adminKey : userKey, { algorithms: ['HS256'] });
 }`,
       },
       {
@@ -433,6 +452,149 @@ function check(token) {
   const claims = jwt.decode(token);
   leaked = claims.sub;
   jwt.verify(token, key, { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'a claim that is itself the key lets the attacker choose it',
+        code: `${jsonwebtoken}
+function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, claims.secret, { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'a claim copied to a local that is then the key',
+        code: `${jsonwebtoken}
+function check(token) {
+  const claims = jwt.decode(token);
+  const key = claims.secret;
+  jwt.verify(token, key, { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'NestJS: a claim as the secret option is the attacker-chosen key',
+        code: `${nest}
+class S {
+  constructor(private readonly jwtService: JwtService) {}
+  async check(token) {
+    const claims = this.jwtService.decode(token);
+    await this.jwtService.verifyAsync(token, { secret: claims.secret, algorithms: ['HS256'] });
+  }
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'a claim choosing between two keys is a branch on a claim',
+        code: `${jsonwebtoken}
+function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, claims.admin ? adminKey : userKey, { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'a method called on the claims whose result is the key is not a lookup',
+        code: `${jsonwebtoken}
+function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, claims.getKey(), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'a lookup result that nothing reads is not a key lookup',
+        code: `${jsonwebtoken}
+async function check(token) {
+  const claims = jwt.decode(token);
+  const user = await users.findById(claims.sub);
+  jwt.verify(token, key, { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'a compound assignment of a claim to a local is not a plain copy',
+        code: `${jsonwebtoken}
+function check(token) {
+  const claims = jwt.decode(token);
+  let salt = '';
+  salt += claims.sub;
+  jwt.verify(token, secretFor(salt), { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'a claim assigned to a global the scope declares has no local to follow',
+        code: `${jsonwebtoken}
+function check(token) {
+  const claims = jwt.decode(token);
+  Array = claims.sub;
+  jwt.verify(token, key, { algorithms: ['HS256'] });
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'a verify before the decode does not cover claims used after it',
+        code: `${jsonwebtoken}
+function check(token) {
+  jwt.verify(token, key, { algorithms: ['HS256'] });
+  const claims = jwt.decode(token);
+  return claims.sub;
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'the token is the key of another verify, not the verified token',
+        code: `${jsonwebtoken}
+function check(token, other) {
+  const claims = jwt.decode(token);
+  jwt.verify(other, token, { algorithms: ['HS256'] });
+  return claims;
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'the token is only bound to another name',
+        code: `${jsonwebtoken}
+function check(token) {
+  const claims = jwt.decode(token);
+  const alias = token;
+  return claims;
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'a decode with no token',
+        code: `${jsonwebtoken}
+function check() {
+  return jwt.decode();
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'NestJS: a lookup of a claim in an option after the key is not the key',
+        code: `${nest}
+class S {
+  constructor(private readonly jwtService: JwtService) {}
+  async check(token) {
+    const claims = this.jwtService.decode(token);
+    await this.jwtService.verifyAsync(token, {
+      secret: key,
+      algorithms: ['HS256'],
+      audience: audienceFor(claims.tenant),
+    });
+  }
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'a lookup of a claim in the verify callback is not the key',
+        code: `${jsonwebtoken}
+function check(token) {
+  const claims = jwt.decode(token);
+  jwt.verify(token, key, { algorithms: ['HS256'] }, () => grant(lookup(claims.sub)));
 }`,
         errors: [{ messageId: 'decodeWithoutVerify' }],
       },
