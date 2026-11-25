@@ -6,16 +6,22 @@
 // It replaces prose that every CLAUDE.md used to repeat. A rule an agent can break
 // with one command is a check, not a sentence: the denial below is the documentation.
 //
-//   1. Skipping git hooks (--no-verify, `git commit -n`, LEFTHOOK=0/HUSKY=0) — the hooks are the gate.
-//   2. Pointing git at other hooks (`git config core.hooksPath`, `git -c core.hooksPath=`).
-//   3. Hand-rolled CI polling (`until/while … gh … sleep`) — the harness kills those loops
-//      and the turn ends knowing nothing. `gh pr checks <PR> --watch` blocks correctly.
-//   4. Asks (never denies) before a publish: `npm publish`, `changeset publish`, and the
-//      commands the repo lists under `ask` in .claude/hookset.json (deploys, releases).
-//   5. Denies Edit/Write on a path matching a glob the repo lists under `frozen` there.
+//   1. Skipping git hooks (--no-verify and its abbreviations, `git commit -n`, LEFTHOOK=0/HUSKY=0,
+//      also exported earlier in the same command) — the hooks are the gate.
+//   2. Pointing git at other hooks (`git config core.hooksPath`, `git -c core.hooksPath=`,
+//      GIT_CONFIG_KEY_n=core.hooksPath) or removing them (`lefthook uninstall`, rm/mv/chmod .git/hooks).
+//   3. Hand-rolled CI polling (`until/while/for … gh … sleep`, `watch … gh`) — the harness kills
+//      those loops and the turn ends knowing nothing. `gh pr checks <PR> --watch` blocks correctly.
+//   4. Asks (never denies) before a publish: npm/pnpm/yarn/bun `publish`, `unpublish`, `deprecate`,
+//      `dist-tag add|rm`, `changeset publish`, `lerna publish`, and the commands the repo lists
+//      under `ask` in .claude/hookset.json (deploys, releases).
+//   5. Denies Edit/Write on a path matching a glob the repo lists under `frozen` there, and on
+//      a generated file (`generated`: glob -> the command that writes it), naming that command.
 //   6. Denies `git commit` / `git push` run in the foreground under the default 2-minute
 //      timeout: their hooks are the repo's gate and take minutes. The denial names the fix
 //      (timeout 600000 or run_in_background), so no CLAUDE.md has to say "not a hang".
+//   7. Asks before a push that rewrites or deletes remote history: --force, --force-with-lease,
+//      -f, +refspec, --delete, :refspec, --mirror, --prune.
 //
 // Matching is done on tokens, not regexes over the raw command: quoted strings and
 // heredoc bodies are data (commit messages, PR bodies), and no pattern here can backtrack.
@@ -131,7 +137,8 @@ function skipsHooks(words) {
   const env = words.slice(0, words.indexOf("git"));
   const sub = words[s];
   const args = words.slice(s + 1);
-  if (args.includes("--no-verify")) return true;
+  // git takes any unambiguous prefix of a long option: `--no-veri` skips hooks like `--no-verify`.
+  if (args.some((a) => /^--no-veri(f|fy)?$/.test(a))) return true;
   if (
     sub === "commit" &&
     args.some((a) => /^-[a-zA-Z]+$/.test(a) && a.includes("n"))
@@ -141,8 +148,32 @@ function skipsHooks(words) {
   return offEnv && (sub === "commit" || sub === "push");
 }
 
-/** `git config [--global|--local] core.hooksPath x` or `git -c core.hooksPath=x …`. */
+const HOOKS_OFF = /^(LEFTHOOK|HUSKY)=(0|false)$/;
+
+/** `export LEFTHOOK=0; git push`: the variable outlives its own command, so any commit or push after it is unhooked. */
+function hooksOffInShell(cmds) {
+  if (!cmds.some((w) => w.some((x) => HOOKS_OFF.test(x)))) return false;
+  return cmds.some((w) => {
+    const s = gitSub(w);
+    return s !== -1 && (w[s] === "commit" || w[s] === "push");
+  });
+}
+
+const HOOK_FILE_TOOLS = new Set(["rm", "mv", "chmod", "unlink", "truncate", "ln"]);
+
+/** `lefthook uninstall`, `rm .git/hooks/pre-push`, `> .git/hooks/pre-commit`: the hooks are gone. */
+function removesHooks(words) {
+  if (hasPhrase(words, "lefthook uninstall")) return true;
+  const inHooks = (w) => /(^|\/)\.git\/hooks(\/|$)/.test(w.replace(/^>+/, ""));
+  if (words.some((w, i) => inHooks(w) && (w.startsWith(">") || /^>+$/.test(words[i - 1] ?? "")))) return true;
+  const tool = words.findIndex((w) => HOOK_FILE_TOOLS.has(w.split("/").pop()));
+  return tool !== -1 && words.slice(tool + 1).some(inHooks);
+}
+
+/** `git config [--global|--local] core.hooksPath x`, `git -c core.hooksPath=x …`, `GIT_CONFIG_KEY_0=core.hooksPath`. */
 function movesHooks(words) {
+  if (words.some((w) => /^GIT_CONFIG_KEY_\d+=core\.hookspath$/i.test(w))) return true;
+  if (removesHooks(words)) return true;
   const g = words.indexOf("git");
   if (g === -1) return false;
   const rest = words.slice(g + 1);
@@ -161,32 +192,51 @@ function hasPhrase(words, phrase) {
   return false;
 }
 
-export const PUBLISH = ["npm publish", "pnpm publish", "yarn npm publish", "changeset publish"];
+export const PUBLISH = ["npm publish", "pnpm publish", "yarn npm publish", "changeset publish", "lerna publish"];
+
+const PACKAGE_MANAGERS = new Set(["npm", "pnpm", "yarn", "bun"]);
+/** Subcommands that change the registry for everyone: no later command takes them back. */
+const REGISTRY_WRITES = new Set(["publish", "unpublish", "deprecate"]);
 
 /**
- * True when `words` runs `npm` or `pnpm` with `publish` as its subcommand after global options:
- * `npm --access=public publish`, `npm --registry https://r publish`. An option without `=`
- * may take the next word as its value, so that word is skipped unless it is `publish` itself.
+ * The registry write `words` runs, or null: npm, pnpm, yarn or bun (by any path, `/usr/bin/npm`)
+ * with `publish`, `unpublish`, `deprecate` or `dist-tag add|rm` as its subcommand, after global
+ * options: `npm --access=public publish`, `npm --registry https://r publish`. An option without `=`
+ * may take the next word as its value, so that word is skipped unless it is the subcommand itself.
  */
 function publishesAfterOptions(words) {
+  const isWrite = (k) => REGISTRY_WRITES.has(words[k]) || (words[k] === "dist-tag" && /^(add|rm)$/.test(words[k + 1] ?? ""));
   for (let i = 0; i < words.length; i++) {
-    if (words[i] !== "npm" && words[i] !== "pnpm") continue;
+    const tool = words[i].split("/").pop();
+    if (!PACKAGE_MANAGERS.has(tool)) continue;
     let j = i + 1;
     while (j < words.length && words[j].startsWith("-")) {
       // Any option without `=` may take the next word as its value (`--registry url`, `-F pkg`).
       const valued = !words[j].includes("=");
       j++;
-      if (valued && j < words.length && !words[j].startsWith("-") && words[j] !== "publish") j++;
+      if (valued && j < words.length && !words[j].startsWith("-") && !isWrite(j)) j++;
     }
-    if (words[j] === "publish") return `${words[i]} publish`;
+    if (isWrite(j)) return `${tool} ${words[j]}${words[j] === "dist-tag" ? ` ${words[j + 1]}` : ""}`;
   }
   return null;
+}
+
+/** True when `words` is a `git push` that rewrites or deletes history on the remote. */
+function forcePushes(words) {
+  const s = gitSub(words);
+  if (s === -1 || words[s] !== "push") return false;
+  return words.slice(s + 1).some(
+    (a) =>
+      /^--(force|force-with-lease|mirror|delete|prune)(=.*)?$/.test(a) ||
+      (/^-[a-zA-Z]+$/.test(a) && /[fd]/.test(a)) ||
+      /^[+:]./.test(a),
+  );
 }
 
 const RULES = [
   {
     id: "no-verify",
-    test: (cmds) => cmds.some(skipsHooks),
+    test: (cmds) => cmds.some(skipsHooks) || hooksOffInShell(cmds),
     reason:
       "Git hooks are this repo's gate: never skip them (--no-verify, commit -n, LEFTHOOK=0). " +
       "If a hook fails, fix what it reports. If it is slow, wait: commit/push hooks can take 3–4 minutes, " +
@@ -196,15 +246,16 @@ const RULES = [
     id: "hooks-path",
     test: (cmds) => cmds.some(movesHooks),
     reason:
-      "Do not point git at other hooks (core.hooksPath): lefthook installed this repo's hooks and they are the gate. " +
+      "Do not point git at other hooks (core.hooksPath) or remove them (lefthook uninstall, .git/hooks): lefthook installed this repo's hooks and they are the gate. " +
       "If a hook is wrong, fix lefthook.yml or the hookset preset in a PR.",
   },
   {
     id: "ci-poll-loop",
     test: (cmds) => {
       const all = cmds.flat();
+      if (cmds.some((w) => w[0] === "watch" && w.includes("gh"))) return true;
       return (
-        (all.includes("until") || all.includes("while")) &&
+        (all.includes("until") || all.includes("while") || all.includes("for")) &&
         all.includes("gh") &&
         all.includes("sleep")
       );
@@ -231,7 +282,15 @@ export function decide(command, ask = []) {
     return {
       decision: "ask",
       id: "publish",
-      reason: `\`${phrase}\` publishes or deploys outside this repo, and that cannot be undone. A person approves it; CI release workflows are the usual route.`,
+      reason: `\`${phrase}\` changes the package registry outside this repo, and that cannot be undone. A person approves it; CI release workflows are the usual route.`,
+    };
+  if (cmds.some(forcePushes))
+    return {
+      decision: "ask",
+      id: "force-push",
+      reason:
+        "This push rewrites or deletes history on the remote, which other sessions and reviewers may have built on. A person approves it. " +
+        "If a push was rejected because the remote has commits you lack, merge them instead: `git fetch origin <branch> && git merge --no-edit FETCH_HEAD`.",
     };
   const listed = ask.find((p) => cmds.some((w) => hasPhrase(w, p)));
   if (listed)
@@ -271,24 +330,23 @@ export function decideHooked(command, { timeout, run_in_background } = {}) {
 }
 
 /** `*` within a segment, `**` across segments, `?` one character. Paths use forward slashes. */
+const GLOB_TOKEN = /\*\*\/|\*\*|\*|\?|[.+^${}()|[\]\\]/g;
+const GLOB_PART = { "**/": "(?:.*/)?", "**": ".*", "*": "[^/]*", "?": "[^/]" };
 export function globToRegExp(glob) {
-  let re = "";
-  for (let i = 0; i < glob.length; i++) {
-    const ch = glob[i];
-    if (ch === "*" && glob[i + 1] === "*") {
-      re += glob[i + 2] === "/" ? "(?:.*/)?" : ".*";
-      i += glob[i + 2] === "/" ? 2 : 1;
-    } else if (ch === "*") re += "[^/]*";
-    else if (ch === "?") re += "[^/]";
-    else re += /[.+^${}()|[\]\\]/.test(ch) ? `\\${ch}` : ch;
-  }
-  return new RegExp(`^${re}$`);
+  return new RegExp(`^${glob.replace(GLOB_TOKEN, (token) => GLOB_PART[token] ?? `\\${token}`)}$`);
 }
 
 /** The verdict for an Edit/Write on `file` (relative to the repo), or null. */
-export function decideEdit(file, frozen = []) {
+export function decideEdit(file, frozen = [], generated = {}) {
   // posix.normalize folds `a/../b` and `./a`, so a dotted path cannot step around a frozen glob.
   const rel = posix.normalize(String(file ?? "").replaceAll("\\", "/")).replace(/^\.\//, "");
+  const made = Object.entries(generated).find(([g]) => globToRegExp(g).test(rel));
+  if (made)
+    return {
+      decision: "deny",
+      id: "generated",
+      reason: `${rel} is generated (\`${made[0]}\` in .claude/hookset.json). Edit its source, then run \`${made[1]}\`.`,
+    };
   const hit = frozen.find((g) => globToRegExp(g).test(rel));
   return hit
     ? {
@@ -320,6 +378,21 @@ export const CASES = {
     "until gh pr view 5 --json state | grep MERGED; do sleep 30; done",
     "while true; do gh run list; sleep 10; done",
     "until gh workflow view ci; do sleep 5; done",
+    "git push --no-veri origin x",
+    "git commit --no-verif -m x",
+    "export LEFTHOOK=0; git push",
+    "LEFTHOOK=0\ngit commit -m x",
+    "export HUSKY=false && git -C . commit -m x",
+    "lefthook uninstall",
+    "npx lefthook uninstall",
+    "rm .git/hooks/pre-push",
+    "rm -f /repo/.git/hooks/pre-commit",
+    "chmod -x .git/hooks/pre-commit",
+    "mv .git/hooks .git/hooks.off",
+    "echo > .git/hooks/pre-push",
+    "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=/dev/null git push",
+    "for i in 1 2 3; do gh pr checks 5; sleep 30; done",
+    "watch -n 30 gh pr checks 5",
   ],
   allow: [
     'git commit -m "docs: explain why --no-verify is banned"',
@@ -335,6 +408,16 @@ export const CASES = {
     "git log -n 3",
     "git config --get core.hooksPath",
     'echo "npm publish" > notes.txt',
+    'git commit -m "never use --no-veri"',
+    "cat .git/hooks/pre-push",
+    "ls .git/hooks",
+    "git push -u origin feature",
+    "git push origin HEAD:refs/heads/feature",
+    "npm view pkg dist-tags",
+    "npm dist-tag ls pkg",
+    "npm run publish:dry",
+    "for f in a b; do echo $f; done",
+    "LEFTHOOK=0 npm ci && git status",
   ],
   ask: [
     "npm publish --access public",
@@ -345,8 +428,24 @@ export const CASES = {
     "pnpm --filter pkg publish",
     "pnpm -F pkg publish",
     "npm -g publish",
+    "yarn publish",
+    "bun publish",
+    "/usr/local/bin/npm publish",
+    "npm unpublish pkg@1.0.0",
+    "pnpm deprecate pkg@1 old",
+    "npm dist-tag add pkg@1.0.0 latest",
+    "npx lerna publish from-package",
+    "git push --force origin main",
+    "git push -f",
+    "git push -uf origin x",
+    "git push origin +main",
+    "git push --force-with-lease=main origin main",
+    "git push origin :main",
+    "git push --delete origin x",
+    "git push -d origin x",
+    "git push --mirror",
   ],
-  // decideHooked: [command, Bash input, denied?]
+  // decideHooked cases: the command, its Bash input, and whether it is denied.
   hooked: [
     ["git push origin main", {}, true],
     ["git -C repo commit -m x", { timeout: 120000 }, true],
@@ -359,7 +458,17 @@ export const CASES = {
     ["git commit -F - <<'EOF'\nx\nEOF", { timeout: 300000 }, false],
     ["echo 'git push'", {}, false],
   ],
+  // decideEdit: [path, denied as] against EDIT_CONFIG.
+  edit: [
+    ["content/a/b.md", "frozen"],
+    ["./docs/../content/a.md", "frozen"],
+    ["public/r/button.json", "generated"],
+    ["public/r/../r/x.json", "generated"],
+    ["src/button.tsx", null],
+  ],
 };
+
+const EDIT_CONFIG = { frozen: ["content/**/*.md"], generated: { "public/r/**": "npm run registry:build" } };
 
 function selfTest() {
   const bad = [
@@ -369,16 +478,19 @@ function selfTest() {
     ...CASES.hooked
       .filter(([c, input, denied]) => Boolean(decideHooked(c, input)) !== denied)
       .map(([c, input, denied]) => `should ${denied ? "deny" : "allow"} ${JSON.stringify(input)}: ${c}`),
+    ...CASES.edit
+      .filter(([f, id]) => (decideEdit(f, EDIT_CONFIG.frozen, EDIT_CONFIG.generated)?.id ?? null) !== id)
+      .map(([f, id]) => `should ${id ? `deny as ${id}` : "allow"}: edit ${f}`),
   ];
   process.stdout.write(
     bad.length
       ? `${bad.join("\n")}\n${bad.length} failing\n`
-      : `ok: ${CASES.deny.length} denied, ${CASES.allow.length} allowed, ${CASES.ask.length} asked, ${CASES.hooked.length} timed\n`,
+      : `ok: ${CASES.deny.length} denied, ${CASES.allow.length} allowed, ${CASES.ask.length} asked, ${CASES.hooked.length} timed, ${CASES.edit.length} edits\n`,
   );
   process.exit(bad.length ? 1 : 0);
 }
 
-/** The repo's `.claude/hookset.json`: `{ "ask": [phrases], "frozen": [globs] }`. Missing is empty. */
+/** The repo's `.claude/hookset.json`: `{ "ask": [phrases], "frozen": [globs], "generated": { glob: command } }`. Missing is empty. */
 async function repoConfig() {
   const { readFile } = await import("node:fs/promises");
   const dir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
@@ -388,9 +500,13 @@ async function repoConfig() {
       dir,
       ask: Array.isArray(c.ask) ? c.ask.map(String) : [],
       frozen: Array.isArray(c.frozen) ? c.frozen.map(String) : [],
+      generated:
+        c.generated && typeof c.generated === "object" && !Array.isArray(c.generated)
+          ? Object.fromEntries(Object.entries(c.generated).map(([g, cmd]) => [g, String(cmd)]))
+          : {},
     };
   } catch {
-    return { dir, ask: [], frozen: [] };
+    return { dir, ask: [], frozen: [], generated: {} };
   }
 }
 
@@ -418,7 +534,7 @@ else if (isMain) {
         // Windows hands both paths over with backslashes: compare them with forward slashes.
         const [f, d] = [file, config.dir].map((p) => posix.normalize(p.replaceAll("\\", "/")));
         const rel = f.startsWith(`${d}/`) ? f.slice(d.length + 1) : f;
-        hit = decideEdit(rel, config.frozen);
+        hit = decideEdit(rel, config.frozen, config.generated);
       }
     }
     if (!hit) process.exit(0);
