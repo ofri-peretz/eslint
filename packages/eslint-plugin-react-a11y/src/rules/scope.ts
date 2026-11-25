@@ -13,6 +13,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { resolveElementType } from '../utils/element-type';
 
 type MessageIds = 'invalidScope';
 
@@ -53,17 +54,21 @@ export const scope = createRule<RuleOptions, MessageIds>({
         }
 
         const parent = node.parent;
-        if (parent && parent.type === 'JSXOpeningElement') {
-          if (
-            parent.name.type === 'JSXIdentifier' &&
-            parent.name.name !== 'th'
-          ) {
-            context.report({
-              node,
-              messageId: 'invalidScope',
-            });
-          }
-        }
+        if (!parent || parent.type !== 'JSXOpeningElement') return;
+
+        // Upstream (scope.js:40-44) checks DOM elements only: a component
+        // decides itself where `scope` lands, and the rule cannot see through
+        // `<TableCell component="th">`. Only the jsx-a11y settings map a
+        // component to an element. A DOM element is a lowercase tag without a
+        // hyphen (a hyphen makes it a custom element).
+        const type = resolveElementType(
+          parent,
+          context.sourceCode.getText(parent.name),
+          context.settings,
+        );
+        if (!/^[a-z][^-:.]*$/.test(type) || type === 'th') return;
+
+        context.report({ node, messageId: 'invalidScope' });
       },
     };
   },
