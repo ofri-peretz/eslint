@@ -137,7 +137,7 @@ Using one of these plugins in a public repository and want it listed? Open an is
 
 <!-- AUTO-GENERATED:NUMBERS:START - Do not edit manually -->
 
-**31 published plugins · 512 rules** — 22 security plugins (292 rules), 7 code-quality plugins (115 rules), 2 React plugins (105 rules). <sub>Counts generated 2026-11-24 from the source tree — never hand-typed.</sub>
+**31 published plugins · 513 rules** — 22 security plugins (292 rules), 7 code-quality plugins (116 rules), 2 React plugins (105 rules). <sub>Counts generated 2026-11-25 from the source tree — never hand-typed.</sub>
 
 <!-- AUTO-GENERATED:NUMBERS:END -->
 
@@ -184,11 +184,11 @@ that match your stack; ignore the other twenty-eight.
 
 ### 🧭 Architecture
 
-<sub>1 plugin · 58 rules</sub>
+<sub>1 plugin · 59 rules</sub>
 
 | Package                                                                                | Rules | What it catches                                                                                                                                                                  | Docs                                                                                                                               | Downloads                                                                                      |
 | :------------------------------------------------------------------------------------- | ----: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |    58 | Eslint-plugin-import replacement for ESLint 10 (and 8, 9): same import/* rule names and settings (node, typescript and custom-alias resolvers), passes 95% of its own test cases | [docs](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-import-next?style=flat-square&label=) |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |    59 | Eslint-plugin-import replacement for ESLint 10 (and 8, 9): same import/* rule names and settings (node, typescript and custom-alias resolvers), passes 95% of its own test cases | [docs](https://eslint.interlace.tools/docs/quality/plugin-import-next?utm_source=github&utm_medium=referral&utm_campaign=monorepo) | ![downloads](https://img.shields.io/npm/dm/eslint-plugin-import-next?style=flat-square&label=) |
 
 ### ✨ Code quality
 

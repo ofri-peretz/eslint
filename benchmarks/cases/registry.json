@@ -5409,6 +5409,35 @@
         }
       ],
       "peers": []
+    },
+    {
+      "id": "ILB-0191",
+      "added": "2026-11-24",
+      "title": "An import after a statement, written under the deprecated name",
+      "rationale": "eslint-plugin-import 2.32.0's deprecated `imports-first` is `first` under another name. A config naming it must load and report what `first` reports: an import that follows a non-import statement, since imports are hoisted and the file should say so.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import foo from 'foo'; const a = 1; import bar from 'bar';",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "import-next/imports-first",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-import-next/src/tests/imports-first.test.ts"
+        },
+        {
+          "rule": "import-next/first",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-import-next/src/tests/first.test.ts"
+        }
+      ],
+      "peers": []
     }
   ]
 }

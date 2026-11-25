@@ -573,6 +573,11 @@
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-import-next/imports-first": {
+      "cases": 8,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-import-next/max-dependencies": {
       "cases": 41,
       "failed": 0,

@@ -41,6 +41,8 @@ export interface PluginFacts {
   presets: Record<string, Record<string, Severity>>;
   /** rule name to description */
   rules: Record<string, string>;
+  /** rules with `meta.deprecated`; never offered under "Rules in no preset" */
+  deprecated?: string[];
   /** config key the preset registers the plugin under, e.g. `secure-coding` */
   pluginKey: string;
   /** presets that lint with a Markdown language (`markdown/gfm`) */
@@ -118,6 +120,9 @@ export function factsFrom(
             .trim(),
         ]),
     ),
+    deprecated: Object.entries(rules)
+      .filter(([k, r]) => !k.includes('/') && r?.meta?.deprecated)
+      .map(([k]) => k),
     pluginKey: pluginKey || bare,
     ...(markdownPresets.length && { markdownPresets }),
   };
@@ -236,8 +241,9 @@ export async function renderAgentsMd(
     if (f.markdownPresets?.includes(n)) out.push(...markdownSetup(f, n));
   }
 
+  // A deprecated rule is not something to tell an agent to enable.
   const unlisted = Object.keys(f.rules).filter(
-    (r) => !names.some((n) => r in f.presets[n]),
+    (r) => !names.some((n) => r in f.presets[n]) && !f.deprecated?.includes(r),
   );
   if (unlisted.length)
     out.push(

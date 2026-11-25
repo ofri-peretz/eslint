@@ -116,6 +116,7 @@ import-next	no-internal-modules	unaware
 import-next	no-named-default	unaware	
 import-next	no-import-module-exports	unaware	
 import-next	first	unaware	
+import-next	imports-first	unaware	
 import-next	extensions	unaware	
 import-next	default	optional	  hasParserServices,
 import-next	enforce-dependency-direction	unaware	

@@ -5,7 +5,7 @@
 Every rule declares `meta.interop.runtimes`. A rule lists `oxlint` only when its
 own test suite passes on oxlint's `RuleTester` as well as ESLint's
 (`vitest.dual-rule-tester.ts`), and it is not type-aware. Measured on oxlint
-`1.90.0`: **582 of 611** rules run on
+`1.90.0`: **583 of 612** rules run on
 both engines. The 29 below run on ESLint only. In oxlint or Vite+ they still load,
 but nothing guarantees they report the same findings, so do not rely on them there.
 

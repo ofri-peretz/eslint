@@ -211,6 +211,7 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) fo
 | [extensions](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/extensions?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
 | [first](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/first?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
 | [group-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/group-exports?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
+| [imports-first](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/imports-first?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
 | [max-dependencies](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/max-dependencies?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟢 |  |  |  |  |  |
 | [named](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/named?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟡 | 💼 |  |  |  |  |
 | [namespace](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/namespace?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-import-next) |  |  |  |  | 🟡 |  | ⚠️ |  |  |  |

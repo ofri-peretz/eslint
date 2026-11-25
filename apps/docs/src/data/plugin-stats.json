@@ -13,7 +13,7 @@
       "rules": 44,
       "description": "ESLint Node security rules for Node.js — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
-      "version": "6.1.5",
+      "version": "6.2.0",
       "published": true
     },
     {
@@ -21,7 +21,7 @@
       "rules": 35,
       "description": "ESLint security rules for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "6.4.10",
+      "version": "6.4.12",
       "published": true
     },
     {
@@ -53,7 +53,7 @@
       "rules": 13,
       "description": "ESLint JWT security rules — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
       "category": "security",
-      "version": "4.0.4",
+      "version": "4.0.5",
       "published": true
     },
     {
@@ -173,15 +173,15 @@
       "rules": 11,
       "description": "ESLint NestJS security rules — detects missing auth guards, missing validation pipes, unthrottled routes, and exposed private fields",
       "category": "framework",
-      "version": "4.2.4",
+      "version": "4.2.5",
       "published": true
     },
     {
       "name": "eslint-plugin-import-next",
-      "rules": 58,
+      "rules": 59,
       "description": "ESLint import rules — eslint-plugin-import replacement for ESLint 10 (and 8, 9): same import/* rule names and settings (node, typescript and custom-alias resolvers), passes 95% of its own test cases",
       "category": "architecture",
-      "version": "4.1.10",
+      "version": "4.1.11",
       "published": true
     },
     {
@@ -189,7 +189,7 @@
       "rules": 20,
       "description": "ESLint conventions rules for team code — enforces filename case, magic-number bans, commented-out code, expiring TODOs, and deprecated-API usage",
       "category": "quality",
-      "version": "7.2.1",
+      "version": "7.3.0",
       "published": true
     },
     {
@@ -245,7 +245,7 @@
       "rules": 68,
       "description": "ESLint React hooks and JSX rules — prop-types, JSX correctness, render performance, and class-to-hooks migration for modern React codebases",
       "category": "react",
-      "version": "2.4.1",
+      "version": "2.4.2",
       "published": true
     },
     {
@@ -253,12 +253,12 @@
       "rules": 37,
       "description": "ESLint React a11y rules for React accessibility — WCAG 2.1 rules for ARIA, alt text, keyboard interaction, and focus management, with auto-fixes",
       "category": "react",
-      "version": "3.0.9",
+      "version": "3.1.0",
       "published": true
     }
   ],
-  "totalRules": 512,
+  "totalRules": 513,
   "totalPlugins": 31,
   "allPluginsCount": 32,
-  "generatedAt": "2026-11-24"
+  "generatedAt": "2026-11-25"
 }
