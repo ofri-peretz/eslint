@@ -15,8 +15,9 @@
  *     package.json read (`exports` with import-like conditions, `module`,
  *     `main`, `types`) for ESM-only and types-only packages
  *
- * It deliberately does NOT cover: tsconfig `references`, `exports` / `imports`
- * patterns with more than one `*`, and Yarn PnP.
+ * It deliberately does NOT cover: tsconfig `extends` that names an npm package
+ * (only relative `extends` paths are followed), tsconfig `references`,
+ * `exports` / `imports` patterns with more than one `*`, and Yarn PnP.
  * Those resolve to `null` here and need `oxc-resolver` installed.
  */
 import { createRequire, isBuiltin } from 'node:module';
@@ -229,9 +230,15 @@ function resolveFromPackageDir(
   opts: Required<FallbackOptions>,
 ): string | null {
   const pkgJsonText = readFileSync(joinPath(pkgDir, 'package.json'));
-  const pkg = pkgJsonText
-    ? (JSON.parse(pkgJsonText) as Record<string, unknown>)
-    : {};
+  let pkg: Record<string, unknown> = {};
+  if (pkgJsonText) {
+    try {
+      pkg = JSON.parse(pkgJsonText) as Record<string, unknown>;
+    } catch {
+      // A manifest that does not parse is unresolvable, as with oxc-resolver.
+      return null;
+    }
+  }
   const key = sub ? `./${sub}` : '.';
   const exportsField = pkg['exports'];
   if (exportsField !== undefined && exportsField !== null) {
