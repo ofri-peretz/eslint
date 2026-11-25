@@ -31,3 +31,4 @@
 # difference, so formatting them here would break the Shared gates check.
 /.claude/hooks/guard-bash.mjs
 /.claude/hooks/stop-after-3.mjs
+/.claude/hooks/verify-before-stop.mjs
