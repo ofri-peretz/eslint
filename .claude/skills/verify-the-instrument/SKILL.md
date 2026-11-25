@@ -1,6 +1,6 @@
 ---
 name: verify-the-instrument
-description: Use before trusting a green gate, baseline or metric: when a number looks stable, a check fails unseen, or a gate is added.
+description: Use before trusting a green gate, baseline or metric, when a number looks stable, a check fails unseen, or a gate is added.
 ---
 
 # Verify the instrument before you believe it
