@@ -236,6 +236,14 @@ jobs:
           !contains(github.event.pull_request.labels.*.name, 'skip-changeset')
         run: npx tsx scripts/check-changeset-coverage.ts --since=origin/main --strict
 
+      # A `fix` PR that changes code must change a test too: the CLAUDE.md rule "lock everything
+      # you fix", made a gate. Whether that test bites is check:lock-proofs' question.
+      - name: A fix carries a test
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: npx tsx scripts/check-fix-carries-test.ts --base origin/main
+
   taxonomy:
     name: Plugin Taxonomy
     runs-on: ubuntu-latest

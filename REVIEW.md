@@ -6,7 +6,7 @@ CI reads this file and the checklist from the base branch, so a pull request is 
 The reviewer is shown only the rules whose triggers fire on the diff (`triggerlist match <base>`), each with the check that answers it. Every rule:
 
 - `dependency-in-ledger` Does every external dependency added here have a classified line (core, subject, owned-soon) in .agent/dependency-ledger.json? ([why](scripts/__tests__/dependency-ledger.lock.test.ts))
-- `fix-without-lock` Does a rule fix carry a test that fails when the fix is reverted, and does the rule leave the audit ratchet no worse? ([why](CLAUDE.md))
+- `fix-without-lock` Does a rule fix carry a test that fails when the fix is reverted, and does the rule leave the audit ratchet no worse? ([why](scripts/check-fix-carries-test.ts))
 - `changeset-for-publishable-source` Does a change to publishable package source carry a changeset with an upgrade path for anything breaking? ([why](scripts/check-changeset-coverage.ts))
 - `csp-and-image-hosts` Does the change loosen the CSP, or add an image host as a wildcard instead of an explicit images.remotePatterns entry? ([why](CLAUDE.md))
 - `hooks-bypassed` Does the change bypass or teach bypassing the git hooks, which guard-bash denies? ([why](scripts/__tests__/guard-bash-hook.test.ts))
