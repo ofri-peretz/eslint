@@ -25,6 +25,10 @@ export const importsFirst: typeof first = {
   ...first,
   meta: {
     ...first.meta,
+    // oxlint has no native `imports-first`, so the alias must not inherit
+    // `first`'s nativeEquivalent (`import/first`); the overlap triage keys on
+    // the rule's own name.
+    interop: { runtimes: first.meta.interop!.runtimes },
     deprecated: true,
     replacedBy: ['first'],
     docs: {
