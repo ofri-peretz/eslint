@@ -147,7 +147,28 @@ jobs:
         if: steps.token.outputs.present == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 1
+          # triggerlist diffs base...HEAD, so it needs the merge base. Blobless
+          # keeps the full history cheap.
+          fetch-depth: 0
+          filter: blob:none
+
+      # REVIEW.md promises the reviewer only the checklist items whose triggers
+      # fire on this diff, read from the BASE branch so a PR cannot rewrite the
+      # questions it is held to. This step keeps that promise. Fail open: if
+      # triggerlist breaks, the review still runs, just without the list.
+      - name: Triggered checklist
+        id: checklist
+        if: steps.token.outputs.present == 'true'
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        shell: bash
+        run: |
+          set -uo pipefail
+          git checkout "origin/$BASE_REF" -- .sdlc/checklist.yaml 2>/dev/null || true
+          items=$(npx --yes triggerlist@1.0.1 match "origin/$BASE_REF" 2>&1) \
+            || items="(triggerlist failed — review without the checklist)"
+          printf '%s\n' "$items"
+          { echo 'items<<TRIGGERLIST_EOF'; printf '%s\n' "$items"; echo 'TRIGGERLIST_EOF'; } >> "$GITHUB_OUTPUT"
 
       - name: Claude Code Review
         if: steps.token.outputs.present == 'true'
@@ -167,21 +188,29 @@ jobs:
             PR NUMBER: ${{ github.event.pull_request.number }}
 
             You are reviewing a pull request in a published security &
-            code-quality ESLint plugin ecosystem. Read the repository's
-            CLAUDE.md / AGENTS.md for project conventions and honour them.
+            code-quality ESLint plugin ecosystem.
 
-            Prioritise, in order:
+            Programs already judge this PR: lint (oxlint, eslint and our own
+            security plugins), typecheck, tests, CodeQL, mutation testing,
+            changeset coverage and the fix-carries-a-test gate. Report nothing
+            one of them would report. Spend the review on what only a reader
+            can judge:
 
-            1. Correctness & security -- real bugs, broken edge cases,
-               regressions, and security issues (injection, unsafe AST
-               handling, secret leakage, ReDoS, prototype pollution). Map
-               security findings to a CWE when you can.
-            2. Regression locks -- this repo's contract is "lock everything you
-               fix". If a change fixes a bug but adds no test that would fail on
-               the unfixed code, flag it.
-            3. Public-API & docs drift -- exported rule changes that don't
-               update the rule's README, schema, or meta, and CLAUDE.md
-               statements made stale by the change.
+            1. Does the code do what the PR says it does? Logic and semantic
+               bugs, broken edge cases, regressions.
+            2. For a rule: a false positive or false negative on realistic
+               code, and whether the rule decides from names or string values
+               instead of what the code proves.
+            3. Security reasoning that spans functions or files (injection,
+               unsafe AST handling, secret leakage, prototype pollution). Map
+               each finding to a CWE.
+            4. A claim in docs or a README that the code does not back.
+
+            Then answer each checklist question below. These fired on this
+            diff. Where reading cannot settle one, name its `check` command
+            for the author to run; you cannot run it here.
+
+            ${{ steps.checklist.outputs.items }}
 
             Be precise and low-noise: only post a finding when you can cite the
             specific file:line and explain why it is wrong. Cap nits -- prefer a
