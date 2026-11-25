@@ -192,3 +192,74 @@ Baseline arithmetic:
 `benchmarks/corpus-index.json` still lists reactpress, for the same reason it
 still lists autobe: it indexes the local `oos/` clone set, and the gate does
 not read it.
+
+## 2026-11-25 — off-SDK regression triage (no corpus change)
+
+Not a `repos.json` change: run
+[45474907652](https://github.com/ofri-peretz/eslint/actions/runs/45474907652)
+(`main` at `ce584f95f`, scheduled, issue #1728) scanned 105,166 files, which
+matches this baseline's `filesScanned`, so the corpus is the same 105 pins. It
+failed on five rules:
+
+| Rule                                           | Ceiling | Measured |
+| ---------------------------------------------- | ------: | -------: |
+| `express-security/no-missing-csrf-protection`  |       9 |       34 |
+| `express-security/no-missing-security-headers` |      20 |       22 |
+| `mongodb-security/no-unbounded-find`           |       5 |       10 |
+| `mongodb-security/require-projection`          |       7 |       11 |
+| `mongodb-security/require-lean-queries`        |       2 |        7 |
+
+The run's numbers were reproduced locally on depth-1 clones of all 105 pins,
+with the same file walk, lint config and `sdk-map.ts` probe as `run.ts`:
+exactly 34, 22, 10, 11 and 7. The same 14 repositories were then linted with
+these rules as they were at `0760e1097` (the last green scheduled run,
+2026-11-14), and every finding the old rules did not produce was read in its
+source file. All of them come from the evidence-gate changes that taught both gates to recognise files using the framework without importing it (PRs 1616, 1620, 1623 and 1693).
+
+Fixed, because the verdict was wrong (each fix has a fixture that fails on the
+old code):
+
+- **`express-security/no-missing-csrf-protection` (25) and
+  `no-missing-security-headers` (1)**: activepieces' Fastify controllers
+  (`FastifyPluginAsyncZod`, `app.post('/', schema, async (req, res) => …)`). The
+  route-registration arm of `fileUsesExpress` took the Fastify route as Express
+  evidence. The structural arms no longer count in a file that imports Fastify,
+  Koa, Hono, hapi, h3 or Elysia and does not import Express. The same exclusion
+  removes two older `no-missing-security-headers` findings in nest-framework's
+  `platform-fastify/adapters/fastify-adapter.ts`, which imports `@fastify/cors`.
+- **`mongodb-security/require-lean-queries` (5)**: the-mirror migrate-mongo
+  scripts, `const assetsCollection = db.collection('assets');
+assetsCollection.find(…).toArray()`. `.lean()` is Mongoose-only. The rule
+  already skipped the inline `db.collection('x').find()` but not a handle held
+  in a variable; it now uses `isNativeCollectionReceiver`, which follows the
+  bound handle the way the gate does.
+
+Ceilings raised, because the file uses the SDK through evidence the import
+probe cannot see:
+
+| Rule                                  | Ceiling | Files                                                                     | Evidence the gate reads                                                                                                                                                                                                                    |
+| ------------------------------------- | ------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `mongodb-security/no-unbounded-find`  | 5 → 10  | the-mirror `mirror-web-server/migrations/themirror/` (4 files, 5 queries) | migrate-mongo hands `up(db, client)` the driver's `Db`; the script binds `db.collection('assets')` and calls `.find({...}).toArray()` with no limit. The native-driver arm of `fileUsesMongo` (handle held in a variable, #1693) reads it. |
+| `mongodb-security/require-projection` | 7 → 11  | the same migrations (3 files, 4 queries)                                  | the same bound collection handles, queried with no projection                                                                                                                                                                              |
+
+`express-security/no-missing-security-headers` gained one finding the old rules
+did not report: booking-microservices-expressjs
+`src/building-blocks/monitoring/prometheus.metrics.js`, a compiled route module
+that receives `app` and registers `app.use('/metrics', async (req, res) => …)`.
+It is Express through the route-registration arm, and it fits under the
+unchanged ceiling of 20.
+
+Re-measured after the fixes on the 14 repositories that produced any finding of
+these five rules:
+
+| Rule                                           | Ceiling | After |
+| ---------------------------------------------- | ------: | ----: |
+| `express-security/no-missing-csrf-protection`  |       9 |     9 |
+| `express-security/no-missing-security-headers` |      20 |    19 |
+| `mongodb-security/no-unbounded-find`           |      10 |    10 |
+| `mongodb-security/require-projection`          |      11 |    11 |
+| `mongodb-security/require-lean-queries`        |       2 |     2 |
+
+The `no-missing-csrf-protection` ceiling still holds eight findings in tududi
+(`areasService.delete(userId, uid)` read as a `DELETE` route). They were already
+there in the 2026-11-14 run and are not raised here.

@@ -1,6 +1,6 @@
 ---
 title: require-max-steps
-description: 'This rule identifies tool-calling AI SDK calls whose step limit does not bound the loop: a hasToolCall-only stopWhen, Infinity, or a limit read from the request'
+description: 'This rule identifies tool-calling AI SDK calls whose step limit does not bound the loop: a hasToolCall-only stopWhen, Infinity, or a limit read from the request.'
 tags: ['security', 'ai']
 category: security
 severity: medium

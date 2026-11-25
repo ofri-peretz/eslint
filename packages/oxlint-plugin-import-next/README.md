@@ -20,13 +20,13 @@
 
 ## Description
 
-**Fills the gaps in oxlint's import plugin.** oxlint's native `import` plugin already covers 34 of these rules (listed below; use those natively). This package adds the 24 it does not have: `dynamic-import-chunkname`, `enforce-dependency-direction`, `enforce-import-order`, `enforce-node-protocol-usage`, `enforce-team-boundaries`, `no-barrel-import`, `no-cross-domain-imports`, `no-deprecated`, `no-extraneous-dependencies`, `no-full-package-import`, `no-import-module-exports`, `no-internal-modules`, `no-legacy-imports`, `no-relative-packages`, `no-restricted-paths`, `no-unresolved`, `no-unused-modules`, `no-useless-path-segments`, `no-webpack-loader-syntax`, `order`, `prefer-direct-import`, `prefer-modern-api`, `prefer-tree-shakeable-imports`, `require-import-approval`.
+**Fills the gaps in oxlint's import plugin.** oxlint's native `import` plugin already covers 34 of these rules (listed below; use those natively). This package adds the 25 it does not have: `dynamic-import-chunkname`, `enforce-dependency-direction`, `enforce-import-order`, `enforce-node-protocol-usage`, `enforce-team-boundaries`, `imports-first`, `no-barrel-import`, `no-cross-domain-imports`, `no-deprecated`, `no-extraneous-dependencies`, `no-full-package-import`, `no-import-module-exports`, `no-internal-modules`, `no-legacy-imports`, `no-relative-packages`, `no-restricted-paths`, `no-unresolved`, `no-unused-modules`, `no-useless-path-segments`, `no-webpack-loader-syntax`, `order`, `prefer-direct-import`, `prefer-modern-api`, `prefer-tree-shakeable-imports`, `require-import-approval`.
 
 `oxlint-plugin-import-next` is the [oxlint](https://oxc.rs/docs/guide/usage/linter/js-plugins) and [Vite+](https://viteplus.dev/guide/lint) name for [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next). It carries the same rules under the same IDs (`import-next/<rule>`), always at the same version, because it re-exports that package rather than copying it. Installing it does not install ESLint.
 
 ## Covered natively by oxlint
 
-oxlint already ships 34 of these 58 rules as built-ins. Enable the built-in instead: it is the same check, runs natively, and running both would report every finding twice. Each rule carries the mapping as `meta.interop.nativeEquivalent`.
+oxlint already ships 34 of these 59 rules as built-ins. Enable the built-in instead: it is the same check, runs natively, and running both would report every finding twice. Each rule carries the mapping as `meta.interop.nativeEquivalent`.
 
 | This plugin                                   | oxlint built-in                          |
 | :-------------------------------------------- | :--------------------------------------- |
@@ -65,7 +65,7 @@ oxlint already ships 34 of these 58 rules as built-ins. Enable the built-in inst
 | `import-next/prefer-node-protocol`            | `unicorn/prefer-node-protocol`           |
 | `import-next/unambiguous`                     | `import/unambiguous`                     |
 
-What this package adds to oxlint is the other 24: every rule in the table below that is not listed here.
+What this package adds to oxlint is the other 25: every rule in the table below that is not listed here.
 
 - **Why** — a linter nobody reads protects nothing. We would rather miss a finding
   than spend your attention on one that was never real.
@@ -122,7 +122,7 @@ Install [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugi
 
 | Package | Version                                                          |
 | :------ | :--------------------------------------------------------------- |
-| oxlint  | verified on `1.90.0`: CI loads every rule ID through `jsPlugins` |
+| oxlint  | verified on `1.94.0`: CI loads every rule ID through `jsPlugins` |
 | Vite+   | `lint.jsPlugins` in `vite.config.ts`                             |
 | Node.js | `^20.19.0 \|\| ^22.13.0 \|\| >=24`                               |
 
@@ -155,6 +155,7 @@ Install [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugi
 | [extensions](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/extensions?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                           |         |          |      |             | 🟢  |     |     |     |     |     |
 | [first](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/first?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                                     |         |          |      |             | 🟢  |     |     |     |     |     |
 | [group-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/group-exports?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                     |         |          |      |             | 🟢  |     |     |     |     |     |
+| [imports-first](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/imports-first?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                     |         |          |      |             | 🟢  |     |     |     |     |     |
 | [max-dependencies](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/max-dependencies?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                               |         |          |      |             | 🟢  |     |     |     |     |     |
 | [named](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/named?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                                     |         |          |      |             | 🟡  | 💼  |     |     |     |     |
 | [namespace](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/namespace?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-import-next)                                             |         |          |      |             | 🟡  |     | ⚠️  |     |     |     |

@@ -10,7 +10,7 @@
  * Inspired by typescript-eslint's ast-utils
  * Provides common utilities for traversing and analyzing AST nodes
  */
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '../types/estree/utils/index';
 
 /**
  * Check if a node is a specific type of node

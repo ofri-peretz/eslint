@@ -39,7 +39,7 @@ import { RuleCreator } from './rule-creator';
 
 import { AST_NODE_TYPES } from '../ast-node-types';
 import { namesOneOf, propertyName } from '../ast/spellings';
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint, TSESTree } from '../types/estree/utils/index';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 import { createModuleEvidence } from './module-evidence';
 import { isTestFilePath } from './rule-creator';
@@ -407,9 +407,19 @@ export function receiverBaseName(
   }
 }
 
+/**
+ * The rule createUnscopedMutationRule returns, by a name plugins can reach through
+ * `@interlace/eslint-devkit`: a plugin's declarations then refer to this
+ * alias instead of to devkit's vendored typescript-eslint types.
+ */
+export type UnscopedMutationRule = TSESLint.RuleModule<
+  UnscopedMutationMessageIds,
+  []
+>;
+
 export function createUnscopedMutationRule(
   config: UnscopedMutationRuleConfig,
-): TSESLint.RuleModule<UnscopedMutationMessageIds, []> {
+): UnscopedMutationRule {
   const sinks = new Set(config.methods);
   const scopeKeys = config.scopeKeys ?? DEFAULT_SCOPE_KEYS;
   const scopeMethods = config.scopeMethods ?? DEFAULT_SCOPE_METHODS;

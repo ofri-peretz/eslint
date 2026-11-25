@@ -1,6 +1,6 @@
 ---
 title: no-unhandled-promise
-description: "Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This rule detects promises that are created but never have"
+description: "Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling."
 tags: ['quality', 'maintainability', 'async']
 category: quality
 autofix: suggestions
@@ -11,6 +11,8 @@ type_aware_status: unaware
 import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This rule detects promises that are created but never have
 
 Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This rule detects promises that are created but never have their rejection handled, preventing silent failures in production applications.
 
