@@ -322,10 +322,14 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
              * own `signOptions.expiresIn` (or options this file cannot see)
              * is the only lifetime source; without one the token has no exp.
              */
+            // A receiver that is not a bare name (`this.jwtService`) finds
+            // no variable and reads as none; testing for an Identifier
+            // first would change no verdict.
             const receiver =
-              node.callee.type === AST_NODE_TYPES.MemberExpression &&
-              node.callee.object.type === AST_NODE_TYPES.Identifier
-                ? resolveObjectLiteral(node.callee.object)
+              node.callee.type === AST_NODE_TYPES.MemberExpression
+                ? resolveObjectLiteral(
+                    node.callee.object as TSESTree.Identifier,
+                  )
                 : null;
             if (receiver?.type === AST_NODE_TYPES.NewExpression) {
               const ctor = resolveObject(receiver.arguments[0], sourceCode);

@@ -1025,6 +1025,19 @@ const jwt = new JwtService({ secret: 's', signOptions: { expiresIn: '15m' } });
 export const token = jwt.sign({ sub: 1 });`,
     },
     {
+      name: 'a constructed JwtService whose call passes options this file cannot see',
+      code: `import { JwtService } from '@nestjs/jwt';
+const jwt = new JwtService({ secret: 's' });
+export const token = jwt.signAsync({ sub: 1 }, loadSignOptions());`,
+    },
+    {
+      // Outside a NestJS project the module decides nothing; the point is
+      // that a bare callee has no receiver to resolve.
+      name: 'a NestJS-shaped sign on a bare function is not resolved as a receiver',
+      code: `import { sign } from 'jsonwebtoken';
+export const token = sign({ sub: 1 }, { algorithm: 'HS256' });`,
+    },
+    {
       name: 'a constructed JwtService given options this file cannot see',
       code: `import { JwtService } from '@nestjs/jwt';
 const jwt = new JwtService(loadOptions());
@@ -1108,6 +1121,14 @@ jwt.sign({ sub: 1 }, 'k', { expiresIn: '1h' }, (err, token) => {});`,
 const jwt = new JwtService();
 export const token = jwt.sign({ sub: 1 });`,
       errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+    {
+      name: 'a constructed JwtService whose own expiresIn is over the limit',
+      options: [{ maxExpirationSeconds: 3600 }],
+      code: `import { JwtService } from '@nestjs/jwt';
+const jwt = new JwtService({ secret: 's', signOptions: { expiresIn: '2h' } });
+export const token = jwt.sign({ sub: 1 });`,
+      errors: [{ messageId: 'excessiveExpiration' }],
     },
     {
       name: 'a constructed JwtService whose options set no signOptions',
