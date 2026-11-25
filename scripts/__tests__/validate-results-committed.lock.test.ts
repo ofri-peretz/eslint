@@ -1,4 +1,6 @@
 /**
+ * @provenBy {"file":"benchmarks/results/ilb-app-h2h/dvna.json","find":"    \"tsCompiler\": \"unknown\",\n","replace":""}
+ *
  * Lock: every committed benchmark result passes `ilb:validate-results`.
  *
  * The validator only ran in the scheduled `benchmark.yml`, so a result file
