@@ -167,6 +167,7 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     // Only a FULLY interpolated authority is unknowable — `api.` already
     // proves the host is not loopback.
     {
+      name: 'a partly interpolated authority still writes its host label down, so it reports',
       code: 'const u = `http://api.${env}.acmecorp.io/x`;',
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
@@ -524,6 +525,52 @@ ruleTester.run('partition: deferred to a more specific sibling', noHttpUrls, {
     // the sibling never sees it.
     {
       code: "const BASE = 'http://api.acmecorp.io'; fetch(BASE);",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+  ],
+});
+
+ruleTester.run('no-http-urls (URI-scheme prefix tables)', noHttpUrls, {
+  valid: [
+    {
+      // @source tauri-apps/plugins-workspace plugins/nfc/guest-js/index.ts:293 at 0472f4aa0eef
+      // @found real-source scan
+      name: 'FP: the NFC URI-record prefix table holds scheme prefixes, never fetched',
+      code: "const protocols = ['', 'http://www.', 'https://www.', 'http://', 'https://', 'tel:', 'mailto:', 'ftp://anonymous:anonymous@', 'ftp://ftp.', 'ftps://', 'sftp://', 'ftp://'];",
+    },
+    {
+      name: 'a two-entry table of authority-free prefixes is still a table',
+      code: "const p = ['http://', 'https://'];",
+    },
+    {
+      name: 'a label-and-dot entry such as www. cannot be a complete host',
+      code: "const p = ['tel:', 'http://www.'];",
+    },
+  ],
+  invalid: [
+    {
+      name: 'one real URL among the prefixes disqualifies the whole array',
+      code: "const p = ['http://', 'https://', 'http://api.acmecorp.io/v1'];",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    {
+      name: 'a host with a path after the scheme is a destination, not a prefix',
+      code: "const p = ['tel:', 'http://acmecorp.io/'];",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    {
+      name: 'a single-element array is not a table',
+      code: "const p = ['http://api.acmecorp.io'];",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    {
+      name: 'a non-literal element means the array is not provably a prefix table',
+      code: "const p = ['tel:', host, 'http://api.acmecorp.io'];",
+      errors: [{ messageId: 'insecureHttpWithException' }],
+    },
+    {
+      name: 'a full host in an object property is outside any array table',
+      code: "const o = { base: 'http://api.acmecorp.io' };",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
   ],

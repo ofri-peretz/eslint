@@ -54,6 +54,7 @@ import {
 } from '../../utils/namespace-uris';
 import { isReservedExampleUrl } from '../../utils/loopback-hosts';
 import { isProtocolInspection } from '../../utils/protocol-inspection';
+import { isInSchemePrefixTable } from './scheme-prefix-table';
 import {
   isRequestCallSiteUrl,
   isSubresourcePosition,
@@ -278,6 +279,15 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
       // spec is a remote URL; reporting it flags the check as the vulnerability. Shared
       // with no-unencrypted-transmission so the two cannot disagree.
       if (isProtocolInspection(node, node.parent as TSESTree.Node)) {
+        return;
+      }
+
+      // A table of URI-scheme prefixes (`['http://www.', 'https://', 'tel:']`) is
+      // an encoding dictionary, not a set of endpoints: no entry names a host.
+      // Every element must be prefix-only; see `isInSchemePrefixTable`.
+      //
+      // @source tauri-apps/plugins-workspace plugins/nfc/guest-js/index.ts:293
+      if (isInSchemePrefixTable(node)) {
         return;
       }
 
