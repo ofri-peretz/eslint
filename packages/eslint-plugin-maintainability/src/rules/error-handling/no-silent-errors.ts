@@ -56,9 +56,14 @@ function isEmptyCatchBlock(catchClause: TSESTree.CatchClause): boolean {
 }
 
 /**
- * A comment that gives a REASON, as opposed to marking the spot: three or more
+ * A comment that gives a REASON, as opposed to marking the spot: two or more
  * words of prose that do not open with a placeholder. `// Empty`, `// nothing`
- * and `// handle later` fail; `// Files referenced by HTML may not exist yet.` passes.
+ * and `// handle later` fail; `// pre-init — skip` and
+ * `// Files referenced by HTML may not exist yet.` pass.
+ *
+ * Two, not three (#1554): a one-word `// ignore` already passes on the keyword
+ * list, so a three-word floor held a terse reason (`// pre-init — skip`, where
+ * the dash is not a word) to a higher bar than a bare keyword.
  */
 function isReasonProse(text: string): boolean {
   const words = text
@@ -66,7 +71,7 @@ function isReasonProse(text: string): boolean {
     .trim()
     .split(' ')
     .filter((word) => /[a-z]/i.test(word));
-  if (words.length < 3) return false;
+  if (words.length < 2) return false;
   return !/^(todo|fixme|xxx|hack|tbd|placeholder|handle|empty|nothing)\b/i.test(
     words.join(' '),
   );
