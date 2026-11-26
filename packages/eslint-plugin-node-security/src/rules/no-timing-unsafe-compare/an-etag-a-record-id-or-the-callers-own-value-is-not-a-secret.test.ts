@@ -69,6 +69,37 @@ ruleTester.run(
         `,
       },
       {
+        name: 'the header on the right, a digest of the request body on the left',
+        code: `
+          import { createHash } from 'crypto';
+          function get(req) {
+            const hash = createHash('sha1').update(req.body).digest('hex');
+            return hash === req.headers['if-none-match'];
+          }
+        `,
+      },
+      {
+        name: 'a request held on this, read through its headers getter',
+        code: `
+          import crypto from 'crypto';
+          function get(req) {
+            const hash = crypto.createHash('sha1').update(req.body).digest('hex');
+            return this.request.headers.get('If-None-Match') === hash;
+          }
+        `,
+      },
+      {
+        name: 'an alias of a content digest is still the etag',
+        code: `
+          import crypto from 'crypto';
+          function get(req) {
+            const digest = crypto.createHash('sha1').update(req.body).digest('hex');
+            const hash = digest;
+            return req.headers['if-none-match'] === hash;
+          }
+        `,
+      },
+      {
         name: 'a strategy id against the built-in local auth id',
         code: `
           app.delete('/s/:strategyId', async (req, reply) => {
@@ -183,6 +214,93 @@ ruleTester.run(
         name: 'a pattern configured as id keeps every id a secret',
         code: 'function f(req) { return req.body.tokenId === store.apiTokenId; }',
         options: [{ secretPatterns: ['token', 'id'] }],
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'If-None-Match against a value named as a stored secret still reports',
+        code: "function f(req, storedToken) { return req.headers['if-none-match'] === storedToken; }",
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a stored secret on the left against If-None-Match still reports',
+        code: "function f(req, storedToken) { return storedToken !== req.get('if-none-match'); }",
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a configured secret against If-None-Match still reports',
+        code: "function f(req) { return req.headers['if-none-match'] === process.env.API_SECRET; }",
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a binding reassigned after the header read is not the header',
+        code: `
+          import crypto from 'crypto';
+          function hook(req) {
+            const expected = crypto.createHmac('sha256', secret).update(req.body).digest('hex');
+            let sent = req.headers['if-none-match'];
+            sent = req.body.signature;
+            return sent === expected;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a keyed HMAC named as a digest is not an entity tag',
+        code: `
+          import crypto from 'crypto';
+          function hook(req) {
+            const digest = crypto.createHmac('sha256', secret).update(req.body).digest('hex');
+            return req.headers['if-none-match'] === digest;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a hash binding that only aliases another name is not followed',
+        code: "function f(req, storedHash) { const hash = storedHash; return req.headers['if-none-match'] === hash; }",
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a cache getter on this is not a request header getter',
+        code: `
+          import crypto from 'crypto';
+          function get(req) {
+            const hash = crypto.createHash('sha1').update(req.body).digest('hex');
+            return this.cache.get('if-match') === hash;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'two hash bindings that initialise each other are not a digest',
+        code: "function f(req) { let a = b; let b = a; return req.headers['if-none-match'] === a; }",
+        options: [{ secretPatterns: ['a'] }],
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a Map get is not a request header getter',
+        code: `
+          import crypto from 'crypto';
+          function hook(req, credentials) {
+            const expected = crypto.createHmac('sha256', secret).update(req.body).digest('hex');
+            return credentials.get('if-match') === expected;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a @Body() parameter replaced by a stored record is server data',
+        code: `
+          import { Body, Controller, Post } from '@nestjs/common';
+          @Controller()
+          class AuthController {
+            @Post('reset')
+            async reset(@Body() dto: ResetDto, @Req() req: Request) {
+              dto = this.stored;
+              return dto.token === req.body.token;
+            }
+          }
+        `,
         errors: [{ messageId: 'timingUnsafeCompare' }],
       },
       {

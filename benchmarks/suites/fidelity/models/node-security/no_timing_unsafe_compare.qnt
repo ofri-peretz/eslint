@@ -5,8 +5,9 @@
 // string literal comparand is skipped unless reportLiteralComparands is on.
 // nonSecretWords / nonSecretTails exclude collisions (authorId, tokenCount).
 // A name ending in Id is a record key (localAuthId) unless a secret pattern
-// ends in it too (sessionId). An If-None-Match header is the public etag and
-// never reports. crypto.timingSafeEqual is the safe twin.
+// ends in it too (sessionId). An If-None-Match header is attacker input that
+// is not itself a secret: against the etag it is silent, against a secret-named
+// value it still reports. crypto.timingSafeEqual is the safe twin.
 module no_timing_unsafe_compare {
   // left: req.body.token | req.body.value | ctx.request.body.signature | userToken | submitted | req.headers['if-none-match']
   type Left = ReqBodyToken | ReqBodyValue | CtxSignature | UserToken | Submitted | IfNoneMatch
@@ -37,7 +38,6 @@ module no_timing_unsafe_compare {
 
   pure def reports(l: Left, r: Right, op: Op, o: Opt): bool =
     if (op == TimingSafe) false
-    else if (l == IfNoneMatch) false
     else if (r == Literal) (o == Literals and leftSecret(l))
     else (leftSecret(l) or rightSecret(r)) and (leftUntrusted(l) or o == Unverified)
 

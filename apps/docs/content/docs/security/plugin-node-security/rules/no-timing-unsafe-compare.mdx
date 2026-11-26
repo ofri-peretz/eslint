@@ -374,13 +374,18 @@ reaches `authorId`, because a short pattern must be a whole word).
 
 An `id`/`ids` tail marks a record key (`localAuthId`, `tokenId`), but it does not
 override a secret pattern that itself ends in that word: `sessionId` is listed
-in `secretPatterns` and stays a secret.
+in `secretPatterns` and stays a secret. Only plain-word patterns do this: a regex
+pattern ending in `id` does not lift the tail, so spell such a name as a plain
+word (`tokenId`) or remove `id` from `nonSecretTails`.
 
 ### Values the caller already holds
 
 - An `If-None-Match` / `If-Match` header compared with an etag is not reported.
   The etag went out in the `ETag` response header, so every client has it,
-  even when it is a hash of the content.
+  even when it is a hash of the content. The etag is a value not named as a
+  secret, or a keyless `createHash` digest under any name. The same header
+  compared with a stored secret (`storedToken`), an HMAC or a configured secret
+  still reports.
 - A NestJS `@Body()` / `@Query()` / `@Param()` parameter reads as the request.
   A body field compared with another value from the same request has the
   caller on both sides, so it is not reported. A body field compared with a

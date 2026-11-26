@@ -1816,6 +1816,12 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     ): boolean {
       const bare = unwrapTypeSyntax(node);
       if (bare.type === AST_NODE_TYPES.Identifier) {
+        // A binding written again after its initializer may hold anything
+        // by the comparison, so only one written once is followed.
+        const writes = findVariable(sourceCode, bare)?.references.filter(
+          (ref) => ref.isWrite(),
+        );
+        if (writes?.length !== 1) return false;
         // `let a = b; let b = a` initialise each other; stop on the loop.
         const init = bindingInit(sourceCode, bare);
         return (
@@ -1838,13 +1844,60 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         bare.callee.type === AST_NODE_TYPES.MemberExpression
       ) {
         const header = staticString(bare.arguments[0]);
+        // The getter must be the request's: `headers.get(…)` on a Fetch
+        // `Headers`, or `req.get(…)` on the request itself. A `Map` of
+        // submitted credentials has a `get` too.
+        const receiver = bare.callee.object;
         return (
           header !== null &&
           CONDITIONAL_REQUEST_HEADERS.has(header.toLowerCase()) &&
-          HEADER_GETTERS.has(propertyName(bare.callee) ?? '')
+          HEADER_GETTERS.has(propertyName(bare.callee) ?? '') &&
+          ((receiver.type === AST_NODE_TYPES.MemberExpression &&
+            propertyName(receiver) === 'headers') ||
+            readsUntrusted(receiver))
         );
       }
       return false;
+    }
+
+    /**
+     * Could this be the entity tag a conditional header is checked against?
+     * Anything not named as a secret, and a keyless digest of content under
+     * any name (`const hash = createHash('sha1').update(body).digest('hex')`)
+     * — an etag is usually exactly that. An HMAC is keyed, so it is not.
+     */
+    function isEntityTag(node: TSESTree.Node): boolean {
+      return !isSecretIdentifier(node) || isContentDigest(node);
+    }
+
+    /**
+     * A `createHash(…)` derivation with no `createHmac` in it, through `const`
+     * aliases (`const hash = digest`), stopping on a binding loop.
+     */
+    function isContentDigest(
+      node: TSESTree.Node,
+      seen: ReadonlySet<TSESTree.Node> = new Set(),
+    ): boolean {
+      const bare = unwrapTypeSyntax(node);
+      if (bare.type === AST_NODE_TYPES.Identifier) {
+        const init = bindingInit(sourceCode, bare);
+        return (
+          init !== undefined &&
+          !seen.has(init) &&
+          isContentDigest(init, new Set([...seen, init]))
+        );
+      }
+      const calls = (name: string) =>
+        someNode(
+          bare,
+          (n) =>
+            n.type === AST_NODE_TYPES.CallExpression &&
+            ((n.callee.type === AST_NODE_TYPES.Identifier &&
+              n.callee.name === name) ||
+              (n.callee.type === AST_NODE_TYPES.MemberExpression &&
+                propertyName(n.callee) === name)),
+        );
+      return calls('createHash') && !calls('createHmac');
     }
 
     /**
@@ -1862,10 +1915,15 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       }
       if (root.type !== AST_NODE_TYPES.Identifier) return false;
       // Only a parameter carries a parameter decorator, so the declaration
-      // itself is the test.
-      const id = findVariable(sourceCode, root)?.identifiers[0];
+      // itself is the test. A parameter is never written by its declaration,
+      // so any write replaced the payload (`dto = stored`) and the binding no
+      // longer says where the value came from.
+      const variable = findVariable(sourceCode, root);
+      if (variable === null) return false;
+      const [id] = variable.identifiers;
       return (
         id !== undefined &&
+        !variable.references.some((ref) => ref.isWrite()) &&
         requestSource.hasPayloadDecorator(id, valueFollow.envOf(context))
       );
     }
@@ -2227,16 +2285,22 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      // A conditional-request validator is the public entity tag, already
-      // sent to every client in the `ETag` response header.
-      if (readsConditionalHeader(left) || readsConditionalHeader(right)) {
-        return;
-      }
-
       // A configured secret against a caller-supplied candidate needs no
       // request in sight (see `comparesStoredSecret`).
       if (comparesStoredSecret(left, right)) {
         context.report({ node, messageId: 'timingUnsafeCompare' });
+        return;
+      }
+
+      // A conditional-request validator against the entity tag: the tag went
+      // out in the `ETag` response header, so every client holds it, hash of
+      // the content or not. Only the etag is exempt; the same header against
+      // a value NAMED as a secret (`storedToken`) is still the caller timing
+      // a credential.
+      if (
+        (readsConditionalHeader(left) && isEntityTag(right)) ||
+        (readsConditionalHeader(right) && isEntityTag(left))
+      ) {
         return;
       }
 
