@@ -46,3 +46,6 @@ export * from './sdk-flow';
 // Bounded value following across relative imports, namespaced because its
 // helper names (`follow`, `lookup`, `Value`) are too generic for the root.
 export * as valueFollow from './value-follow';
+// Structural request-payload recognition (`@Body()` parameters, `req.body`,
+// `await request.json()`), namespaced for the same reason.
+export * as requestSource from './request-source';

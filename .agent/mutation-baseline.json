@@ -552,11 +552,11 @@
           "timeout": 0
         },
         "no-timing-unsafe-compare": {
-          "score": 91.2,
-          "killed": 1314,
-          "survived": 125,
+          "score": 91.6,
+          "killed": 1574,
+          "survived": 143,
           "noCoverage": 2,
-          "timeout": 17
+          "timeout": 23
         },
         "no-toctou-vulnerability": {
           "score": 96.5,

@@ -22,6 +22,7 @@ import {
   propertyName,
   staticString,
   valueFollow,
+  requestSource,
 } from '@interlace/eslint-devkit';
 import {
   bindingInit,
@@ -395,6 +396,22 @@ const DEFAULT_SECRET_PATTERNS = [
  */
 const SHORT_PATTERN_LENGTH = 6;
 
+/**
+ * Conditional-request headers. Their value is the entity tag the server put in
+ * an `ETag` response header, which every client that fetched the resource
+ * already holds: Wiki.js answers 304 when `req.headers['if-none-match'] ===
+ * etag` (`backend/controllers/site.ts:87`), and the etag is a SHA-1 of the
+ * asset, which is why it read as a crypto secret. Header names are
+ * case-insensitive, so they are compared lower-cased.
+ */
+const CONDITIONAL_REQUEST_HEADERS: ReadonlySet<string> = new Set([
+  'if-none-match',
+  'if-match',
+]);
+
+/** Header getters that take the header name: Fetch `get`, Express `get`/`header`. */
+const HEADER_GETTERS: ReadonlySet<string> = new Set(['get', 'header']);
+
 /** A pattern written as a plain word, not a regular expression. */
 const PLAIN_PATTERN = /^[A-Za-z0-9_-]+$/;
 
@@ -746,6 +763,16 @@ const DEFAULT_NON_SECRET_TAILS: readonly string[] = [
   'flag',
   'flags',
   'category',
+  // A record's identifier, not the credential it identifies. Wiki.js deletes
+  // an auth strategy unless `strategy.id === WIKI.data.systemIds.localAuthId`
+  // (`backend/api/authentication.ts:1898`), and Trigger.dev checks that a
+  // personal access token resolved to the same row with `result.tokenId ===
+  // identity.tokenId` (`withMcpToolAuth.server.ts:132`): both names carry a
+  // secret word and both values are database keys. A secret pattern that
+  // itself ends in the tail keeps reporting, so `sessionId` — the cookie value
+  // in express-session — is still a secret (see `endsInSecretCompound`).
+  'id',
+  'ids',
 ];
 
 /**
@@ -1073,12 +1100,26 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     /** Anything else a user configured: their regex, their semantics. */
     let patterns: ReturnType<typeof compileUserPatterns>;
 
+    /**
+     * Does a secret pattern ending in this tail name the identifier?
+     * `sessionId` is a configured secret that happens to end in `id`; the tail
+     * exempts `tokenId`, not a pattern that spells the tail out.
+     */
+    function endsInSecretCompound(name: string, tail: string): boolean {
+      return wordPatterns.some(
+        (pattern) =>
+          identifierWords(pattern).at(-1) === tail &&
+          containsWord(name, pattern),
+      );
+    }
+
     function nameLooksSecret(name: string): boolean {
       if (BOOLEAN_PREDICATE_NAME.test(name)) return false;
       const words = identifierWords(name);
       if (
         words.length > 0 &&
-        nonSecretTailSet.has(words[words.length - 1] as string)
+        nonSecretTailSet.has(words[words.length - 1] as string) &&
+        !endsInSecretCompound(name, words[words.length - 1] as string)
       ) {
         return false;
       }
@@ -1142,7 +1183,9 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
 
     /** The same question, allowing one hop through a binding. */
     function isCryptoSecret(node: TSESTree.Node): boolean {
-      const bare = unwrapTypeSyntax(node);
+      // Through every single-write alias: `const expected = derived` is the
+      // derivation `derived` holds.
+      const bare = aliasedValue(node);
       const init =
         bare.type === AST_NODE_TYPES.Identifier
           ? bindingInit(sourceCode, bare)
@@ -1746,7 +1789,19 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       }
       if (node.type === AST_NODE_TYPES.Identifier) {
         const init = bindingInit(sourceCode, node);
-        return init !== undefined && isServerDerived(init, visited);
+        if (init !== undefined && isServerDerived(init, visited)) return true;
+        // `hash = await store.etagFor(id)` after the initializer: the binding
+        // may hold what that wrote by the comparison.
+        // The initializer is in `visited` by now, so its own write is not
+        // walked twice.
+        const variable = findVariable(sourceCode, node);
+        return (
+          variable !== null &&
+          variable.references.some(
+            (ref) =>
+              ref.writeExpr != null && isServerDerived(ref.writeExpr, visited),
+          )
+        );
       }
       if (node.type === AST_NODE_TYPES.CallExpression) {
         const callee = unwrapChain(node.callee);
@@ -1762,6 +1817,214 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         );
       }
       return false;
+    }
+
+    /**
+     * Is this a read of an `If-None-Match` / `If-Match` request header —
+     * `req.headers['if-none-match']`, `request.headers.get('If-None-Match')`,
+     * `req.get('if-match')` — directly or through a `const` bound to one?
+     */
+    function readsConditionalHeader(
+      node: TSESTree.Node,
+      seen: ReadonlySet<TSESTree.Node> = new Set(),
+    ): boolean {
+      const bare = unwrapTypeSyntax(node);
+      if (bare.type === AST_NODE_TYPES.Identifier) {
+        // A binding written again after its initializer may hold anything
+        // by the comparison, so only one written once is followed.
+        const writes = findVariable(sourceCode, bare)?.references.filter(
+          (ref) => ref.isWrite(),
+        );
+        if (writes?.length !== 1) return false;
+        // `let a = b; let b = a` initialise each other; stop on the loop.
+        const init = bindingInit(sourceCode, bare);
+        return (
+          init !== undefined &&
+          !seen.has(init) &&
+          readsConditionalHeader(init, new Set([...seen, init]))
+        );
+      }
+      if (bare.type === AST_NODE_TYPES.MemberExpression) {
+        const header = propertyName(bare);
+        return (
+          header !== null &&
+          CONDITIONAL_REQUEST_HEADERS.has(header.toLowerCase()) &&
+          bare.object.type === AST_NODE_TYPES.MemberExpression &&
+          propertyName(bare.object) === 'headers'
+        );
+      }
+      if (
+        bare.type === AST_NODE_TYPES.CallExpression &&
+        bare.callee.type === AST_NODE_TYPES.MemberExpression
+      ) {
+        const header = staticString(bare.arguments[0]);
+        // The getter must be the request's: `headers.get(…)` on a Fetch
+        // `Headers`, or `req.get(…)` on the request itself. A `Map` of
+        // submitted credentials has a `get` too.
+        const receiver = bare.callee.object;
+        return (
+          header !== null &&
+          CONDITIONAL_REQUEST_HEADERS.has(header.toLowerCase()) &&
+          HEADER_GETTERS.has(propertyName(bare.callee) ?? '') &&
+          ((receiver.type === AST_NODE_TYPES.MemberExpression &&
+            propertyName(receiver) === 'headers') ||
+            readsUntrusted(receiver))
+        );
+      }
+      return false;
+    }
+
+    /**
+     * Could this be the entity tag a conditional header is checked against?
+     * A keyless digest of content under any name (`const hash =
+     * createHash('sha1').update(body).digest('hex')`), which an etag usually
+     * is, and otherwise anything neither named as a secret nor derived with
+     * crypto: `const expected = createHmac(…).digest('hex')` is keyed, so it
+     * is not an entity tag whatever it is called.
+     */
+    function isEntityTag(node: TSESTree.Node): boolean {
+      return (
+        isContentDigest(node) ||
+        !(isSecretIdentifier(node) || isCryptoSecret(node))
+      );
+    }
+
+    /**
+     * The last alias in a chain of single-write bindings, whose initializer is
+     * the value itself: `const expected = derived` with `const derived =
+     * createHmac(…)` ends at `derived`. It stops at a binding written more
+     * than once, and where a loop closes.
+     */
+    function aliasedValue(
+      node: TSESTree.Node,
+      seen: ReadonlySet<TSESTree.Node> = new Set(),
+    ): TSESTree.Node {
+      const bare = unwrapTypeSyntax(node);
+      if (bare.type !== AST_NODE_TYPES.Identifier) return bare;
+      const writes = findVariable(sourceCode, bare)?.references.filter((ref) =>
+        ref.isWrite(),
+      );
+      const init = bindingInit(sourceCode, bare);
+      if (writes?.length !== 1 || init === undefined || seen.has(init)) {
+        return bare;
+      }
+      return unwrapTypeSyntax(init).type === AST_NODE_TYPES.Identifier
+        ? aliasedValue(init, new Set([...seen, init]))
+        : bare;
+    }
+
+    /**
+     * A digest-result chain rooted in `createHash(…)` — `createHash(…)
+     * .update(…).digest(…)` — quoted with string literals at most
+     * (`'"' + digest + '"'`, `` `"${digest}"` ``), through single-write aliases, stopping on a
+     * binding loop. Anything else concatenated in is not the digest.
+     */
+    function isContentDigest(
+      node: TSESTree.Node,
+      seen: ReadonlySet<TSESTree.Node> = new Set(),
+    ): boolean {
+      const bare = unwrapTypeSyntax(node);
+      if (bare.type === AST_NODE_TYPES.Identifier) {
+        const writes = findVariable(sourceCode, bare)?.references.filter(
+          (ref) => ref.isWrite(),
+        );
+        if (writes?.length !== 1) return false;
+        const init = bindingInit(sourceCode, bare);
+        return (
+          init !== undefined &&
+          !seen.has(init) &&
+          isContentDigest(init, new Set([...seen, init]))
+        );
+      }
+      if (bare.type === AST_NODE_TYPES.BinaryExpression) {
+        const operands = [bare.left, bare.right];
+        return (
+          bare.operator === '+' &&
+          operands.some((operand) => isContentDigest(operand, seen)) &&
+          operands.every(
+            (operand) =>
+              operand.type === AST_NODE_TYPES.Literal ||
+              isContentDigest(operand, seen),
+          )
+        );
+      }
+      if (bare.type === AST_NODE_TYPES.TemplateLiteral) {
+        // `"${digest}"`: the quasis are literal text, so only the
+        // interpolations have to be the digest. One with none is a constant,
+        // which holds no secret, so passing it is harmless.
+        return bare.expressions.every((expression) =>
+          isContentDigest(expression, seen),
+        );
+      }
+      return isDigestChain(bare);
+    }
+
+    /** `createHash(…)`, then `.update(…)` calls, ending in `.digest(…)`. */
+    function isDigestChain(node: TSESTree.Node): boolean {
+      if (
+        node.type !== AST_NODE_TYPES.CallExpression ||
+        node.callee.type !== AST_NODE_TYPES.MemberExpression ||
+        propertyName(node.callee) !== 'digest'
+      ) {
+        return false;
+      }
+      let link: TSESTree.Node = node.callee.object;
+      while (
+        link.type === AST_NODE_TYPES.CallExpression &&
+        link.callee.type === AST_NODE_TYPES.MemberExpression &&
+        propertyName(link.callee) === 'update'
+      ) {
+        link = link.callee.object;
+      }
+      if (link.type !== AST_NODE_TYPES.CallExpression) return false;
+      const root = link.callee;
+      return (
+        (root.type === AST_NODE_TYPES.Identifier &&
+          root.name === 'createHash') ||
+        (root.type === AST_NODE_TYPES.MemberExpression &&
+          propertyName(root) === 'createHash')
+      );
+    }
+
+    /**
+     * Is this a read off a handler parameter the framework fills from the
+     * request — NestJS `@Body()` / `@Query()` / `@Param()`, resolved through
+     * the import? Docmost refuses to revoke the caller's own session with
+     * `dto.sessionId === (req.raw as any).sessionId` (`session.controller.ts:
+     * 49`): both sides are the caller's, but `dto` is a decorated parameter
+     * the name-based reader cannot see, so only one side read as untrusted.
+     */
+    function readsPayloadParameter(
+      node: TSESTree.Node,
+      seen: ReadonlySet<unknown> = new Set(),
+    ): boolean {
+      let root = unwrapTypeSyntax(node);
+      while (root.type === AST_NODE_TYPES.MemberExpression) {
+        root = unwrapTypeSyntax(root.object);
+      }
+      if (root.type !== AST_NODE_TYPES.Identifier) return false;
+      // Only a parameter carries a parameter decorator, so the declaration
+      // itself is the test. A parameter is never written by its declaration,
+      // so a later write replaced the payload: `dto = stored` makes it server
+      // data, `dto = other` (another decorated parameter) keeps it the
+      // caller's.
+      const variable = findVariable(sourceCode, root);
+      if (variable === null) return false;
+      // Back on a parameter already being checked: the loop brings in nothing
+      // the other writes do not.
+      if (seen.has(variable)) return true;
+      const [id] = variable.identifiers;
+      const next = new Set([...seen, variable]);
+      return (
+        id !== undefined &&
+        requestSource.hasPayloadDecorator(id, valueFollow.envOf(context)) &&
+        variable.references.every(
+          (ref) =>
+            !ref.isWrite() ||
+            (ref.writeExpr != null &&
+              readsPayloadParameter(ref.writeExpr, next)),
+        )
+      );
     }
 
     function isSecretIdentifier(node: TSESTree.Node): boolean {
@@ -2128,6 +2391,18 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // A conditional-request validator against the entity tag: the tag went
+      // out in the `ETag` response header, so every client holds it, hash of
+      // the content or not. Only the etag is exempt; the same header against
+      // a value NAMED as a secret (`storedToken`) is still the caller timing
+      // a credential.
+      if (
+        (readsConditionalHeader(left) && isEntityTag(right)) ||
+        (readsConditionalHeader(right) && isEntityTag(left))
+      ) {
+        return;
+      }
+
       // Check if either side looks like a secret. A crypto derivation counts
       // as a secret on evidence rather than on spelling, which is the only
       // thing available when both operands are named `v` and `expected`.
@@ -2248,6 +2523,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
           // made `REQUEST` read as the request object.
           if (isImportedRoot(node)) return false;
           if (readsRequest(node)) return true;
+          if (readsPayloadParameter(node)) return true;
           const bare = unwrapTypeSyntax(node);
           if (bare.type !== AST_NODE_TYPES.Identifier) return false;
           const variable = findVariable(sourceCode, bare);
