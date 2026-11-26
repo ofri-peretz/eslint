@@ -159,6 +159,42 @@ server.addService(svc, {
       name: 'a comparison in a class field decides nothing',
       code: `class A { ok = rec.owner === call.metadata.get('foo')[0]; }`,
     },
+    {
+      name: 'compared with a field of an imported config object',
+      code: `import { config } from './config';\nserver.addService(svc, { Get(call, cb) { if (call.metadata.get('foo')[0] !== config.key) return cb(16); } });`,
+    },
+    {
+      name: 'compared with a field of `this`',
+      code: `server.addService(svc, { Get(call, cb) { if (call.metadata.get('foo')[0] !== this.key) return cb(16); } });`,
+    },
+    {
+      name: 'a comparison in a ternary arm is a value, not the decision',
+      code: `server.addService(svc, { Get(call, cb) { const ok = ready ? rec.owner === call.metadata.get('foo')[0] : false; cb(null, { ok }); } });`,
+    },
+    {
+      name: 'a destructured key other than metadata',
+      code: `server.addService(svc, { Get({ request: metadata }, cb) { if (rec.owner !== metadata.get('foo')[0]) return cb(7); } });`,
+    },
+    {
+      name: '`{ metadata }` destructured from the callback, not the call',
+      code: `server.addService(svc, { Get(call, { metadata }) { if (rec.owner !== metadata.get('foo')[0]) return cb(7); } });`,
+    },
+    {
+      name: 'a resolver passed by reference next to the metadata is not called with it',
+      code: `function who(md) { return md.get('foo')[0]; }\nserver.addService(svc, { Get(call, cb) { run(call.metadata, who); if (rec.owner !== who(other)) return cb(7); } });`,
+    },
+    {
+      name: 'a return inside a nested function is not the resolver’s return',
+      code: `function who(md) { function inner() { return md.get('foo')[0]; } return null; }\n${handler(`who(call.metadata)`)}`,
+    },
+    {
+      name: 'a cycle of consts on the other side ends, it does not loop',
+      code: `server.addService(svc, { Get(call, cb) { const a = b; const b = a; if (a !== call.metadata.get('foo')[0]) return cb(7); } });`,
+    },
+    {
+      name: 'a var declared twice is not followed',
+      code: `server.addService(svc, { Get(call, cb) { var h = call.metadata.get('foo')[0]; var h = SESSIONS[h]; if (rec.owner !== h) return cb(7); } });`,
+    },
   ],
   invalid: [
     {
@@ -279,6 +315,16 @@ ${handler(`who(call.metadata)`)}`,
     {
       name: 'one read reaching two checks is reported once',
       code: `server.addService(svc, { Get(call, cb) { const u = call.metadata.get('foo')[0]; if (a.owner !== u) return cb(7); if (b.owner !== u) return cb(7); } });`,
+      errors: ERR,
+    },
+    {
+      name: 'the record field read into a const first',
+      code: `server.addService(svc, { Get(call, cb) { const acc = ACCOUNTS[call.request.id]; const owner = acc.owner; if (owner !== call.metadata.get('foo')[0]) return cb(7); } });`,
+      errors: ERR,
+    },
+    {
+      name: 'a record fetched inline with await',
+      code: `server.addService(svc, { async Get(call, cb) { if ((await db.find(call.request.id)).owner !== call.metadata.get('foo')[0]) return cb(7); } });`,
       errors: ERR,
     },
   ],

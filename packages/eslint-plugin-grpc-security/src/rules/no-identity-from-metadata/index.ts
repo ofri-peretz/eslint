@@ -323,20 +323,35 @@ function rootOf(node: TSESTree.Node): TSESTree.Node {
  * Is this the field of a record the handler looked up for this request
  * (`acc.owner`), as opposed to a secret or a config value?
  */
-function isRecordField(node: TSESTree.Node, sourceCode: SourceCode): boolean {
+function isRecordField(
+  node: TSESTree.Node,
+  sourceCode: SourceCode,
+  hops: number = MAX_HOPS,
+): boolean {
+  if (hops <= 0) return false;
+  if (node.type === 'Identifier') {
+    // `const owner = acc.owner; if (owner !== user)`
+    const def = definitionOf(node, sourceCode);
+    const init =
+      def?.type === 'Variable'
+        ? (def.node as TSESTree.VariableDeclarator).init
+        : null;
+    return init !== null && isRecordField(init, sourceCode, hops - 1);
+  }
   if (node.type !== 'MemberExpression') return false;
   const root = rootOf(node);
-  if (root.type !== 'Identifier') return root.type === 'CallExpression';
+  // `(await db.find(id)).owner`, `load(id).owner`: a record fetched for this call.
+  if (root.type === 'AwaitExpression' || root.type === 'CallExpression') {
+    return true;
+  }
+  if (root.type !== 'Identifier') return false;
   const variable = variableOf(root, sourceCode);
   // `process.env.X`, and any other global, is configuration.
   if (variable === undefined || variable.defs.length === 0) {
     return root.name !== 'process';
   }
-  const def = variable.defs[0];
-  // A module-level constant (`CONFIG.key`) is configuration too.
-  const moduleLevel =
-    variable.scope.type === 'module' || variable.scope.type === 'global';
-  return !(moduleLevel && def.type === 'Variable');
+  // So is anything bound at module level: a constant, an import.
+  return variable.scope.type !== 'module' && variable.scope.type !== 'global';
 }
 
 /** Is `node` inside the test of an `if` or a ternary? */

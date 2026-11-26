@@ -519,7 +519,7 @@
       "examples": []
     },
     "eslint-plugin-grpc-security/no-identity-from-metadata": {
-      "cases": 42,
+      "cases": 53,
       "failed": 0,
       "examples": []
     },
