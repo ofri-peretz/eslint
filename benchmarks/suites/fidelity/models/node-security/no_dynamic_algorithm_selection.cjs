@@ -19,8 +19,8 @@ const LIT = {
 
 module.exports = {
   rule: 'no-dynamic-algorithm-selection',
-  domain: 252, // 6 functions x 6 bindings x 7 algorithm sources
-  traces: 2800,
+  domain: 324, // 6 functions x 6 bindings x 9 algorithm sources
+  traces: 3600,
   key: (s) => `${tag(s.fn)}|${tag(s.binding)}|${tag(s.alg)}`,
   code: (s) => {
     const f = tag(s.fn);
@@ -34,6 +34,8 @@ module.exports = {
       RecordField: 'record.algName',
       AllowlistConst: 'ALGORITHMS[tier]',
       MutableTable: 'TABLE[tier]',
+      EnumMember: 'Algo.Strong',
+      EnumAlias: 'ALGO_ALIAS',
     }[tag(s.alg)];
     const rest = {
       CreateHash: '',
@@ -59,7 +61,8 @@ module.exports = {
     }[tag(s.binding)];
     const tables =
       `const ALGORITHMS = { strong: '${lit}', stronger: '${lit}' } as const;\n` +
-      `const TABLE: Record<string, string> = { strong: '${lit}' };\nTABLE.legacy = String(Date.now());`;
+      `const TABLE: Record<string, string> = { strong: '${lit}' };\nTABLE.legacy = String(Date.now());\n` +
+      `enum Algo { Strong = '${lit}' }\nconst ALGO_ALIAS = Algo.Strong;`;
     return `${head}\n${tables}\nexport function run(algorithm: string, tier: 'strong' | 'stronger', record: any, key: any, iv: any) {\n  return ${callee}(${a}${rest});\n}\n`;
   },
   model: (s) => s.verdict,

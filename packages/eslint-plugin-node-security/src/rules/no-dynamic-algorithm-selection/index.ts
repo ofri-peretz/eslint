@@ -61,7 +61,10 @@ import {
   makeIsLiteralConstant,
   parameterIsAlwaysDefault,
 } from '../../utils/constant-folding';
-import { isClosedStringTableLookup } from '../../utils/const-value';
+import {
+  constInitializerOf,
+  isClosedStringTableLookup,
+} from '../../utils/const-value';
 import { moduleExportName } from '../../utils/module-binding';
 
 type MessageIds = 'dynamicAlgorithm';
@@ -113,6 +116,60 @@ function isClosedParameter(
         def.name.type === AST_NODE_TYPES.Identifier &&
         isClosedLiteralType(def.name.typeAnnotation?.typeAnnotation) &&
         variable.references.every((ref) => !ref.isWrite())
+      );
+    }
+    scope = scope.upper;
+  }
+  return false;
+}
+
+/**
+ * `Algo.Strong` where `enum Algo { Strong = 'aes-256-gcm' }` is declared in this
+ * file, or a `const` that holds one.
+ *
+ * An enum is the allowlist written as a declaration: every member the author
+ * listed carries a string literal, so a member read can only produce an
+ * algorithm they wrote down. The enum must be declared once in this file (a
+ * merged or imported one is not fully visible), and the member read must be
+ * static: `Algo[req.query.a]` can name any member a caller invents.
+ */
+function isEnumStringMember(
+  sourceCode: Readonly<TSESLint.SourceCode>,
+  node: TSESTree.Node,
+  depth = 0,
+): boolean {
+  if (depth > 4) return false;
+  if (node.type === AST_NODE_TYPES.Identifier) {
+    const init = constInitializerOf(sourceCode, node);
+    return init !== null && isEnumStringMember(sourceCode, init, depth + 1);
+  }
+  if (
+    node.type !== AST_NODE_TYPES.MemberExpression ||
+    node.object.type !== AST_NODE_TYPES.Identifier
+  ) {
+    return false;
+  }
+  const member = node.computed
+    ? node.property.type === AST_NODE_TYPES.Literal &&
+      typeof node.property.value === 'string'
+      ? node.property.value
+      : null
+    : // `Algo.#x` is a PrivateIdentifier, which has a `name` all the same.
+      (node.property as TSESTree.Identifier).name;
+  if (member === null) return false;
+  let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+  while (scope) {
+    const variable = scope.set.get(node.object.name);
+    if (variable) {
+      const [def, ...rest] = variable.defs;
+      if (def?.type !== 'TSEnumName' || rest.length > 0) return false;
+      return (def.node as TSESTree.TSEnumDeclaration).body.members.some(
+        (entry) =>
+          (entry.id.type === AST_NODE_TYPES.Identifier
+            ? entry.id.name
+            : entry.id.value) === member &&
+          entry.initializer?.type === AST_NODE_TYPES.Literal &&
+          typeof entry.initializer.value === 'string',
       );
     }
     scope = scope.upper;
@@ -343,6 +400,8 @@ export const noDynamicAlgorithmSelection = createRule<[], MessageIds>({
       // `name as 'sha256' | 'sha512'`, or a same-file helper whose return is
       // one (nestjs/authentication's `hashOf(alg)`).
       if (isClosedLiteralCast(sourceCode, node)) return true;
+      // An enum of string literals declared in this file, written the same way.
+      if (isEnumStringMember(sourceCode, node)) return true;
       if (node.type === AST_NODE_TYPES.CallExpression) {
         const fn = calledLocalFunction(sourceCode, node);
         if (fn && returnsClosedLiteral(sourceCode, fn)) return true;

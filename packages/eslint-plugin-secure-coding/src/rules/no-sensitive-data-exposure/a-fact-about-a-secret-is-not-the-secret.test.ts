@@ -12,6 +12,9 @@
  *   logger.info('Changing user password', { previousPasswordRequired: isRequired })
  *   logger.info('Created replacement', { preservedSecretCount: secrets.length })
  *
+ * (The fixtures below name the key `…Tally`: a key ending in `count` is a
+ * descriptor on its own now, which would leave the value's shape untested.)
+ *
  * The shape of the value decides, never the key. Every exemption has a
  * lookalike that logs the secret itself.
  */
@@ -53,7 +56,7 @@ ruleTester.run(
       },
       {
         name: 'the optional-chained length of a list of secrets',
-        code: `logger.info('done', { secretCount: secrets?.length });`,
+        code: `logger.info('done', { secretTally: secrets?.length });`,
       },
       {
         name: 'double negation',
@@ -66,7 +69,7 @@ ruleTester.run(
       },
       {
         name: 'the size of a set of secrets',
-        code: `logger.info('done', { secretCount: secrets.size });`,
+        code: `logger.info('done', { secretTally: secrets.size });`,
       },
       {
         name: 'a boolean held in a variable, from a comparison',
