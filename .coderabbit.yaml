@@ -7,7 +7,8 @@
 #
 # Reviewer split by repo volume (2026-11-25): eslint (~200 human merges a week) is Claude's,
 # through the required `review` check; CodeRabbit reviews the low-volume public repos
-# (subagent-gateway, serverless, blog), where its free quota lasts. Here it runs only on demand:
+# (subagent-gateway, serverless), where its free quota lasts; blog stays on Claude because
+# its REVIEW.md checklist is fed to the Claude reviewer. Here it runs only on demand:
 # comment `@coderabbitai review` on a PR that needs a second reader.
 language: en-US
 reviews:

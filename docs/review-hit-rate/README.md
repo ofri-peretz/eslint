@@ -45,6 +45,23 @@ constraint is quota, not quality. Five of its unacted findings are logic bugs in
 `.claude/hooks/verify-before-stop.mjs` (for example `npm test || true` recorded as a pass),
 tracked separately. Rows are in `coderabbit-baseline-2026-11-25.jsonl`.
 
+## The reviewer split (2026-11-25)
+
+Each repo gets one reviewer, chosen by human merges in the last 7 days:
+
+| Repo             | Merges / 7d | Reviewer   | Why                                                     |
+| ---------------- | ----------: | ---------- | ------------------------------------------------------- |
+| burgee           |         233 | Claude     | high volume                                             |
+| eslint           |         208 | Claude     | high volume; `review` is a required check               |
+| interlace        |         118 | Claude     | high volume                                             |
+| agents           |          31 | Claude     | private: CodeRabbit's free tier covers public repos     |
+| blog             |          25 | Claude     | its `REVIEW.md` checklist is fed to the Claude reviewer |
+| serverless       |          21 | CodeRabbit | low volume keeps it under its free limit                |
+| subagent-gateway |          19 | CodeRabbit | low volume keeps it under its free limit                |
+
+On eslint CodeRabbit still answers `@coderabbitai review`. Measure each side on its own repos:
+`--reviewer 'coderabbitai[bot]' --repo ofri-peretz/serverless --last 10`.
+
 ## Comparison: the 10 PRs after the judgment-only prompt merges
 
 Expected if the change works: gate drops toward 0, noise drops (citations are now reserved
