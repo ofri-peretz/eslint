@@ -240,7 +240,9 @@
         "no-unguarded-reflection",
         "no-identity-from-metadata",
         "no-unbounded-message-size",
-        "no-error-detail-leak"
+        "no-error-detail-leak",
+        "no-insecure-server-credentials",
+        "no-insecure-channel-credentials"
       ],
       "why": "gRPC: server reflection registered with no guard publishes every service on the listener; a caller identity read from metadata lets any client claim to be anyone.",
       "examples": ["no-unguarded-reflection", "no-identity-from-metadata"],

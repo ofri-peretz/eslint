@@ -2769,6 +2769,18 @@
       "confidence": "enforcement",
       "notes": "A `.get(…)` read of a gRPC handler's call metadata (handler = method of the object passed to `.addService`), followed backwards through consts, string wrappers and same-file function returns, that lands on one side of an equality check in an `if`/ternary test against a per-request record field. A lookup keyed by the value or a call that takes it ends the flow; comparisons with `process.env` or module constants are credential checks. Never decided from a header name."
     },
+    "no-insecure-channel-credentials": {
+      "environment": "grpc",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "A client constructed with `credentials.createInsecure()` and a call on it that passes `new Metadata()` filled with a credential header (authorization, proxy-authorization, cookie, x-api-key) or a `Bearer` value. Decided by the credential flow, never by the target's host name."
+    },
+    "no-insecure-server-credentials": {
+      "environment": "grpc",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "`bindAsync`/`bind` with `ServerCredentials.createInsecure()` and an address whose static host is a wildcard (`0.0.0.0`, `[::]`, `::`) or a bare port. Loopback and unix sockets are network semantics; a named or configured host is not something the file proves, so it stays silent."
+    },
     "no-unbounded-message-size": {
       "environment": "grpc",
       "detection": "structural-api",

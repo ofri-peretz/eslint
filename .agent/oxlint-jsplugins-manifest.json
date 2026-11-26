@@ -3,8 +3,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-11-26",
   "totalPlugins": 33,
-  "totalRules": 527,
-  "oxlintCompatible": 527,
+  "totalRules": 529,
+  "oxlintCompatible": 529,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -724,7 +724,7 @@
       "short": "grpc-security",
       "shim": "tools/oxlint-plugins/interlace-grpc-security.cjs",
       "subpath": "eslint-plugin-grpc-security/oxlint",
-      "ruleCount": 4,
+      "ruleCount": 6,
       "rules": [
         {
           "name": "no-error-detail-leak",
@@ -734,6 +734,18 @@
         },
         {
           "name": "no-identity-from-metadata",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-insecure-channel-credentials",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-insecure-server-credentials",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3594,6 +3606,8 @@
     "grpc-security": [
       "no-error-detail-leak",
       "no-identity-from-metadata",
+      "no-insecure-channel-credentials",
+      "no-insecure-server-credentials",
       "no-unbounded-message-size",
       "no-unguarded-reflection"
     ],

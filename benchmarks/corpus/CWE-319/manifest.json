@@ -1,0 +1,29 @@
+{
+  "cwe": "CWE-319",
+  "name": "Cleartext Transmission of Sensitive Information",
+  "owasp": "A02:2021",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-grpc-security"],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "grpc-insecure-wildcard-bind.js",
+        "description": "A gRPC server with insecure credentials bound to 0.0.0.0"
+      },
+      {
+        "file": "grpc-bearer-over-insecure-channel.js",
+        "description": "An Authorization header sent over a channel built with credentials.createInsecure()"
+      }
+    ],
+    "safe": [
+      {
+        "file": "grpc-lab-bind-loopback.js",
+        "description": "security-research protocol-ctf lib/grpc.mjs, verbatim: insecure credentials bound to a 127.0.0.1 default"
+      },
+      {
+        "file": "grpc-bearer-over-tls-channel.js",
+        "description": "The same Authorization header over a TLS channel"
+      }
+    ]
+  }
+}

@@ -99,7 +99,7 @@ const DESCRIPTIONS: Record<string, string> = {
   'eslint-plugin-sqlite-security':
     'Security rules for better-sqlite3 / sqlite3 (SQL injection prevention in raw queries).',
   'eslint-plugin-grpc-security':
-    'Security rules for Node gRPC servers (unguarded server reflection, caller identity read from metadata, unbounded message sizes, caught errors sent to the client).',
+    'Security rules for Node gRPC servers and clients (unguarded reflection, identity read from metadata, unbounded message sizes, error details sent to clients, plaintext transport).',
   'eslint-plugin-supabase-security':
     'Security rules for @supabase/supabase-js (service_role key reaching the client, computed RPC names, discarded auth errors, public storage buckets).',
   'eslint-plugin-typeorm-security':
