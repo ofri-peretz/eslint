@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-react-features",
-  "version": "2.4.5",
+  "version": "2.4.6",
   "description": "ESLint React hooks and JSX rules — prop-types, JSX correctness, render performance, and class-to-hooks migration for modern React codebases.",
   "type": "commonjs",
   "sideEffects": false,
@@ -72,7 +72,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.5.0"
+    "@interlace/eslint-devkit": "^2.5.1"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",

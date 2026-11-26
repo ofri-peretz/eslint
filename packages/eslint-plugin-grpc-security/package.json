@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-grpc-security",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "ESLint gRPC security rules — catches server reflection registered with no guard, which publishes every service on the listener, internal ones included.",
   "type": "commonjs",
   "sideEffects": false,
@@ -71,7 +71,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.5.0"
+    "@interlace/eslint-devkit": "^2.5.1"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",
