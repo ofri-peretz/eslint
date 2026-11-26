@@ -23,7 +23,7 @@
  * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"    shadowing.push(file);","replace":""}
  * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"      if (calls !== undefined && !calls.has(spec)) continue;","replace":""}
  * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"        missingExports.push(","replace":"        void ("}
- * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"      olderThanSource.push(basename(pkgDir));","replace":"      void 0;"}
+ * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"    if (src > newestMtime(present)) olderThanSource.push(basename(pkgDir));","replace":"    void 0;"}
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
