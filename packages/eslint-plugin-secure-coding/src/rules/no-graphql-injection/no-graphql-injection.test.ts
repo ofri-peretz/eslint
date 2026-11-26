@@ -56,6 +56,7 @@ describe('no-graphql-injection', () => {
         },
         // Safe introspection in development (with config)
         {
+          name: 'allowIntrospection permits an introspection selection set',
           code: 'const query = `{ __schema { types { name } } }`;',
           options: [{ allowIntrospection: true }],
         },
@@ -1832,6 +1833,51 @@ ruleTester.run(
         code: 'const q = "query {\\nuser\\n}" + zzzWrap(id);',
         options: [{ trustedSanitizers: ['zzzWrap'], strictMode: true }],
         errors: [{ messageId: 'graphqlInjection' }],
+      },
+    ],
+  },
+);
+
+/**
+ * ajv's bundled code generator (mcp-remote@0.1.15, dist/chunk-*.js) builds
+ * each validation error object in pieces: one `out +=` opens it, a later one
+ * closes it. The first piece starts with `{` and ends in `params: {} `, so it
+ * read as a two-level selection set and reported 30 times in a file where
+ * "graphql" never appears. A selection set's outer brace closes at its end,
+ * and its text holds only GraphQL tokens: `'`, `+` and `;` are not among them.
+ */
+ruleTester.run(
+  'ajv codegen fragments are not selection sets',
+  noGraphqlInjection,
+  {
+    valid: [
+      {
+        name: 'ajv error object, empty params (chunk:1733)',
+        code: `out += " { keyword: '" + ($errorKeyword || "false schema") + "' , dataPath: (dataPath || '') + " + it.errorPath + " , schemaPath: " + it.util.toQuotedString($errSchemaPath) + " , params: {} ";`,
+      },
+      {
+        name: 'ajv error object, nested params (chunk:2589)',
+        code: `out += " { keyword: '$ref' , dataPath: (dataPath || '') + " + it.errorPath + " , schemaPath: " + it.util.toQuotedString($errSchemaPath) + " , params: { ref: '" + it.util.escapeQuotes($schema) + "' } ";`,
+      },
+      {
+        name: 'the same fragment in a file that does load graphql',
+        code: `import { graphql } from 'graphql';\nout += " { keyword: 'anyOf' , dataPath: (dataPath || '') + " + it.errorPath + " , params: {} ";`,
+      },
+      {
+        name: 'a balanced object literal in JS syntax is not a selection set',
+        code: 'function f(a) { return `{ x: { y: ${a} + 1 } }`; }',
+      },
+    ],
+    invalid: [
+      {
+        name: 'a balanced selection set built by concatenation still reports',
+        code: `function f(userId) { return " { user(id: \\"" + userId + "\\") { name } } "; }`,
+        errors: [{ messageId: 'graphqlInjection' }],
+      },
+      {
+        name: 'a string value holding a quote or brace does not hide a selection set',
+        code: 'function f(userId) { return `{ user(id: "${userId}", note: "it\'s {") { name } }`; }',
+        errors: [{ messageId: 'unsafeVariableInterpolation' }],
       },
     ],
   },

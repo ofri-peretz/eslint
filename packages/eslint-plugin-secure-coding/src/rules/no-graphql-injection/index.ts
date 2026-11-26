@@ -406,9 +406,32 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       // quoted string on the left of a colon cannot occur.
       if (/\{\{|\}\}/.test(trimmed)) return false;
       if (/"[^"]*"\s*:/.test(trimmed)) return false;
+      // String values and `#` comments may hold any character, so the token
+      // checks below read the text without them.
+      const tokens = trimmed.replace(
+        /"""[\s\S]*?"""|"(?:[^"\\\n]|\\.)*"|#[^\n]*/g,
+        '""',
+      );
+      // Outside strings a document is names, numbers and GraphQL's
+      // punctuators (`! $ & ( ) ... : = @ [ ] { | }`), commas and whitespace.
+      // ajv's bundled code generator builds every validation error as
+      //   out += " { keyword: '" + … + "' , dataPath: (dataPath || '') + "
+      //       + … + " , params: {} ";
+      // (mcp-remote@0.1.15 dist/chunk-*.js, 30 findings) — `'` and `+` are
+      // JavaScript, not GraphQL.
+      if (/[^\w\s,!$&().:=@[\]{|}"-]/.test(tokens)) return false;
+      // The opening brace closes at the very end. ajv's piece above opens the
+      // object and leaves closing it to a later `out +=`.
+      let open = 0;
+      for (let i = 0; i < tokens.length; i++) {
+        if (tokens[i] === '{') open++;
+        else if (tokens[i] === '}' && --open === 0) {
+          if (i !== tokens.length - 1) return false;
+        }
+      }
       // A selection set nests: the operation's braces hold a field's braces.
       // `{ a } and { b }` never does.
-      return maxBraceDepth(trimmed) >= 2;
+      return open === 0 && maxBraceDepth(tokens) >= 2;
     };
 
     /** Index of `keyword` at a word boundary, from `startFrom`, or -1. */
