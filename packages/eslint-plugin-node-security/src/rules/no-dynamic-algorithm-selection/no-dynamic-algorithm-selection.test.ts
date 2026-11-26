@@ -41,7 +41,10 @@ describe('no-dynamic-algorithm-selection', () => {
           code: 'customCrypto.createHash(algo)',
         },
         // Different method — not checked
-        { code: 'crypto.randomBytes(32)' },
+        {
+          name: 'a crypto export that takes no algorithm is never an algorithm choice',
+          code: 'crypto.randomBytes(32)',
+        },
         {
           name: 'a crypto export that takes no algorithm is not an algorithm choice, whatever its first argument',
           code: 'crypto.randomBytes(size)',

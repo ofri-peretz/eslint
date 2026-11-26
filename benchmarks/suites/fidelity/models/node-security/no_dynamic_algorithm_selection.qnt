@@ -4,13 +4,15 @@
 // not a static string: a parameter, process.env, a stored record field, a
 // request value. Static literals (incl. a no-expression template) are fine, and
 // so is a lookup into a const object literal whose values are all string
-// literals (the documented allowlist). The crypto binding is resolved in any
+// literals (the documented allowlist), and so is a member of a string-literal
+// enum declared in the same file (the allowlist as a declaration), read directly
+// or through a const. The crypto binding is resolved in any
 // spelling (node:crypto, named/renamed import, destructured require, bracket);
 // a local object with a createHash method is not crypto.
 module no_dynamic_algorithm_selection {
   type Fn = CreateHash | CreateHmac | CreateCipheriv | CreateDecipheriv | CreateSign | CreateVerify
   type Binding = CjsCrypto | EsmNodeDefault | NamedRenamedNode | CjsDestructure | Bracket | LocalObject
-  type Alg = Literal | StaticTemplate | Param | Env | RecordField | AllowlistConst | MutableTable
+  type Alg = Literal | StaticTemplate | Param | Env | RecordField | AllowlistConst | MutableTable | EnumMember | EnumAlias
 
   pure def dynamicAlg(a: Alg): bool = match a {
     | Literal => false
@@ -20,6 +22,8 @@ module no_dynamic_algorithm_selection {
     | RecordField => true
     | AllowlistConst => false
     | MutableTable => true
+    | EnumMember => false
+    | EnumAlias => false
   }
 
   pure def reports(f: Fn, b: Binding, a: Alg): bool = b != LocalObject and dynamicAlg(a)
@@ -32,7 +36,7 @@ module no_dynamic_algorithm_selection {
   action step = {
     nondet f = Set(CreateHash, CreateHmac, CreateCipheriv, CreateDecipheriv, CreateSign, CreateVerify).oneOf()
     nondet b = Set(CjsCrypto, EsmNodeDefault, NamedRenamedNode, CjsDestructure, Bracket, LocalObject).oneOf()
-    nondet a = Set(Literal, StaticTemplate, Param, Env, RecordField, AllowlistConst, MutableTable).oneOf()
+    nondet a = Set(Literal, StaticTemplate, Param, Env, RecordField, AllowlistConst, MutableTable, EnumMember, EnumAlias).oneOf()
     all { fn' = f, binding' = b, alg' = a, verdict' = reports(f, b, a) }
   }
 
