@@ -1787,7 +1787,19 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       }
       if (node.type === AST_NODE_TYPES.Identifier) {
         const init = bindingInit(sourceCode, node);
-        return init !== undefined && isServerDerived(init, visited);
+        if (init !== undefined && isServerDerived(init, visited)) return true;
+        // `hash = await store.etagFor(id)` after the initializer: the binding
+        // may hold what that wrote by the comparison.
+        // The initializer is in `visited` by now, so its own write is not
+        // walked twice.
+        const variable = findVariable(sourceCode, node);
+        return (
+          variable !== null &&
+          variable.references.some(
+            (ref) =>
+              ref.writeExpr != null && isServerDerived(ref.writeExpr, visited),
+          )
+        );
       }
       if (node.type === AST_NODE_TYPES.CallExpression) {
         const callee = unwrapChain(node.callee);
@@ -1862,17 +1874,24 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
 
     /**
      * Could this be the entity tag a conditional header is checked against?
-     * Anything not named as a secret, and a keyless digest of content under
-     * any name (`const hash = createHash('sha1').update(body).digest('hex')`)
-     * — an etag is usually exactly that. An HMAC is keyed, so it is not.
+     * A keyless digest of content under any name (`const hash =
+     * createHash('sha1').update(body).digest('hex')`), which an etag usually
+     * is, and otherwise anything neither named as a secret nor derived with
+     * crypto: `const expected = createHmac(…).digest('hex')` is keyed, so it
+     * is not an entity tag whatever it is called.
      */
     function isEntityTag(node: TSESTree.Node): boolean {
-      return !isSecretIdentifier(node) || isContentDigest(node);
+      return (
+        isContentDigest(node) ||
+        !(isSecretIdentifier(node) || isCryptoSecret(node))
+      );
     }
 
     /**
-     * A `createHash(…)` derivation with no `createHmac` in it, through `const`
-     * aliases (`const hash = digest`), stopping on a binding loop.
+     * A digest-result chain rooted in `createHash(…)` — `createHash(…)
+     * .update(…).digest(…)` — quoted with string literals at most
+     * (`'"' + digest + '"'`, `` `"${digest}"` ``), through single-write aliases, stopping on a
+     * binding loop. Anything else concatenated in is not the digest.
      */
     function isContentDigest(
       node: TSESTree.Node,
@@ -1880,6 +1899,10 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     ): boolean {
       const bare = unwrapTypeSyntax(node);
       if (bare.type === AST_NODE_TYPES.Identifier) {
+        const writes = findVariable(sourceCode, bare)?.references.filter(
+          (ref) => ref.isWrite(),
+        );
+        if (writes?.length !== 1) return false;
         const init = bindingInit(sourceCode, bare);
         return (
           init !== undefined &&
@@ -1887,17 +1910,54 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
           isContentDigest(init, new Set([...seen, init]))
         );
       }
-      const calls = (name: string) =>
-        someNode(
-          bare,
-          (n) =>
-            n.type === AST_NODE_TYPES.CallExpression &&
-            ((n.callee.type === AST_NODE_TYPES.Identifier &&
-              n.callee.name === name) ||
-              (n.callee.type === AST_NODE_TYPES.MemberExpression &&
-                propertyName(n.callee) === name)),
+      if (bare.type === AST_NODE_TYPES.BinaryExpression) {
+        const operands = [bare.left, bare.right];
+        return (
+          bare.operator === '+' &&
+          operands.some((operand) => isContentDigest(operand, seen)) &&
+          operands.every(
+            (operand) =>
+              operand.type === AST_NODE_TYPES.Literal ||
+              isContentDigest(operand, seen),
+          )
         );
-      return calls('createHash') && !calls('createHmac');
+      }
+      if (bare.type === AST_NODE_TYPES.TemplateLiteral) {
+        // `"${digest}"`: the quasis are literal text, so only the
+        // interpolations have to be the digest. One with none is a constant,
+        // which never reaches here.
+        return bare.expressions.every((expression) =>
+          isContentDigest(expression, seen),
+        );
+      }
+      return isDigestChain(bare);
+    }
+
+    /** `createHash(…)`, then `.update(…)` calls, ending in `.digest(…)`. */
+    function isDigestChain(node: TSESTree.Node): boolean {
+      if (
+        node.type !== AST_NODE_TYPES.CallExpression ||
+        node.callee.type !== AST_NODE_TYPES.MemberExpression ||
+        propertyName(node.callee) !== 'digest'
+      ) {
+        return false;
+      }
+      let link: TSESTree.Node = node.callee.object;
+      while (
+        link.type === AST_NODE_TYPES.CallExpression &&
+        link.callee.type === AST_NODE_TYPES.MemberExpression &&
+        propertyName(link.callee) === 'update'
+      ) {
+        link = link.callee.object;
+      }
+      if (link.type !== AST_NODE_TYPES.CallExpression) return false;
+      const root = link.callee;
+      return (
+        (root.type === AST_NODE_TYPES.Identifier &&
+          root.name === 'createHash') ||
+        (root.type === AST_NODE_TYPES.MemberExpression &&
+          propertyName(root) === 'createHash')
+      );
     }
 
     /**
@@ -1908,7 +1968,10 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
      * 49`): both sides are the caller's, but `dto` is a decorated parameter
      * the name-based reader cannot see, so only one side read as untrusted.
      */
-    function readsPayloadParameter(node: TSESTree.Node): boolean {
+    function readsPayloadParameter(
+      node: TSESTree.Node,
+      seen: ReadonlySet<unknown> = new Set(),
+    ): boolean {
       let root = unwrapTypeSyntax(node);
       while (root.type === AST_NODE_TYPES.MemberExpression) {
         root = unwrapTypeSyntax(root.object);
@@ -1916,15 +1979,25 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       if (root.type !== AST_NODE_TYPES.Identifier) return false;
       // Only a parameter carries a parameter decorator, so the declaration
       // itself is the test. A parameter is never written by its declaration,
-      // so any write replaced the payload (`dto = stored`) and the binding no
-      // longer says where the value came from.
+      // so a later write replaced the payload: `dto = stored` makes it server
+      // data, `dto = other` (another decorated parameter) keeps it the
+      // caller's.
       const variable = findVariable(sourceCode, root);
       if (variable === null) return false;
+      // Back on a parameter already being checked: the loop brings in nothing
+      // the other writes do not.
+      if (seen.has(variable)) return true;
       const [id] = variable.identifiers;
+      const next = new Set([...seen, variable]);
       return (
         id !== undefined &&
-        !variable.references.some((ref) => ref.isWrite()) &&
-        requestSource.hasPayloadDecorator(id, valueFollow.envOf(context))
+        requestSource.hasPayloadDecorator(id, valueFollow.envOf(context)) &&
+        variable.references.every(
+          (ref) =>
+            !ref.isWrite() ||
+            (ref.writeExpr != null &&
+              readsPayloadParameter(ref.writeExpr, next)),
+        )
       );
     }
 

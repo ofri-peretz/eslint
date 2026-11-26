@@ -382,10 +382,12 @@ word (`tokenId`) or remove `id` from `nonSecretTails`.
 
 - An `If-None-Match` / `If-Match` header compared with an etag is not reported.
   The etag went out in the `ETag` response header, so every client has it,
-  even when it is a hash of the content. The etag is a value not named as a
-  secret, or a keyless `createHash` digest under any name. The same header
-  compared with a stored secret (`storedToken`), an HMAC or a configured secret
-  still reports.
+  even when it is a hash of the content. The etag is a keyless
+  `createHash(…).update(…).digest(…)` chain under any name (quoted with string
+  literals at most), or a value neither named as a secret nor derived with
+  crypto. Only a binding written once is followed. The same header compared
+  with a stored secret (`storedToken`), an HMAC under any name, a digest with
+  something else concatenated in, or a configured secret still reports.
 - A NestJS `@Body()` / `@Query()` / `@Param()` parameter reads as the request.
   A body field compared with another value from the same request has the
   caller on both sides, so it is not reported. A body field compared with a

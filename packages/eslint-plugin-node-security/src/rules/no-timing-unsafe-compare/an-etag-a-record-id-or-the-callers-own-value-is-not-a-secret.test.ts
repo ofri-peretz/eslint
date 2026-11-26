@@ -142,6 +142,59 @@ ruleTester.run(
           }
         `,
       },
+      {
+        name: 'a template-quoted digest etag, as Wiki.js writes it',
+        code: `
+          import crypto from 'crypto';
+          async function asset(req, reply) {
+            const etag = \`"\${crypto.createHash('sha1').update(asset.data).digest('hex')}"\`;
+            reply.header('ETag', etag);
+            if (req.headers['if-none-match'] === etag) return reply.code(304).send();
+          }
+        `,
+      },
+      {
+        name: 'a @Body() parameter replaced by another @Body() parameter is still the caller',
+        code: `
+          import { Body, Controller, Post, Req } from '@nestjs/common';
+          @Controller()
+          class AuthController {
+            @Post('reset')
+            async reset(@Body() dto: Dto, @Body() other: Dto, @Req() req: Request) {
+              dto = other;
+              return dto.token === req.body.token;
+            }
+          }
+        `,
+      },
+      {
+        name: 'an imported createHash digest of server content is the etag',
+        code: `
+          import { createHash } from 'crypto';
+          function get(req) {
+            const hash = createHash('sha1').update(asset.data).digest('hex');
+            return req.headers['if-none-match'] === hash;
+          }
+        `,
+      },
+      {
+        name: 'a request read off an undeclared req on both sides',
+        code: 'function f() { return req.body.token === req.query.token; }',
+      },
+      {
+        name: 'a @Body() parameter only incremented is not the caller any more',
+        code: `
+          import { Body, Controller, Post } from '@nestjs/common';
+          @Controller()
+          class AuthController {
+            @Post('reset')
+            async reset(@Body() count: number) {
+              count++;
+              return count === this.stored.token;
+            }
+          }
+        `,
+      },
     ],
     invalid: [
       {
@@ -256,6 +309,67 @@ ruleTester.run(
         errors: [{ messageId: 'timingUnsafeCompare' }],
       },
       {
+        name: 'a digest binding written again is not followed',
+        code: `
+          import crypto from 'crypto';
+          async function f(req) {
+            let hash = crypto.createHash('sha1').update(req.body).digest('hex');
+            hash = await store.etagFor(req.params.id);
+            return req.headers['if-none-match'] === hash;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a digest concatenated with a stored token is not an entity tag',
+        code: `
+          import crypto from 'crypto';
+          function f(req, storedToken) {
+            const hash = crypto.createHash('sha1').update(req.body).digest('hex') + storedToken;
+            return req.headers['if-match'] === hash;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a keyed HMAC under a plain name is not an entity tag',
+        code: `
+          import crypto from 'crypto';
+          function hook(req) {
+            const expected = crypto.createHmac('sha256', secret).update(req.body).digest('hex');
+            return req.headers['if-none-match'] === expected;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a template with a stored token beside the digest is not an entity tag',
+        code: `
+          import crypto from 'crypto';
+          function f(req, storedToken) {
+            const hash = \`\${crypto.createHash('sha1').update(req.body).digest('hex')}\${storedToken}\`;
+            return req.headers['if-none-match'] === hash;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a hash that only calls digest on some other object is not a digest',
+        code: "function f(req) { const hash = hasher.digest('hex'); return req.headers['if-none-match'] === hash; }",
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a hash minus a quote is not a quoted digest',
+        code: `
+          import crypto from 'crypto';
+          function f(req) {
+            const hash = crypto.createHash('sha1').update(req.body).digest('hex') - '"';
+            return req.headers['if-none-match'] === hash;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
         name: 'a hash binding that only aliases another name is not followed',
         code: "function f(req, storedHash) { const hash = storedHash; return req.headers['if-none-match'] === hash; }",
         errors: [{ messageId: 'timingUnsafeCompare' }],
@@ -301,6 +415,71 @@ ruleTester.run(
             }
           }
         `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'two @Body() parameters written from each other are not followed forever',
+        code: `
+          import { Body, Controller, Post, Req } from '@nestjs/common';
+          @Controller()
+          class AuthController {
+            @Post('reset')
+            async reset(@Body() dto: Dto, @Body() other: Dto, @Req() req: Request) {
+              dto = other;
+              other = dto;
+              return dto.token === this.stored.resetToken;
+            }
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a hash from a function that is not createHash is not a digest',
+        code: `
+          import crypto from 'crypto';
+          function get(req) {
+            const hash = makeHash('sha1').update(asset.data).digest('hex');
+            return req.headers['if-none-match'] === hash;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a hash from a member that is not createHash is not a digest',
+        code: `
+          import crypto from 'crypto';
+          function get(req) {
+            const hash = crypto.makeHash('sha1').update(asset.data).digest('hex');
+            return req.headers['if-none-match'] === hash;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a hash object that is never digested is not a digest',
+        code: `
+          import crypto from 'crypto';
+          function get(req) {
+            const hash = crypto.createHash('sha1').update(asset.data).copy();
+            return req.headers['if-none-match'] === hash;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a hash from a plain digest call is not a digest chain',
+        code: `
+          import crypto from 'crypto';
+          function get(req) {
+            const hash = digest(asset.data);
+            return req.headers['if-none-match'] === hash;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'an undeclared hash is not followed',
+        code: "function get(req) { return req.headers['if-none-match'] === hash; }",
         errors: [{ messageId: 'timingUnsafeCompare' }],
       },
       {
