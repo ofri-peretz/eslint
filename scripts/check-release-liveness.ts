@@ -173,6 +173,50 @@ function gh(args: string[]): string {
   }).trim();
 }
 
+/**
+ * Is `changesets-pr.yml`'s push-triggered "version" job currently running on
+ * main?
+ *
+ * The no-version-pr check below asks "is a Version PR open" exactly once,
+ * with no retry — unlike the publish-lag check further down, which already
+ * rides out `release.yml` still running via `releaseInFlight()`. That
+ * asymmetry produced #1816: this script's OWN workflow run was queued by
+ * GitHub Actions for ~7.5 minutes before a runner picked it up (created
+ * 06:27:34Z, its job did not start until 06:35:05Z), and in that window a
+ * second, slightly later push landed. That push's "version" job was still
+ * running when this check sampled "no open Version PR" at 06:36:12Z — it
+ * opened the Version PR 19 seconds later, at 06:36:33Z, for the exact
+ * changeset this check was about to report as stalled.
+ *
+ * `workflow_run` on `types: [completed]` (the fix for #849) only guarantees
+ * this check runs after ITS OWN triggering Changesets run has had its one
+ * chance to open a PR. It says nothing about a DIFFERENT, concurrently
+ * in-flight run triggered by a later push — which is exactly what resolved
+ * #1816 a moment too late for a single, retry-free query to see. The same
+ * fix already used for `release.yml` (ask the Actions API whether the job
+ * that would resolve this is still going, rather than guess from timing)
+ * applies here unchanged.
+ *
+ * Read-only (`gh run list`). A query failure returns false — same posture as
+ * `releaseInFlight()`: fails toward reporting the stall, not toward excusing
+ * one.
+ */
+let versionJobInFlightAnswer: boolean | undefined;
+function versionJobInFlight(): boolean {
+  if (versionJobInFlightAnswer !== undefined) return versionJobInFlightAnswer;
+  try {
+    const count = gh([
+      'run', 'list', '--repo', REPO, '--workflow', 'changesets-pr.yml',
+      '--event', 'push', '--branch', 'main',
+      '--json', 'status', '--jq', '[.[] | select(.status != "completed")] | length',
+    ]);
+    versionJobInFlightAnswer = count !== '0';
+  } catch {
+    versionJobInFlightAnswer = false;
+  }
+  return versionJobInFlightAnswer;
+}
+
 // ── 1. changesets queued, but no Version PR ──────────────────────────────
 const { files: pending, source: pendingSource } = pendingChangesets();
 try {
@@ -183,14 +227,21 @@ try {
   checked.push(
     `${pending.length} pending changeset(s) on ${pendingSource}, Version PR open: ${open !== '0'}`,
   );
-  if (pending.length > 0 && open === '0')
-    findings.push({
-      kind: 'no-version-pr',
-      detail:
-        `${pending.length} changeset(s) are queued on main but no Version Packages PR is open. ` +
-        'The changesets action is not producing one, so nothing will ever be versioned or published. ' +
-        `Queued: ${pending.join(', ')}`,
-    });
+  if (pending.length > 0 && open === '0') {
+    if (versionJobInFlight()) {
+      checked.push(
+        'no-version-pr held back: changesets-pr.yml has a push-triggered run still in progress on main (not a stall)',
+      );
+    } else {
+      findings.push({
+        kind: 'no-version-pr',
+        detail:
+          `${pending.length} changeset(s) are queued on main but no Version Packages PR is open. ` +
+          'The changesets action is not producing one, so nothing will ever be versioned or published. ' +
+          `Queued: ${pending.join(', ')}`,
+      });
+    }
+  }
 } catch (err) {
   // A failure to ASK is not a clean bill of health. Reported, not swallowed —
   // the whole point of this file is that silence was mistaken for success.
