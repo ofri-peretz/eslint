@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-gemini-security",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "ESLint Gemini SDK security rules — catches safety thresholds set to BLOCK_NONE, hardcoded API keys, and system instructions assembled from untrusted input.",
   "type": "commonjs",
   "sideEffects": false,
@@ -74,7 +74,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.0.4"
+    "@interlace/eslint-devkit": "^2.5.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",

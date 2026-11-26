@@ -5,6 +5,25 @@ All notable changes to `eslint-plugin-knex-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.5
+
+### Patch Changes
+
+- **🐛 Fix** — no longer declares `knex` as optional `peerDependencies`
+
+  No source file ever imported it; the rules match the library by the import specifier in the linted code, so nothing needs installing. The entries only made npm warn on a version mismatch. The supported ranges are now listed in the README under "Supported library versions". Nothing changes at lint time. If you installed the plugin next to this library and relied on npm's peer warning, that warning is gone.
+
+- **🐛 Fix** — `no-unsafe-query` accepts members of an enum imported by a relative path, and destructured parameters typed `number`
+
+  The shared SQL-injection judge already treated literals, `const` bindings, enum members declared in the file and `as const` objects as fixed text. Two more constants are now proven, which removed 7 of 89 reports on Infisical's backend (the rest are values read back from the database, enums imported through a path alias, and untyped parameters, none of which a file can prove fixed):
+
+  - `${TableName.Project}` where `TableName` is an `enum` exported by a module the file imports with a relative path, followed through `export *` barrels. An alias or a package specifier is still never opened, and an enum member whose initialiser is computed at run time is still reported.
+  - `({ limit }: Opts)` where `Opts` is an `interface`, a `type` or an inline type written in the same file and `limit` is declared `number`, `boolean` or a literal. A `string` property, an untyped pattern and a missing key are still reported.
+
+  The value-following walk in `@interlace/eslint-devkit` now resolves an `export enum` across relative imports, which every driver plugin built on `createSqlInjectionRule` inherits.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`
+
 ## 2.0.4
 
 ### Patch Changes
