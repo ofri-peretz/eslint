@@ -5,6 +5,17 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.5.1
+
+### Patch Changes
+
+- **🐛 Fix** — `no-fail-open-auth`: a catch that stores the error in a variable is not fail-open when the next guard reads that variable and throws or returns. The rule now accepts this shape, which FastMCP's stdio authentication uses: `catch (e) { failure = e.message } if (failure !== void 0) throw …`. The write must always run, target a binding declared before the try, and not read its own old value, so a counter like `failures = failures + 1` does not count. The guard must also come before any work. A flag set only on some failures, a compound or member write, and work that runs before the guard still report.
+- **🧹 Refactor** — `no-redos-vulnerable-regex` runs its own backtracking analysis instead of `refa` and `scslre`
+
+  The two packages are gone from the dependency list. What the rule used of them (set algebra over characters, the Unicode property and case-folding data, and `scslre`'s ambiguity detection) now lives in `src/rules/no-redos-vulnerable-regex/analysis/`, trimmed to what the rule calls, with the MIT notices shipped in `THIRD_PARTY_NOTICES.md`. Verdicts are unchanged: the same 400-odd recorded `scslre` answers, 65,000 real-world patterns and 150,000 generated ones agree report for report. `@eslint-community/regexpp` is still used for parsing.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.4.0`
+
 ## 6.5.0
 
 ### Minor Changes

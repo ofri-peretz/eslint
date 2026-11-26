@@ -5,6 +5,15 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.3.2
+
+### Patch Changes
+
+- **🐛 Fix** — `no-arbitrary-file-access` now decides that a path variable is a function parameter by scope resolution, not by matching its name while walking up the tree. A `catch (file)` binding that shadows an outer `file` parameter fed request input is no longer reported as that parameter.
+- **🐛 Fix** — `isSeparatorAnchored` now lives in `@interlace/eslint-devkit`. node-security's file-access rules and mcp-sdk-security's `no-path-traversal-in-tool` each carried their own copy, and the two had to be changed together. Both now import the one shared helper, so a `startsWith` containment guard gets the same verdict from every rule. Rule behaviour does not change.
+- **🐛 Fix** — `no-timing-unsafe-compare`: a comparison against `void 0` is a comparison against `undefined`, the spelling bundlers and minifiers emit. `meta?.progressToken === void 0` in a bundled MCP server is a presence check, not a secret comparison. `=== undefined` was already silent. A token compared with a configured secret still reports.
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.4.0`
+
 ## 6.3.1
 
 ### Patch Changes

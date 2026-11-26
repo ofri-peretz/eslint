@@ -38,13 +38,13 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-knex-security` | 2.0.4 | `knex-security/` | — | `plugin-knex-security` | security | `knex` | ✅ | ✅ | ✅ |
 | `eslint-plugin-lambda-security` | 3.0.6 | `lambda-security/` | — | `plugin-lambda-security` | security | `lambda` | ✅ | ✅ | ✅ |
 | `eslint-plugin-maintainability` | 4.0.8 | `maintainability/` | — | `plugin-maintainability` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-mcp-sdk-security` | 2.1.4 | `mcp-sdk-security/` | — | `plugin-mcp-sdk-security` | security | `mcp` | ✅ | ✅ | ✅ |
+| `eslint-plugin-mcp-sdk-security` | 2.1.5 | `mcp-sdk-security/` | — | `plugin-mcp-sdk-security` | security | `mcp` | ✅ | ✅ | ✅ |
 | `eslint-plugin-modernization` | 4.0.6 | `modernization/` | — | `plugin-modernization` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-modularity` | 3.0.5 | `modularity/` | — | `plugin-modularity` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mongodb-security` | 10.1.3 | `mongodb-security/` | — | `plugin-mongodb-security` | security | `mongodb` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mysql-security` | 2.0.4 | `mysql-security/` | — | `plugin-mysql-security` | security | `mysql` | ✅ | ✅ | ✅ |
 | `eslint-plugin-nestjs-security` | 4.3.1 | `nestjs-security/` | — | `plugin-nestjs-security` | security | `nestjs` | ✅ | ✅ | ✅ |
-| `eslint-plugin-node-security` | 6.3.1 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
+| `eslint-plugin-node-security` | 6.3.2 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
 | `eslint-plugin-openai-security` | 2.0.4 | `openai-security/` | — | `plugin-openai-security` | security | `openai` | ✅ | ✅ | ✅ |
 | `eslint-plugin-operability` | 5.0.8 | `operability/` | — | `plugin-operability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-postgresql-security` | 3.0.6 | `postgresql-security/` | `pg/` | `plugin-postgresql-security` | security | `postgresql` | ✅ | ✅ | ✅ |
@@ -52,7 +52,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-react-a11y` | 3.2.0 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-features` | 2.4.4 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-reliability` | 5.1.1 | `reliability/` | — | `plugin-reliability` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-secure-coding` | 6.5.0 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-secure-coding` | 6.5.1 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sequelize-security` | 2.0.4 | `sequelize-security/` | — | `plugin-sequelize-security` | security | `sequelize` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sqlite-security` | 2.0.4 | `sqlite-security/` | — | `plugin-sqlite-security` | security | `sqlite` | ✅ | ✅ | ✅ |
 | `eslint-plugin-supabase-security` | 2.0.5 | `supabase-security/` | — | `plugin-supabase-security` | security | `—` | ✅ | ✅ | ✅ |

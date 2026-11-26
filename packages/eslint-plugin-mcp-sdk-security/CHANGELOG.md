@@ -5,6 +5,13 @@ All notable changes to `eslint-plugin-mcp-sdk-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.5
+
+### Patch Changes
+
+- **🐛 Fix** — `isSeparatorAnchored` now lives in `@interlace/eslint-devkit`. node-security's file-access rules and mcp-sdk-security's `no-path-traversal-in-tool` each carried their own copy, and the two had to be changed together. Both now import the one shared helper, so a `startsWith` containment guard gets the same verdict from every rule. Rule behaviour does not change.
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.4.0`
+
 ## 2.1.4
 
 ### Patch Changes
