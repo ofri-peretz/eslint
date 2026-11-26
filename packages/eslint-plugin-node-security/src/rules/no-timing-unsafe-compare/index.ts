@@ -1101,20 +1101,16 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     let patterns: ReturnType<typeof compileUserPatterns>;
 
     /**
-     * Does a secret pattern of two or more words, ending in this tail, name
-     * the identifier? `sessionId` is a configured secret that happens to end
-     * in `id`; the tail exempts `tokenId`, not the pattern that spells the
-     * tail out.
+     * Does a secret pattern ending in this tail name the identifier?
+     * `sessionId` is a configured secret that happens to end in `id`; the tail
+     * exempts `tokenId`, not a pattern that spells the tail out.
      */
     function endsInSecretCompound(name: string, tail: string): boolean {
-      return wordPatterns.some((pattern) => {
-        const words = identifierWords(pattern);
-        return (
-          words.length > 1 &&
-          words[words.length - 1] === tail &&
-          containsWord(name, pattern)
-        );
-      });
+      return wordPatterns.some(
+        (pattern) =>
+          identifierWords(pattern).at(-1) === tail &&
+          containsWord(name, pattern),
+      );
     }
 
     function nameLooksSecret(name: string): boolean {
@@ -1865,10 +1861,10 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         root = unwrapTypeSyntax(root.object);
       }
       if (root.type !== AST_NODE_TYPES.Identifier) return false;
-      const variable = findVariable(sourceCode, root);
-      const id = variable?.identifiers[0];
+      // Only a parameter carries a parameter decorator, so the declaration
+      // itself is the test.
+      const id = findVariable(sourceCode, root)?.identifiers[0];
       return (
-        variable?.defs[0]?.type === 'Parameter' &&
         id !== undefined &&
         requestSource.hasPayloadDecorator(id, valueFollow.envOf(context))
       );

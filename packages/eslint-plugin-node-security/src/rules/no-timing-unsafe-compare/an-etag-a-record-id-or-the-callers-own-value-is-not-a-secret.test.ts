@@ -147,6 +147,45 @@ ruleTester.run(
         errors: [{ messageId: 'timingUnsafeCompare' }],
       },
       {
+        name: 'a header read by a computed name is not a conditional header',
+        code: `
+          import crypto from 'crypto';
+          function hook(req, name) {
+            const expected = crypto.createHmac('sha256', secret).update(req.body).digest('hex');
+            return req.headers[name] === expected;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a getter called with a computed header name still reports',
+        code: `
+          import crypto from 'crypto';
+          function hook(req, name) {
+            const expected = crypto.createHmac('sha256', secret).update(req.body).digest('hex');
+            return req.get(name) === expected;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a signature header with a fallback is not a conditional header',
+        code: `
+          import crypto from 'crypto';
+          function hook(req) {
+            const expected = crypto.createHmac('sha256', secret).update(req.body).digest('hex');
+            return expected === (req.headers['x-hub-signature-256'] || '');
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
+        name: 'a pattern configured as id keeps every id a secret',
+        code: 'function f(req) { return req.body.tokenId === store.apiTokenId; }',
+        options: [{ secretPatterns: ['token', 'id'] }],
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
         name: 'a session id is still a secret although it ends in id',
         code: 'function f(req) { return req.headers.cookie === store.localSessionId; }',
         errors: [{ messageId: 'timingUnsafeCompare' }],
