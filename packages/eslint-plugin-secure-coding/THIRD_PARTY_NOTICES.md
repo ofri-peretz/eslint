@@ -1,8 +1,7 @@
 # Third-party notices
 
-`eslint-plugin-secure-coding` has no third-party runtime dependency for its ReDoS
-analysis. The parts of the three libraries below that the rule used were copied
-or ported into `src/rules/no-redos-vulnerable-regex/analysis/`, trimmed to what the rule calls, and
+`eslint-plugin-secure-coding` has no third-party runtime dependency. The parts of
+the four libraries below that the ReDoS rule used were copied or ported into `src/rules/no-redos-vulnerable-regex/analysis/`, `src/regex-data/` and `src/regex-parser/`, trimmed to what the rule calls, and
 are redistributed under the MIT License they were published under. The
 copyright and permission notice of each follows, as the license requires.
 
@@ -63,6 +62,30 @@ SOFTWARE.
 Copyright (c) 2020 Michael Schmidt. MIT License. https://github.com/RunDevelopment/refa
 
 Code derived from it: `char-set.ts` (character-set algebra, reimplemented), `char-classes.ts` (`JS.parseCharSet`, reimplemented) and `src/regex-data/unicode-12-1.ts` (its Unicode property and case-folding data, re-encoded).
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## @eslint-community/regexpp v4.12.3
+
+Copyright (c) 2018 Toru Nagashima. MIT License. https://github.com/eslint-community/regexpp
+
+Code derived from it: `src/regex-parser/` (the pattern validator and AST builder, the AST types, and the Unicode identifier and property-name tables).
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

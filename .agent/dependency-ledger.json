@@ -12,7 +12,6 @@
     "@commitlint/cli": "commit and format gates",
     "@commitlint/config-conventional": "commit and format gates",
     "@cyclonedx/cyclonedx-npm": "SBOM generator for supply-chain attestation",
-    "@eslint-community/regexpp": "host linter; regexpp ships with eslint",
     "@eslint/compat": "host linter; regexpp ships with eslint",
     "@eslint/js": "host linter; regexpp ships with eslint",
     "@eslint/markdown": "Markdown language the conventions guidance rules run on",

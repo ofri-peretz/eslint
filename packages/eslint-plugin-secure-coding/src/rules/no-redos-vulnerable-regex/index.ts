@@ -115,11 +115,11 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { RegExpParser } from '@eslint-community/regexpp';
+import { RegExpParser } from '../../regex-parser';
 import type {
   Node as RegExpNode,
   Quantifier as RegExpQuantifier,
-} from '@eslint-community/regexpp/ast';
+} from '../../regex-parser/ast';
 import { analyse } from './analysis/backtracking';
 import { toCharSet } from './analysis/char-classes';
 import { walkQuantifiers } from './analysis/walk';

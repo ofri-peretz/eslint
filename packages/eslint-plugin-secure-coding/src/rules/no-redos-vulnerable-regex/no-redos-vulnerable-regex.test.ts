@@ -221,6 +221,7 @@ describe('no-redos-vulnerable-regex', () => {
       {
         valid: [
           {
+            name: 'a literal longer than maxPatternLength is never parsed, so it is never analysed',
             code: `const regex = /${'a'.repeat(600)}+/;`,
             options: [{ maxPatternLength: 100 }],
           },
