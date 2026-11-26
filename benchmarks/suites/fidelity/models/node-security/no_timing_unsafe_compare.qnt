@@ -4,12 +4,14 @@
 // reportUnverifiedComparisons drops the attacker-controlled requirement; a
 // string literal comparand is skipped unless reportLiteralComparands is on.
 // nonSecretWords / nonSecretTails exclude collisions (authorId, tokenCount).
-// crypto.timingSafeEqual is the safe twin.
+// A name ending in Id is a record key (localAuthId) unless a secret pattern
+// ends in it too (sessionId). An If-None-Match header is the public etag and
+// never reports. crypto.timingSafeEqual is the safe twin.
 module no_timing_unsafe_compare {
-  // left: req.body.token | req.body.value | ctx.request.body.signature | userToken | submitted
-  type Left = ReqBodyToken | ReqBodyValue | CtxSignature | UserToken | Submitted
-  // right: storedToken | expectedHmac | tokenCount | authorId | 'access' | expected
-  type Right = StoredToken | ExpectedHmac | TokenCount | AuthorId | Literal | Plain
+  // left: req.body.token | req.body.value | ctx.request.body.signature | userToken | submitted | req.headers['if-none-match']
+  type Left = ReqBodyToken | ReqBodyValue | CtxSignature | UserToken | Submitted | IfNoneMatch
+  // right: storedToken | expectedHmac | tokenCount | authorId | 'access' | expected | localAuthId | sessionId
+  type Right = StoredToken | ExpectedHmac | TokenCount | AuthorId | Literal | Plain | LocalAuthId | SessionId
   type Op = StrictEq | LooseNe | TimingSafe
   type Opt = Default | Unverified | Literals
 
@@ -23,16 +25,19 @@ module no_timing_unsafe_compare {
     | ReqBodyToken => true
     | ReqBodyValue => true
     | CtxSignature => true
+    | IfNoneMatch => true
     | _ => false
   }
   pure def rightSecret(r: Right): bool = match r {
     | StoredToken => true
     | ExpectedHmac => true
+    | SessionId => true
     | _ => false
   }
 
   pure def reports(l: Left, r: Right, op: Op, o: Opt): bool =
     if (op == TimingSafe) false
+    else if (l == IfNoneMatch) false
     else if (r == Literal) (o == Literals and leftSecret(l))
     else (leftSecret(l) or rightSecret(r)) and (leftUntrusted(l) or o == Unverified)
 
@@ -43,8 +48,8 @@ module no_timing_unsafe_compare {
   var verdict: bool
 
   action step = {
-    nondet l = Set(ReqBodyToken, ReqBodyValue, CtxSignature, UserToken, Submitted).oneOf()
-    nondet r = Set(StoredToken, ExpectedHmac, TokenCount, AuthorId, Literal, Plain).oneOf()
+    nondet l = Set(ReqBodyToken, ReqBodyValue, CtxSignature, UserToken, Submitted, IfNoneMatch).oneOf()
+    nondet r = Set(StoredToken, ExpectedHmac, TokenCount, AuthorId, Literal, Plain, LocalAuthId, SessionId).oneOf()
     nondet p = Set(StrictEq, LooseNe, TimingSafe).oneOf()
     nondet o = Set(Default, Unverified, Literals).oneOf()
     all { left' = l, right' = r, op' = p, opt' = o, verdict' = reports(l, r, p, o) }
