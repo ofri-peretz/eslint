@@ -82,6 +82,7 @@ describe('detect-object-injection', () => {
           code: 'export function f(usage) { return Object.entries(usage).map(([k, v]) => usage[v]); }',
         },
         {
+          name: 'a read through a caller-supplied key returns a value and writes nothing',
           code: 'export function f(record, columnKey) { return record[columnKey]; }',
         },
 

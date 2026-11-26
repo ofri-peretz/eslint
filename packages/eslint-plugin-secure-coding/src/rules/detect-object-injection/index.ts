@@ -431,6 +431,14 @@ const childNodes = (n: TSESTree.Node): TSESTree.Node[] => {
   return out;
 };
 
+/** `continue`, `return` or `throw` — alone or as a statement of a block. */
+const exitsLoopIteration = (n: TSESTree.Statement): boolean =>
+  n.type === AST_NODE_TYPES.BlockStatement
+    ? n.body.some(exitsLoopIteration)
+    : n.type === AST_NODE_TYPES.ContinueStatement ||
+      n.type === AST_NODE_TYPES.ReturnStatement ||
+      n.type === AST_NODE_TYPES.ThrowStatement;
+
 /** Does `n` read the loop variable anywhere inside it? */
 const mentionsKey = (n: TSESTree.Node, keyName: string): boolean => {
   if (n.type === AST_NODE_TYPES.Identifier) return n.name === keyName;
@@ -514,9 +522,11 @@ const bodyGuardsKey = (
   keyName: string,
   {
     isModuleOwnedAllowlist,
+    deniedPollutionKeys,
     deferOwnershipGuards = false,
   }: {
     isModuleOwnedAllowlist: (node: TSESTree.Node) => boolean;
+    deniedPollutionKeys: (node: TSESTree.Node) => string[];
     deferOwnershipGuards?: boolean;
   },
 ): boolean => {
@@ -625,6 +635,22 @@ const bodyGuardsKey = (
         ? n.arguments.slice(0, 1)
         : [n.callee.object];
       for (const object of tested) creditGuardedObject(object);
+
+      // `if (DENY.has(key)) continue;` — a denylist rejecting the key and
+      // leaving. Its pollution keys count as named, exactly like the `===`
+      // spelling below, but only when the test is the bare `if` test and the
+      // branch exits: a denylist hit that falls through to the write rejects
+      // nothing.
+      if (
+        namesOneOf(propertyName(n.callee), ['has', 'includes']) &&
+        n.parent?.type === AST_NODE_TYPES.IfStatement &&
+        n.parent.test === n &&
+        exitsLoopIteration(n.parent.consequent)
+      ) {
+        for (const key of deniedPollutionKeys(n.callee.object)) {
+          pollutionKeysNamed.add(key);
+        }
+      }
     }
 
     // `k in schema` — the membership test spelled as an operator.
@@ -3330,7 +3356,14 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // An allowlist inside the body is the remediation — naming the edit that
       // clears this finding is what keeps the rule satisfiable. The guard has to
       // be ON THE KEY, though: see `bodyGuardsKey`.
-      if (bodyGuardsKey(bodyNode, keyName, { isModuleOwnedAllowlist })) return;
+      if (
+        bodyGuardsKey(bodyNode, keyName, {
+          isModuleOwnedAllowlist,
+          deniedPollutionKeys,
+        })
+      ) {
+        return;
+      }
 
       // A computed write keyed by the loop/callback variable, anywhere in the body.
       let reported = false;
@@ -3556,6 +3589,56 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Which prototype keys a denylist this file spelled out REJECTS.
+     *
+     * The mirror of `isModuleOwnedAllowlist`: there an owned list must admit no
+     * pollution key, here an owned list is read for the pollution keys it
+     * names, so `if (DENY.has(key)) continue;` counts exactly as
+     * `if (key === '__proto__' || …) continue;` does. Decided from what the
+     * binding HOLDS — a single `const` initialised to an array literal, that
+     * array frozen, or `new Set(<that array>)` — never from what it is called.
+     * A free binding returns nothing: unlike an allowlist, a denylist is only
+     * evidence once its contents can be read.
+     */
+    const deniedPollutionKeys = (objectNode: TSESTree.Node): string[] => {
+      if (objectNode.type !== AST_NODE_TYPES.Identifier) return [];
+      const variable = resolvedReference(
+        sourceCode.getScope(objectNode),
+        objectNode,
+      );
+      if (variable?.defs.length !== 1) return [];
+      const def = variable.defs[0];
+      if (def.type !== 'Variable' || def.parent?.kind !== 'const') return [];
+      let value = unwrapTypeSyntax(def.node.init);
+      if (
+        value?.type === AST_NODE_TYPES.NewExpression &&
+        value.callee.type === AST_NODE_TYPES.Identifier &&
+        value.callee.name === 'Set'
+      ) {
+        value = unwrapTypeSyntax(value.arguments[0] as TSESTree.Expression);
+      }
+      if (
+        value?.type === AST_NODE_TYPES.CallExpression &&
+        value.callee.type === AST_NODE_TYPES.MemberExpression &&
+        value.callee.object.type === AST_NODE_TYPES.Identifier &&
+        value.callee.object.name === 'Object' &&
+        propertyName(value.callee) === 'freeze'
+      ) {
+        value = unwrapTypeSyntax(value.arguments[0] as TSESTree.Expression);
+      }
+      if (value?.type !== AST_NODE_TYPES.ArrayExpression) return [];
+      return value.elements
+        .map((element) =>
+          element === null || element.type === AST_NODE_TYPES.SpreadElement
+            ? null
+            : staticString(element),
+        )
+        .filter(
+          (name): name is string => name !== null && POLLUTION_KEYS.has(name),
+        );
+    };
+
+    /**
      * Is the object a `for…in` copy loop iterates something this file cannot
      * vouch for?
      *
@@ -3686,6 +3769,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       if (
         bodyGuardsKey(node.body, keyName, {
           isModuleOwnedAllowlist,
+          deniedPollutionKeys,
           deferOwnershipGuards: true,
         })
       ) {

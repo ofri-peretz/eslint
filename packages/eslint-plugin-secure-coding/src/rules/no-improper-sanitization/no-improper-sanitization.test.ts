@@ -191,6 +191,7 @@ describe('no-improper-sanitization', () => {
             errors: [{ messageId: 'unsafeReplaceSanitization' }],
           },
           {
+            name: 'a ternary that can send the request query to res.send reports, markup literal or not',
             code: `res.send(flag ? req.query.name : '<p>x</p>');`,
             errors: [{ messageId: 'unsafeReplaceSanitization' }],
           },

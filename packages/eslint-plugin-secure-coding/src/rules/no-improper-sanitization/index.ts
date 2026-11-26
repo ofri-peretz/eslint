@@ -994,6 +994,23 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             }
           } else if (current.type === 'CallExpression') {
             const callee = current.callee;
+            // `ws.send(JSON.stringify({ v: hidden ? '<redacted>' : v }))`: a
+            // literal that reaches the output call only as a value the
+            // serialiser quotes is JSON data the author wrote, not markup being
+            // composed — the same reasoning the object-argument arm below
+            // applies to `res.send({ … })`. The ternary stops that arm's climb
+            // (#441), so it is decided here, where the serialiser is seen.
+            // Executable markup is still the vector whoever wrote it, so it
+            // keeps reporting, as in the innerHTML literal path above.
+            if (
+              callee.type === 'MemberExpression' &&
+              callee.object.type === 'Identifier' &&
+              callee.object.name === 'JSON' &&
+              propertyName(callee) === 'stringify' &&
+              !/<script[\s>]|<\/script>|\son\w+\s*=|javascript:/i.test(text)
+            ) {
+              return;
+            }
             if (
               callee.type === 'MemberExpression' &&
               // @vocabulary Express response API
