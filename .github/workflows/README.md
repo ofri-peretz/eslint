@@ -16,6 +16,7 @@ Every GitHub Actions workflow for this repo. Triggered by PRs, pushes to `main`,
 | [`changesets-pr.yml`](./changesets-pr.yml) | Changesets PR creation |
 | [`docs.yml`](./docs.yml) | Docs governance (link integrity, structure validation) |
 | [`quality.yml` → Detection Recall](./quality.yml) | Every CWE in `benchmarks/corpus/` must still detect what it used to (`scripts/recall-gate.ts`) — the counterpart to the precision scan in `scripts/corpus-scan.ts` |
+| [`replz-compare.yml`](./replz-compare.yml) | Differential: every rule over `benchmarks/corpus/` through the PR's base and head; any finding that appears, disappears or moves fails unless approved in `.sdlc/replz/compare.yaml` |
 
 ## Benchmark / quality measurement
 
