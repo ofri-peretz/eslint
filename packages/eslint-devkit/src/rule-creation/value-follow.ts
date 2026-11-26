@@ -408,6 +408,7 @@ export function exportedValue(
         (declaration?.type === AST_NODE_TYPES.FunctionDeclaration ||
           declaration?.type === AST_NODE_TYPES.ClassDeclaration ||
           declaration?.type === AST_NODE_TYPES.TSTypeAliasDeclaration ||
+          declaration?.type === AST_NODE_TYPES.TSEnumDeclaration ||
           declaration?.type === AST_NODE_TYPES.TSInterfaceDeclaration) &&
         declaration.id?.name === name
       ) {

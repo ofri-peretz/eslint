@@ -26,6 +26,18 @@ const KNEX_SHAPES = {
     text: `\`${c.head}${c.col} = \${req.query.id} AND active = ?\``,
     args: '[true]',
   }),
+  EnumTemplate: (c) => ({
+    pre: "enum Role {\n  Admin = 'admin',\n}",
+    text: `\`${c.head}${c.col} = '\${Role.Admin}'\``,
+  }),
+  AsConstTemplate: (c) => ({
+    pre: "const ROLES = { admin: 'admin' } as const;",
+    text: `\`${c.head}${c.col} = '\${ROLES.admin}'\``,
+  }),
+  EnumComputed: (c) => ({
+    pre: 'enum Role {\n  Admin = String(req.query.role),\n}',
+    text: `\`${c.head}${c.col} = '\${Role.Admin}'\``,
+  }),
   IdentBinding: (c) => ({ text: `'${c.ohead}??'`, args: '[req.query.sort]' }),
 };
 
@@ -116,9 +128,9 @@ function code(s) {
 
 module.exports = {
   rule: 'no-unsafe-query',
-  // 9 whole-statement sites x 20 shapes + whereRaw / objection x 14 +
+  // 9 whole-statement sites x 23 shapes + whereRaw / objection x 17 +
   // orderByRaw x 7
-  domain: 9 * 20 + 2 * 14 + 7,
+  domain: 9 * 23 + 2 * 17 + 7,
   traces: 2000,
   key: (s) => `${tag(s.site)}|${tag(s.shape)}`,
   filename: (s) =>
