@@ -17,6 +17,13 @@ type MessageIds = 'sortComp';
 
 export interface Options {
   order?: string[];
+  /**
+   * eslint-plugin-react's custom groups (`{ lifecycle: [...], rendering: [...] }`).
+   * Accepted so configs such as eslint-config-airbnb load. Not yet enforced:
+   * the built-in groups below are always used, and `order` entries that are not
+   * one of them (a method name, a `/regex/`, `rendering`, `getters`) place nothing.
+   */
+  groups?: Record<string, string[]>;
 }
 
 const DEFAULT_ORDER = [
@@ -71,6 +78,12 @@ export const sortComp = createRule<[Options], MessageIds>({
           order: {
             type: 'array',
             items: { type: 'string' },
+          },
+          groups: {
+            type: 'object',
+            patternProperties: {
+              '^.*$': { type: 'array', items: { type: 'string' } },
+            },
           },
         },
         additionalProperties: false,

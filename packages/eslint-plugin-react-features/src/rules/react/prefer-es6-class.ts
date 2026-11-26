@@ -11,11 +11,14 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule, resolveModuleBinding } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { isReactApi } from '../../utils/react-api';
+import { extendsReactComponent, isReactApi } from '../../utils/react-api';
 
-type MessageIds = 'preferEs6Class';
+type MessageIds = 'preferEs6Class' | 'preferCreateClass';
 
-export const preferEs6Class = createRule<[], MessageIds>({
+/** eslint-plugin-react's `"always"` (the default) or `"never"`. */
+export type Options = 'always' | 'never';
+
+export const preferEs6Class = createRule<[Options], MessageIds>({
   name: 'prefer-es6-class',
   meta: {
     interop: {
@@ -27,7 +30,7 @@ export const preferEs6Class = createRule<[], MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/prefer-es6-class.md',
       description: 'Prefer ES6 classes over createClass',
     },
-    schema: [],
+    schema: [{ type: 'string', enum: ['always', 'never'] }],
     messages: {
       preferEs6Class: formatLLMMessage({
         icon: MessageIcons.MIGRATION,
@@ -37,12 +40,36 @@ export const preferEs6Class = createRule<[], MessageIds>({
         fix: 'Convert to ES6 class component',
         documentationLink: 'https://react.dev/reference/react/createClass',
       }),
+      preferCreateClass: formatLLMMessage({
+        icon: MessageIcons.MIGRATION,
+        issueName: 'ES6 class component',
+        description: 'This project configures createClass components only',
+        severity: 'LOW',
+        fix: 'Convert to a createClass component',
+        documentationLink: 'https://react.dev/reference/react/Component',
+      }),
     },
   },
-  defaultOptions: [],
-  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
+  defaultOptions: ['always'],
+  createOnce(context: TSESLint.RuleContext<MessageIds, [Options]>) {
+    let option: Options;
+    const check = (
+      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
+    ) => {
+      if (
+        option === 'never' &&
+        extendsReactComponent(node, context.sourceCode.getScope(node))
+      ) {
+        context.report({ node, messageId: 'preferCreateClass' });
+      }
+    };
     return {
+      before() {
+        option = context.options[0] ?? 'always';
+      },
+      ClassDeclaration: check,
       CallExpression(node: TSESTree.CallExpression) {
+        if (option !== 'always') return;
         // React's legacy `createClass` (an import of any shape, a computed
         // member, the UMD global), or `create-react-class`, the package it
         // moved to, under whatever local name. Decided by binding: a local

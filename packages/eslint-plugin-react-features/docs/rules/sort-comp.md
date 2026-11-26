@@ -115,6 +115,9 @@ class UserProfile extends React.Component {
 | Option   | Type     | Default          | Description                       |
 | -------- | -------- | ---------------- | --------------------------------- |
 | `order`  | string[] | See default order| Array of group names in order     |
+| `groups` | object   | none             | Accepted, not yet enforced (see below) |
+
+`groups` (custom group definitions, as in eslint-plugin-react) is accepted so configs such as eslint-config-airbnb load. It is not yet enforced: the built-in groups are always used, and an `order` entry that is not one of them (a method name, a `/regex/`, `rendering`, `getters`, `setters`, `instance-methods`) places nothing.
 
 ### Configuration with Options
 

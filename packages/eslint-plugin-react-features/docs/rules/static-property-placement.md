@@ -123,6 +123,8 @@ UserCard.propTypes = {
 
 ## Options
 
+The first option may also be a placement string, with an optional second object of per-property overrides, as in eslint-plugin-react (`"static public field"`, `"static getter"`, `"property assignment"`; properties `propTypes`, `defaultProps`, `childContextTypes`, `contextTypes`, `contextType`, `displayName`). **Accepted, not yet enforced**, so configs such as eslint-config-airbnb (`"property assignment"`) load. This rule checks that static properties are grouped, not where they are declared; with a placement string it uses the default groups.
+
 | Option           | Type     | Default          | Description                       |
 | ---------------- | -------- | ---------------- | --------------------------------- |
 | `propertyGroups` | array    | See defaults     | Property groups; replaces the default groups |
