@@ -20,7 +20,7 @@ cases:
 
 ---
 
-## What
+## What is wanted
 
 `eslint-plugin-grpc-security` gains `no-identity-from-metadata`. The rule reports a
 `.get(…)` read of a gRPC handler's call metadata whose value reaches an equality
@@ -30,7 +30,7 @@ stays silent when the value is resolved first, by a lookup keyed by it or a call
 that takes it. The grpc-1 lab server reports at its `callerOf` read. The reference
 fix, which resolves the caller from a server-side token table, does not.
 
-## Why
+## Why now
 
 The grpc-1 lab exploit sends `x-authenticated-user: treasury` straight to the
 backend port and reads another user's account. No published Interlace rule
@@ -49,7 +49,7 @@ ships with both rules). The rule joins `recommended`. No other plugin changes.
   check, not an identity, and must stay silent.
 - Type-unaware, runs on oxlint, intra-file only.
 
-## Done when
+## Success criteria
 
 - `npx vitest run` in `packages/eslint-plugin-grpc-security`: both grpc-1 lab files
   (`benchmarks/corpus/CWE-290/`) give the expected verdict, at 100% coverage.

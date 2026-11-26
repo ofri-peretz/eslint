@@ -21,7 +21,7 @@ cases:
 
 ---
 
-## What
+## What is wanted
 
 `eslint-plugin-grpc-security` exists, with `no-unguarded-reflection`. It reports
 `new ReflectionService(def).addToServer(server)` (`@grpc/reflection`) and
@@ -29,7 +29,7 @@ cases:
 stands between the registration and the program running, and is silent once one
 does. The grpc-2 lab server reports; its reference fix does not.
 
-## Why
+## Why now
 
 The grpc-2 lab exploit is `grpcurl list` against a public listener that serves
 reflection, which names an internal `ops.Maintenance` service and its
@@ -55,7 +55,7 @@ The docs site gains the plugin's pages. No existing rule changes.
   that a returned header value is "the caller's identity" needs a data-flow
   model this PR does not build.
 
-## Done when
+## Success criteria
 
 - `npx vitest run` in `packages/eslint-plugin-grpc-security`: both lab files
   (`benchmarks/corpus/CWE-306/`) give the expected verdict, with 100% coverage.
