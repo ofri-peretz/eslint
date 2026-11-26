@@ -877,7 +877,10 @@ describe('Regression - argument shapes the sink never looked at', () => {
           `logger.info('ok', { apiKey: REDACTED });`,
         ].join('\n'),
         // A computed key names nothing statically.
-        `logger.debug('column', row[column]);`,
+        {
+          name: 'a dynamic column lookup names no secret, so there is nothing to report',
+          code: `logger.debug('column', row[column]);`,
+        },
         `logger.info('field', { [field]: value });`,
         // A spread is not a named property.
         `logger.info('ctx', { ...context });`,

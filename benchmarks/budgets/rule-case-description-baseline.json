@@ -389,7 +389,7 @@
     "secure-coding/no-pii-in-logs": 44,
     "secure-coding/no-privilege-escalation": 85,
     "secure-coding/no-redos-vulnerable-regex": 47,
-    "secure-coding/no-sensitive-data-exposure": 78,
+    "secure-coding/no-sensitive-data-exposure": 77,
     "secure-coding/no-sql-injection": 83,
     "secure-coding/no-template-injection": 14,
     "secure-coding/no-unchecked-loop-condition": 101,

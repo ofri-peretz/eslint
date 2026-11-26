@@ -216,6 +216,19 @@ const DESCRIPTOR_SEGMENTS = [
   'placeholder',
   'warning',
   'notice',
+  // What a secret is called, where it lives and how much of it there is: none
+  // of these holds the value. `tokenId` is the lookup handle, `secretName` the
+  // variable it is stored under, `secretPath` its folder, `tokenCount` an LLM
+  // usage figure (LibreChat logs ``${tokenCount} tokens``).
+  'id',
+  'ids',
+  'name',
+  'path',
+  'count',
+  'length',
+  'size',
+  'type',
+  'kind',
 ];
 
 /**
