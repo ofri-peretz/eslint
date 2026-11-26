@@ -14,6 +14,7 @@ import nestjsSecurity from "eslint-plugin-nestjs-security";
 import lambdaSecurity from "eslint-plugin-lambda-security";
 import vercelAiSecurity from "eslint-plugin-vercel-ai-security";
 import mcpSdkSecurity from "eslint-plugin-mcp-sdk-security";
+import grpcSecurity from "eslint-plugin-grpc-security";
 
 export default [
   // Core security rules (23 rules)
@@ -50,4 +51,8 @@ export default [
   // (4 rules). Every rule gates on an MCP SDK import, so it is silent on
   // every non-MCP fixture and repository.
   mcpSdkSecurity.configs.recommended,
+
+  // gRPC security rules — server reflection with no guard (1 rule). Gates on a
+  // gRPC reflection import, so it is silent on every non-gRPC fixture.
+  grpcSecurity.configs.recommended,
 ];

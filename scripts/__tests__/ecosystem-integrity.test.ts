@@ -39,6 +39,7 @@ const PLUGIN_NAMES = [
   // security (18 of 19 — crypto excluded)
   'eslint-plugin-secure-coding',
   'eslint-plugin-supabase-security',
+  'eslint-plugin-grpc-security',
   'eslint-plugin-node-security',
   'eslint-plugin-browser-security',
   'eslint-plugin-sequelize-security',

@@ -1,0 +1,78 @@
+---
+title: no-unguarded-reflection
+description: Register gRPC server reflection only behind a guard
+tags: ['security', 'grpc']
+category: security
+severity: medium
+cwe: CWE-306
+autofix: false
+---
+
+# no-unguarded-reflection
+
+> Register gRPC server reflection only behind a guard.
+
+- **CWE:** [CWE-306 — Missing Authentication for Critical Function](https://cwe.mitre.org/data/definitions/306.html)
+- **OWASP:** A05:2021 — Security Misconfiguration; [API9:2023 — Improper Inventory Management](https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/)
+- **CVSS:** 5.3 (Medium)
+- **Recommended:** `error`
+
+## Why
+
+Server reflection answers one question for any client, with no credentials: which services and methods does this listener serve? It is what lets `grpcurl` and Postman work without a `.proto` file, and that is why it gets turned on during development.
+
+Registered unconditionally, it ships to production. A team that put an internal admin service on the same server as the public API, trusting that nobody outside knew its name, has published that name: `grpcurl -plaintext host:port list` prints it, and `describe` prints every method and message. Reflection is rarely the whole bug, but it is the step that turns a hidden method into a discovered one.
+
+## Rule details
+
+Fires only in files that load `@grpc/reflection` or `grpc-server-reflection`. Reports a registration when nothing in the file stands between it and the program running:
+
+- `new ReflectionService(def).addToServer(server)` from `@grpc/reflection`, through a named, namespace, default or CommonJS import, and through a `const` the service was bound to first;
+- `addReflection(server, descriptorSetPath)` from `grpc-server-reflection`.
+
+The decision is made from structure, not from names or values. Any branch counts as a guard, because a branch is a decision the code made and the rule cannot know the deployment:
+
+- the body or `else` arm of an `if`, a ternary arm, the right side of `&&` / `||` / `??`, a `switch` case;
+- a statement that follows `if (…) return;` (or `throw`, `break`, `continue`) in the same block.
+
+Functions are followed within the file. A callback or an IIFE runs whenever its caller does, so the rule looks through it. A named helper is answered by its call sites: it reports if any call site is itself unguarded. A helper with no call site in the file (exported, a default export, a class method) is left to its caller.
+
+A loop or a `try` block is not a guard: the code inside still runs.
+
+## Incorrect
+
+```js
+import { ReflectionService } from '@grpc/reflection';
+
+const server = new grpc.Server();
+server.addService(pkg.shop.Catalog.service, catalog);
+server.addService(pkg.ops.Maintenance.service, maintenance);
+new ReflectionService(def).addToServer(server);
+```
+
+```js
+import { addReflection } from 'grpc-server-reflection';
+
+addReflection(server, 'descriptor_set.bin');
+```
+
+## Correct
+
+```js
+import { ReflectionService } from '@grpc/reflection';
+
+if (process.env.NODE_ENV === 'development') {
+  new ReflectionService(def).addToServer(server);
+}
+```
+
+Reflection being off in production does not make an internal service private. Serve internal services from a separate server bound to a private interface, behind authentication.
+
+## When not to use it
+
+If reflection is an intended part of a public API, and every service on the listener is meant to be public, disable this rule for that file with a comment that says so.
+
+## Further reading
+
+- [gRPC Server Reflection protocol](https://github.com/grpc/grpc/blob/master/doc/server-reflection.md)
+- [`@grpc/reflection`](https://www.npmjs.com/package/@grpc/reflection)

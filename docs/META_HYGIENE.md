@@ -30,6 +30,7 @@ Sorted by descending completeness. CWE column counts rules with `meta.docs.cwe` 
 | `eslint-plugin-drizzle-security` | 4 | 87% | 100% | 100% | 100% | 4/4 | 100% | 0% | 0% |
 | `eslint-plugin-gemini-security` | 1 | 87% | 100% | 100% | 100% | 1/1 | 100% | 0% | 0% |
 | `eslint-plugin-knex-security` | 5 | 87% | 100% | 100% | 100% | 5/5 | 100% | 0% | 0% |
+| `eslint-plugin-grpc-security` | 1 | 87% | 100% | 100% | 100% | 1/1 | 100% | 0% | 0% |
 | `eslint-plugin-mcp-sdk-security` | 4 | 87% | 100% | 100% | 100% | 4/4 | 100% | 0% | 0% |
 | `eslint-plugin-mysql-security` | 3 | 87% | 100% | 100% | 100% | 3/3 | 100% | 0% | 0% |
 | `eslint-plugin-nestjs-security` | 10 | 87% | 100% | 100% | 100% | 10/10 | 100% | 0% | 0% |

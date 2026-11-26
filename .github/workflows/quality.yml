@@ -392,6 +392,7 @@ jobs:
           npx turbo build \
             --filter=eslint-plugin-browser-security... \
             --filter=eslint-plugin-express-security... \
+            --filter=eslint-plugin-grpc-security... \
             --filter=eslint-plugin-jwt-security... \
             --filter=eslint-plugin-lambda-security... \
             --filter=eslint-plugin-mcp-sdk-security... \

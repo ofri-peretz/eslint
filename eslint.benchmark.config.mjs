@@ -43,6 +43,8 @@ const drizzleSecurityModule =
   await import('./packages/eslint-plugin-drizzle-security/src/index.ts');
 const mcpSdkSecurityModule =
   await import('./packages/eslint-plugin-mcp-sdk-security/src/index.ts');
+const grpcSecurityModule =
+  await import('./packages/eslint-plugin-grpc-security/src/index.ts');
 const supabaseSecurityModule =
   await import('./packages/eslint-plugin-supabase-security/src/index.ts');
 // Not a security plugin. Registered so its rules are exercised by their
@@ -88,6 +90,7 @@ const knexSecurity = normalize(knexSecurityModule);
 const drizzleSecurity = normalize(drizzleSecurityModule);
 const mcpSdkSecurity = normalize(mcpSdkSecurityModule);
 const supabaseSecurity = normalize(supabaseSecurityModule);
+const grpcSecurity = normalize(grpcSecurityModule);
 const cliFloor = normalize(cliFloorModule);
 const modernization = normalize(modernizationModule);
 const prismaSecurity = normalize(prismaSecurityModule);
@@ -147,6 +150,7 @@ export default [
       'drizzle-security': drizzleSecurity,
       'mcp-sdk-security': mcpSdkSecurity,
       'supabase-security': supabaseSecurity,
+      'grpc-security': grpcSecurity,
       'cli-floor': cliFloor,
       modernization: modernization,
       'prisma-security': prismaSecurity,
@@ -176,6 +180,7 @@ export default [
       ...allRulesError('drizzle-security', drizzleSecurity),
       ...allRulesError('mcp-sdk-security', mcpSdkSecurity),
       ...allRulesError('supabase-security', supabaseSecurity),
+      ...allRulesError('grpc-security', grpcSecurity),
       ...allRulesError('cli-floor', cliFloor),
       ...allRulesError('modernization', modernization),
       ...allRulesError('prisma-security', prismaSecurity),

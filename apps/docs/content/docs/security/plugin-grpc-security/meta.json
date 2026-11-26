@@ -1,0 +1,6 @@
+{
+  "title": "Plugin: grpc-security",
+  "icon": "Server",
+  "defaultOpen": false,
+  "pages": ["index", "changelog", "rules"]
+}

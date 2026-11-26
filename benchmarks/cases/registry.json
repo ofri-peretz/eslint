@@ -5602,6 +5602,58 @@
         }
       ],
       "peers": []
+    },
+    {
+      "id": "ILB-0195",
+      "added": "2026-11-26",
+      "title": "gRPC server reflection registered on the public server with no guard",
+      "rationale": "Reflection answers 'which services does this listener serve?' to any client, unauthenticated. Registered unconditionally it ships to production, and `grpcurl list` names every service on the server, the internal ones a team assumed nobody knew about included. Observed in the security-research grpc-2 lab.",
+      "cwe": "CWE-306",
+      "severity": {
+        "cvss": 5.3,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        "https://github.com/grpc/grpc/blob/master/doc/server-reflection.md"
+      ],
+      "occurrences": [],
+      "code": "import { ReflectionService } from '@grpc/reflection';\nconst server = new grpc.Server();\nserver.addService(pkg.ops.Maintenance.service, maintenance);\nnew ReflectionService(def).addToServer(server);",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-unguarded-reflection",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-unguarded-reflection/no-unguarded-reflection.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0196",
+      "added": "2026-11-26",
+      "title": "gRPC server reflection registered only in development",
+      "rationale": "The reference fix for the grpc-2 lab: reflection is registered inside a branch on the environment, so production never serves it. A rule that reported this would be asking for something the code already did.",
+      "cwe": "CWE-306",
+      "severity": {
+        "cvss": 5.3,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        "https://github.com/grpc/grpc/blob/master/doc/server-reflection.md"
+      ],
+      "occurrences": [],
+      "code": "import { ReflectionService } from '@grpc/reflection';\nif (process.env.NODE_ENV === 'development') new ReflectionService(def).addToServer(server);",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-unguarded-reflection",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-unguarded-reflection/no-unguarded-reflection.test.ts"
+        }
+      ],
+      "peers": []
     }
   ]
 }
