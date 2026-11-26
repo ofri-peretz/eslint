@@ -141,6 +141,7 @@ describe('no-hardcoded-credentials', () => {
         // NO `options` — this is the whole point. Adding options here would
         // make the fixture pass regardless of what the default is.
         {
+          name: 'a password literal in a test file is exempt by default',
           code: 'const password = "supersecret123";',
           filename: 'integration/auth.test.js',
         },

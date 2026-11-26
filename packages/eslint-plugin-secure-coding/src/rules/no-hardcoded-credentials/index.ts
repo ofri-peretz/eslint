@@ -1655,9 +1655,22 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         if (!variable) continue;
         const def = variable.defs[0];
         if (def?.type === 'ImportBinding') {
-          const source = (def.parent as TSESTree.ImportDeclaration).source
-            .value;
-          return SESSION_PACKAGES.has(source) ? source : null;
+          // An ImportBinding comes from TWO declarations: `import x from 'm'`
+          // (an ImportDeclaration, which has a `source`) and TypeScript's
+          // `import x = require('m')` (a TSImportEqualsDeclaration, which has a
+          // `moduleReference` instead and no `source` at all). Reading `.source`
+          // off the second threw and ended the whole eslint run.
+          const declaration = def.parent as
+            TSESTree.ImportDeclaration | TSESTree.TSImportEqualsDeclaration;
+          const source =
+            declaration.type === 'ImportDeclaration'
+              ? declaration.source.value
+              : declaration.moduleReference.type === 'TSExternalModuleReference'
+                ? declaration.moduleReference.expression.value
+                : null;
+          return source !== null && SESSION_PACKAGES.has(source)
+            ? source
+            : null;
         }
         if (def?.type === 'Variable') {
           return requiredPackage(
