@@ -35,7 +35,7 @@ Two questions this answers:
 
 | #   | Stage        | Artifact it owes                                                     | Enforced by                                                        | Number that moves                            |
 | --- | ------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------- |
-| 1   | **Plan**     | A `docs/intents/` file — what is wanted, why, under which constraint | `check:intent`                                                     | undeclared packages (must be 0)              |
+| 1   | **Plan**     | A `docs/intents/` file — what is wanted, why, under which constraint | `check:intent`, `intent:check`                                     | undeclared packages (must be 0)              |
 | 2   | **Design**   | A **case** in `benchmarks/cases/registry.json` that FAILS            | `check:case-registry`, `check:new-rule-cases`                      | verified cases (grow-only)                   |
 | 3   | **Build**    | Rule using devkit spellings, not open-coded reads                    | `check:spellings`, `check:key-vocabulary`, `check:name-vocabulary` | spelling debt (shrink-only)                  |
 | 4   | **Test**     | A sealed case per fixed FP/FN; ≥3 classified cases a side            | `check:rule-cases`, `check:per-rule-budget`                        | sealed FP+FN (grow), floor breaches (shrink) |
@@ -52,6 +52,11 @@ The failure mode this aims at is **drift**. An agent given a broad task starts
 on `no-zip-slip`, notices something in `no-ssrf`, and eleven plugins later
 nobody can say whether the result is the work that was asked for. A declared
 blast radius turns that from a feeling into a diff.
+
+`intent:check` runs burgee's `provedone intent check --dir docs/intents` over the
+`docs/intents/<slug>/` directories: each has a status, the shared sections, and an
+`approved` or `shipped` intent has its `design.md`. It is the same check burgee runs on its
+own intents, so a rule fixed there is fixed here.
 
 `docs/intents/<date>-<slug>.md` declares `packages:`, `cases:`, and four prose
 sections. `check:intent` refuses four things a stub cannot fake:
