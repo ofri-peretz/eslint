@@ -54,4 +54,5 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          { echo '## replz compare'; echo; echo '```'; cat "$RUNNER_TEMP/compare.log" || echo '(no output)'; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          # A tilde fence: the repo's quoting lock rejects backticks near double-quoted strings.
+          { printf '## replz compare\n\n~~~\n'; cat "$RUNNER_TEMP/compare.log" || echo '(no output)'; printf '~~~\n'; } >> "$GITHUB_STEP_SUMMARY"
