@@ -119,6 +119,12 @@ src/db.ts
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
+### Supported library versions
+
+The library ranges the rules were written against, as previously declared in `peerDependencies`. They are documentation only: this package installs and requires none of these libraries, and npm no longer warns on a mismatch.
+
+- `pg`: `^6.0.0 || ^7.0.0 || ^8.0.0`
+
 ## Rules
 
 **Legend**

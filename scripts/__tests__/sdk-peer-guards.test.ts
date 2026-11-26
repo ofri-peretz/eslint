@@ -16,11 +16,14 @@
  * A peer that is *required* rather than optional is its own bug: an ESLint
  * plugin must never force an adopter to install Express or React to lint
  * something else. `eslint` itself is exempt — it is the runtime, not an SDK.
+ *
+ * Update 2026-11-25: the framework peers themselves were removed (the last
+ * two tests below). The "optional" and "bounded" checks remain for the few
+ * exceptions that are still declared.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import semver from 'semver';
 
 const PACKAGES_DIR = join(__dirname, '../../packages');
 
@@ -37,6 +40,9 @@ interface Manifest {
 
 /** The runtime, not an SDK — it is legitimately required. */
 const RUNTIME = new Set(['eslint']);
+
+/** The hosts a plugin is loaded by. Everything else is third-party. */
+const HOSTS = new Set(['eslint', 'oxlint']);
 
 function pluginManifests(): { name: string; manifest: Manifest }[] {
   return readdirSync(PACKAGES_DIR)
@@ -106,61 +112,62 @@ describe('SDK peer dependencies', () => {
     ).toEqual([]);
   });
 
-  it('React-specific plugins declare a react peer', () => {
-    // Scoped to the plugins whose whole subject is React. A generic plugin
-    // that happens to visit a JSX node — `conventions` checking naming inside
-    // a component, say — should not be made to demand React of every adopter.
-    const missing: string[] = [];
-    for (const dir of readdirSync(PACKAGES_DIR).filter((d) =>
-      d.startsWith('eslint-plugin-react'),
-    )) {
-      const rulesDir = join(PACKAGES_DIR, dir, 'src', 'rules');
-      let handlesJsx = false;
-      const walk = (p: string): void => {
-        for (const entry of readdirSync(p, { withFileTypes: true })) {
-          const child = join(p, entry.name);
-          if (entry.isDirectory()) walk(child);
-          else if (entry.name.endsWith('.ts') && !entry.name.endsWith('.test.ts')) {
-            if (/JSX(Element|Attribute|OpeningElement)\b/.test(readFileSync(child, 'utf-8'))) {
-              handlesJsx = true;
-            }
-          }
-        }
-      };
+  it('declares no framework or SDK peer: only the host and the named exceptions', () => {
+    // Every plugin matches the libraries it lints by the import specifier in
+    // the linted code, so none needs the package installed. The 48 framework
+    // peers (express, jsonwebtoken, react, @prisma/client, ...) were never
+    // imported by any `src` file; they existed only so npm could warn on a
+    // version mismatch. That is not worth a third-party name in the published
+    // dependency graph (PRINCIPLES.md rule 2: zero external dependencies), so
+    // the supported library ranges now live in each README's "Supported
+    // library versions" list. Do not add a peer back: add the range there.
+    //
+    // The exceptions are NOT framework peers. Each does runtime work today and
+    // is scheduled for replacement in the zero-dependency plan
+    // (docs: ventures zero-deps audit, "Removal order" steps 4 to 6), so the
+    // allowlist should only ever shrink.
+    const allowed: Record<string, string[]> = {
+      'eslint-devkit': ['oxc-resolver', 'typescript'],
+      'eslint-plugin-import-next': ['oxc-resolver', 'typescript'],
+      'eslint-plugin-maintainability': ['typescript'],
+      'eslint-plugin-react-features': ['typescript'],
+      'eslint-plugin-secure-coding': ['recheck'],
+    };
+    const unexpected: string[] = [];
+    for (const dir of readdirSync(PACKAGES_DIR)) {
+      let manifest: Manifest;
       try {
-        walk(rulesDir);
+        manifest = manifestOf(dir);
       } catch {
         continue;
       }
-      if (!handlesJsx) continue;
-
-      const manifest = JSON.parse(
-        readFileSync(join(PACKAGES_DIR, dir, 'package.json'), 'utf-8'),
-      ) as Manifest;
-      if (!manifest.peerDependencies?.react) missing.push(dir);
-    }
-    expect(missing, 'these plugins lint JSX but name no React version').toEqual([]);
-  });
-
-  it('bounded does not mean current: optional SDK peers must admit the SDK major actually shipping', () => {
-    // #1555: `@anthropic-ai/sdk@1.9.0` next to `@anthropic-ai/claude-agent-sdk`
-    // (whose own peer resolves to the SDK's 1.x line) failed `npm install`
-    // with ERESOLVE: eslint-plugin-anthropic-security's peer range was
-    // `>=0.1.0 <1.0.0`. That range IS bounded (the general check above
-    // passes it), so it needs its own assertion: a currently-shipping major
-    // must satisfy the range, not just have a ceiling somewhere.
-    const manifest = manifestOf('eslint-plugin-anthropic-security');
-    const currentMajors: Record<string, string> = {
-      '@anthropic-ai/sdk': '1.9.0',
-      '@anthropic-ai/claude-agent-sdk': '0.3.326',
-    };
-    const stale: string[] = [];
-    for (const [dep, version] of Object.entries(currentMajors)) {
-      const range = manifest.peerDependencies?.[dep];
-      if (!range || !semver.satisfies(version, range)) {
-        stale.push(`${dep}@${version} does not satisfy "${range}"`);
+      if (manifest.private) continue;
+      const ok = new Set([...HOSTS, ...(allowed[dir] ?? [])]);
+      for (const dep of Object.keys(manifest.peerDependencies ?? {})) {
+        if (!ok.has(dep)) unexpected.push(`${dir} → ${dep}`);
       }
     }
-    expect(stale, 'the peer ceiling excludes the SDK major adopters actually install').toEqual([]);
+    expect(
+      unexpected,
+      'a published package must not declare a third-party peer; put the supported range in its README',
+    ).toEqual([]);
+  });
+
+  it('every allowlisted exception is still a real peer', () => {
+    // An exception that no longer exists is a stale allowance: it would let
+    // the peer come back unnoticed. Remove the entry with the peer.
+    const allowed: [string, string][] = [
+      ['eslint-devkit', 'oxc-resolver'],
+      ['eslint-devkit', 'typescript'],
+      ['eslint-plugin-import-next', 'oxc-resolver'],
+      ['eslint-plugin-import-next', 'typescript'],
+      ['eslint-plugin-maintainability', 'typescript'],
+      ['eslint-plugin-react-features', 'typescript'],
+      ['eslint-plugin-secure-coding', 'recheck'],
+    ];
+    const gone = allowed
+      .filter(([dir, dep]) => manifestOf(dir).peerDependencies?.[dep] === undefined)
+      .map(([dir, dep]) => `${dir} → ${dep}`);
+    expect(gone).toEqual([]);
   });
 });
