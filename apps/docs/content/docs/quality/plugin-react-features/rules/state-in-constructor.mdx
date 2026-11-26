@@ -124,6 +124,13 @@ function Counter({ initialCount = 0 }) {
 }
 ```
 
+## Options
+
+One string, as in eslint-plugin-react: `"always"` (the default) or `"never"`.
+
+- `"always"`: report a `state = ...` class field when the constructor does not assign `this.state`.
+- `"never"`: report `this.state = ...` inside a React class's constructor, including one nested in an `if` or an arrow function.
+
 ## Configuration Examples
 
 ### Basic Usage
