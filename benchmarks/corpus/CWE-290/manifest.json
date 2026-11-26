@@ -1,0 +1,21 @@
+{
+  "cwe": "CWE-290",
+  "name": "Authentication Bypass by Spoofing",
+  "owasp": "A07:2021",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-grpc-security"],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "grpc-1-lab-server.js",
+        "description": "security-research protocol-ctf grpc-1 lab server, verbatim: a forwarded identity header is returned as the caller and compared with the account owner"
+      }
+    ],
+    "safe": [
+      {
+        "file": "grpc-1-lab-fixed-server.js",
+        "description": "The lab's reference fix, verbatim: the caller is resolved from a server-side token table, so the header is a key, not the identity"
+      }
+    ]
+  }
+}

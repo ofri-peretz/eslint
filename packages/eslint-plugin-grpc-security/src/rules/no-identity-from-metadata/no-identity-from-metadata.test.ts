@@ -116,6 +116,10 @@ server.addService(svc, {
       code: `function who(md) { return who(md); }\n${handler(`who(call.metadata)`)}`,
     },
     {
+      name: 'a normalizer called with no argument at that position',
+      code: `function norm(u) { return u; }\n${handler(`norm()`)}`,
+    },
+    {
       name: 'a resolver built by a factory is not followed',
       code: `const who = makeWho();\n${handler(`who(call.metadata)`)}`,
     },
@@ -250,6 +254,11 @@ server.addService(svc, {
   return md.get('foo')[0];
 }
 ${handler(`who(call.metadata)`)}`,
+      errors: ERR,
+    },
+    {
+      name: 'a normalizer that takes the header value as a parameter',
+      code: `function norm(u) { return u.trim().toLowerCase(); }\n${handler(`norm(call.metadata.get('foo')[0])`)}`,
       errors: ERR,
     },
     {

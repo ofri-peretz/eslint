@@ -19,8 +19,8 @@
  *   `.addService(…)`, followed through consts, destructuring and same-file
  *   helpers whose call sites pass it;
  * - it travels unchanged in substance (consts, `String()`, templates, string
- *   methods, `??`, ternaries, `await`, and the return of same-file
- *   functions) — a lookup keyed by it (`TOKENS[h]`) or a call that takes it
+ *   methods, `??`, ternaries, `await`, the return of same-file functions, and
+ *   their parameters at the call sites that pass it) — a lookup keyed by it (`TOKENS[h]`) or a call that takes it
  *   (`verify(h)`) resolves it into something else and ends the flow;
  * - and it lands on one side of an equality check, inside an `if` or ternary
  *   test, whose other side is a field of a per-request record (`acc.owner`).
@@ -257,6 +257,14 @@ function metadataOrigins(
   switch (node.type) {
     case 'Identifier': {
       const def = definitionOf(node, sourceCode);
+      if (def?.type === 'Parameter') {
+        // `function norm(u) { return u.trim(); }`: what the call sites pass.
+        const fn = def.node as FunctionNode;
+        const index = fn.params.indexOf(def.name as TSESTree.Parameter);
+        return callSitesOf(fn, sourceCode).flatMap((call) =>
+          call.arguments[index] ? next(call.arguments[index]) : [],
+        );
+      }
       if (def?.type !== 'Variable') return [];
       // `const h = …` and `const [h] = …` both hold (a part of) the value.
       const { init } = def.node as TSESTree.VariableDeclarator;
