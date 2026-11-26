@@ -1,9 +1,94 @@
 {
-  "releaseCount": 1626,
+  "releaseCount": 1632,
   "packageCount": 68,
-  "entryCount": 3543,
+  "entryCount": 3551,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "oxlint-plugin-react-features",
+      "short": "oxlint-plugin-react-features",
+      "version": "2.4.6",
+      "date": "2026-11-26T17:01:36Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-react-features@2.4.6`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "2.4.6",
+      "date": "2026-11-26T17:00:08Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "accept eslint-plugin-react's option shapes for six rules airbnb configures",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "6.5.4",
+      "date": "2026-11-26T16:59:30Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.5.4`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "2.5.1",
+      "date": "2026-11-26T16:58:07Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "**✨ New**: `eslint-plugin-grpc-security`, starting with `no-unguarded-reflection`.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "6.5.4",
+      "date": "2026-11-26T16:57:06Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no-graphql-injection stops reading JS object fragments as GraphQL selection sets",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.1`",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "oxlint-plugin-vercel-ai-security",
       "short": "oxlint-plugin-vercel-ai-security",
@@ -33405,21 +33490,6 @@
       ]
     },
     {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
-      "version": "2.5.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "**✨ New**: `eslint-plugin-grpc-security`, starting with `no-unguarded-reflection`.",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "1.0.1",
@@ -33540,6 +33610,21 @@
         {
           "kind": "fix",
           "title": "Three autofixes no longer write broken code into a file.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "4.0.9",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`require-algorithm-whitelist` no longer reports a jose verify whose key already fixes the algorithm family. jose checks the key against the header `alg` and refuses `none`, so `jwtVerify(token, createLocalJWKSet({ keys }))`, `jwtVerify(token, new TextEncoder().encode(secret))` and a key from `importSPKI` / `importX509` / `importPKCS8` / `importJWK` cannot be steered to a weaker family by the token. The key is read structurally in the same file (a `const` is followed); a key from a parameter or an unreadable call, a callee that is not imported from jose, and every jsonwebtoken call keep being reported. Seen on Payload and logto.",
           "pr": null
         }
       ]
@@ -33670,6 +33755,26 @@
         {
           "kind": "docs",
           "title": "ship an AGENTS.md that tells AI assistants how to enable the plugin and what each preset catches",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "6.3.4",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-dynamic-algorithm-selection` no longer reports an algorithm name read from a string enum declared in the same file. `createCipheriv(SecretEncryptionAlgo.AES_256_GCM, key, iv)`, and a `const` that holds such a member, can only produce a name the author wrote down, which is the allowlist the rule asks for. A member read by a caller-supplied key (`Algo[name]`), an enum with a numeric or computed member, a merged enum and an imported enum keep being reported. Seen on Infisical.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-toctou-vulnerability` no longer reports a check-then-use on a path beneath a directory the code created with `fs.mkdtemp` / `mkdtempSync` (also awaited, and through `path.join` or a template). `mkdtemp` makes a 0700 directory owned by the caller, so no other unprivileged user can create or swap a name inside it: the same absence of a shared namespace the per-user-root exemption already relies on. A path in the shared temp root, a `mkdtemp` that is not `fs`'s, and a path joined from unvalidated input (the Vendure `path.join(importAssetsDir, assetPath)` shape) are still reported. Seen on docmost.",
           "pr": null
         }
       ]
@@ -33810,41 +33915,21 @@
       ]
     },
     {
-      "package": "eslint-plugin-react-features",
-      "short": "eslint-plugin-react-features",
-      "version": "2.4.6",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "accept eslint-plugin-react's option shapes for six rules airbnb configures",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.1`",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-secure-coding",
       "short": "eslint-plugin-secure-coding",
-      "version": "6.5.4",
+      "version": "6.5.5",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
           "kind": "fix",
-          "title": "no-graphql-injection stops reading JS object fragments as GraphQL selection sets",
+          "title": "`no-sensitive-data-exposure` no longer reports a name that ends in what a secret is called, where it lives or how much of it there is. The default `descriptorSegments` now also hold `id`, `ids`, `name`, `path`, `count`, `length`, `size`, `type` and `kind`, so `tokenCount` in a usage log, `secretPath` in a webhook log object and `secretName` in an error message are not reported. The comparison is still the whole final segment of the name: `token`, `accessToken`, `passwordHash` and `tokenIdValue` keep reporting, and `descriptorSegments` can drop any of the new ones. Seen on LibreChat, Infisical and Budibase.",
           "pr": null
         },
         {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.1`",
+          "kind": "fix",
+          "title": "`no-log-injection` no longer reports the raw request target. `req.url`, `request.url`, `ctx.url` and `req.path` / `ctx.path` hold the target as it came off the wire, and Node's HTTP parser rejects a request whose target carries a literal CR or LF (a percent-encoded `%0d%0a` stays encoded), so a forged log line cannot start there. The decoded and parsed parts (`query`, `params`, `body`, `headers`, `cookies`), a `url` read from them, and a `url` on an `event` or `message` root keep reporting. Seen on cal.com and Teable.",
           "pr": null
         }
       ]
@@ -33920,6 +34005,21 @@
       ]
     },
     {
+      "package": "oxlint-plugin-jwt-security",
+      "short": "oxlint-plugin-jwt-security",
+      "version": "4.0.9",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-jwt-security@4.0.9`",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-modernization",
       "short": "oxlint-plugin-modernization",
       "version": "4.0.3",
@@ -33930,6 +34030,21 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `eslint-plugin-modernization@4.0.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "6.3.4",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.3.4`",
           "pr": null
         }
       ]
@@ -33950,31 +34065,16 @@
       ]
     },
     {
-      "package": "oxlint-plugin-react-features",
-      "short": "oxlint-plugin-react-features",
-      "version": "2.4.6",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-react-features@2.4.6`",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "oxlint-plugin-secure-coding",
       "short": "oxlint-plugin-secure-coding",
-      "version": "6.5.4",
+      "version": "6.5.5",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
           "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.5.4`",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.5.5`",
           "pr": null
         }
       ]
