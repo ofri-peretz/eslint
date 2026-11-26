@@ -75,26 +75,10 @@
     "@interlace/eslint-devkit": "^2.3.1"
   },
   "peerDependencies": {
-    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0",
-    "@nestjs/common": "^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0",
-    "@nestjs/throttler": "^4.0.0 || ^5.0.0 || ^6.0.0",
-    "class-validator": "^0.14.0 || ^0.15.0",
-    "class-transformer": "^0.5.0"
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"
   },
   "peerDependenciesMeta": {
     "eslint": {
-      "optional": true
-    },
-    "@nestjs/common": {
-      "optional": true
-    },
-    "@nestjs/throttler": {
-      "optional": true
-    },
-    "class-validator": {
-      "optional": true
-    },
-    "class-transformer": {
       "optional": true
     }
   },

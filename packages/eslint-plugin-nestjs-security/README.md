@@ -179,6 +179,15 @@ so reporting it on every route described a one-line fix as dozens of errors.
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
+### Supported library versions
+
+The library ranges the rules were written against, as previously declared in `peerDependencies`. They are documentation only: this package installs and requires none of these libraries, and npm no longer warns on a mismatch.
+
+- `@nestjs/common`: `^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0`
+- `@nestjs/throttler`: `^4.0.0 || ^5.0.0 || ^6.0.0`
+- `class-validator`: `^0.14.0 || ^0.15.0`
+- `class-transformer`: `^0.5.0`
+
 ## Rules
 
 **Legend**

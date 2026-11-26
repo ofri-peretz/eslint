@@ -69,46 +69,10 @@
     "node": ">=22.13.0"
   },
   "peerDependencies": {
-    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0",
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "@modelcontextprotocol/server": "^2.0.0",
-    "@modelcontextprotocol/client": "^2.0.0",
-    "@modelcontextprotocol/core": "^2.0.0",
-    "@modelcontextprotocol/node": "^2.0.0",
-    "@modelcontextprotocol/express": "^2.0.0",
-    "@modelcontextprotocol/hono": "^2.0.0",
-    "@modelcontextprotocol/fastify": "^2.0.0",
-    "@modelcontextprotocol/server-legacy": "^2.0.0"
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"
   },
   "peerDependenciesMeta": {
     "eslint": {
-      "optional": true
-    },
-    "@modelcontextprotocol/sdk": {
-      "optional": true
-    },
-    "@modelcontextprotocol/server": {
-      "optional": true
-    },
-    "@modelcontextprotocol/client": {
-      "optional": true
-    },
-    "@modelcontextprotocol/core": {
-      "optional": true
-    },
-    "@modelcontextprotocol/node": {
-      "optional": true
-    },
-    "@modelcontextprotocol/express": {
-      "optional": true
-    },
-    "@modelcontextprotocol/hono": {
-      "optional": true
-    },
-    "@modelcontextprotocol/fastify": {
-      "optional": true
-    },
-    "@modelcontextprotocol/server-legacy": {
       "optional": true
     }
   },
@@ -132,7 +96,7 @@
         "@modelcontextprotocol/sdk/server/mcp.js",
         "@modelcontextprotocol/sdk/client/index.js"
       ],
-      "note": "The SDK has no root export \u2014 only subpaths. Declaring the bare package read as \"surface: 0\", which is indistinguishable from a plugin with no surface at all."
+      "note": "The SDK has no root export — only subpaths. Declaring the bare package read as \"surface: 0\", which is indistinguishable from a plugin with no surface at all."
     }
   }
 }
