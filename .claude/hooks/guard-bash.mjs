@@ -23,11 +23,18 @@
 //   7. Asks before a push that rewrites or deletes remote history: --force, --force-with-lease,
 //      -f, +refspec, --delete, :refspec, --mirror, --prune.
 //
+//   8. Denies a `git commit -m/-F` whose message the repo's commit-msg stations would reject
+//      (commitlint with the repo's own config, and the `Verified-by:` receipt where the repo has the
+//      provedone station), so the failure comes in seconds, before the pre-commit hook has run for minutes.
+//      No commitlint config or install, an interactive commit, or any internal error: no opinion.
+//
 // Matching is done on tokens, not regexes over the raw command: quoted strings and
 // heredoc bodies are data (commit messages, PR bodies), and no pattern here can backtrack.
 // Reads the PreToolUse payload on stdin. Prints a deny or ask decision, or nothing (no opinion).
 // `node guard-bash.mjs --self-test` runs the cases at the bottom.
 
+import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 import { posix } from "node:path";
 
 const SEPARATORS = new Set([";", "&", "|", "\n", "(", ")"]);
@@ -329,6 +336,174 @@ export function decideHooked(command, { timeout, run_in_background } = {}) {
   };
 }
 
+/** Words of the commands in `src`, quotes resolved (`"a b"` is one word), each with whether the shell would expand it. */
+function shellWords(src) {
+  const out = [];
+  let words = [];
+  let w = null;
+  const flushWord = () => {
+    if (w) words.push(w);
+    w = null;
+  };
+  const flush = () => {
+    flushWord();
+    if (words.length) out.push(words);
+    words = [];
+  };
+  const add = (text, dynamic) => {
+    w ??= { text: "", dynamic: false };
+    w.text += text;
+    w.dynamic ||= dynamic;
+  };
+  let i = 0;
+  while (i < src.length) {
+    const ch = src[i];
+    if (ch === "'") {
+      const end = src.indexOf("'", i + 1);
+      if (end === -1) return [];
+      add(src.slice(i + 1, end), false);
+      i = end + 1;
+    } else if (ch === '"') {
+      const end = skipQuoted(src, i) - 1;
+      const inner = src.slice(i + 1, end);
+      // `"$(cat <<'EOF' … EOF)"` is how a long message is passed: the body is the message.
+      const doc = /^\$\(cat <<-?\s*(['"]?)(\w+)\1\n([\s\S]*?)\n[ \t]*\2\s*\)$/.exec(inner);
+      if (doc) add(doc[3], false);
+      else add(inner.replace(/\\([\\"$`])/g, "$1"), /[$`]/.test(inner));
+      i = end + 1;
+    } else if (ch === "\\" && src[i + 1] !== undefined) {
+      add(src[i + 1], false);
+      i += 2;
+    } else if (SEPARATORS.has(ch)) {
+      flush();
+      i++;
+    } else if (ch === " " || ch === "\t") {
+      flushWord();
+      i++;
+    } else {
+      add(ch, ch === "$" || ch === "`");
+      i++;
+    }
+  }
+  flush();
+  return out;
+}
+
+/**
+ * The message a `git commit -m … / -F …` carries, or null when it is not a commit, has none on its
+ * command line (the editor opens), or cannot be known without running the shell. `read` returns a
+ * file's text (or null); `-F -` reads the command's own heredoc.
+ */
+export function commitMessage(command, read = () => null) {
+  let src = String(command ?? "").replace(/\\\n/g, " ");
+  let stdin = null;
+  if (/(?:-F|--file)[ =]-(?:\s|$)/.test(src)) {
+    const heredoc = /<<-?\s*(['"]?)(\w+)\1[^\n]*\n([\s\S]*?)\n[ \t]*\2[ \t]*(?:\n|$)/.exec(src);
+    if (heredoc) {
+      stdin = heredoc[3];
+      src = src.replace(heredoc[0], "\n");
+    }
+  }
+  for (const w of shellWords(src)) {
+    const s = gitSub(w.map((x) => x.text));
+    if (s === -1 || w[s].text !== "commit") continue;
+    const args = w.slice(s + 1);
+    const parts = [];
+    for (let k = 0; k < args.length; k++) {
+      const a = args[k].text;
+      let value;
+      if (a === "--message" || a === "--file" || /^-[a-zA-Z]*[mF]$/.test(a)) {
+        const arg = args[++k];
+        if (!arg || arg.dynamic) return null;
+        value = arg.text;
+        if (/^-[a-zA-Z]*F$|^--file$/.test(a)) value = value === "-" ? stdin : read(value);
+      } else if (/^--(message|file)=/.test(a)) {
+        if (args[k].dynamic) return null;
+        value = a.startsWith("--file=") ? read(a.slice(7)) : a.slice(10);
+      } else if (/^-[a-zA-Z]*m./.test(a)) {
+        if (args[k].dynamic) return null;
+        value = a.slice(a.indexOf("m") + 1);
+      } else continue;
+      if (value === null || value === undefined) return null;
+      parts.push(value);
+    }
+    return parts.length ? parts.join("\n\n") : null;
+  }
+  return null;
+}
+
+const COMMITLINT_CONFIG = [
+  ...["", ".json", ".yaml", ".yml", ".js", ".cjs", ".mjs", ".ts", ".cts", ".mts"].map((e) => `.commitlintrc${e}`),
+  ...["js", "cjs", "mjs", "ts", "cts", "mts"].map((e) => `commitlint.config.${e}`),
+];
+
+/** The `✖` lines commitlint prints for `message`: its rules (scope, type, footer width) come from the repo's own config; this only finds and runs it. */
+function commitlintProblems(message, dir) {
+  const pkg = (() => {
+    try {
+      return JSON.parse(readFileSync(`${dir}/package.json`, "utf8"));
+    } catch {
+      return {};
+    }
+  })();
+  const cli = `${dir}/node_modules/@commitlint/cli/cli.js`;
+  if (!existsSync(cli) || !(pkg.commitlint || COMMITLINT_CONFIG.some((f) => existsSync(`${dir}/${f}`)))) return [];
+  const r = spawnSync(process.execPath, [cli], { cwd: dir, input: message, encoding: "utf8", timeout: 6000, env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" } });
+  if (r.status !== 1) return [];
+  // Lint failures are `✖ <message> [rule]` lines; a crash (bad config) prints none and has no opinion.
+  return `${r.stdout}\n${r.stderr}`.split("\n").map((l) => l.trim()).filter((l) => l.startsWith("✖") && /\[[a-z-]+\]$/.test(l));
+}
+
+/** The provedone receipt rule (burgee packages/provedone receipt.ts `verdict`), for repos that run its commit-msg station. */
+function receiptProblem(message, dir) {
+  const has = (f) => {
+    try {
+      return readFileSync(`${dir}/${f}`, "utf8").includes("provedone");
+    } catch {
+      return false;
+    }
+  };
+  if (!has("package.json") && !has("lefthook.yml") && !has("lefthook.yaml")) return null;
+  const lines = message
+    .split("\n")
+    .filter((l) => !l.startsWith("#"))
+    .join("\n")
+    .replace(/\n[ \t]+/g, " ")
+    .split("\n");
+  if (/^Merge /.test(lines.join("\n"))) return null;
+  const values = lines.flatMap((l) => /^Verified-by:(.*)/i.exec(l)?.slice(1) ?? []).map((v) => v.trim());
+  const fix = "add a trailer `Verified-by: <command> -> exit 0` (or `Verified-by: none (<why no check applies>)`)";
+  if (!values.length) return `✖ no Verified-by: line: ${fix}`;
+  if (values.some((v) => /^none\b/i.test(v) && !/^none \(\s*\S[^)]*\)$/i.test(v))) return "✖ `Verified-by: none` gives no reason: write `Verified-by: none (<why it needs no check>)`";
+  if (values.some((v) => v === "")) return `✖ an empty Verified-by: line: ${fix}`;
+  return null;
+}
+
+/** The verdict for a `git commit` whose message the commit-msg stations would reject, or null. Never throws. */
+export function decideCommitMessage(command, dir) {
+  try {
+    const message = commitMessage(command, (f) => {
+      try {
+        return readFileSync(posix.isAbsolute(f) ? f : `${dir}/${f}`, "utf8");
+      } catch {
+        return null;
+      }
+    });
+    if (message === null || message.trim() === "") return null;
+    const problems = [...commitlintProblems(message, dir), receiptProblem(message, dir)].filter(Boolean);
+    if (!problems.length) return null;
+    return {
+      decision: "deny",
+      id: "commit-message",
+      reason:
+        `The commit-msg hook would reject this message, but only after the pre-commit hook has spent minutes on the tests. Fix it now:\n${problems.join("\n")}` +
+        (problems.some((p) => p.includes("footer")) ? "\nFold a trailer longer than 100 characters onto a second line that starts with a space." : ""),
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** `*` within a segment, `**` across segments, `?` one character. Paths use forward slashes. */
 const GLOB_TOKEN = /\*\*\/|\*\*|\*|\?|[.+^${}()|[\]\\]/g;
 const GLOB_PART = { "**/": "(?:.*/)?", "**": ".*", "*": "[^/]*", "?": "[^/]" };
@@ -470,7 +645,49 @@ export const CASES = {
 
 const EDIT_CONFIG = { frozen: ["content/**/*.md"], generated: { "public/r/**": "npm run registry:build" } };
 
-function selfTest() {
+// decideCommitMessage: [command, denied as a message problem containing, or null], run in a repo
+// with a commitlint config (a stand-in CLI that applies the same three rules), the provedone station.
+export const MESSAGES = [
+  ['git commit -m "feat(zzz): add x\n\nVerified-by: npm test -> exit 0"', "scope must be one of"],
+  ['git commit -m "feat(ci): add x"', "no Verified-by"],
+  ['git commit -m "feat(ci): add x" -m "Verified-by: none"', "gives no reason"],
+  [`git commit -m "feat(ci): add x" -m "Verified-by: ${"x".repeat(120)} -> exit 0"`, "100 characters"],
+  ['git commit -F - <<\'EOF\'\nfeat(zzz): x\n\nVerified-by: t -> exit 0\nEOF', "scope must be one of"],
+  ['git commit -m "$(cat <<\'EOF\'\nfeat(ci): x\n\nbody\nEOF\n)"', "no Verified-by"],
+  ['git commit -m "feat(ci): add x\n\nVerified-by: npm test -> exit 0"', null],
+  ['git commit -am "fix(ci): x" -m "Verified-by: none (docs only)"', null],
+  ['git commit -m "$(cat <<\'EOF\'\nfeat(ci): x\n\nVerified-by: npm test -> exit 0\nEOF\n)"', null],
+  ["git commit", null],
+  ["git commit --amend --no-edit", null],
+  ['git commit -m "$MSG"', null],
+  ['git log -m "feat(zzz): x"', null],
+];
+
+const FAKE_COMMITLINT = `let s = "";
+process.stdin.on("data", (d) => (s += d)).on("end", () => {
+  const out = [];
+  const scope = /^\\w+\\(([^)]*)\\)/.exec(s)?.[1];
+  if (scope && !["a", "ci"].includes(scope)) out.push("\\u2716 scope must be one of [a, ci] [scope-enum]");
+  if (s.split("\\n").slice(1).some((l) => l.length > 100)) out.push("\\u2716 footer's lines must not be longer than 100 characters [footer-max-line-length]");
+  console.log(out.join("\\n"));
+  process.exit(out.length ? 1 : 0);
+});
+`;
+
+async function messageFixture() {
+  const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const dir = mkdtempSync(`${tmpdir()}/guard-bash-`);
+  mkdirSync(`${dir}/node_modules/@commitlint/cli`, { recursive: true });
+  writeFileSync(`${dir}/node_modules/@commitlint/cli/cli.js`, FAKE_COMMITLINT);
+  writeFileSync(`${dir}/commitlint.config.mjs`, "export default {};\n");
+  writeFileSync(`${dir}/package.json`, JSON.stringify({ scripts: { "hook:provedone": "provedone gate --mode enforce" } }));
+  return dir;
+}
+
+async function selfTest() {
+  const repo = await messageFixture();
+  const bare = await messageFixture();
   const bad = [
     ...CASES.deny.filter((c) => decide(c)?.decision !== "deny").map((c) => `should deny: ${c}`),
     ...CASES.allow.filter((c) => decide(c)).map((c) => `should allow: ${c}`),
@@ -481,11 +698,22 @@ function selfTest() {
     ...CASES.edit
       .filter(([f, id]) => (decideEdit(f, EDIT_CONFIG.frozen, EDIT_CONFIG.generated)?.id ?? null) !== id)
       .map(([f, id]) => `should ${id ? `deny as ${id}` : "allow"}: edit ${f}`),
+    ...MESSAGES.flatMap(([c, want]) => {
+      const hit = decideCommitMessage(c, repo);
+      return (want === null ? hit === null : hit?.reason.includes(want)) ? [] : [`should ${want === null ? "allow" : `deny (${want})`}: ${c}`];
+    }),
   ];
+  // Without a commitlint config or the provedone station there is nothing to enforce.
+  const { rmSync } = await import("node:fs");
+  rmSync(`${bare}/commitlint.config.mjs`);
+  rmSync(`${bare}/package.json`);
+  if (decideCommitMessage('git commit -m "feat(zzz): x"', bare)) bad.push("should allow a commit in a repo with no commitlint config or provedone station");
+  rmSync(repo, { recursive: true, force: true });
+  rmSync(bare, { recursive: true, force: true });
   process.stdout.write(
     bad.length
       ? `${bad.join("\n")}\n${bad.length} failing\n`
-      : `ok: ${CASES.deny.length} denied, ${CASES.allow.length} allowed, ${CASES.ask.length} asked, ${CASES.hooked.length} timed, ${CASES.edit.length} edits\n`,
+      : `ok: ${CASES.deny.length} denied, ${CASES.allow.length} allowed, ${CASES.ask.length} asked, ${CASES.hooked.length} timed, ${CASES.edit.length} edits, ${MESSAGES.length} messages\n`,
   );
   process.exit(bad.length ? 1 : 0);
 }
@@ -512,7 +740,7 @@ async function repoConfig() {
 
 // Imported (stop-after-3 reads `commands` from guard-bash) is not run: only the entry file acts.
 const isMain = Boolean(process.argv[1]) && import.meta.url.endsWith(`/${process.argv[1].split(/[\\/]/).pop()}`);
-if (isMain && process.argv.includes("--self-test")) selfTest();
+if (isMain && process.argv.includes("--self-test")) await selfTest();
 else if (isMain) {
   let raw = "";
   process.stdin.on("data", (d) => (raw += d));
@@ -527,7 +755,7 @@ else if (isMain) {
     const config = await repoConfig();
     let hit = null;
     if (typeof input.command === "string")
-      hit = decide(input.command, config.ask) ?? decideHooked(input.command, input);
+      hit = decide(input.command, config.ask) ?? decideCommitMessage(input.command, payload.cwd || config.dir) ?? decideHooked(input.command, input);
     else {
       const file = input.file_path ?? input.notebook_path;
       if (typeof file === "string") {

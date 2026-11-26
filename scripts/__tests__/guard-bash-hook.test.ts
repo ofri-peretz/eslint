@@ -26,13 +26,21 @@ const HOOK = join(REPO_ROOT, '.claude/hooks/guard-bash.mjs');
 
 // The content cases run with the timeout a hooked `git commit`/`git push` needs, so only the
 // command text decides them; the timeout rule has its own cases (`CASES.hooked`) below.
+// They also run in an empty project dir: since hookset 1.3.0 the hook rejects a commit message
+// this repo's commitlint or provedone station would, and `-m "x"` fails both here. That rule is
+// pinned against this repo on its own, below.
+const BARE = mkdtempSync(join(tmpdir(), 'guard-bash-bare-'));
+afterAll(() => rmSync(BARE, { recursive: true, force: true }));
+
 function decision(
   command: string,
   bash: Record<string, unknown> = { timeout: 600_000 },
+  projectDir: string = BARE,
 ): string | null {
   const r = spawnSync(process.execPath, [HOOK], {
     input: JSON.stringify({ tool_input: { command, ...bash } }),
     encoding: 'utf8',
+    env: { ...process.env, CLAUDE_PROJECT_DIR: projectDir },
   });
   expect(r.status).toBe(0);
   if (!r.stdout.trim()) return null;
@@ -66,6 +74,10 @@ describe('guard-bash hook', () => {
     'sleep 5',
   ])('has no opinion on %j', (command) => {
     expect(decision(command)).toBeNull();
+  });
+
+  it("denies, in this repo, a commit message this repo's commit-msg stations reject", () => {
+    expect(decision('git commit -m "x"', undefined, REPO_ROOT)).toBe('deny');
   });
 
   it('has no opinion on a payload it cannot parse', () => {
