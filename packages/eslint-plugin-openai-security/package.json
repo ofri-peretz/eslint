@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-openai-security",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "ESLint OpenAI SDK security rules — catches dangerouslyAllowBrowser, hardcoded API keys, and system prompts assembled from untrusted input.",
   "type": "commonjs",
   "sideEffects": false,
@@ -74,7 +74,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.0.4"
+    "@interlace/eslint-devkit": "^2.5.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",

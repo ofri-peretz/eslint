@@ -5,6 +5,16 @@ All notable changes to `eslint-plugin-express-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.4.3
+
+### Patch Changes
+
+- **🐛 Fix** — no longer declares `express`, `helmet`, `cors`, `csurf`, `express-rate-limit` as optional `peerDependencies`
+
+  No source file ever imported them; the rules match the library by the import specifier in the linted code, so nothing needs installing. The entries only made npm warn on a version mismatch. The supported ranges are now listed in the README under "Supported library versions". Nothing changes at lint time. If you installed the plugin next to these libraries and relied on npm's peer warning, that warning is gone.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`
+
 ## 4.4.2
 
 ### Patch Changes

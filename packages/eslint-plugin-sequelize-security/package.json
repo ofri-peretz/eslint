@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-sequelize-security",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "ESLint Sequelize security rules — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials.",
   "type": "commonjs",
   "sideEffects": false,
@@ -79,7 +79,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.0.4"
+    "@interlace/eslint-devkit": "^2.5.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",

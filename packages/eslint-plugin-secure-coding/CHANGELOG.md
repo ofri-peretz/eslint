@@ -5,6 +5,16 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.5.3
+
+### Patch Changes
+
+- **🐛 Fix** — `no-hardcoded-credentials` no longer aborts the whole run on a TypeScript `import x = require('m')`
+
+  Resolving which module a called binding comes from read `.source.value` off every import, but `import x = require('m')` has no `source`, so a `const` object literal passed to such a binding threw `TypeError: Cannot read properties of undefined (reading 'value')` and ended the ESLint process (found scanning cal.com). The import-equals declaration is now resolved through its `moduleReference`, so `import session = require('express-session')` is also recognised as the session middleware; an entity-name alias (`import s = A.B`) and any other module stay silent.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`
+
 ## 6.5.2
 
 ### Patch Changes
