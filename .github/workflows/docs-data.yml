@@ -169,7 +169,9 @@ jobs:
 
           git checkout -B "$BRANCH"
           git add apps/docs/src/data/
-          git commit -m "chore(docs): sync data [automated]"
+          # The receipt keeps hookset's provedone check from blocking every sync PR (#1797).
+          git commit -m "chore(docs): sync data [automated]" \
+            -m "Verified-by: none (generated data written by this workflow; no test covers it)"
           git push --force-with-lease="$BRANCH:$LEASE" origin "$BRANCH"
 
           # `--base main --limit 1` and `.[0].number // empty`: a bare
