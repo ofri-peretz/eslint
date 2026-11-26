@@ -115,13 +115,14 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { RegExpParser, visitRegExpAST } from '@eslint-community/regexpp';
+import { RegExpParser } from '@eslint-community/regexpp';
 import type {
   Node as RegExpNode,
   Quantifier as RegExpQuantifier,
 } from '@eslint-community/regexpp/ast';
-import { JS } from 'refa';
-import { analyse } from 'scslre';
+import { analyse } from './analysis/backtracking';
+import { toCharSet } from './analysis/char-classes';
+import { walkQuantifiers } from './analysis/walk';
 import {
   asDirectConstruction,
   isRegExpConstructor,
@@ -521,15 +522,21 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
           return null;
         }
         try {
-          return JS.parseCharSet(el as never, { unicode });
+          return toCharSet(el, {
+            ignoreCase: false,
+            unicode,
+            unicodeSets: flags.includes('v'),
+            dotAll: false,
+            multiline: false,
+          });
         } catch {
           return null;
         }
       };
 
       let catastrophic = false;
-      visitRegExpAST(ast as never, {
-        onQuantifierEnter(quantifier: RegExpQuantifier) {
+      walkQuantifiers(ast, {
+        enter(quantifier: RegExpQuantifier) {
           if (catastrophic) return;
           if (quantifier.max !== Infinity) return;
           const { element } = quantifier;
@@ -575,19 +582,16 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
         // valid regex". A `/v` pattern is a valid regex; it compiles, runs, and
         // backtracks. Every `/v` pattern using a property escape was dropped.
         const run = (ast: ReturnType<typeof parse>) =>
-          analyse(
-            {
-              pattern: ast,
-              flags: {
-                ignoreCase: flags.includes('i'),
-                unicode: flags.includes('u'),
-                unicodeSets: flags.includes('v'),
-                dotAll: flags.includes('s'),
-                multiline: flags.includes('m'),
-              } as never,
+          analyse({
+            pattern: ast,
+            flags: {
+              ignoreCase: flags.includes('i'),
+              unicode: flags.includes('u'),
+              unicodeSets: flags.includes('v'),
+              dotAll: flags.includes('s'),
+              multiline: flags.includes('m'),
             },
-            { reportTypes: { Move: false } },
-          );
+          });
 
         const ast = parse(pattern);
         let result = run(ast);

@@ -160,9 +160,11 @@ const valid = isEmail(input);
 
 ## How detection works
 
-Every pattern goes to [`scslre`](https://github.com/RunDevelopment/scslre), the
-NFA analyser `eslint-plugin-regexp` uses. It builds the automaton and looks for
-genuine ambiguity, and its verdict is **final**:
+Every pattern goes to the ambiguity analysis ported from
+[`scslre`](https://github.com/RunDevelopment/scslre), the analyser
+`eslint-plugin-regexp` uses, and kept in this package so the rule has no
+third-party runtime dependency for it. It looks for genuine ambiguity, and its
+verdict is **final**:
 
 - **Reports** — a self-loop or cross-quantifier trade was found. The message
   names which, and whether backtracking is exponential or polynomial.

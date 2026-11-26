@@ -15,7 +15,9 @@
  * practice, making these combinations either exceedingly rare or possibly
  * unreachable via real regex source.
  *
- * This file mocks `scslre`'s `analyse()` return value to force both
+ * This file mocks the in-house `analyse()` (analysis/backtracking,
+ * which replaced the `scslre` dependency; the mock target moved with it and no
+ * expectation changed) return value to force both
  * combinations directly — it is testing *our* rule's branch logic (the
  * `report.type === 'Self'` / `isExp` ternaries in index.ts), not scslre's
  * internals. Isolated into its own file so the `vi.mock` hoist doesn't
@@ -23,11 +25,11 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('scslre', () => ({
+vi.mock('./analysis/backtracking', () => ({
   analyse: vi.fn(),
 }));
 
-import { analyse } from 'scslre';
+import { analyse } from './analysis/backtracking';
 import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noRedosVulnerableRegex } from './index';
 
