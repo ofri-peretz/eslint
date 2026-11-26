@@ -5,6 +5,16 @@ All notable changes to `oxlint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.5.2
+
+### Patch Changes
+
+- **🧹 Refactor** — `no-redos-vulnerable-regex` parses patterns with its own parser instead of `@eslint-community/regexpp`
+
+  `eslint-plugin-secure-coding` now has a single runtime dependency, `@interlace/eslint-devkit`. The pattern parser the rule used is vendored into `src/regex-parser/`, trimmed to the one path it takes (a pattern string under `u`, `v` or neither, at the newest ECMAScript edition), with the MIT notice in `THIRD_PARTY_NOTICES.md`. A pattern it cannot parse is skipped, as before. Parse results and error messages are identical to `regexpp`'s over 33,000 real-world and 450,000 generated pattern/flag combinations.
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.5.2`
+
 ## 6.5.1
 
 ### Patch Changes
