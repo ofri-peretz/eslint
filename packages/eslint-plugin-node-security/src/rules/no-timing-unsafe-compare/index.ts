@@ -22,6 +22,7 @@ import {
   propertyName,
   staticString,
   valueFollow,
+  requestSource,
 } from '@interlace/eslint-devkit';
 import {
   bindingInit,
@@ -395,6 +396,22 @@ const DEFAULT_SECRET_PATTERNS = [
  */
 const SHORT_PATTERN_LENGTH = 6;
 
+/**
+ * Conditional-request headers. Their value is the entity tag the server put in
+ * an `ETag` response header, which every client that fetched the resource
+ * already holds: Wiki.js answers 304 when `req.headers['if-none-match'] ===
+ * etag` (`backend/controllers/site.ts:87`), and the etag is a SHA-1 of the
+ * asset, which is why it read as a crypto secret. Header names are
+ * case-insensitive, so they are compared lower-cased.
+ */
+const CONDITIONAL_REQUEST_HEADERS: ReadonlySet<string> = new Set([
+  'if-none-match',
+  'if-match',
+]);
+
+/** Header getters that take the header name: Fetch `get`, Express `get`/`header`. */
+const HEADER_GETTERS: ReadonlySet<string> = new Set(['get', 'header']);
+
 /** A pattern written as a plain word, not a regular expression. */
 const PLAIN_PATTERN = /^[A-Za-z0-9_-]+$/;
 
@@ -746,6 +763,16 @@ const DEFAULT_NON_SECRET_TAILS: readonly string[] = [
   'flag',
   'flags',
   'category',
+  // A record's identifier, not the credential it identifies. Wiki.js deletes
+  // an auth strategy unless `strategy.id === WIKI.data.systemIds.localAuthId`
+  // (`backend/api/authentication.ts:1898`), and Trigger.dev checks that a
+  // personal access token resolved to the same row with `result.tokenId ===
+  // identity.tokenId` (`withMcpToolAuth.server.ts:132`): both names carry a
+  // secret word and both values are database keys. A secret pattern that
+  // itself ends in the tail keeps reporting, so `sessionId` — the cookie value
+  // in express-session — is still a secret (see `endsInSecretCompound`).
+  'id',
+  'ids',
 ];
 
 /**
@@ -1073,12 +1100,30 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     /** Anything else a user configured: their regex, their semantics. */
     let patterns: ReturnType<typeof compileUserPatterns>;
 
+    /**
+     * Does a secret pattern of two or more words, ending in this tail, name
+     * the identifier? `sessionId` is a configured secret that happens to end
+     * in `id`; the tail exempts `tokenId`, not the pattern that spells the
+     * tail out.
+     */
+    function endsInSecretCompound(name: string, tail: string): boolean {
+      return wordPatterns.some((pattern) => {
+        const words = identifierWords(pattern);
+        return (
+          words.length > 1 &&
+          words[words.length - 1] === tail &&
+          containsWord(name, pattern)
+        );
+      });
+    }
+
     function nameLooksSecret(name: string): boolean {
       if (BOOLEAN_PREDICATE_NAME.test(name)) return false;
       const words = identifierWords(name);
       if (
         words.length > 0 &&
-        nonSecretTailSet.has(words[words.length - 1] as string)
+        nonSecretTailSet.has(words[words.length - 1] as string) &&
+        !endsInSecretCompound(name, words[words.length - 1] as string)
       ) {
         return false;
       }
@@ -1764,6 +1809,71 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    /**
+     * Is this a read of an `If-None-Match` / `If-Match` request header —
+     * `req.headers['if-none-match']`, `request.headers.get('If-None-Match')`,
+     * `req.get('if-match')` — directly or through a `const` bound to one?
+     */
+    function readsConditionalHeader(
+      node: TSESTree.Node,
+      seen: ReadonlySet<TSESTree.Node> = new Set(),
+    ): boolean {
+      const bare = unwrapTypeSyntax(node);
+      if (bare.type === AST_NODE_TYPES.Identifier) {
+        // `let a = b; let b = a` initialise each other; stop on the loop.
+        const init = bindingInit(sourceCode, bare);
+        return (
+          init !== undefined &&
+          !seen.has(init) &&
+          readsConditionalHeader(init, new Set([...seen, init]))
+        );
+      }
+      if (bare.type === AST_NODE_TYPES.MemberExpression) {
+        const header = propertyName(bare);
+        return (
+          header !== null &&
+          CONDITIONAL_REQUEST_HEADERS.has(header.toLowerCase()) &&
+          bare.object.type === AST_NODE_TYPES.MemberExpression &&
+          propertyName(bare.object) === 'headers'
+        );
+      }
+      if (
+        bare.type === AST_NODE_TYPES.CallExpression &&
+        bare.callee.type === AST_NODE_TYPES.MemberExpression
+      ) {
+        const header = staticString(bare.arguments[0]);
+        return (
+          header !== null &&
+          CONDITIONAL_REQUEST_HEADERS.has(header.toLowerCase()) &&
+          HEADER_GETTERS.has(propertyName(bare.callee) ?? '')
+        );
+      }
+      return false;
+    }
+
+    /**
+     * Is this a read off a handler parameter the framework fills from the
+     * request — NestJS `@Body()` / `@Query()` / `@Param()`, resolved through
+     * the import? Docmost refuses to revoke the caller's own session with
+     * `dto.sessionId === (req.raw as any).sessionId` (`session.controller.ts:
+     * 49`): both sides are the caller's, but `dto` is a decorated parameter
+     * the name-based reader cannot see, so only one side read as untrusted.
+     */
+    function readsPayloadParameter(node: TSESTree.Node): boolean {
+      let root = unwrapTypeSyntax(node);
+      while (root.type === AST_NODE_TYPES.MemberExpression) {
+        root = unwrapTypeSyntax(root.object);
+      }
+      if (root.type !== AST_NODE_TYPES.Identifier) return false;
+      const variable = findVariable(sourceCode, root);
+      const id = variable?.identifiers[0];
+      return (
+        variable?.defs[0]?.type === 'Parameter' &&
+        id !== undefined &&
+        requestSource.hasPayloadDecorator(id, valueFollow.envOf(context))
+      );
+    }
+
     function isSecretIdentifier(node: TSESTree.Node): boolean {
       if (node.type === AST_NODE_TYPES.Identifier) {
         return nameLooksSecret(node.name);
@@ -2121,6 +2231,12 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // A conditional-request validator is the public entity tag, already
+      // sent to every client in the `ETag` response header.
+      if (readsConditionalHeader(left) || readsConditionalHeader(right)) {
+        return;
+      }
+
       // A configured secret against a caller-supplied candidate needs no
       // request in sight (see `comparesStoredSecret`).
       if (comparesStoredSecret(left, right)) {
@@ -2248,6 +2364,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
           // made `REQUEST` read as the request object.
           if (isImportedRoot(node)) return false;
           if (readsRequest(node)) return true;
+          if (readsPayloadParameter(node)) return true;
           const bare = unwrapTypeSyntax(node);
           if (bare.type !== AST_NODE_TYPES.Identifier) return false;
           const variable = findVariable(sourceCode, bare);

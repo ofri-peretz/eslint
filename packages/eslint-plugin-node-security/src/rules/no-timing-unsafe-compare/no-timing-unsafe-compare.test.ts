@@ -1122,7 +1122,10 @@ ruleTester.run(
       // NARROWING: emptying the list restores the `^auth` ⊂ `authorId`
       // collision, which is the behaviour the guard exists to remove.
       {
-        code: 'function h(req){ const authorId = req.query.a; if (authorId === expected) {} }',
+        // `authorName`, not `authorId`: an `Id` tail is a record key on its
+        // own (see an-etag-a-record-id-…test.ts), which would hide the word
+        // list this case is about.
+        code: 'function h(req){ const authorName = req.query.a; if (authorName === expected) {} }',
         options: [{ secretPatterns: ['^auth'], nonSecretWords: [] }],
         errors: [{ messageId: 'timingUnsafeCompare' }],
       },
