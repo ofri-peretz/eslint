@@ -3,7 +3,7 @@
  * Licensed under the MIT License. Use of this source code is governed by the
  * MIT license that can be found in the LICENSE file.
  */
-import { RegExpParser } from '@eslint-community/regexpp';
+import { RegExpParser } from '../../../regex-parser';
 import { describe, expect, it } from 'vitest';
 import { walkQuantifiers } from './walk';
 

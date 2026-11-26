@@ -24,4 +24,4 @@ export type {
   Node,
   Pattern,
   Quantifier,
-} from '@eslint-community/regexpp/ast';
+} from '../../../regex-parser/ast';

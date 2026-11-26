@@ -89,8 +89,7 @@
     "typecheck": "tsgo -p tsconfig.lib.json --noEmit"
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.4.0",
-    "@eslint-community/regexpp": "^4.12.3"
+    "@interlace/eslint-devkit": "^2.4.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",
