@@ -68,6 +68,7 @@ export const preferEs6Class = createRule<[Options], MessageIds>({
         option = context.options[0] ?? 'always';
       },
       ClassDeclaration: check,
+      ClassExpression: check,
       CallExpression(node: TSESTree.CallExpression) {
         if (option !== 'always') return;
         // React's legacy `createClass` (an import of any shape, a computed

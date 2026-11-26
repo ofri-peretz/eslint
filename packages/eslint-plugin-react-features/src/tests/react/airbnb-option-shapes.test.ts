@@ -132,6 +132,12 @@ describe('airbnb option shapes', () => {
         errors: [{ messageId: 'preferCreateClass' }],
       },
       {
+        name: '"never": a class expression component reports',
+        code: `const Hello = class extends React.Component { render() { return <div />; } };`,
+        options: ['never'],
+        errors: [{ messageId: 'preferCreateClass' }],
+      },
+      {
         name: '"never": a PureComponent class reports',
         code: `import { PureComponent } from 'react';
 class Hello extends PureComponent { render() { return <div />; } }`,
