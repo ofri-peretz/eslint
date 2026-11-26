@@ -1183,7 +1183,9 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
 
     /** The same question, allowing one hop through a binding. */
     function isCryptoSecret(node: TSESTree.Node): boolean {
-      const bare = unwrapTypeSyntax(node);
+      // Through every single-write alias: `const expected = derived` is the
+      // derivation `derived` holds.
+      const bare = aliasedValue(node);
       const init =
         bare.type === AST_NODE_TYPES.Identifier
           ? bindingInit(sourceCode, bare)
@@ -1888,6 +1890,30 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     }
 
     /**
+     * The last alias in a chain of single-write bindings, whose initializer is
+     * the value itself: `const expected = derived` with `const derived =
+     * createHmac(…)` ends at `derived`. It stops at a binding written more
+     * than once, and where a loop closes.
+     */
+    function aliasedValue(
+      node: TSESTree.Node,
+      seen: ReadonlySet<TSESTree.Node> = new Set(),
+    ): TSESTree.Node {
+      const bare = unwrapTypeSyntax(node);
+      if (bare.type !== AST_NODE_TYPES.Identifier) return bare;
+      const writes = findVariable(sourceCode, bare)?.references.filter((ref) =>
+        ref.isWrite(),
+      );
+      const init = bindingInit(sourceCode, bare);
+      if (writes?.length !== 1 || init === undefined || seen.has(init)) {
+        return bare;
+      }
+      return unwrapTypeSyntax(init).type === AST_NODE_TYPES.Identifier
+        ? aliasedValue(init, new Set([...seen, init]))
+        : bare;
+    }
+
+    /**
      * A digest-result chain rooted in `createHash(…)` — `createHash(…)
      * .update(…).digest(…)` — quoted with string literals at most
      * (`'"' + digest + '"'`, `` `"${digest}"` ``), through single-write aliases, stopping on a
@@ -1925,7 +1951,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       if (bare.type === AST_NODE_TYPES.TemplateLiteral) {
         // `"${digest}"`: the quasis are literal text, so only the
         // interpolations have to be the digest. One with none is a constant,
-        // which never reaches here.
+        // which holds no secret, so passing it is harmless.
         return bare.expressions.every((expression) =>
           isContentDigest(expression, seen),
         );

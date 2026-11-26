@@ -483,6 +483,19 @@ ruleTester.run(
         errors: [{ messageId: 'timingUnsafeCompare' }],
       },
       {
+        name: 'a keyed HMAC two aliases away is not an entity tag',
+        code: `
+          import crypto from 'crypto';
+          function hook(req) {
+            const derived = crypto.createHmac('sha256', secret).update(req.body).digest('hex');
+            const middle = derived;
+            const expected = middle;
+            return req.headers['if-none-match'] === expected;
+          }
+        `,
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
+      {
         name: 'a session id is still a secret although it ends in id',
         code: 'function f(req) { return req.headers.cookie === store.localSessionId; }',
         errors: [{ messageId: 'timingUnsafeCompare' }],
