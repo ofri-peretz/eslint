@@ -45,6 +45,10 @@ describe('no-sensitive-data-exposure: a handle, a place and a count are not the 
         code: 'console.log(`revoked ${tokenId}`);',
       },
       {
+        name: 'a list of token ids is a list of lookup handles',
+        code: 'console.log("revoked", tokenIds);',
+      },
+      {
         name: 'a token type is the scheme, not the credential',
         code: 'console.log("auth", tokenType);',
       },

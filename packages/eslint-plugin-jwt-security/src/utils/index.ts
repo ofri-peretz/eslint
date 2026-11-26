@@ -1339,6 +1339,9 @@ export function joseKeyBindsAlgorithm(
     return false;
   }
   // The caller has already required two arguments.
+  // `Uint8Array` and `TextEncoder` below are matched by name, not by binding:
+  // they are globals, and a same-file shadow that builds something else would
+  // hand jose a non-byte key, which it rejects at runtime before verifying.
   const value = resolveTerminal(node.arguments[1]!, sourceCode);
   if (value.type === AST_NODE_TYPES.NewExpression) {
     return (

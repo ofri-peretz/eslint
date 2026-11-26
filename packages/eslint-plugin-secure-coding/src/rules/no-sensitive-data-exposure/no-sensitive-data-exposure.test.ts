@@ -56,6 +56,7 @@ describe('no-sensitive-data-exposure', () => {
         },
         // Variables with sensitive names not in logs
         {
+          name: 'reading a password into a variable exposes it nowhere',
           code: `const password = process.env.PASSWORD;`,
         },
         // Non-logging function calls with sensitive data (not flagged)
