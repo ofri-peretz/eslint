@@ -1,0 +1,67 @@
+name: Verification Scorecard
+
+# How well this repository's checks catch bugs, from git history alone (replz scorecard, burgee):
+# escapes traced from reverts and fixes, provedone receipts, and replz recall. No model runs. A
+# measure that leaves its band in .sdlc/bands/verification-scorecard.json fails the run with the
+# `next:` fix it points at.
+
+on:
+  schedule:
+    - cron: '41 5 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: verification-scorecard
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  score:
+    name: Score the checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Full history: SZZ blames the lines each fix changed back to the pull request that wrote them.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Score
+        shell: bash
+        run: |
+          set -o pipefail
+          npx --yes replz@1 scorecard --ref HEAD --ratchet .sdlc/bands/verification-scorecard.json 2>&1 | tee scorecard.log
+
+      - name: Summary
+        if: always()
+        run: |
+          { echo '## Verification scorecard'; echo; echo '```'; cat scorecard.log || echo '(no output)'; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+  # A measure that leaves its band, or a run that cannot score, files one issue for a person.
+  report-failure:
+    name: Report a failing scorecard
+    needs: [score]
+    if: >-
+      always() && github.event_name == 'schedule' &&
+      contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/report-failure
+        with:
+          title: 'Verification scorecard left its band'
+          body: >-
+            The weekly replz scorecard failed: a measure left its band in .sdlc/bands/verification-scorecard.json, or the run could not score. The run's summary names the measure and the next fix.
+          token: ${{ github.token }}
