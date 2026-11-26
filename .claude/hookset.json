@@ -2,9 +2,11 @@
   "ask": [],
   "frozen": [],
   "verifyIgnore": [
-    "benchmark-results/**",
+    ".claude/.iterate-count",
+    "apps/docs/src/data/cached-tweets.json",
     "apps/docs/src/data/content-dates.json",
-    "apps/docs/src/data/cached-tweets.json"
+    "apps/docs/src/data/plugin-stats.json",
+    "benchmark-results/**"
   ],
   "context": {
     "tokens": 2372
