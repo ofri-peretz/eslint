@@ -1,4 +1,13 @@
 {
+  "permissions": {
+    "allow": ["mcp__codegraph__codegraph_explore"],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./**/.env)",
+      "Read(./**/.env.local)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -77,8 +86,5 @@
       }
     ]
   },
-  "enabledMcpjsonServers": ["codegraph"],
-  "permissions": {
-    "allow": ["mcp__codegraph__codegraph_explore"]
-  }
+  "enabledMcpjsonServers": ["codegraph"]
 }
