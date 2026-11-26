@@ -76,7 +76,12 @@ CVSS 9.8, every one of them an ordinary message or code-generation string:
    larger message are not a selection set. Requiring the trimmed text to start
    with `{` and end with `}` is what stops webpack's
    `` `resolve.fallback: { "${request}": require.resolve("${alias}") }` `` from
-   matching.
+   matching. The opening brace must also close at the end, and outside string
+   values the text may hold only GraphQL tokens (names, numbers and
+   `! $ & ( ) ... : = @ [ ] { | }`). Code generators that build objects in
+   pieces, like ajv's `" { keyword: '" + k + "' , params: {} "`, and JS object
+   templates like `` `{ model: 'm', messages: [{ content: ${v} }] }` `` fail
+   both tests.
 
 String concatenations are evaluated on their reassembled **static string
 value**, not on `sourceCode.getText()` — otherwise the JS quoting (`"query {…`)
