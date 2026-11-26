@@ -3,13 +3,10 @@
  * Licensed under the MIT License. Use of this source code is governed by the
  * MIT license that can be found in the LICENSE file.
  */
-import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import {
-  AST_NODE_TYPES,
-  isModuleBinding,
-  propertyName,
-  staticString,
-} from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '../types/estree/utils/index';
+import { AST_NODE_TYPES } from '../ast-node-types';
+import { isModuleBinding } from './module-binding';
+import { propertyName, staticString } from './spellings';
 
 /**
  * Is this `startsWith` argument anchored to a path separator?
@@ -24,8 +21,11 @@ import {
  * When the argument cannot be read at all, reject: an unproven guard must not
  * silence a finding.
  *
- * Shared by every rule that trusts a `startsWith` containment guard, so the
- * same guard never gets opposite verdicts from two rules.
+ * Shared by every rule, in every plugin, that trusts a `startsWith`
+ * containment guard (node-security's file-access rules and mcp-sdk-security's
+ * no-path-traversal-in-tool), so the same guard never gets opposite verdicts
+ * from two rules. It lived as a copy in each plugin until both copies had to be
+ * changed together; one copy here removes that step.
  */
 export function isSeparatorAnchored(
   arg: TSESTree.Node | undefined,

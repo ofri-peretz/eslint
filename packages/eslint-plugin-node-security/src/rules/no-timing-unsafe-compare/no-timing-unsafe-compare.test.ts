@@ -141,7 +141,10 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
           code: 'if (role === "admin") {}',
           name: 'comparing a role name to a literal is not a secret comparison',
         },
-        { code: 'if (method === "oauth") {}' },
+        {
+          code: 'if (method === "oauth") {}',
+          name: 'an auth scheme compared with its name is not a secret comparison',
+        },
         { code: 'if (length === 8) {}' },
         // Non-comparison operators with secrets (should NOT flag)
         { code: 'if (token.length > 0) {}' },

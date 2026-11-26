@@ -471,6 +471,11 @@ function isSourceConstant(node: TSESTree.Node): boolean {
   if (node.type === AST_NODE_TYPES.Identifier && node.name === 'undefined')
     return true;
   if (node.type === AST_NODE_TYPES.Literal) return true;
+  // `void 0` is how bundlers and minifiers spell `undefined`:
+  // `meta?.progressToken === void 0` in firecrawl-mcp's dist/server.js is a
+  // presence check, not a secret comparison. Any `void <expr>` is undefined.
+  if (node.type === AST_NODE_TYPES.UnaryExpression && node.operator === 'void')
+    return true;
   // A template literal with no interpolation is a string constant written out
   // longhand — `token === \`access\`` is the same finding as the quoted form.
   if (node.type === AST_NODE_TYPES.TemplateLiteral)
