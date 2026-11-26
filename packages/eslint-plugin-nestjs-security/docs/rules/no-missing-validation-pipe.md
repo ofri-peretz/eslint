@@ -123,7 +123,9 @@ controller, and:
   is the ❌ example above.
 - **a global pipe**: reported only when its shape carries no runtime class for
   the pipe to validate against (no annotation, `any`, `unknown`, `object`, an
-  inline type literal) — or always, under `requireExplicitPipe`.
+  inline type literal) — or always, under `requireExplicitPipe`. The message
+  then names the shape, not a missing pipe: the project has the pipe, and
+  `@Body() { couponCode }: { couponCode: string }` gives it no class to read.
 
 The parameter may be a name, a destructured object
 (`@Body() { email, password }: LoginDto`), or either with a default value
@@ -198,6 +200,21 @@ finds an app-wide registration, so this is _not_ a false positive:
 app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 ```
 
+A registration in a helper that `main.ts` (or `bootstrap.ts`) imports directly and calls (or imports for its side effects) counts too:
+
+```typescript
+// main.ts
+import { setupApp } from './setup';
+setupApp(app);
+
+// setup.ts
+export function setupApp(app: INestApplication) {
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+}
+```
+
+Only one hop is followed, and only project-local specifiers (`./`, `../`, `src/`, `@/`). An `import type`, a helper imported but never called, or a call that is commented out registers nothing and is not read.
+
 Turn the scan off with `detectGlobalPipes: false` if you want the routes reported anyway.
 What the scan still cannot resolve is a registration built at runtime or
 supplied by a library — `assumeGlobalPipes: true` covers those.
@@ -219,14 +236,25 @@ if (process.env.NODE_ENV === 'production') {
 
 **Mitigation**: Always apply validation unconditionally.
 
-### Custom Validation Decorators
+### A project decorator that wraps the pipe
 
-**Why**: Custom decorators wrapping validation are not recognized.
+A decorator your project writes around `UsePipes` counts as the pipe itself.
+The rule follows it to its definition, in the same file or across relative
+imports and `export *` barrels, and accepts it when every path out of it
+returns `UsePipes(ValidationPipe)` or an `applyDecorators(…)` that includes one:
 
 ```typescript
-// ❌ NOT DETECTED - Custom decorator includes validation
-@CustomValidated() // Internally uses ValidationPipe
-class MyController {}
+// shared/pipes/use-validation.pipe.ts
+export function UseValidationPipe(options?: ValidationPipeOptions) {
+  return UsePipes(new ValidationPipe(options));
+}
+
+// users.controller.ts: not reported
+@UseValidationPipe({ whitelist: true })
+@Post()
+create(@Body() dto: CreateUserDto) {}
 ```
 
-**Mitigation**: Document custom decorators. Use standard @UsePipes.
+A helper imported through a path alias (`@app/shared`) or from a package is out
+of reach and is still reported; add a pipe the rule can see, or use
+`assumeGlobalPipes` if a global one covers the route.

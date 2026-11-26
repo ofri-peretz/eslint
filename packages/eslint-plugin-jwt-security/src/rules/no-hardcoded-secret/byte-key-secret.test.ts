@@ -55,6 +55,16 @@ describe('no-hardcoded-secret sees through a byte wrapper', () => {
     ],
     invalid: [
       {
+        // jose 5.10.0 verifies an HMAC token against an empty key, so an empty
+        // fallback is a key anyone can sign with, not a missing one.
+        name: 'an empty fallback inside the byte wrapper is still a key',
+        code: `
+          import { compactVerify } from 'jose';
+          await compactVerify(jws, new TextEncoder().encode(process.env.JWT_SECRET || ''));
+        `,
+        errors: [{ messageId: 'hardcodedSecret' }],
+      },
+      {
         name: "jose's documented HMAC idiom over a literal",
         code: `
           import { compactVerify } from 'jose';

@@ -139,6 +139,7 @@ describe('detect-non-literal-fs-filename', () => {
             errors: [{ messageId: 'fsPathTraversal' }],
           },
           {
+            name: 'dot-dot segments after a fixed root still climb out of it',
             options: [{ reportUnresolvedPaths: true }],
             code: "const DIR = path.join(__dirname, 'x');\nfs.readFileSync(`${DIR}/../../../etc/passwd`);",
             errors: [{ messageId: 'fsPathTraversal' }],

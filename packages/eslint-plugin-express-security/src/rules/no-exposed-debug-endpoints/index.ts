@@ -14,6 +14,8 @@ import {
   MessageIcons,
   namesOneOf,
   propertyName,
+  staticString,
+  valueFollow,
   resolveModuleBinding,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
@@ -106,6 +108,109 @@ function fileMatches(filename: string, pattern: string): boolean {
   return new RegExp(`(?:^|/)${body}$`).test(path);
 }
 
+/** `NODE_ENV` values that name an environment other than production. */
+const NON_PRODUCTION_ENVS = new Set(['development', 'dev', 'test', 'local']);
+
+/**
+ * `process.env.NODE_ENV`, dotted or quoted, where `process` is the Node global:
+ * a local `const process = { env: { NODE_ENV: 'development' } }` says nothing
+ * about where the app runs.
+ */
+function isNodeEnvRead(node: TSESTree.Node, env: valueFollow.Env): boolean {
+  if (
+    node.type !== 'MemberExpression' ||
+    propertyName(node) !== 'NODE_ENV' ||
+    node.object.type !== 'MemberExpression' ||
+    propertyName(node.object) !== 'env' ||
+    node.object.object.type !== 'Identifier' ||
+    node.object.object.name !== 'process'
+  ) {
+    return false;
+  }
+  const binding = valueFollow.lookup(
+    'process',
+    env.scopeOf(node.object.object),
+  );
+  return binding === null || binding.defs.length === 0;
+}
+
+/**
+ * Does this condition hold only outside production?
+ *
+ * `process.env.NODE_ENV === 'development'`, `… !== 'production'`, either half
+ * of an `&&`, or a call to a function — in this file or a relative import —
+ * that returns one of those. Uptime Kuma registers its webhook echo routes
+ * under `if (isDevEnv())`, where `isDevEnv` returns
+ * `process.env.NODE_ENV === "development"`; they never exist in production.
+ */
+function holdsOnlyOutsideProduction(
+  start: valueFollow.Value,
+  depth = 0,
+): boolean {
+  if (depth > 3) return false;
+  const { node, env } = start;
+  if (node.type === 'LogicalExpression') {
+    return (
+      node.operator === '&&' &&
+      [node.left, node.right].some((side) =>
+        holdsOnlyOutsideProduction(valueFollow.valueAt(side, env), depth + 1),
+      )
+    );
+  }
+  if (node.type === 'BinaryExpression') {
+    const [read, other] = isNodeEnvRead(node.left, env)
+      ? [node.left, node.right]
+      : [node.right, node.left];
+    const value = isNodeEnvRead(read, env) ? staticString(other) : null;
+    if (value === null) return false;
+    if (node.operator === '===' || node.operator === '==') {
+      return NON_PRODUCTION_ENVS.has(value);
+    }
+    return (
+      (node.operator === '!==' || node.operator === '!=') &&
+      value === 'production'
+    );
+  }
+  if (
+    node.type !== 'CallExpression' ||
+    node.callee.type !== 'Identifier' ||
+    node.arguments.length > 0
+  ) {
+    return false;
+  }
+  const fn = valueFollow.follow(valueFollow.valueAt(node.callee, env));
+  if (
+    fn.node.type !== 'FunctionDeclaration' &&
+    fn.node.type !== 'FunctionExpression' &&
+    fn.node.type !== 'ArrowFunctionExpression'
+  ) {
+    return false;
+  }
+  // A function some other function returned (`const isDev = makeGuard()`)
+  // is only the factory's last answer: an earlier `return () => true` may be
+  // the one that runs. Only a helper written as itself is read.
+  const parent = fn.node.parent;
+  if (
+    parent?.type === 'ReturnStatement' ||
+    (parent?.type === 'ArrowFunctionExpression' && parent.body === fn.node)
+  ) {
+    return false;
+  }
+  // An async helper returns a Promise and a generator returns an iterator:
+  // both are truthy objects, so `if (isDev())` runs in production too.
+  if (fn.node.async || fn.node.generator) return false;
+  const results = valueFollow.returnedValues(fn.node);
+  return (
+    results !== null &&
+    results.every((result) =>
+      holdsOnlyOutsideProduction(
+        valueFollow.valueAt(result, fn.env),
+        depth + 1,
+      ),
+    )
+  );
+}
+
 export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   name: 'no-exposed-debug-endpoints',
   /** A debug route mounted by a test application is the fixture, not an exposure — it never ships. */
@@ -163,6 +268,26 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
         ['app', 'router', 'express'].includes(node.callee.object.name) &&
         namesOneOf(propertyName(node.callee), HTTP_METHODS)
       );
+    };
+
+    /** Is this registration inside an `if` that holds only outside production? */
+    const registeredOutsideProductionOnly = (
+      node: TSESTree.CallExpression,
+    ): boolean => {
+      const env = valueFollow.envOf(context);
+      let child: TSESTree.Node = node;
+      while (child.parent) {
+        const parent: TSESTree.Node = child.parent;
+        if (
+          parent.type === 'IfStatement' &&
+          parent.consequent === child &&
+          holdsOnlyOutsideProduction(valueFollow.valueAt(parent.test, env))
+        ) {
+          return true;
+        }
+        child = parent;
+      }
+      return false;
     };
 
     /** Does an inline handler of this registration read the host (`process`, `os`)? */
@@ -290,7 +415,10 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
                   .filter((segment) => !HEALTH_PROBE_SEGMENTS.has(segment))
                   .join('/')
               : written;
-          if (debugPaths.some((dp) => path.includes(dp.toLowerCase()))) {
+          if (
+            debugPaths.some((dp) => path.includes(dp.toLowerCase())) &&
+            !registeredOutsideProductionOnly(node)
+          ) {
             context.report({ node: pathArg, messageId: 'violationDetected' });
           }
         }

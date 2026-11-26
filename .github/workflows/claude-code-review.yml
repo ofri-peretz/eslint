@@ -147,48 +147,33 @@ jobs:
         if: steps.token.outputs.present == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # triggerlist diffs base...HEAD, so it needs the merge base. Blobless
-          # keeps the full history cheap.
+          # triggerlist diffs base...HEAD, so it needs the PR head and the merge base.
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-          filter: blob:none
 
-      # REVIEW.md promises the reviewer only the checklist items whose triggers
-      # fire on this diff, read from the BASE branch so a PR cannot rewrite the
-      # questions it is held to. This step keeps that promise. Fail open: if
-      # triggerlist breaks, the review still runs, just without the list.
-      - name: Triggered checklist
-        id: checklist
+      # triggerlist needs Node 22.13+.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         if: steps.token.outputs.present == 'true'
-        env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
-        shell: bash
-        run: |
-          set -uo pipefail
-          git checkout "origin/$BASE_REF" -- .sdlc/checklist.yaml 2>/dev/null || true
-          items=$(npx --yes triggerlist@1.0.1 match "origin/$BASE_REF" 2>&1) \
-            || items="(triggerlist failed — review without the checklist)"
-          printf '%s\n' "$items"
-          { echo 'items<<TRIGGERLIST_EOF'; printf '%s\n' "$items"; echo 'TRIGGERLIST_EOF'; } >> "$GITHUB_OUTPUT"
+        with:
+          node-version-file: .nvmrc
 
+      # triggerlist (burgee): the reviewer reads REVIEW.md and .sdlc/checklist.yaml from the base
+      # branch, the checklist items this diff fires, and its own findings from the previous round.
+      # The action drops CodeRabbit's comments from the prompt by default (eslint#1574).
       - name: Claude Code Review
         if: steps.token.outputs.present == 'true'
-        uses: anthropics/claude-code-action@c84e279f859e2591391e95bd309286eb111c345f # v1
+        uses: ofri-peretz/burgee/.github/actions/triggerlist-review@5aa232997a1dc85c888c6783b3e531d8ac92b798 # burgee main after #1861
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          track_progress: true
-          # track_progress inlines every PR comment into the prompt. CodeRabbit
-          # posts long HTML reviews on every push, and on eslint#1574 they grew
-          # the prompt from 60K to 477K characters (362K of it CodeRabbit). The
-          # run then ends in under a second with is_error:true, $0 spent and no
-          # model call, and this required check blocks the merge. The reviewer
-          # reads the diff itself, so CodeRabbit's text adds nothing it needs.
-          exclude_comments_by_actor: 'coderabbitai[bot]'
-          prompt: |
-            REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.pull_request.number }}
-
+          claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          triggerlist: npx --yes triggerlist@1
+          extra-tools: Read,Grep,Glob
+          claude-args: |
+            --model claude-sonnet-4-6
+            --max-turns 50
+          preamble: |
             You are reviewing a pull request in a published security &
-            code-quality ESLint plugin ecosystem.
+            code-quality ESLint plugin ecosystem. Read the repository's
+            CLAUDE.md / AGENTS.md for project conventions and honour them.
 
             Programs already judge this PR: lint (oxlint, eslint and our own
             security plugins), typecheck, tests, CodeQL, mutation testing,
@@ -206,11 +191,8 @@ jobs:
                each finding to a CWE.
             4. A claim in docs or a README that the code does not back.
 
-            Then answer each checklist question below. These fired on this
-            diff. Where reading cannot settle one, name its `check` command
-            for the author to run; you cannot run it here.
-
-            ${{ steps.checklist.outputs.items }}
+            For a checklist item in the brief that reading cannot settle, name
+            its `check` command for the author to run; you cannot run it here.
 
             Be precise and low-noise: only post a finding when you can cite the
             specific file:line and explain why it is wrong. Cite `path:line`
@@ -239,7 +221,3 @@ jobs:
               4. Say in the summary how many files you actually read. A review
                  that silently covered a fraction of a large PR is worse than
                  one that says which fraction.
-          claude_args: |
-            --model claude-sonnet-4-6
-            --max-turns 50
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Read,Grep,Glob"

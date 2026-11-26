@@ -52,6 +52,7 @@ import {
   TSESLint,
   createRule,
   formatLLMMessage,
+  isSeparatorAnchored,
   MessageIcons,
   propertyName,
   resolveModuleBinding,
@@ -59,7 +60,6 @@ import {
 } from '@interlace/eslint-devkit';
 import { fsExport } from '../../utils/fs-module';
 import { createGuards, isConversion } from '../../utils/guards';
-import { isSeparatorAnchored } from '../../utils/separator-anchored';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 import { valueResolverFor } from '../../utils/module-resolver';
 import { createHandlerCollector } from '../../utils/tool-handlers';

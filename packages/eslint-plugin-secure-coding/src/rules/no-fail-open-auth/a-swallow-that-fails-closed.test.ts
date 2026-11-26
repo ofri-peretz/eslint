@@ -91,6 +91,7 @@ ruleTester.run(
       // The guard reads the variable and leaves, but it runs AFTER the
       // privileged call — the corpus case with its last two statements swapped.
       {
+        name: 'a guard that reads the variable after the privileged call gates nothing',
         code: `async function handleAdminAction(req, res) {
          let actor = null;
          try { actor = await assertAdmin(req.headers.authorization); } catch (err) {}

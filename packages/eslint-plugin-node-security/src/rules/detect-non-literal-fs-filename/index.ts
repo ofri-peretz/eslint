@@ -123,6 +123,7 @@ import {
   AST_NODE_TYPES,
   formatLLMMessage,
   isModuleBinding,
+  isSeparatorAnchored,
   namesOneOf,
   propertyName,
   resolveModuleBinding,
@@ -130,7 +131,6 @@ import {
   unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { isSeparatorAnchored } from '../../utils/separator-anchored';
 import { undeclaredFsBinding } from '../../utils/module-binding';
 
 type MessageIds = 'fsPathTraversal';

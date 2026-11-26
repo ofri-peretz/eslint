@@ -5,15 +5,18 @@
  */
 
 /**
+ * @provenBy {"file":".github/workflows/claude-code-review.yml","find":"one of them would report","replace":"one of them flags"}
+ */
+
+/**
  * The Claude reviewer gets judgment work only.
  *
  * REVIEW.md promises that CI shows the reviewer just the checklist items whose
  * triggers fire on the diff, read from the base branch. Until this lock, no
  * step did that: the prompt was a generic list that asked the model to redo
  * work programs already gate (missing tests, README drift). These assertions
- * fail if the triggered list stops reaching the prompt, if the checklist is
- * read from the PR instead of the base, or if the "programs already judge
- * this" boundary is dropped from the prompt.
+ * fail if the review stops going through the triggerlist action, or if the
+ * "programs already judge this" boundary is dropped from the prompt.
  *
  * It also holds the secrets deny list in .claude/settings.json: "never read
  * .env" is a permission rule, not a sentence.
@@ -30,28 +33,19 @@ const WORKFLOW = readFileSync(
 );
 
 describe('claude-code-review.yml hands the reviewer the triggered checklist', () => {
-  const checklistAt = WORKFLOW.indexOf('id: checklist');
-  const reviewAt = WORKFLOW.indexOf('uses: anthropics/claude-code-action');
-
-  it('runs triggerlist match against the base branch before the review', () => {
-    expect(checklistAt, 'no `id: checklist` step').toBeGreaterThan(-1);
-    expect(checklistAt).toBeLessThan(reviewAt);
-    expect(WORKFLOW).toMatch(/triggerlist@[\d.]+ match "origin\/\$BASE_REF"/);
-  });
-
-  it('reads the checklist from the base branch, not the PR', () => {
+  // burgee's triggerlist-review action runs `triggerlist brief` against the base branch and puts
+  // the fired items, read from the base, into the prompt. Its own tests in burgee hold that; this
+  // repo holds that the review goes through it and keeps the judgment-only preamble.
+  it('reviews through the triggerlist-review action, not a bare claude-code-action', () => {
     expect(WORKFLOW).toMatch(
-      /git checkout "origin\/\$BASE_REF" -- \.sdlc\/checklist\.yaml/,
+      /uses: ofri-peretz\/burgee\/\.github\/actions\/triggerlist-review@[0-9a-f]{40}/,
     );
+    expect(WORKFLOW).not.toContain('uses: anthropics/claude-code-action');
+    expect(WORKFLOW).toMatch(/triggerlist: npx --yes triggerlist@\d/);
   });
 
   it('fetches enough history for a base...HEAD diff', () => {
     expect(WORKFLOW).toMatch(/fetch-depth: 0/);
-  });
-
-  it('puts the triggered items into the prompt', () => {
-    const prompt = WORKFLOW.slice(WORKFLOW.indexOf('prompt: |'));
-    expect(prompt).toContain('${{ steps.checklist.outputs.items }}');
   });
 
   it('reserves path:line citations for findings, which the hit-rate script counts', () => {
@@ -59,8 +53,9 @@ describe('claude-code-review.yml hands the reviewer the triggered checklist', ()
   });
 
   it('tells the reviewer not to repeat what programs already gate', () => {
-    expect(WORKFLOW).toContain('Report nothing');
-    expect(WORKFLOW).toContain('one of them would report');
+    const preamble = WORKFLOW.slice(WORKFLOW.indexOf('preamble: |'));
+    expect(preamble).toContain('Report nothing');
+    expect(preamble).toContain('one of them would report');
   });
 });
 

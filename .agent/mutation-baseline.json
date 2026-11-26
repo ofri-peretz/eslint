@@ -391,11 +391,11 @@
           "timeout": 2
         },
         "no-arbitrary-file-access": {
-          "score": 91.8,
-          "killed": 413,
-          "survived": 37,
+          "score": 92.2,
+          "killed": 582,
+          "survived": 49,
           "noCoverage": 0,
-          "timeout": 3
+          "timeout": 1
         },
         "no-buffer-overread": {
           "score": 94.8,
@@ -552,11 +552,11 @@
           "timeout": 0
         },
         "no-timing-unsafe-compare": {
-          "score": 94.8,
-          "killed": 512,
-          "survived": 26,
+          "score": 91.2,
+          "killed": 1314,
+          "survived": 125,
           "noCoverage": 2,
-          "timeout": 1
+          "timeout": 17
         },
         "no-toctou-vulnerability": {
           "score": 96.5,
@@ -711,13 +711,6 @@
           "survived": 36,
           "noCoverage": 0,
           "timeout": 1
-        },
-        "utils/separator-anchored": {
-          "score": 85.9,
-          "killed": 61,
-          "survived": 10,
-          "noCoverage": 0,
-          "timeout": 0
         }
       }
     },

@@ -163,6 +163,24 @@ if (req.path === '/health') return next();
 const configured = app.get('/debug');
 ```
 
+### Registered outside production only
+
+A route inside an `if` that holds only outside production is not reported:
+`process.env.NODE_ENV === 'development'` (or `'dev'`, `'test'`, `'local'`),
+`process.env.NODE_ENV !== 'production'`, either half of an `&&`, or a call to a
+helper, in the same file or a relative import, that returns one of those.
+
+```js
+import { isDevEnv } from '../src/util'; // returns process.env.NODE_ENV === 'development'
+if (isDevEnv()) {
+  app.post('/test-webhook', echo); // ✅ never registered in production
+}
+```
+
+The `else` branch, an `||`, and a helper whose return value the rule cannot read are
+still reported. So are an `async` or generator helper, whose Promise or iterator is always
+truthy, and a `process` that is a local object rather than the Node global.
+
 ## Security Impact
 
 | Vulnerability             | CWE | OWASP    | CVSS | Impact                       |

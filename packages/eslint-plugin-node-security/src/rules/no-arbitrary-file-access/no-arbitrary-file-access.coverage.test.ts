@@ -77,9 +77,15 @@ describe('no-arbitrary-file-access coverage gaps', () => {
         ].join('\n'),
       },
       // Path argument is a call expression → no identifier/member analysis
-      { code: 'fs.readFile(getPath());' },
+      {
+        name: 'a path returned by a call carries no request evidence',
+        code: 'fs.readFile(getPath());',
+      },
       // Member path whose object is not a user-input source
-      { code: 'fs.readFile(config.path);' },
+      {
+        name: 'a member of a non-input object is not a user-supplied path',
+        code: 'fs.readFile(config.path);',
+      },
     ],
     invalid: [
       // Unrelated if in the same block → guard text check fails
