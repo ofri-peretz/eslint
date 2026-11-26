@@ -44,7 +44,7 @@ withCanonicalDocsUrls('plugin-mysql-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-mysql-security',
-    version: '2.0.4',
+    version: '2.0.5',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

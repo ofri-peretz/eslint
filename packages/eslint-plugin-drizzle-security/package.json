@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-drizzle-security",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "ESLint Drizzle ORM security rules — detects SQL injection in raw queries built with string concatenation or template literals.",
   "type": "commonjs",
   "sideEffects": false,
@@ -79,7 +79,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.0.4"
+    "@interlace/eslint-devkit": "^2.5.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",

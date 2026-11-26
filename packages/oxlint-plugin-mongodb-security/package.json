@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-mongodb-security",
-  "version": "10.1.3",
+  "version": "10.1.4",
   "description": "Oxlint MongoDB security rules for MongoDB and Mongoose — detects NoSQL operator injection, unsafe queries and regex, hardcoded connection strings, and missing TLS. Same rules and rule IDs as eslint-plugin-mongodb-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
@@ -81,6 +81,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-mongodb-security": "10.1.3"
+    "eslint-plugin-mongodb-security": "10.1.4"
   }
 }
