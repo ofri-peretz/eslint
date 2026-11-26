@@ -23,11 +23,18 @@
  * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"    shadowing.push(file);","replace":""}
  * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"      if (calls !== undefined && !calls.has(spec)) continue;","replace":""}
  * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"        missingExports.push(","replace":"        void ("}
+ * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"      olderThanSource.push(basename(pkgDir));","replace":"      void 0;"}
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdtempSync,
+  mkdirSync,
+  rmSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 
@@ -157,5 +164,54 @@ describe('stale-build-artifacts', () => {
     const { code, err } = check(packages);
 
     expect(code, err).toBe(0);
+  });
+
+  // 2026-11-25: three of seven failed commits ran a devkit dist built before its last source
+  // edit. An edited function body changes no export and no require, so only time can show it.
+  describe('a dist the hooks import, against its source mtime', () => {
+    const devkit = (name: string, distAge: number, srcAge: number) => {
+      const packages = tree(name, {
+        'eslint-devkit/src/index.ts': 'export const createRule = 1;\n',
+        'eslint-devkit/dist/src/index.js': 'exports.createRule=1;\n',
+      });
+      const now = Date.now() / 1000;
+      const at = (rel: string, age: number) =>
+        utimesSync(join(packages, rel), now - age, now - age);
+      at('eslint-devkit/dist/src/index.js', distAge);
+      at('eslint-devkit/src/index.ts', srcAge);
+      return packages;
+    };
+
+    it('rejects a devkit source touched after the build, naming the rebuild', () => {
+      const { code, err } = check(devkit('devkit-touched', 60, 0));
+
+      expect(code, err).toBe(1);
+      expect(err).toContain(
+        'npx turbo run build --filter=./packages/eslint-devkit',
+      );
+    });
+
+    it('accepts the build once it is newer than the source', () => {
+      const { code, err } = check(devkit('devkit-rebuilt', 0, 60));
+
+      expect(code, err).toBe(0);
+    });
+
+    it('leaves a plugin dist alone: the hooks load plugins from src', () => {
+      const packages = tree('plugin-touched', {
+        'eslint-plugin-x/src/index.ts': 'export const rules = 1;\n',
+        'eslint-plugin-x/dist/src/index.js': 'exports.rules=1;\n',
+      });
+      const now = Date.now() / 1000;
+      utimesSync(
+        join(packages, 'eslint-plugin-x/dist/src/index.js'),
+        now - 60,
+        now - 60,
+      );
+
+      const { code, err } = check(packages);
+
+      expect(code, err).toBe(0);
+    });
   });
 });
