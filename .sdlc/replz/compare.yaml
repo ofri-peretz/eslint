@@ -1,0 +1,17 @@
+# `replz compare`: every rule of every plugin (eslint.benchmark.config.mjs, plugin source through
+# tsx) over benchmarks/corpus, through the PR's base and its head. Any finding that appears,
+# disappears or moves fails the run until `approved` names that exact change with a reason. The
+# recall gate asks "does each CWE still detect?"; this asks "did anything else change?".
+#
+# The head tree already has node_modules from the setup action, so only the base installs. Only
+# the devkit is built: the config imports each plugin's src, and the plugins import the devkit's
+# dist. Each line printed is `path:line:column rule`, the path relative to the tree.
+setup: (test -d node_modules || npm ci --ignore-scripts --no-audit --no-fund) && npx turbo run build --filter=@interlace/eslint-devkit --concurrency=2
+command: >-
+  xargs npx tsx node_modules/eslint/bin/eslint.js --config eslint.benchmark.config.mjs --no-ignore --format json
+  | node -e "let s='';process.stdin.on('data',(d)=>{s+=d}).on('end',()=>{for(const f of JSON.parse(s))for(const m of f.messages)console.log(require('node:path').relative(process.cwd(),f.filePath)+':'+m.line+':'+m.column+' '+(m.ruleId??m.message))})"
+inputs: .sdlc/replz/compare-inputs
+normalize:
+  # Node prints its process id in warnings.
+  - '\(node:\d+\)'
+approved: []
