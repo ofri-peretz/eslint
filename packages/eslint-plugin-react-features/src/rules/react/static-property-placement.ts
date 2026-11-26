@@ -23,6 +23,33 @@ export interface Options {
   childClass?: 'first' | 'last';
 }
 
+/**
+ * eslint-plugin-react's placement style: `"static public field"` (default),
+ * `"static getter"` or `"property assignment"`, then an optional object that
+ * overrides it per property. Accepted so configs such as eslint-config-airbnb
+ * (`"property assignment"`) load. Not yet enforced: this rule checks that
+ * static properties are grouped, not where they are declared.
+ */
+export type Placement =
+  'static public field' | 'static getter' | 'property assignment';
+
+const PLACEMENTS: Placement[] = [
+  'static public field',
+  'static getter',
+  'property assignment',
+];
+
+const PLACED_PROPERTIES = [
+  'propTypes',
+  'defaultProps',
+  'childContextTypes',
+  'contextTypes',
+  'contextType',
+  'displayName',
+];
+
+export type PlacementOverrides = Partial<Record<string, Placement>>;
+
 const DEFAULT_GROUPS = [
   {
     name: 'propTypes',
@@ -40,7 +67,10 @@ const DEFAULT_GROUPS = [
   },
 ];
 
-export const staticPropertyPlacement = createRule<[Options], MessageIds>({
+export const staticPropertyPlacement = createRule<
+  [Options | Placement, PlacementOverrides?],
+  MessageIds
+>({
   name: 'static-property-placement',
   meta: {
     interop: { runtimes: ['eslint', 'oxlint'] },
@@ -51,24 +81,39 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
     },
     schema: [
       {
-        type: 'object',
-        properties: {
-          propertyGroups: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                name: { type: 'string' },
-                properties: { type: 'array', items: { type: 'string' } },
+        anyOf: [
+          { type: 'string', enum: PLACEMENTS },
+          {
+            type: 'object',
+            properties: {
+              propertyGroups: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string' },
+                    properties: { type: 'array', items: { type: 'string' } },
+                  },
+                },
+              },
+              childClass: {
+                type: 'string',
+                enum: ['first', 'last'],
+                description: 'Accepted for compatibility; it has no effect.',
               },
             },
+            additionalProperties: false,
           },
-          childClass: {
-            type: 'string',
-            enum: ['first', 'last'],
-            description: 'Accepted for compatibility; it has no effect.',
-          },
-        },
+        ],
+      },
+      {
+        type: 'object',
+        properties: Object.fromEntries(
+          PLACED_PROPERTIES.map((name) => [
+            name,
+            { type: 'string', enum: PLACEMENTS },
+          ]),
+        ),
         additionalProperties: false,
       },
     ],
@@ -85,7 +130,12 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
     },
   },
   defaultOptions: [{ propertyGroups: DEFAULT_GROUPS, childClass: 'first' }],
-  createOnce(context: TSESLint.RuleContext<MessageIds, [Options]>) {
+  createOnce(
+    context: TSESLint.RuleContext<
+      MessageIds,
+      [Options | Placement, PlacementOverrides?]
+    >,
+  ) {
     let propertyGroups: { name: string; properties: string[] }[];
 
     function checkStaticPropertyPlacement(
@@ -192,7 +242,10 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
     return {
       before() {
         const [options] = context.options;
-        propertyGroups = options?.propertyGroups ?? DEFAULT_GROUPS;
+        propertyGroups =
+          typeof options === 'object'
+            ? (options.propertyGroups ?? DEFAULT_GROUPS)
+            : DEFAULT_GROUPS;
       },
       ClassDeclaration: check,
       ClassExpression: check,

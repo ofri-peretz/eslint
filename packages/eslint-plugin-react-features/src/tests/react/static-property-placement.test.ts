@@ -239,6 +239,16 @@ describe('static-property-placement', () => {
           }
         `,
       },
+      // The override schema lists each placeable property; dropping displayName
+      // from PLACED_PROPERTIES makes this option invalid and the case fail.
+      {
+        name: 'per-property override for displayName is accepted',
+        code: `class C extends Component { static displayName = 'C'; render() { return null; } }`,
+        options: [
+          'static public field',
+          { displayName: 'static public field' },
+        ],
+      },
     ],
     invalid: [
       // The rule reports when a property should be between two others in the group
@@ -246,4 +256,3 @@ describe('static-property-placement', () => {
     ],
   });
 });
-

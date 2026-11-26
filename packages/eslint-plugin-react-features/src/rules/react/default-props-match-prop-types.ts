@@ -20,7 +20,18 @@ import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'defaultPropsMatchPropTypes';
 
-export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
+/**
+ * eslint-plugin-react's option object. Accepted so configs such as
+ * eslint-config-airbnb (`{ allowRequiredDefaults: false }`) load. Not yet
+ * enforced: this rule checks a default's literal kind against its validator,
+ * and does not report a default for a required prop or one with no propTypes
+ * entry, so there is nothing for the option to relax or tighten.
+ */
+export interface Options {
+  allowRequiredDefaults?: boolean;
+}
+
+export const defaultPropsMatchPropTypes = createRule<[Options], MessageIds>({
   name: 'default-props-match-prop-types',
   meta: {
     interop: { runtimes: ['eslint', 'oxlint'] },
@@ -29,7 +40,15 @@ export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/default-props-match-prop-types.md',
       description: 'Validate default props match prop types',
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          allowRequiredDefaults: { type: 'boolean', default: false },
+        },
+        additionalProperties: false,
+      },
+    ],
     messages: {
       defaultPropsMatchPropTypes: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -42,8 +61,8 @@ export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
       }),
     },
   },
-  defaultOptions: [],
-  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
+  defaultOptions: [{}],
+  createOnce(context: TSESLint.RuleContext<MessageIds, [Options]>) {
     /** propTypes / defaultProps object literals, per component. */
     let owners: Map<unknown, Declared>;
 

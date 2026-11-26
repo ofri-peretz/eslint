@@ -73,6 +73,13 @@ function MyComponent() {
 }
 ```
 
+## Options
+
+One string, as in eslint-plugin-react: `"always"` (the default) or `"never"`.
+
+- `"always"`: report `createClass` components.
+- `"never"`: report ES6 class components (a class extending `Component` or `PureComponent` from React). Unlike upstream, it does not read a JSDoc `@extends React.Component`.
+
 ## Configuration Examples
 
 ### Basic Usage

@@ -86,6 +86,18 @@ function MyComponent({ id }) {
 }
 ```
 
+## Options
+
+The option object of eslint-plugin-react 7.37.5, so configs such as eslint-config-airbnb load.
+
+| Option | Type | Default | Status |
+| --- | --- | --- | --- |
+| `allowBind` | boolean | `false` | Enforced: `true` lets `.bind()` through |
+| `ignoreRefs` | boolean | `false` | Enforced: skips `ref={...}` |
+| `ignoreDOMComponents` | boolean | `false` | Enforced: skips lowercase tags such as `<div>` |
+| `allowArrowFunctions` | boolean | `false` | Accepted, not yet enforced: this rule never reports arrow functions |
+| `allowFunctions` | boolean | `false` | Accepted, not yet enforced: this rule never reports function expressions |
+
 ## Configuration Examples
 
 ### Basic Usage

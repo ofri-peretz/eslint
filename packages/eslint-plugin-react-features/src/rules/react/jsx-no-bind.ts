@@ -14,7 +14,22 @@ import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'jsxNoBind';
 
-export const jsxNoBind = createRule<[], MessageIds>({
+/**
+ * eslint-plugin-react 7.37.5's option object. `allowBind`, `ignoreRefs` and
+ * `ignoreDOMComponents` are honoured. `allowArrowFunctions` and
+ * `allowFunctions` are accepted so configs such as eslint-config-airbnb load,
+ * but they change nothing: this rule reports `.bind()` only, never arrow
+ * functions or function expressions.
+ */
+export interface Options {
+  allowArrowFunctions?: boolean;
+  allowBind?: boolean;
+  allowFunctions?: boolean;
+  ignoreRefs?: boolean;
+  ignoreDOMComponents?: boolean;
+}
+
+export const jsxNoBind = createRule<[Options], MessageIds>({
   name: 'jsx-no-bind',
   meta: {
     interop: { runtimes: ['eslint', 'oxlint'] },
@@ -23,7 +38,19 @@ export const jsxNoBind = createRule<[], MessageIds>({
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/jsx-no-bind.md',
       description: 'Prevent .bind() in JSX',
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          allowArrowFunctions: { type: 'boolean', default: false },
+          allowBind: { type: 'boolean', default: false },
+          allowFunctions: { type: 'boolean', default: false },
+          ignoreRefs: { type: 'boolean', default: false },
+          ignoreDOMComponents: { type: 'boolean', default: false },
+        },
+        additionalProperties: false,
+      },
+    ],
     messages: {
       jsxNoBind: formatLLMMessage({
         icon: MessageIcons.PERFORMANCE,
@@ -37,10 +64,17 @@ export const jsxNoBind = createRule<[], MessageIds>({
       }),
     },
   },
-  defaultOptions: [],
-  createOnce(context: TSESLint.RuleContext<MessageIds, []>) {
+  defaultOptions: [{}],
+  createOnce(context: TSESLint.RuleContext<MessageIds, [Options]>) {
+    let options: Options;
     return {
+      before() {
+        options = context.options[0] ?? {};
+      },
       JSXAttribute(node: TSESTree.JSXAttribute) {
+        if (options.allowBind) return;
+        if (options.ignoreRefs && isRefAttribute(node)) return;
+        if (options.ignoreDOMComponents && isDOMElement(node.parent)) return;
         if (node.value && node.value.type === 'JSXExpressionContainer') {
           const expression = node.value.expression;
 
@@ -84,4 +118,17 @@ function findBindCall(node: TSESTree.Node): TSESTree.Node | null {
     default:
       return null;
   }
+}
+
+/** `ref={…}`, as upstream's `ignoreRefs` reads it. */
+function isRefAttribute(node: TSESTree.JSXAttribute): boolean {
+  return node.name.type === 'JSXIdentifier' && node.name.name === 'ref';
+}
+
+/** `<div>`, `<svg:rect>`: a lowercase tag, not `<Foo>` or `<foo.Bar>`. */
+function isDOMElement(node: TSESTree.JSXOpeningElement): boolean {
+  const name = node.name;
+  if (name.type === 'JSXMemberExpression') return false;
+  const tag = name.type === 'JSXIdentifier' ? name.name : name.namespace.name;
+  return /^[a-z]/.test(tag);
 }

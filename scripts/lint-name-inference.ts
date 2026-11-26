@@ -374,6 +374,12 @@ const REGISTERED: RegistryEntry[] = [
       'A capital first letter IS React\'s definition of a component: JSX renders `<Card />` as the component `Card` and `<card />` as the DOM tag "card", and the Rules of Hooks name components the same way. It is combined with the structural test that the function returns JSX; a `memo` / `forwardRef` argument is decided by binding.',
   },
   {
+    file: 'eslint-plugin-react-features/src/rules/react/jsx-no-bind.ts',
+    direction: 'suppress',
+    reason:
+      'A lowercase first letter IS the JSX specification for an intrinsic element: `<div onClick={f.bind(this)}>` compiles to the string "div", `<Div>` to the component `Div`. The test only serves upstream\'s `ignoreDOMComponents` option, which by its own definition skips DOM elements, so the spelling is the option\'s contract; member tags (`<foo.Bar>`) are excluded structurally.',
+  },
+  {
     file: 'eslint-plugin-react-features/src/rules/component-api/no-inline-style.ts',
     direction: 'suppress',
     reason:

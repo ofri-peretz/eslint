@@ -80,6 +80,10 @@ function UserCard({ name = "Guest", count = 0 }: Props) {
 }
 ```
 
+## Options
+
+`{ allowRequiredDefaults?: boolean }`, as in eslint-plugin-react. **Accepted, not yet enforced.** This rule checks that a default's literal kind matches its `prop-types` validator. It does not report a default for a required prop or one with no `propTypes` entry (upstream's `requiredHasDefault` and `defaultHasNoType`), so there is nothing for `allowRequiredDefaults` to change.
+
 ## Configuration Examples
 
 ### Basic Usage
