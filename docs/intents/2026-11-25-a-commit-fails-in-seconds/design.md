@@ -1,6 +1,6 @@
 **Accepted:** night loop, under the owner's delegation of 2026-11-26
 
-# Spec — a commit that will fail, fails in seconds
+# Design — a commit that will fail, fails in seconds
 
 Intent: [`intent.md`](./intent.md).
 
