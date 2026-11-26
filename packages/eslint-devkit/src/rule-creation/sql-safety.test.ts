@@ -287,6 +287,119 @@ describe('createSqlSafety — bindings', () => {
   });
 });
 
+describe('createSqlSafety — enums imported by a relative path', () => {
+  const models = 'export enum T { A = "a", B }\nexport enum C { X = make() }\n';
+  const files = {
+    'schemas/models.ts': models,
+    'schemas/index.ts': 'export * from "./models";\n',
+  };
+
+  it('a member of an enum exported by the module, or by a barrel over it', () => {
+    expect(
+      safe('import { T } from "./schemas/models";\nprobe(T.A);', files),
+    ).toBe(true);
+    expect(safe('import { T } from "./schemas";\nprobe(T.A);', files)).toBe(
+      true,
+    );
+    expect(safe('import { T } from "./schemas";\nprobe(T.B);', files)).toBe(
+      true,
+    );
+    expect(
+      safe('import { T } from "./schemas";\nprobe(`"${T.A}".id`);', files),
+    ).toBe(true);
+    expect(safe('import * as s from "./schemas";\nprobe(s.T.A);', files)).toBe(
+      true,
+    );
+  });
+
+  it('abstains on a member the enum lacks, a computed member, an alias or a package', () => {
+    expect(safe('import { T } from "./schemas";\nprobe(T.Z);', files)).toBe(
+      false,
+    );
+    expect(safe('import { C } from "./schemas";\nprobe(C.X);', files)).toBe(
+      false,
+    );
+    expect(safe('import { T } from "@app/schemas";\nprobe(T.A);', files)).toBe(
+      false,
+    );
+    expect(safe('import { T } from "some-package";\nprobe(T.A);', files)).toBe(
+      false,
+    );
+    expect(safe('import { T } from "./schemas";\nprobe(T[k]);', files)).toBe(
+      false,
+    );
+  });
+
+  it('abstains on an export that is not an enum', () => {
+    const plain = {
+      'schemas/index.ts': 'export const T = { A: process.env.X };\n',
+    };
+    expect(safe('import { T } from "./schemas";\nprobe(T.A);', plain)).toBe(
+      false,
+    );
+    const fixed = { 'schemas/index.ts': 'export const T = { A: "a" };\n' };
+    expect(safe('import { T } from "./schemas";\nprobe(T.A);', fixed)).toBe(
+      true,
+    );
+  });
+});
+
+describe('createSqlSafety — destructured parameters typed in this file', () => {
+  it('a property typed number, boolean, literal or enum', () => {
+    expect(
+      safe('interface O { n: number }\nfunction f({ n }: O) { probe(n); }'),
+    ).toBe(true);
+    expect(
+      safe('type O = { n: number };\nfunction f({ n }: O) { probe(n); }'),
+    ).toBe(true);
+    expect(safe('function f({ n }: { n: boolean }) { probe(n); }')).toBe(true);
+    expect(safe('function f({ n: m }: { n: number }) { probe(m); }')).toBe(
+      true,
+    );
+    expect(safe('function f({ "n": m }: { n: number }) { probe(m); }')).toBe(
+      true,
+    );
+    expect(
+      safe('enum E { A }\nfunction f({ n }: { n: E }) { probe(n); }'),
+    ).toBe(true);
+  });
+
+  it('abstains on a string property, a missing key, an unknown or computed shape', () => {
+    expect(
+      safe('interface O { n: string }\nfunction f({ n }: O) { probe(n); }'),
+    ).toBe(false);
+    expect(
+      safe('interface O { m: number }\nfunction f({ n }: O) { probe(n); }'),
+    ).toBe(false);
+    expect(safe('function f({ n }: Unknown) { probe(n); }')).toBe(false);
+    expect(safe('function f({ n }) { probe(n); }')).toBe(false);
+    expect(
+      safe(
+        'interface O { [k: string]: number }\nfunction f({ n }: O) { probe(n); }',
+      ),
+    ).toBe(false);
+    expect(safe('type O = number;\nfunction f({ n }: O) { probe(n); }')).toBe(
+      false,
+    );
+    expect(safe('function f({ n = 1 }: { n: number }) { probe(n); }')).toBe(
+      false,
+    );
+    expect(safe('function f([n]: number[]) { probe(n); }')).toBe(false);
+    expect(safe('function f(a, { n }: { n: number } = {}) { probe(n); }')).toBe(
+      false,
+    );
+    expect(safe('function f({ ...n }: { n: number }) { probe(n); }')).toBe(
+      false,
+    );
+    expect(
+      safe(
+        'const o = { n: ({ m }: { m: number }) => 1 };\nconst { n } = o;\nprobe(n);',
+      ),
+    ).toBe(false);
+    expect(safe('function f({ n }: ns.O) { probe(n); }')).toBe(false);
+  });
+});
+
 describe('createSqlSafety — members', () => {
   it('length, enums, const objects, class fields and fixed maps', () => {
     expect(safe('probe(list.length);')).toBe(true);

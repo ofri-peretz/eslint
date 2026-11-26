@@ -379,7 +379,7 @@
     "secure-coding/no-fail-open-auth": 52,
     "secure-coding/no-format-string-injection": 103,
     "secure-coding/no-graphql-injection": 112,
-    "secure-coding/no-hardcoded-credentials": 145,
+    "secure-coding/no-hardcoded-credentials": 144,
     "secure-coding/no-hardcoded-session-tokens": 7,
     "secure-coding/no-improper-sanitization": 99,
     "secure-coding/no-improper-type-validation": 117,

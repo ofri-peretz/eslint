@@ -24,7 +24,7 @@ const V = {
 };
 
 module.exports = {
-  domain: 68,
+  domain: 85,
   traces: 800,
   rule: 'no-hardcoded-credentials',
   key: (s) => `${tag(s.value)}|${tag(s.slot)}`,
@@ -36,6 +36,7 @@ module.exports = {
       NeutralVar: `export const label = ${lit};\n`,
       CredProp: `export const cfg = { apiKey: ${lit} };\n`,
       WeakKeyProp: `export const cfg = { key: ${lit} };\n`,
+      ImportEqualsProp: `import post = require('./post');\nexport const send = () => {\n  const cfg = { apiKey: ${lit} };\n  return post(cfg);\n};\n`,
     }[tag(s.slot)];
   },
 };
