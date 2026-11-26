@@ -30,13 +30,18 @@ export function serverSpec(dir) {
   }
 }
 
-/** The npx arguments that bring the index up to date: build it on a fresh clone, catch it up otherwise. */
+/**
+ * The npx arguments that bring the index up to date: build it on a fresh clone, catch it up otherwise.
+ * The path is "." because the index runs with `dir` as its cwd: on Windows npx runs through a shell,
+ * which would split a path with a space in it.
+ */
 export function indexArgs(dir, spec) {
   const indexed = existsSync(join(dir, ".codegraph", "codegraph.db"));
-  return ["-y", spec, ...(indexed ? ["sync"] : ["init", "--yes"]), dir];
+  return ["-y", spec, ...(indexed ? ["sync"] : ["init", "--yes"]), "."];
 }
 
 function startIndex(dir, spec) {
+  // Telemetry off through the env var: `init` and `sync` reject `--no-telemetry`, which only `serve` takes.
   const env = { ...process.env, CODEGRAPH_TELEMETRY: "0" };
   const windows = process.platform === "win32";
   const child = spawn(windows ? "npx.cmd" : "npx", indexArgs(dir, spec), { cwd: dir, env, detached: true, stdio: "ignore", shell: windows });
@@ -61,10 +66,10 @@ function selfTest() {
     if (serverSpec(dir) !== want) bad.push(`spec of ${json}: want ${want}, got ${serverSpec(dir)}`);
   }
   const dir = mkdtempSync(join(tmpdir(), "codegraph-"));
-  if (indexArgs(dir, "x@1").join(" ") !== `-y x@1 init --yes ${dir}`) bad.push("a fresh clone should init");
+  if (indexArgs(dir, "x@1").join(" ") !== "-y x@1 init --yes .") bad.push("a fresh clone should init");
   mkdirSync(join(dir, ".codegraph"));
   writeFileSync(join(dir, ".codegraph", "codegraph.db"), "");
-  if (indexArgs(dir, "x@1").join(" ") !== `-y x@1 sync ${dir}`) bad.push("an indexed repo should sync");
+  if (indexArgs(dir, "x@1").join(" ") !== "-y x@1 sync .") bad.push("an indexed repo should sync");
   if (serverSpec(join(dir, "missing")) !== null) bad.push("no .mcp.json should be null");
   process.stdout.write(bad.length ? `${bad.join("\n")}\n${bad.length} failing\n` : `ok: ${Object.keys(CASES.specs).length + 3} cases\n`);
   process.exit(bad.length ? 1 : 0);
