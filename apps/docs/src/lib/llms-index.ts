@@ -50,7 +50,7 @@ export const PLUGINS: readonly Plugin[] = [
   ['typeorm-security', 'typeorm: raw query injection'],
   [
     'grpc-security',
-    '@grpc/grpc-js: unguarded reflection, caller identity read from metadata',
+    '@grpc/grpc-js: reflection, metadata identity, message size, error details',
   ],
   [
     'supabase-security',

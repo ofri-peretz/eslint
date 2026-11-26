@@ -4,7 +4,8 @@
   "owasp": "A05:2021",
   "severity": "MEDIUM",
   "expectedPlugins": [
-    "eslint-plugin-express-security"
+    "eslint-plugin-express-security",
+    "eslint-plugin-grpc-security"
   ],
   "coverageGap": "No rule yet detects err.stack / a raw error object reaching res.send / res.json. Candidate: express-security/no-error-details-in-response. Today only generic hardening rules fire on these fixtures.",
   "fixtures": {
@@ -16,12 +17,20 @@
       {
         "file": "error-object-in-json.js",
         "description": "Route serialises the caught error object into the JSON response"
+      },
+      {
+        "file": "grpc-stack-in-status-details.js",
+        "description": "A caught error's stack sent as gRPC status details"
       }
     ],
     "safe": [
       {
         "file": "generic-error-response.js",
         "description": "Generic client message plus a server-side log of the real error"
+      },
+      {
+        "file": "grpc-3-lab-server.js",
+        "description": "security-research protocol-ctf grpc-3 lab server, verbatim: call.emit('error') with fixed details"
       }
     ]
   }

@@ -5702,6 +5702,106 @@
         }
       ],
       "peers": []
+    },
+    {
+      "id": "ILB-0199",
+      "added": "2026-11-26",
+      "title": "gRPC receive cap removed with -1",
+      "rationale": "gRPC defaults the receive cap to 4 MiB. Setting grpc.max_receive_message_length to -1 removes it, so one request can make the server buffer any size before a handler runs.",
+      "cwe": "CWE-770",
+      "severity": {
+        "cvss": 7.5,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        "https://grpc.github.io/grpc/core/group__grpc__arg__keys.html"
+      ],
+      "occurrences": [],
+      "code": "const server = new grpc.Server({ 'grpc.max_receive_message_length': -1 });",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-unbounded-message-size",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-unbounded-message-size/no-unbounded-message-size.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0200",
+      "added": "2026-11-26",
+      "title": "gRPC receive cap raised but bounded",
+      "rationale": "A 16 MiB cap is a deliberate, bounded raise. A rule that reported every non-default cap would be reporting configuration, not a defect.",
+      "cwe": "CWE-770",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        "https://grpc.github.io/grpc/core/group__grpc__arg__keys.html"
+      ],
+      "occurrences": [],
+      "code": "const server = new grpc.Server({ 'grpc.max_receive_message_length': 16 * 1024 * 1024 });",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-unbounded-message-size",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-unbounded-message-size/no-unbounded-message-size.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0201",
+      "added": "2026-11-26",
+      "title": "Caught error stack sent as gRPC status details",
+      "rationale": "Status details travel to the client. Built from a caught error's stack they disclose file paths, dependency versions and whatever the error quoted.",
+      "cwe": "CWE-209",
+      "severity": {
+        "cvss": 5.3,
+        "vector": null,
+        "source": null
+      },
+      "references": ["https://grpc.io/docs/guides/error/"],
+      "occurrences": [],
+      "code": "server.addService(svc, {\n  Get(call, cb) {\n    try { cb(null, work()); } catch (err) { cb({ code: 13, details: err.stack }); }\n  },\n});",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-error-detail-leak",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-error-detail-leak/no-error-detail-leak.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0202",
+      "added": "2026-11-26",
+      "title": "Generic gRPC status details, real error logged",
+      "rationale": "The remedy: the caught error is logged server-side and the client gets a fixed message.",
+      "cwe": "CWE-209",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": ["https://grpc.io/docs/guides/error/"],
+      "occurrences": [],
+      "code": "server.addService(svc, {\n  Get(call, cb) {\n    try { cb(null, work()); } catch (err) { log(err); cb({ code: 13, details: 'internal error' }); }\n  },\n});",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-error-detail-leak",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-error-detail-leak/no-error-detail-leak.test.ts"
+        }
+      ],
+      "peers": []
     }
   ]
 }

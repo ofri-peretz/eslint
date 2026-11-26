@@ -43,7 +43,7 @@ Using oxlint or Vite+? Install `oxlint-plugin-grpc-security`: the same rules und
 
 ## Description
 
-Security rules for Node gRPC servers (server reflection registered with no guard, caller identity read from client-settable metadata).
+Security rules for Node gRPC servers (unguarded server reflection, caller identity read from metadata, unbounded message sizes, caught errors sent to the client).
 
 They target servers built on [@grpc/grpc-js](https://www.npmjs.com/package/@grpc/grpc-js).
 
@@ -52,6 +52,8 @@ They target servers built on [@grpc/grpc-js](https://www.npmjs.com/package/@grpc
 The first rule is `no-unguarded-reflection`. Server reflection answers "which services does this listener serve?" to any client, unauthenticated. Registered unconditionally it ships to production, and `grpcurl -plaintext host:port list` then names every service on the server, the internal ones included. The rule reports a registration with no branch between it and the program running, and stays silent once any branch decides it (`if (process.env.NODE_ENV !== 'production')`, a config flag, an early return).
 
 `no-identity-from-metadata` catches the backend that believes a header a gateway was supposed to set. A value read from a handler's `call.metadata` that reaches an equality check against a per-request record (`acc.owner !== user`) is the caller's identity, and any client can send it. Resolving the header through a server-side lookup or a verifier ends the flow, so the rule stays silent on a verified token.
+
+`no-unbounded-message-size` reports `grpc.max_receive_message_length` / `grpc.max_send_message_length` set to `-1` or above 100 MiB, evaluated from literals, arithmetic and consts. `no-error-detail-leak` reports a status sent through a handler's callback or call object whose `details` are built from a caught error's stack or message.
 
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 
@@ -71,11 +73,11 @@ That trade costs recall, and we measure it:
 
 ## ⚙️ Configuration Presets
 
-| Preset        | Description                                             |
-| :------------ | :------------------------------------------------------ |
-| `minimal`     | `no-unguarded-reflection`.                              |
-| `recommended` | `no-unguarded-reflection`, `no-identity-from-metadata`. |
-| `strict`      | Every rule.                                             |
+| Preset        | Description                |
+| :------------ | :------------------------- |
+| `minimal`     | `no-unguarded-reflection`. |
+| `recommended` | Every rule.                |
+| `strict`      | Every rule.                |
 
 ## Usage
 
@@ -145,7 +147,9 @@ The library ranges the rules were written against. Documentation only: this pack
 
 | Rule                                                                                                                                                                                                          |   CWE   |  OWASP   | CVSS | Description                                                      | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
 | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-----: | :------: | :--: | :--------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
+| [no-error-detail-leak](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-error-detail-leak?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security)           | CWE-209 | A05:2021 |      | Do not send a caught error's stack or message to the gRPC client | 🟢  |     |     |     |     |     |
 | [no-identity-from-metadata](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-identity-from-metadata?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security) | CWE-290 | A07:2021 |      | Do not authorize a gRPC caller by an identity read from metadata | 🟢  |     |     |     |     |     |
+| [no-unbounded-message-size](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-unbounded-message-size?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security) | CWE-770 | A04:2021 |      | Keep gRPC message size limits bounded                            | 🟢  |     |     |     |     |     |
 | [no-unguarded-reflection](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-unguarded-reflection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security)     | CWE-306 | A05:2021 |      | Register gRPC server reflection only behind a guard              | 🟢  |     |     |     |     |     |
 
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
