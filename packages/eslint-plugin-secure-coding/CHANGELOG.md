@@ -5,6 +5,13 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.5.5
+
+### Patch Changes
+
+- **🐛 Fix** — `no-sensitive-data-exposure` no longer reports a name that ends in what a secret is called, where it lives or how much of it there is. The default `descriptorSegments` now also hold `id`, `ids`, `name`, `path`, `count`, `length`, `size`, `type` and `kind`, so `tokenCount` in a usage log, `secretPath` in a webhook log object and `secretName` in an error message are not reported. The comparison is still the whole final segment of the name: `token`, `accessToken`, `passwordHash` and `tokenIdValue` keep reporting, and `descriptorSegments` can drop any of the new ones. Seen on LibreChat, Infisical and Budibase.
+- **🐛 Fix** — `no-log-injection` no longer reports the raw request target. `req.url`, `request.url`, `ctx.url` and `req.path` / `ctx.path` hold the target as it came off the wire, and Node's HTTP parser rejects a request whose target carries a literal CR or LF (a percent-encoded `%0d%0a` stays encoded), so a forged log line cannot start there. The decoded and parsed parts (`query`, `params`, `body`, `headers`, `cookies`), a `url` read from them, and a `url` on an `event` or `message` root keep reporting. Seen on cal.com and Teable.
+
 ## 6.5.4
 
 ### Patch Changes
