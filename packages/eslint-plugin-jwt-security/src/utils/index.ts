@@ -1282,6 +1282,99 @@ export function resolveCallOptions(
   return resolveObject(node.arguments[2], sourceCode);
 }
 
+/** jose's key constructors: the result is a typed key, never raw bytes. */
+const JOSE_KEY_FACTORIES: ReadonlySet<string> = new Set([
+  'createLocalJWKSet',
+  'createRemoteJWKSet',
+  'importSPKI',
+  'importX509',
+  'importPKCS8',
+  'importJWK',
+]);
+
+/**
+ * The module a bare name or the root of a member chain was imported from.
+ *
+ * A name that is not bound by an import or a `require` is `null`: a local
+ * wrapper called `jwtVerify` says nothing about jose.
+ */
+function importSourceOf(node: TSESTree.Node): string | null {
+  const root = chainRoot(node);
+  if (root.type !== AST_NODE_TYPES.Identifier) return null;
+  for (const stmt of programOf(node).body) {
+    const source = bindingSourceOf(stmt, root.name);
+    if (source !== null) return source;
+  }
+  return null;
+}
+
+/**
+ * Whether a jose verify call hands jose a key that already fixes which
+ * algorithms can verify, so an absent `algorithms` list opens nothing.
+ *
+ * jose checks the key against the header `alg` before it verifies: an `HS*`
+ * token needs a raw byte secret, an asymmetric one needs the matching key
+ * type, and `none` is refused outright. So when the key is
+ *
+ * - a key set (`createLocalJWKSet` / `createRemoteJWKSet`), where each key
+ *   carries its own `kty` / `alg`;
+ * - raw bytes (`new TextEncoder().encode(secret)`, `new Uint8Array(...)`),
+ *   which only `HS*` can use; or
+ * - a typed key from `importSPKI` / `importX509` / `importPKCS8` / `importJWK`,
+ *
+ * the token header cannot steer the verification to a weaker family. That is
+ * a structural read of how the key was built in this file. A key that arrives
+ * as a parameter, an import or a call this file cannot read could be anything
+ * — jose included — so it is not exempted.
+ *
+ * Only a callee that is itself imported from jose qualifies: a local helper
+ * named `jwtVerify` is not jose.
+ */
+export function joseKeyBindsAlgorithm(
+  node: TSESTree.CallExpression,
+  sourceCode: SourceCodeLike,
+): boolean {
+  const source = importSourceOf(node.callee);
+  if (source === null || packageRootOf(source) !== JWT_LIBRARIES.JOSE) {
+    return false;
+  }
+  // The caller has already required two arguments.
+  const value = resolveTerminal(node.arguments[1]!, sourceCode);
+  if (value.type === AST_NODE_TYPES.NewExpression) {
+    return (
+      value.callee.type === AST_NODE_TYPES.Identifier &&
+      value.callee.name === 'Uint8Array'
+    );
+  }
+  if (value.type !== AST_NODE_TYPES.CallExpression) return false;
+  const callee = value.callee;
+  // `new TextEncoder().encode(secret)`
+  if (
+    callee.type === AST_NODE_TYPES.MemberExpression &&
+    propertyName(callee) === 'encode' &&
+    callee.object.type === AST_NODE_TYPES.NewExpression &&
+    callee.object.callee.type === AST_NODE_TYPES.Identifier &&
+    callee.object.callee.name === 'TextEncoder'
+  ) {
+    return true;
+  }
+  const factory = joseImportedNameOf(value);
+  return factory !== null && JOSE_KEY_FACTORIES.has(factory);
+}
+
+/** The jose export a call invokes (`importSPKI`, also via `jose.importSPKI`), or null. */
+function joseImportedNameOf(call: TSESTree.CallExpression): string | null {
+  const source = importSourceOf(call.callee);
+  if (source === null || packageRootOf(source) !== JWT_LIBRARIES.JOSE) {
+    return null;
+  }
+  if (call.callee.type === AST_NODE_TYPES.MemberExpression) {
+    return propertyName(call.callee);
+  }
+  // `importSourceOf` answered, so the root is an Identifier: a bare name here.
+  return jwtImportedNameOf(call, (call.callee as TSESTree.Identifier).name);
+}
+
 /** The jose builder a trailing `.sign(key)` hangs off: `new SignJWT(claims)`. */
 const JOSE_SIGN_BUILDERS: ReadonlySet<string> = new Set([
   'SignJWT',
