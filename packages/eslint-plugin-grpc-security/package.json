@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-grpc-security",
   "version": "0.1.0",
-  "description": "ESLint gRPC security rules — catches server reflection registered with no guard, which publishes every service on the listener, internal ones included.",
+  "description": "ESLint gRPC security rules — catches server reflection registered with no guard, and a caller identity read from client-settable metadata and then authorized on.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./dist/src/index.js",
@@ -87,6 +87,7 @@
     "surface": {
       "kind": "npm",
       "modules": [
+        "@grpc/grpc-js",
         "@grpc/reflection",
         "grpc-server-reflection"
       ]

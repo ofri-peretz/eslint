@@ -43,13 +43,15 @@ Using oxlint or Vite+? Install `oxlint-plugin-grpc-security`: the same rules und
 
 ## Description
 
-Security rules for Node gRPC servers (server reflection registered with no guard).
+Security rules for Node gRPC servers (server reflection registered with no guard, caller identity read from client-settable metadata).
 
 They target servers built on [@grpc/grpc-js](https://www.npmjs.com/package/@grpc/grpc-js).
 
-**Scope:** every rule gates on the gRPC package it is about being imported, and on the binding a call resolves to. `addToServer` is an ordinary method name, so a rule that matched it alone would fire on code that has never seen gRPC.
+**Scope:** every rule gates on gRPC structure, never on a method name alone. `no-unguarded-reflection` needs a reflection package imported and the call resolved to it. `no-identity-from-metadata` needs a gRPC handler: a method of the object passed to `.addService(service, implementation)` whose first parameter's `metadata` is read. Servers often load `@grpc/grpc-js` through a wrapper module, so this rule does not require the import itself.
 
 The first rule is `no-unguarded-reflection`. Server reflection answers "which services does this listener serve?" to any client, unauthenticated. Registered unconditionally it ships to production, and `grpcurl -plaintext host:port list` then names every service on the server, the internal ones included. The rule reports a registration with no branch between it and the program running, and stays silent once any branch decides it (`if (process.env.NODE_ENV !== 'production')`, a config flag, an early return).
+
+`no-identity-from-metadata` catches the backend that believes a header a gateway was supposed to set. A value read from a handler's `call.metadata` that reaches an equality check against a per-request record (`acc.owner !== user`) is the caller's identity, and any client can send it. Resolving the header through a server-side lookup or a verifier ends the flow, so the rule stays silent on a verified token.
 
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 
@@ -69,11 +71,11 @@ That trade costs recall, and we measure it:
 
 ## ⚙️ Configuration Presets
 
-| Preset        | Description                |
-| :------------ | :------------------------- |
-| `minimal`     | `no-unguarded-reflection`. |
-| `recommended` | `no-unguarded-reflection`. |
-| `strict`      | Every rule.                |
+| Preset        | Description                                             |
+| :------------ | :------------------------------------------------------ |
+| `minimal`     | `no-unguarded-reflection`.                              |
+| `recommended` | `no-unguarded-reflection`, `no-identity-from-metadata`. |
+| `strict`      | Every rule.                                             |
 
 ## Usage
 
@@ -141,9 +143,10 @@ The library ranges the rules were written against. Documentation only: this pack
 
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 
-| Rule                                                                                                                                                                                                      |   CWE   |  OWASP   | CVSS | Description                                         | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-----: | :------: | :--: | :-------------------------------------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
-| [no-unguarded-reflection](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-unguarded-reflection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security) | CWE-306 | A05:2021 |      | Register gRPC server reflection only behind a guard | 🟢  |     |     |     |     |     |
+| Rule                                                                                                                                                                                                          |   CWE   |  OWASP   | CVSS | Description                                                      | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-----: | :------: | :--: | :--------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
+| [no-identity-from-metadata](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-identity-from-metadata?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security) | CWE-290 | A07:2021 |      | Do not authorize a gRPC caller by an identity read from metadata | 🟢  |     |     |     |     |     |
+| [no-unguarded-reflection](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-unguarded-reflection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security)     | CWE-306 | A05:2021 |      | Register gRPC server reflection only behind a guard              | 🟢  |     |     |     |     |     |
 
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 <!-- INTERLACE:STAR_CTA:START -->

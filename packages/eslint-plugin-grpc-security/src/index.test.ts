@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest';
 
 import plugin, {
   configs,
+  noIdentityFromMetadata,
   noUnguardedReflection,
   plugin as namedPlugin,
   rules,
@@ -13,7 +14,11 @@ import plugin, {
 
 describe('eslint-plugin-grpc-security', () => {
   it('exposes every rule under its documented id', () => {
-    expect(Object.keys(rules).sort()).toEqual(['no-unguarded-reflection']);
+    expect(Object.keys(rules).sort()).toEqual([
+      'no-identity-from-metadata',
+      'no-unguarded-reflection',
+    ]);
+    expect(rules['no-identity-from-metadata']).toBe(noIdentityFromMetadata);
     expect(rules['no-unguarded-reflection']).toBe(noUnguardedReflection);
   });
 
@@ -34,6 +39,15 @@ describe('eslint-plugin-grpc-security', () => {
         'error',
       );
     }
+  });
+
+  it('turns the identity rule on in recommended but not minimal', () => {
+    expect(
+      configs.recommended.rules?.['grpc-security/no-identity-from-metadata'],
+    ).toBe('error');
+    expect(
+      configs.minimal.rules?.['grpc-security/no-identity-from-metadata'],
+    ).toBeUndefined();
   });
 
   it('turns every rule on in strict, by name', () => {

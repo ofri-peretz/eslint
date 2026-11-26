@@ -1,4 +1,4 @@
 {
   "title": "Rules",
-  "pages": ["no-unguarded-reflection"]
+  "pages": ["no-identity-from-metadata", "no-unguarded-reflection"]
 }

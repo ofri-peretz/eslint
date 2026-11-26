@@ -1,0 +1,72 @@
+---
+title: no-identity-from-metadata
+description: Do not authorize a gRPC caller by an identity read from metadata
+tags: ['security', 'grpc']
+category: security
+severity: high
+cwe: CWE-290
+autofix: false
+---
+
+# no-identity-from-metadata
+
+> Do not authorize a gRPC caller by an identity read from metadata.
+
+- **CWE:** [CWE-290 — Authentication Bypass by Spoofing](https://cwe.mitre.org/data/definitions/290.html)
+- **OWASP:** A07:2021 — Identification and Authentication Failures
+- **CVSS:** 8.1 (High)
+- **Recommended:** `error`
+
+## Why
+
+gRPC metadata is HTTP/2 headers, and the client sets every one of them. Services behind an API gateway or a service mesh often read "who is calling" from a header the gateway is supposed to set, such as `x-authenticated-user`. That holds only while every request comes through the gateway. Once the backend is reachable another way (a debug port, an SSRF, a misrouted path, a sidecar that forwards client headers), anyone can send the header and become anyone.
+
+## Rule details
+
+The rule decides from the flow, not from the header's name. It reports a metadata read when all three hold:
+
+1. **The value comes from call metadata.** That means `.get(…)` on the `metadata` of a gRPC handler's first parameter. A handler is a method of the object passed to `.addService(service, implementation)`, directly or through a `const`. The rule follows `{ metadata }` destructuring, a `const` holding the metadata, and same-file helpers whose call sites pass it (`callerOf(call.metadata)`, an IIFE).
+2. **The value reaches the comparison unchanged in substance.** It can pass through consts (including `const [h] = md.get(…)`), `[0]` and `?.[0]`, `String(…)`, templates, string methods, `??` and `||`, ternaries, `await`, casts, and the return value of same-file functions.
+   - A lookup keyed by the value (`TOKENS[h]`) or a call that takes it (`verify(h)`) resolves it into something else, and the flow stops there.
+3. **The value is used as an identity.** It sits on one side of `===`, `!==`, `==` or `!=` inside the test of an `if` or a ternary, and the other side is a field of a per-request record (`acc.owner`, `(await db.find(id)).owner`).
+   - A comparison with `process.env.X` or a field of a module-level constant is a credential check, not an identity, and stays silent.
+
+## Incorrect
+
+```js
+function callerOf(metadata) {
+  const forwarded = metadata.get('x-authenticated-user')[0];
+  if (forwarded) return String(forwarded);
+  // ...
+}
+
+server.addService(pkg.bank.Accounts.service, {
+  GetAccount(call, cb) {
+    const user = callerOf(call.metadata);
+    const acc = ACCOUNTS[call.request.account_id];
+    if (acc.owner !== user) return cb({ code: grpc.status.PERMISSION_DENIED });
+    cb(null, acc);
+  },
+});
+```
+
+## Correct
+
+```js
+function callerOf(metadata) {
+  const auth = String(metadata.get('authorization')[0] ?? '');
+  return TOKENS[auth.replace(/^Bearer\s+/i, '')] ?? null;
+}
+```
+
+Here the caller is whatever a server-side table says the presented token belongs to. The header is a key into that table, not the identity itself. A signed token verified in the backend, or the peer certificate of an mTLS connection, works the same way.
+
+## Limits
+
+- Only equality checks against a record field count as authorization. An identity used as a lookup key (`DATA_BY_USER[user]`) or compared against a string literal (`user === 'admin'`) is not reported.
+- Flows that leave the file, or pass through a class method, are not followed.
+
+## Further reading
+
+- [gRPC authentication guide](https://grpc.io/docs/guides/auth/)
+- [CWE-290](https://cwe.mitre.org/data/definitions/290.html)

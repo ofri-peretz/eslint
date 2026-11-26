@@ -2757,6 +2757,12 @@
     }
   },
   "eslint-plugin-grpc-security": {
+    "no-identity-from-metadata": {
+      "environment": "grpc",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "A `.get(…)` read of a gRPC handler's call metadata (handler = method of the object passed to `.addService`), followed backwards through consts, string wrappers and same-file function returns, that lands on one side of an equality check in an `if`/ternary test against a per-request record field. A lookup keyed by the value or a call that takes it ends the flow; comparisons with `process.env` or module constants are credential checks. Never decided from a header name."
+    },
     "no-unguarded-reflection": {
       "environment": "grpc",
       "detection": "structural-api",

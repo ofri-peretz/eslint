@@ -1,7 +1,7 @@
 {
   "name": "oxlint-plugin-grpc-security",
   "version": "0.1.0",
-  "description": "Oxlint gRPC security rules — catches server reflection registered with no guard, which publishes every service on the listener, internal ones included. Same rules and rule IDs as eslint-plugin-grpc-security, for oxlint and Vite+.",
+  "description": "Oxlint gRPC security rules — catches server reflection registered with no guard, and a caller identity read from client-settable metadata and then authorized on. Same rules and rule IDs as eslint-plugin-grpc-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./index.js",
