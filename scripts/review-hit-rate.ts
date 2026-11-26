@@ -13,12 +13,17 @@
  *   npx tsx scripts/review-hit-rate.ts --last 10       # the 10 most recently merged non-bot PRs
  *   npx tsx scripts/review-hit-rate.ts --prs 1790,1791 --dump out.jsonl
  *   npx tsx scripts/review-hit-rate.ts --reviewer 'coderabbitai[bot]' --repo ofri-peretz/interlace --last 10
+ *   npx tsx scripts/review-hit-rate.ts --compare baseline.jsonl after.jsonl  # labelled dumps
+ *   npx tsx scripts/review-hit-rate.ts --kappa docs/review-hit-rate/human-sample.jsonl
+ *
+ * Every rate carries a 95% Wilson interval: 8/20 is 40% (22-61%), and a comparison only calls a
+ * change when the two intervals do not overlap.
  *
  * A reply inside a review thread is a follow-up to a finding, not a new one; only thread
  * openers count.
  */
 import { execFileSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 export interface ReviewComment {
@@ -112,6 +117,102 @@ export function isActedOn(
   return commits.some((k) => k.date > c.createdAt && k.files.includes(file));
 }
 
+/** 95% Wilson score interval for k successes out of n. */
+export function wilson(k: number, n: number, z = 1.96): [number, number] {
+  if (n === 0) return [0, 1];
+  const p = k / n;
+  const d = 1 + (z * z) / n;
+  const c = (p + (z * z) / (2 * n)) / d;
+  const h = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / d;
+  return [Math.max(0, c - h), Math.min(1, c + h)];
+}
+
+const pct = (x: number) => `${Math.round(100 * x)}%`;
+
+/** "8/20 = 40% (22–61%)". */
+export function rate(k: number, n: number): string {
+  const [lo, hi] = wilson(k, n);
+  return `${k}/${n} = ${n ? pct(k / n) : 'n/a'} (${Math.round(100 * lo)}–${pct(hi)})`;
+}
+
+export type Verdict = 'improved' | 'worse' | 'no detectable change';
+
+/** A change is called only when the two 95% intervals do not overlap. */
+export function verdict(
+  before: { k: number; n: number },
+  after: { k: number; n: number },
+): Verdict {
+  const [bLo, bHi] = wilson(before.k, before.n);
+  const [aLo, aHi] = wilson(after.k, after.n);
+  if (aLo > bHi) return 'improved';
+  if (aHi < bLo) return 'worse';
+  return 'no detectable change';
+}
+
+/** Cohen's kappa between two raters' labels for the same items. */
+export function kappa(a: string[], b: string[]): number {
+  if (a.length !== b.length || a.length === 0) {
+    throw new Error('kappa needs two equal, non-empty label lists');
+  }
+  const n = a.length;
+  const observed = a.filter((x, i) => x === b[i]).length / n;
+  const labels = [...new Set([...a, ...b])];
+  const expected = labels.reduce(
+    (sum, l) =>
+      sum +
+      (a.filter((x) => x === l).length / n) *
+        (b.filter((x) => x === l).length / n),
+    0,
+  );
+  return expected === 1 ? 1 : (observed - expected) / (1 - expected);
+}
+
+/** The reviewer model a claude-code-review.yml asks for (`--model x`), or null. */
+export function modelFromWorkflow(text: string): string | null {
+  return /--model\s+([\w.-]+)/.exec(text)?.[1] ?? null;
+}
+
+interface Labelled {
+  label?: string;
+  model?: string | null;
+  promptSha?: string | null;
+}
+
+/** Signal share of two labelled dumps, refusing to mix reviewer models or prompts. */
+export function compareDumps(before: Labelled[], after: Labelled[]): string {
+  const keyOf = (rows: Labelled[]) => [
+    ...new Set(
+      rows.filter((r) => r.model).map((r) => `${r.model}@${r.promptSha}`),
+    ),
+  ];
+  const unlabelled = [...before, ...after].filter((r) => !r.label).length;
+  if (unlabelled) throw new Error(`${unlabelled} row(s) have no label`);
+  const bk = keyOf(before).join(',');
+  const ak = keyOf(after).join(',');
+  if (keyOf(before).length > 1 || keyOf(after).length > 1) {
+    throw new Error(
+      `mixed reviewer model or prompt within a dump: ${bk} | ${ak}`,
+    );
+  }
+  const judged = (rows: Labelled[]) => ({
+    k: rows.filter((r) => r.label === 'judgment').length,
+    n: rows.length,
+  });
+  const b = judged(before);
+  const a = judged(after);
+  return [
+    `signal share before ${rate(b.k, b.n)}${bk ? ` [${bk}]` : ''}`,
+    `signal share after  ${rate(a.k, a.n)}${ak ? ` [${ak}]` : ''}`,
+    `verdict: ${verdict(b, a)}`,
+  ].join('\n');
+}
+
+const readJsonl = (file: string) =>
+  readFileSync(file, 'utf8')
+    .split('\n')
+    .filter(Boolean)
+    .map((l) => JSON.parse(l) as Record<string, unknown>);
+
 const gh = (path: string): unknown =>
   JSON.parse(
     execFileSync('gh', ['api', '--paginate', '--slurp', path], {
@@ -181,12 +282,44 @@ function main(): void {
     const i = args.indexOf(f);
     return i < 0 ? undefined : args[i + 1];
   };
+  if (args.includes('--compare')) {
+    const i = args.indexOf('--compare');
+    console.log(compareDumps(readJsonl(args[i + 1]!), readJsonl(args[i + 2]!)));
+    return;
+  }
+  if (at('--kappa')) {
+    const rows = readJsonl(at('--kappa')!) as {
+      label: string;
+      humanLabel: string | null;
+    }[];
+    const done = rows.filter((r) => r.humanLabel);
+    if (done.length < rows.length) {
+      console.log(
+        `${rows.length - done.length} of ${rows.length} rows still need a humanLabel`,
+      );
+      process.exitCode = 1;
+      return;
+    }
+    const disagree = done.filter((r) => r.label !== r.humanLabel).length;
+    console.log(
+      `kappa ${kappa(
+        done.map((r) => r.label),
+        done.map((r) => r.humanLabel!),
+      ).toFixed(2)} ` +
+        `over ${done.length} findings, ${disagree} disagreement(s)`,
+    );
+    return;
+  }
   const r = at('--repo') ?? repo();
   const reviewer = at('--reviewer') ?? 'claude[bot]';
   const prs = at('--prs')
     ? at('--prs')!.split(',').map(Number)
     : lastMergedPrs(r, Number(at('--last') ?? 10));
-  const all: (ReviewComment & { acted: boolean })[] = [];
+  const all: (ReviewComment & {
+    acted: boolean;
+    model: string | null;
+    promptSha: string | null;
+  })[] = [];
 
   for (const pr of prs) {
     const found = (
@@ -220,6 +353,30 @@ function main(): void {
     }
     const comments = dedupe(found);
     if (comments.length === 0) continue;
+    // What reviewed this PR: the reviewer config as of the PR's head, so a baseline and a
+    // comparison taken under different prompts or models are never mixed.
+    const head = (
+      gh(`repos/${r}/pulls/${pr}`) as { head: { sha: string } }[]
+    )[0]!.head.sha;
+    const config =
+      reviewer === 'claude[bot]'
+        ? '.github/workflows/claude-code-review.yml'
+        : '.coderabbit.yaml';
+    const promptSha =
+      (
+        gh(`repos/${r}/commits?path=${config}&sha=${head}&per_page=1`) as {
+          sha: string;
+        }[]
+      )[0]?.sha.slice(0, 9) ?? null;
+    let model: string | null = reviewer;
+    if (reviewer === 'claude[bot]' && promptSha) {
+      const file = gh(`repos/${r}/contents/${config}?ref=${promptSha}`) as {
+        content: string;
+      }[];
+      model = modelFromWorkflow(
+        Buffer.from(file[0]!.content, 'base64').toString('utf8'),
+      );
+    }
     // Every file the PR's commits ever touched, not only its final diff: a file a later commit
     // reverted to base drops out of the diff but was still acted on.
     const diffFiles = (
@@ -242,15 +399,19 @@ function main(): void {
       ...new Set([...diffFiles, ...commits.flatMap((k) => k.files)]),
     ];
     for (const c of comments) {
-      all.push({ ...c, acted: isActedOn(c, commits, prFiles) });
+      all.push({
+        ...c,
+        acted: isActedOn(c, commits, prFiles),
+        model,
+        promptSha,
+      });
     }
   }
 
   const acted = all.filter((c) => c.acted).length;
-  const pct = all.length ? Math.round((100 * acted) / all.length) : 0;
   console.log(
     `PRs ${prs.length} (${Math.min(...prs)}..${Math.max(...prs)}), reviewer findings ${all.length}, ` +
-      `acted on ${acted} (${pct}%)`,
+      `acted on ${rate(acted, all.length)}`,
   );
   const dump = at('--dump');
   if (dump) {

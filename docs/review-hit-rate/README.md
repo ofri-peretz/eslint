@@ -62,10 +62,29 @@ Each repo gets one reviewer, chosen by human merges in the last 7 days:
 On eslint CodeRabbit still answers `@coderabbitai review`. Measure each side on its own repos:
 `--reviewer 'coderabbitai[bot]' --repo ofri-peretz/serverless --last 10`.
 
-## Comparison: the 10 PRs after the judgment-only prompt merges
+## Uncertainty, the human check, and comparing
+
+Every rate is printed with its 95% Wilson interval. Claude's baseline signal share is
+`8/20 = 40% (22–61%)`. `--compare a.jsonl b.jsonl` calls a change only when the two intervals do
+not overlap, and refuses dumps that mix reviewer models or prompt versions (each row carries
+`model` and `promptSha`).
+
+Claude vs CodeRabbit on the same 23 PRs gives `8/20 = 40% (22–61%)` vs `12/13 = 92% (67–99%)`,
+so the verdict is "improved" for CodeRabbit. Read it with care: its 13 findings came from 2 PRs,
+and findings within one PR are not independent, so its true interval is wider than printed.
+
+**Human check of the labeller, still needed.** `human-sample.jsonl` holds 20 findings (10 from
+each reviewer, chosen deterministically) with the model's `label` and an empty `humanLabel`. Fill
+each `humanLabel` with `judgment`, `gate` or `noise` (about 15 minutes), then run
+`npx tsx scripts/review-hit-rate.ts --kappa docs/review-hit-rate/human-sample.jsonl`. Below a
+kappa of 0.6, the labels decide nothing until the definitions are fixed.
+
+## Comparison: Claude after the judgment-only prompt merges
 
 Expected if the change works: gate drops toward 0, noise drops (citations are now reserved
-for findings), signal share and acted-on rate rise. If signal share does not move, the
-prompt change did nothing and should be reverted rather than kept as ceremony.
+for findings), signal share and acted-on rate rise. The scheduled comparison adds merged PRs
+until `--compare` gives a verdict other than "no detectable change", or 60 PRs pass. If it is
+still "no detectable change" at 60, the prompt change did nothing detectable and is reverted
+rather than kept as ceremony.
 
 _Pending._
