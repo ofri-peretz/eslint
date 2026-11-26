@@ -33,7 +33,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-drizzle-security` | 2.0.5 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
 | `eslint-plugin-express-security` | 4.4.3 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
 | `eslint-plugin-gemini-security` | 2.0.5 | `gemini-security/` | — | `plugin-gemini-security` | security | `gemini` | ✅ | ✅ | ✅ |
-| `eslint-plugin-grpc-security` | 0.0.0 | `grpc-security/` | — | `plugin-grpc-security` | security | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-grpc-security` | 0.1.0 | `grpc-security/` | — | `plugin-grpc-security` | security | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-import-next` | 4.2.1 | `import-next/` | — | `plugin-import-next` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-jwt-security` | 4.0.8 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
 | `eslint-plugin-knex-security` | 2.0.5 | `knex-security/` | — | `plugin-knex-security` | security | `knex` | ✅ | ✅ | ✅ |
@@ -51,9 +51,9 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-postgresql-security` | 3.0.7 | `postgresql-security/` | `pg/` | `plugin-postgresql-security` | security | `postgresql` | ✅ | ✅ | ✅ |
 | `eslint-plugin-prisma-security` | 2.0.5 | `prisma-security/` | — | `plugin-prisma-security` | security | `prisma` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-a11y` | 3.2.1 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
-| `eslint-plugin-react-features` | 2.4.5 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
+| `eslint-plugin-react-features` | 2.4.6 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-reliability` | 5.1.1 | `reliability/` | — | `plugin-reliability` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-secure-coding` | 6.5.3 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-secure-coding` | 6.5.4 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sequelize-security` | 2.0.5 | `sequelize-security/` | — | `plugin-sequelize-security` | security | `sequelize` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sqlite-security` | 2.0.5 | `sqlite-security/` | — | `plugin-sqlite-security` | security | `sqlite` | ✅ | ✅ | ✅ |
 | `eslint-plugin-supabase-security` | 2.0.6 | `supabase-security/` | — | `plugin-supabase-security` | security | `—` | ✅ | ✅ | ✅ |
