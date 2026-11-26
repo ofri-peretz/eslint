@@ -10,7 +10,7 @@ cases: []
 > Stage 1 artifact. Opened from the AI-SDLC alignment work on eslint#1795 and
 > [interlace#219](https://github.com/ofri-peretz/interlace/pull/219) (`AI_SDLC_PHILOSOPHY.md`).
 
-**Status:** draft · **Opened:** 2026-11-25 · **Owner:** @ofri-peretz
+**Status:** approved · **Opened:** 2026-11-25 · **Owner:** @ofri-peretz
 
 ---
 

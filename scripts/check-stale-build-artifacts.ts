@@ -34,13 +34,22 @@
  *    (reading 'follow')" minutes into a commit. Same cheap-symptom reasoning:
  *    an export the source has and the build lacks proves the build is older.
  *
+ * 4. OLDER THAN SOURCE — for a dist that the hooks themselves import (devkit: every plugin
+ *    `case-registry` loads requires it by name, and its `main` is `./dist`), the newest file in
+ *    `dist/` must not be older than the newest `.ts` in `src/`. Checks 2 and 3 catch a stale build
+ *    only when its shape changed; an edited function body changes no export and no require, and
+ *    the hooks run the old body. On 2026-11-25 three of seven failed commits were this
+ *    (intent 2026-11-25-a-commit-fails-in-seconds). Here an mtime IS the signal: the only way a
+ *    devkit source gets newer than its whole build is an edit or a checkout the build has not
+ *    seen, and either way the hooks would run code the tree no longer holds.
+ *
  * Wired as the `stale-build-artifacts` step in lefthook's pre-commit.
  *
  * Usage: check-stale-build-artifacts.ts [packagesDir]
  */
 
-import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import process from 'node:process';
@@ -195,9 +204,24 @@ const builtExports = (text: string): Set<string> => {
   return names;
 };
 
+/**
+ * Packages whose dist the pre-commit hooks import (assertion 4).
+ * ponytail: a hand list of one. Plugins are left out on purpose: the hooks load them from src, and
+ * holding every rule edit to a rebuild would get this step switched off. Add a package when a hook
+ * starts importing its dist.
+ */
+const HOOK_IMPORTED_DISTS = new Set(['eslint-devkit']);
+
+const newestMtime = (files: Iterable<string>): number => {
+  let newest = 0;
+  for (const f of files) newest = Math.max(newest, statSync(f).mtimeMs);
+  return newest;
+};
+
 const shadowing: string[] = [];
 const missingExports: string[] = [];
 const dangling: string[] = [];
+const olderThanSource: string[] = [];
 
 for (const pkgDir of packageDirs) {
   for (const file of walkFiles(join(pkgDir, 'src'), {
@@ -211,6 +235,14 @@ for (const pkgDir of packageDirs) {
 
   const distDir = join(pkgDir, 'dist');
   const present = new Set(walkFiles(distDir, { skipDirs: ['node_modules'] }));
+
+  // No dist at all is "not built", which assertion 4 leaves to the build, as 2 and 3 do.
+  if (HOOK_IMPORTED_DISTS.has(basename(pkgDir)) && present.size > 0) {
+    const src = newestMtime(
+      walkFiles(join(pkgDir, 'src'), { extensions: ['.ts'] }),
+    );
+    if (src > newestMtime(present)) olderThanSource.push(basename(pkgDir));
+  }
 
   for (const file of walkFiles(join(pkgDir, 'src'), { extensions: ['.ts'] })) {
     if (!file.endsWith('/index.ts') || file.endsWith('.d.ts')) continue;
@@ -328,6 +360,27 @@ if (missingExports.length > 0) {
   console.error('');
 }
 
+if (olderThanSource.length > 0) {
+  console.error('');
+  console.error(
+    `Stale dist: older than its own src/ in ${olderThanSource.join(', ')}.`,
+  );
+  console.error(
+    'The hooks import this dist, so they would run code the tree no longer holds. Rebuild:',
+  );
+  console.error('');
+  console.error(
+    `  npx turbo run build ${olderThanSource.map((p) => `--filter=./packages/${p}`).join(' ')}`,
+  );
+  console.error('');
+}
+
 process.exit(
-  shadowing.length + dangling.length + missingExports.length === 0 ? 0 : 1,
+  shadowing.length +
+    dangling.length +
+    missingExports.length +
+    olderThanSource.length ===
+    0
+    ? 0
+    : 1,
 );
