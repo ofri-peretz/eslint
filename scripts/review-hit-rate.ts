@@ -12,12 +12,14 @@
  *
  *   npx tsx scripts/review-hit-rate.ts --last 10       # the 10 most recently merged non-bot PRs
  *   npx tsx scripts/review-hit-rate.ts --prs 1790,1791 --dump out.jsonl
+ *   npx tsx scripts/review-hit-rate.ts --reviewer 'coderabbitai[bot]' --repo ofri-peretz/interlace --last 10
+ *
+ * A reply inside a review thread is a follow-up to a finding, not a new one; only thread
+ * openers count.
  */
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-
-const REVIEWER = 'claude[bot]';
 
 export interface ReviewComment {
   pr: number;
@@ -179,7 +181,8 @@ function main(): void {
     const i = args.indexOf(f);
     return i < 0 ? undefined : args[i + 1];
   };
-  const r = repo();
+  const r = at('--repo') ?? repo();
+  const reviewer = at('--reviewer') ?? 'claude[bot]';
   const prs = at('--prs')
     ? at('--prs')!.split(',').map(Number)
     : lastMergedPrs(r, Number(at('--last') ?? 10));
@@ -192,11 +195,12 @@ function main(): void {
         path: string;
         line: number | null;
         original_line: number | null;
+        in_reply_to_id?: number;
         created_at: string;
         body: string;
       }[]
     )
-      .filter((c) => c.user.login === REVIEWER)
+      .filter((c) => c.user.login === reviewer && !c.in_reply_to_id)
       .map((c) => ({
         pr,
         path: c.path,
@@ -210,7 +214,7 @@ function main(): void {
       updated_at: string;
       body: string;
     }[]) {
-      if (s.user.login === REVIEWER) {
+      if (s.user.login === reviewer) {
         found.push(...findingsInSummary(pr, s.body, s.updated_at));
       }
     }

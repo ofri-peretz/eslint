@@ -43,3 +43,6 @@ export * from './module-evidence';
 // Same-file value following and SDK-binding resolution for the three
 // inference-SDK factories above, exported for the plugins that build on them.
 export * from './sdk-flow';
+// Bounded value following across relative imports, namespaced because its
+// helper names (`follow`, `lookup`, `Value`) are too generic for the root.
+export * as valueFollow from './value-follow';

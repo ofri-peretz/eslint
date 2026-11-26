@@ -21,6 +21,7 @@ import {
   unwrapTypeSyntax,
   propertyName,
   staticString,
+  valueFollow,
 } from '@interlace/eslint-devkit';
 import {
   bindingInit,
@@ -75,6 +76,19 @@ export interface Options {
   reportLiteralComparands?: boolean;
 
   /**
+   * Also check browser modules. Default: `false`.
+   *
+   * A timing oracle needs the comparison to run where the attacker can time it:
+   * on a server answering their requests. A React, Vue, Svelte or Angular
+   * module runs in the user's own browser, and `event.sessionId !==
+   * selectedSessionId` in a socket handler there leaks nothing to anyone else.
+   * 30 of the 82 reports on a 40-app corpus were browser code of this kind
+   * (OpenWA's dashboard, Trilium's client, n8n's editor, Langfuse's sign-in
+   * page), none of them an oracle. See {@link isBrowserModule} for what counts.
+   */
+  includeBrowserCode?: boolean;
+
+  /**
    * Whole words whose presence in an identifier means a `secretPatterns` match
    * was a collision, not a secret. Default: `['author', 'authors', 'authored',
    * 'authoring', 'authorship', 'hashtag', 'hashtags', 'scheme', 'schemes']`.
@@ -102,6 +116,209 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
+
+/** UI frameworks whose modules run in the browser. */
+const BROWSER_FRAMEWORKS = new Set([
+  'react',
+  'react-dom',
+  'react-native',
+  'vue',
+  'svelte',
+  'preact',
+  'solid-js',
+  '@angular/core',
+]);
+/** Single-file components: the file only exists as a UI component. */
+const COMPONENT_EXTENSION = /\.(?:vue|svelte)$/;
+/**
+ * JSX files. The extension alone proves nothing: a `.tsx` file can hold a
+ * request handler or a Remix loader. It counts only when the file renders
+ * JSX, which a component built with the automatic runtime does with no import.
+ */
+const JSX_EXTENSION = /\.(?:tsx|jsx)$/;
+/**
+ * Exports a framework runs on the server, whatever else the file renders:
+ * Remix's `loader` and `action`, the Next.js pages-router data functions and
+ * the app-router metadata functions. A request reaches them.
+ */
+const SERVER_ENTRY_EXPORTS = new Set([
+  'loader',
+  'action',
+  'getServerSideProps',
+  'getStaticProps',
+  'getStaticPaths',
+  'generateMetadata',
+  'generateStaticParams',
+]);
+/**
+ * A Next.js app-router file: a server component unless it says `'use client'`,
+ * so rendering JSX or importing React proves nothing about where it runs.
+ */
+const NEXT_APP_ROUTER_FILE =
+  /(?:^|[\\/])app[\\/](?:.*[\\/])?(?:page|layout|template|default|not-found|loading|route)\.[jt]sx?$/;
+
+/**
+ * Whether this module runs in the user's browser, where no remote attacker can
+ * time a comparison.
+ *
+ * `'use server'` wins over everything: a Next.js server action in a `.tsx`
+ * file runs on the server. Then `'use client'`, or a `.vue` or `.svelte` file.
+ * A file that holds server code (a Remix `loader`, a Next.js data function or
+ * app-router file, an inline `'use server'` action) is checked. Otherwise a
+ * `.tsx` or `.jsx` file that renders JSX, or an import of a UI framework
+ * (`react/jsx-runtime` and other subpaths count; type-only imports do not).
+ */
+export function isBrowserModule(
+  program: TSESTree.Program,
+  filename: string,
+): boolean {
+  const directives = new Set<string>();
+  for (const statement of program.body) {
+    if (statement.type !== AST_NODE_TYPES.ExpressionStatement) break;
+    if (statement.directive === undefined) break;
+    directives.add(statement.directive);
+  }
+  if (directives.has('use server')) return false;
+  if (directives.has('use client')) return true;
+  if (COMPONENT_EXTENSION.test(filename)) return true;
+  if (holdsServerCode(program, filename)) return false;
+  if (JSX_EXTENSION.test(filename) && rendersJsx(program)) return true;
+  return program.body.some(
+    (statement) =>
+      statement.type === AST_NODE_TYPES.ImportDeclaration &&
+      importsCode(statement) &&
+      BROWSER_FRAMEWORKS.has(packageName(statement.source.value)),
+  );
+}
+
+/**
+ * Whether an import brings in the module's code. `import type { FC }` does
+ * not, and neither does `import { type FC }`: the declaration there is a value
+ * import, but every name it binds is a type. A side-effect import
+ * (`import 'react'`) binds nothing and runs the module.
+ */
+function importsCode(statement: TSESTree.ImportDeclaration): boolean {
+  if (statement.importKind === 'type') return false;
+  if (statement.specifiers.length === 0) return true;
+  return statement.specifiers.some(
+    (specifier) =>
+      specifier.type !== AST_NODE_TYPES.ImportSpecifier ||
+      specifier.importKind !== 'type',
+  );
+}
+
+/**
+ * Whether a module that renders UI also holds code a request reaches: a
+ * Remix route's `loader`, a Next.js data function, an app-router server
+ * component, or an inline `'use server'` action. Rendering JSX in the same
+ * file does not move that code to the browser.
+ */
+function holdsServerCode(program: TSESTree.Program, filename: string): boolean {
+  if (NEXT_APP_ROUTER_FILE.test(filename)) return true;
+  if (program.body.some(exportsServerEntry)) return true;
+  return someNode(program, isServerAction);
+}
+
+function exportsServerEntry(statement: TSESTree.ProgramStatement): boolean {
+  if (statement.type !== AST_NODE_TYPES.ExportNamedDeclaration) return false;
+  const names: string[] = [];
+  const declaration = statement.declaration;
+  if (declaration?.type === AST_NODE_TYPES.FunctionDeclaration) {
+    // An exported function declaration always has a name.
+    names.push((declaration.id as TSESTree.Identifier).name);
+  } else if (declaration?.type === AST_NODE_TYPES.VariableDeclaration) {
+    for (const declarator of declaration.declarations) {
+      if (declarator.id.type === AST_NODE_TYPES.Identifier) {
+        names.push(declarator.id.name);
+      }
+    }
+  }
+  for (const specifier of statement.specifiers) {
+    if (specifier.exported.type === AST_NODE_TYPES.Identifier) {
+      names.push(specifier.exported.name);
+    }
+  }
+  return names.some((name) => SERVER_ENTRY_EXPORTS.has(name));
+}
+
+/** A function whose body opens with `'use server'`: a Next.js server action. */
+function isServerAction(node: TSESTree.Node): boolean {
+  if (
+    node.type !== AST_NODE_TYPES.FunctionDeclaration &&
+    node.type !== AST_NODE_TYPES.FunctionExpression &&
+    node.type !== AST_NODE_TYPES.ArrowFunctionExpression
+  ) {
+    return false;
+  }
+  if (node.body.type !== AST_NODE_TYPES.BlockStatement) return false;
+  // The parser sets `directive` only on prologue statements.
+  return node.body.body.some(
+    (statement) =>
+      statement.type === AST_NODE_TYPES.ExpressionStatement &&
+      statement.directive === 'use server',
+  );
+}
+
+/** Whether a JSX element or fragment appears anywhere under `root`. */
+function rendersJsx(root: TSESTree.Node): boolean {
+  return someNode(
+    root,
+    (node) =>
+      node.type === AST_NODE_TYPES.JSXElement ||
+      node.type === AST_NODE_TYPES.JSXFragment,
+  );
+}
+
+/** Whether any node under `root`, `root` included, satisfies `test`. */
+function someNode(
+  root: TSESTree.Node,
+  test: (node: TSESTree.Node) => boolean,
+): boolean {
+  const stack: unknown[] = [root];
+  while (stack.length > 0) {
+    const value = stack.pop();
+    if (Array.isArray(value)) {
+      stack.push(...value);
+      continue;
+    }
+    if (typeof value !== 'object' || value === null) continue;
+    const node = value as TSESTree.Node;
+    if (test(node)) return true;
+    for (const [key, child] of Object.entries(node)) {
+      if (key !== 'parent') stack.push(child);
+    }
+  }
+  return false;
+}
+
+/** `@scope/name/sub` → `@scope/name`, `name/sub` → `name`. */
+function packageName(specifier: string): string {
+  const parts = specifier.split('/');
+  return specifier.startsWith('@')
+    ? parts.slice(0, 2).join('/')
+    : (parts[0] as string);
+}
+
+/**
+ * One `callerKnows` judgement: the bindings on the current path (a binding
+ * that reads itself stops) and the ones already judged.
+ */
+interface KnowsWalk {
+  path: Set<TSESLint.Scope.Variable>;
+  memo: Map<TSESLint.Scope.Variable, boolean>;
+}
+
+/** Global functions whose result holds only their arguments. */
+const PASS_THROUGH_FUNCTIONS: ReadonlySet<string> = new Set([
+  'String',
+  'encodeURIComponent',
+  'encodeURI',
+]);
+/** `JSON.stringify(x)` and `Buffer.from(x)`: the same, through a namespace. */
+const PASS_THROUGH_METHODS: ReadonlyMap<string, string> = new Map([
+  ['JSON', 'stringify'],
+  ['Buffer', 'from'],
+]);
 
 const DEFAULT_SECRET_PATTERNS = [
   // Common secret names (camelCase, snake_case, kebab-case)
@@ -571,6 +788,14 @@ const CRYPTO_DERIVATIONS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Calls a plain digest chain may carry without adding an input:
+ * `createHash('sha256').update(body).digest('hex').toLowerCase()`.
+ */
+const DIGEST_CHAIN_METHODS: ReadonlySet<string | null> = new Set<string | null>(
+  ['digest', 'toString', 'toLowerCase', 'toUpperCase'],
+);
+
+/**
  * Comparison APIs that are memcmp wearing a method name.
  *
  * `buf.equals(other)` and `Buffer.compare(a, b)` return at the first differing
@@ -782,6 +1007,12 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
             description:
               'Report on a secret-looking name alone, without an attacker-controlled operand. Restores the pre-inversion behaviour.',
           },
+          includeBrowserCode: {
+            type: 'boolean',
+            default: false,
+            description:
+              "Also check browser modules ('use client', .vue/.svelte files, .tsx/.jsx files that render JSX, or modules importing react, vue, svelte, preact, solid-js or @angular/core). A file that also holds server code (a Remix loader or action, a Next.js data function or app-router file, an inline 'use server' action) is always checked. Off by default: a comparison in the user's own browser is not a remote timing oracle.",
+          },
           reportLiteralComparands: {
             type: 'boolean',
             default: false,
@@ -823,6 +1054,9 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     let untrustedSources: string[];
     let reportUnverifiedComparisons: boolean;
     let reportLiteralComparands: boolean;
+    let includeBrowserCode: boolean;
+    /** The file is browser code and `includeBrowserCode` is off. */
+    let skipFile: boolean;
     let nonSecretWords: string[];
     let nonSecretTails: string[];
     let nonSecretWordSet: ReadonlySet<string>;
@@ -903,11 +1137,151 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
 
     /** The same question, allowing one hop through a binding. */
     function isCryptoSecret(node: TSESTree.Node): boolean {
-      if (isCryptoDerivation(node)) return true;
       const bare = unwrapTypeSyntax(node);
-      if (bare.type !== AST_NODE_TYPES.Identifier) return false;
-      const init = bindingInit(sourceCode, bare);
-      return init !== undefined && containsCryptoDerivation(init);
+      const init =
+        bare.type === AST_NODE_TYPES.Identifier
+          ? bindingInit(sourceCode, bare)
+          : node;
+      if (init === undefined) return false;
+      const unkeyed = unkeyedDigestInputs(unwrapTypeSyntax(init));
+      if (unkeyed !== null) return hashesHiddenInput(unkeyed);
+      return containsCryptoDerivation(init);
+    }
+
+    /**
+     * Whether a plain digest hides anything: some input the caller does not
+     * supply. A digest of the request alone is one the caller computes too.
+     */
+    function hashesHiddenInput(inputs: TSESTree.Node[]): boolean {
+      // The request has to be in it somewhere, and every input has to be the
+      // caller's: `.update('v1:').update(req.body)` is the caller's as much
+      // as `.update('v1:' + req.body)`; `.update(req.body).update(pepper)`
+      // is not.
+      const readsRequest = inputs.some((input) =>
+        digestOperands(input).some((operand) => readsUntrusted(operand)),
+      );
+      const walk: KnowsWalk = { path: new Set(), memo: new Map() };
+      return (
+        !readsRequest || !inputs.every((input) => callerKnows(input, walk))
+      );
+    }
+
+    /**
+     * Whether every part of this value is one the caller sent or can read.
+     * Request taint alone is not enough: `const payload = req.body + pepper`
+     * reads the request, and the `pepper` it adds is the server's. So a
+     * binding written once is judged by what it was written with, and a call
+     * only by its arguments, when it is one that adds nothing of its own:
+     * `JSON.stringify`, `String`, `Buffer.from`, `encodeURIComponent`, or a
+     * method on a value the caller knows (`req.rawBody.toString('utf8')`).
+     */
+    function callerKnows(node: TSESTree.Node, walk: KnowsWalk): boolean {
+      const bare = unwrapTypeSyntax(node);
+      switch (bare.type) {
+        case AST_NODE_TYPES.Literal:
+          return true;
+        case AST_NODE_TYPES.TemplateLiteral:
+          return bare.expressions.every((part) => callerKnows(part, walk));
+        case AST_NODE_TYPES.BinaryExpression:
+          return (
+            callerKnows(bare.left as TSESTree.Node, walk) &&
+            callerKnows(bare.right, walk)
+          );
+        case AST_NODE_TYPES.AwaitExpression:
+          return callerKnows(bare.argument, walk);
+        case AST_NODE_TYPES.MemberExpression:
+          // `req.session.apiToken` reads through the request, but the
+          // server put it there: the caller does not know it.
+          return (
+            readsUntrusted(bare) &&
+            !isServerHeld(bare) &&
+            (!bare.computed || callerKnows(bare.property, walk))
+          );
+        case AST_NODE_TYPES.Identifier:
+          return callerKnowsBinding(bare, walk);
+        case AST_NODE_TYPES.CallExpression:
+          return (
+            bare.arguments.every(
+              (argument) =>
+                argument.type !== AST_NODE_TYPES.SpreadElement &&
+                callerKnows(argument, walk),
+            ) && addsNothing(bare.callee, walk)
+          );
+        default:
+          return false;
+      }
+    }
+
+    /** A name: judged by its one write, or as a request root when unbound. */
+    function callerKnowsBinding(
+      node: TSESTree.Identifier,
+      walk: KnowsWalk,
+    ): boolean {
+      if (isImportedRoot(node)) return false;
+      const variable = findVariable(sourceCode, node);
+      if (
+        variable === null ||
+        variable.defs.some((def) => def.type === 'Parameter')
+      ) {
+        return readsUntrusted(node);
+      }
+      const writes = variable.references.filter((ref) => ref.isWrite());
+      const written = writes.length === 1 ? writes[0].writeExpr : null;
+      if (written == null || walk.path.has(variable)) return false;
+      const known = walk.memo.get(variable);
+      if (known !== undefined) return known;
+      // `path` holds the bindings being judged, so a binding that reads
+      // itself stops; `memo` keeps `payload + payload` and a chain of
+      // shared bindings from judging one twice.
+      walk.path.add(variable);
+      const knows = callerKnows(written, walk);
+      walk.path.delete(variable);
+      walk.memo.set(variable, knows);
+      return knows;
+    }
+
+    /** The global, not a binding this file declares under the same name. */
+    function isBuiltIn(node: TSESTree.Identifier): boolean {
+      return (findVariable(sourceCode, node)?.defs.length ?? 0) === 0;
+    }
+
+    /** A callee that returns only what its arguments (and receiver) hold. */
+    function addsNothing(
+      callee: TSESTree.Expression,
+      walk: KnowsWalk,
+    ): boolean {
+      if (callee.type === AST_NODE_TYPES.Identifier) {
+        return PASS_THROUGH_FUNCTIONS.has(callee.name) && isBuiltIn(callee);
+      }
+      if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+      const object = callee.object;
+      if (
+        object.type === AST_NODE_TYPES.Identifier &&
+        PASS_THROUGH_METHODS.get(object.name) === propertyName(callee)
+      ) {
+        return isBuiltIn(object);
+      }
+      return callerKnows(object, walk);
+    }
+
+    /**
+     * The leaves of a template literal or a binary expression; the node itself
+     * otherwise. `+` is the join in practice, but any operator mixes both sides
+     * into the input, so a server value on either side is hidden by the digest.
+     */
+    function digestOperands(node: TSESTree.Node): TSESTree.Node[] {
+      if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+        return node.expressions.flatMap((expression) =>
+          digestOperands(expression),
+        );
+      }
+      if (node.type === AST_NODE_TYPES.BinaryExpression) {
+        return [
+          ...digestOperands(node.left as TSESTree.Node),
+          ...digestOperands(node.right),
+        ];
+      }
+      return [node];
     }
 
     /**
@@ -928,6 +1302,38 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         );
       }
       return false;
+    }
+
+    /**
+     * The inputs of an unkeyed digest chain —
+     * `createHash('sha256').update(a).update(b).digest('hex')` gives `[a, b]` —
+     * or `null` when the node is not one. `createHash` is the only derivation
+     * in {@link CRYPTO_DERIVATIONS} that takes no secret, so it is the only one
+     * whose output an attacker can reproduce.
+     */
+    function unkeyedDigestInputs(node: TSESTree.Node): TSESTree.Node[] | null {
+      const inputs: TSESTree.Node[] = [];
+      let current: TSESTree.Node = node;
+      while (current.type === AST_NODE_TYPES.CallExpression) {
+        const callee = current.callee;
+        // `createHash(…)` or `crypto.createHash(…)` starts the chain.
+        if (callee.type === AST_NODE_TYPES.Identifier) {
+          return callee.name === 'createHash' ? inputs : null;
+        }
+        if (callee.type !== AST_NODE_TYPES.MemberExpression) return null;
+        const name = propertyName(callee);
+        if (name === 'createHash') return inputs;
+        if (name === 'update') {
+          // `.update(data, 'utf8')`: the second argument is an encoding.
+          if (current.arguments.length > 0) inputs.push(current.arguments[0]);
+        } else if (!DIGEST_CHAIN_METHODS.has(name)) {
+          // `.concat(SECRET)` and anything else this cannot read may add an
+          // input the caller does not know: not a plain digest.
+          return null;
+        }
+        current = callee.object;
+      }
+      return null;
     }
 
     /** Is this identifier bound by an `import` or a `require(...)` call? */
@@ -1310,6 +1716,13 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         return isServerDerived(assignedValue(node), visited);
       }
       if (node.type === AST_NODE_TYPES.AwaitExpression) return true;
+      const unkeyed = unkeyedDigestInputs(node);
+      // A plain digest takes no key: the caller can compute it from what they
+      // sent. Unleash `edge-hmac-verifier.ts:58` compares the SHA-256 of the
+      // request body with the `content-sha256` header the client sent — its
+      // own input against its own input. It crossed a boundary only if
+      // something it hashed did.
+      if (unkeyed !== null) return hashesHiddenInput(unkeyed);
       if (containsCryptoDerivation(node)) return true;
       if (node.type === AST_NODE_TYPES.MemberExpression) {
         // No `process.env` arm here on purpose: this function is only ever
@@ -1379,8 +1792,107 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
      */
     function isResolvedConstant(node: TSESTree.Node): boolean {
       if (isSourceConstant(node)) return true;
+      if (node.type === AST_NODE_TYPES.MemberExpression) {
+        return isImportedConstant(node);
+      }
       if (node.type !== AST_NODE_TYPES.Identifier) return false;
-      return constLiteralOf(sourceCode, node) !== undefined;
+      if (constLiteralOf(sourceCode, node) !== undefined) return true;
+      return isImportedConstant(node);
+    }
+
+    /**
+     * An imported name that is a literal where it is written:
+     *
+     * ```js
+     * // events/index.js
+     * export const API_TOKEN_DELETED = 'api-token-deleted';
+     * // api-token-service.js
+     * if (event.type === API_TOKEN_DELETED) { … }
+     * ```
+     *
+     * Unleash `api-token-v2-service.ts:289` was reported because the event
+     * name contains `token`. The binding is followed across relative imports
+     * and read where it is declared; a value written there as anything but a
+     * literal (`process.env.API_KEY`, a call) is not a constant and stays
+     * reportable. A package or a path alias is out of reach and is judged as
+     * before.
+     */
+    function isImportedConstant(
+      node: TSESTree.Identifier | TSESTree.MemberExpression,
+    ): boolean {
+      // `ROUTES.resetPassword`, with `ROUTES` an imported object of literals
+      // (Ghost `server/auth/better-auth/routes.ts`): the import decides, and
+      // the property is read where the object is written.
+      let root: TSESTree.Node = node;
+      while (root.type === AST_NODE_TYPES.MemberExpression) root = root.object;
+      if (root.type !== AST_NODE_TYPES.Identifier || !isImportedBinding(root))
+        return false;
+      const landed = valueFollow.follow(
+        valueFollow.valueAt(node, valueFollow.envOf(context)),
+      );
+      // An import that cannot be followed lands on itself, an identifier, so
+      // only a literal written in the imported module passes.
+      return isSourceConstant(landed.node) && !rewrittenLater(landed);
+    }
+
+    /**
+     * Is the object property this literal initialises written again in its
+     * module? `export const KEYS = { api: '' }; KEYS.api = process.env.KEY;`
+     * declares a placeholder: the value compared at runtime is the env read.
+     * Any member write, delete or `Object.assign` on the object counts.
+     */
+    function rewrittenLater(landed: valueFollow.Value): boolean {
+      // Climb from the literal to the object that holds it. A value, unlike
+      // a pattern, sits in a Property only inside an ObjectExpression.
+      let property: TSESTree.Node = landed.node;
+      while (property.parent?.type === AST_NODE_TYPES.Property) {
+        property = property.parent.parent;
+      }
+      const declarator = property.parent;
+      if (
+        declarator?.type !== AST_NODE_TYPES.VariableDeclarator ||
+        declarator.id.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return false;
+      }
+      const variable = valueFollow.lookup(
+        declarator.id.name,
+        landed.env.scopeOf(declarator.id),
+      );
+      return (
+        variable !== null &&
+        variable.references.some((reference) =>
+          mutatesObject(reference.identifier),
+        )
+      );
+    }
+
+    /** Is this read of an object the target of a write into it? */
+    function mutatesObject(read: TSESTree.Node): boolean {
+      let node = read;
+      while (
+        node.parent?.type === AST_NODE_TYPES.MemberExpression &&
+        node.parent.object === node
+      ) {
+        node = node.parent;
+      }
+      const parent = node.parent;
+      if (node === read) {
+        // `Object.assign(KEYS, …)` writes into its first argument.
+        return (
+          parent?.type === AST_NODE_TYPES.CallExpression &&
+          parent.arguments[0] === read &&
+          parent.callee.type === AST_NODE_TYPES.MemberExpression &&
+          propertyName(parent.callee) === 'assign'
+        );
+      }
+      return (
+        (parent?.type === AST_NODE_TYPES.AssignmentExpression &&
+          parent.left === node) ||
+        parent?.type === AST_NODE_TYPES.UpdateExpression ||
+        (parent?.type === AST_NODE_TYPES.UnaryExpression &&
+          parent.operator === 'delete')
+      );
     }
 
     /** The function a callee identifier resolves to, if it is a local one. */
@@ -1660,6 +2172,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     }
 
     function checkBinaryExpression(node: TSESTree.BinaryExpression) {
+      if (skipFile) return;
       // Check for === or == comparisons
       if (
         node.operator !== '===' &&
@@ -1673,6 +2186,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     }
 
     function checkCallExpression(node: TSESTree.CallExpression) {
+      if (skipFile) return;
       const operands = comparisonOperands(node);
       if (!operands) return;
       checkComparison(node, operands[0], operands[1]);
@@ -1686,9 +2200,13 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
           untrustedSources = DEFAULT_UNTRUSTED_SOURCES,
           reportUnverifiedComparisons = false,
           reportLiteralComparands = false,
+          includeBrowserCode = false,
           nonSecretWords = [...DEFAULT_NON_SECRET_WORDS],
           nonSecretTails = [...DEFAULT_NON_SECRET_TAILS],
         } = options as Options);
+        skipFile =
+          !includeBrowserCode &&
+          isBrowserModule(context.sourceCode.ast, context.filename);
         // Lower-cased once. `identifierWords` already lower-cases what it returns,
         // so a user who writes `['Author']` must still match `postAuthorId` — the
         // built-ins are lower-case and the option has to behave identically.

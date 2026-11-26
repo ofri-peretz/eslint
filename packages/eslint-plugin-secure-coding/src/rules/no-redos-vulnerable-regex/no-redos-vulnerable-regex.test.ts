@@ -315,6 +315,7 @@ describe('no-redos-vulnerable-regex', () => {
       {
         valid: [
           {
+            name: 'branches that are disjoint single characters are not ambiguous, whatever the deprecated option says',
             code: 'new RegExp("(a|b)+c");',
             options: [{ allowCommonPatterns: true }],
           },

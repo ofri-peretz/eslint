@@ -1,4 +1,8 @@
 /**
+ * @provenBy {"file":".github/workflows/claude-code-review.yml","find":"uses: ofri-peretz/burgee/.github/actions/triggerlist-review@","replace":"uses: anthropics/claude-code-action@"}
+ * @provenBy {"file":".claude/settings.json","find":"      \"Read(./.env)\",\n","replace":""}
+ * @provenBy {"file":".coderabbit.yaml","find":"    - '!apps/docs/src/data/**'\n","replace":""}
+ *
  * Copyright (c) 2025 Ofri Peretz
  * Licensed under the MIT License. Use of this source code is governed by the
  * MIT license that can be found in the LICENSE file.
@@ -30,28 +34,17 @@ const WORKFLOW = readFileSync(
 );
 
 describe('claude-code-review.yml hands the reviewer the triggered checklist', () => {
-  const checklistAt = WORKFLOW.indexOf('id: checklist');
-  const reviewAt = WORKFLOW.indexOf('uses: anthropics/claude-code-action');
-
-  it('runs triggerlist match against the base branch before the review', () => {
-    expect(checklistAt, 'no `id: checklist` step').toBeGreaterThan(-1);
-    expect(checklistAt).toBeLessThan(reviewAt);
-    expect(WORKFLOW).toMatch(/triggerlist@[\d.]+ match "origin\/\$BASE_REF"/);
-  });
-
-  it('reads the checklist from the base branch, not the PR', () => {
-    expect(WORKFLOW).toMatch(
-      /git checkout "origin\/\$BASE_REF" -- \.sdlc\/checklist\.yaml/,
+  // burgee's shared action runs `triggerlist brief` from the BASE branch: REVIEW.md, the items
+  // this diff fires, and the previous round's findings (eslint#1800).
+  it('reviews through the shared triggerlist action', () => {
+    expect(WORKFLOW).toContain(
+      'uses: ofri-peretz/burgee/.github/actions/triggerlist-review@',
     );
+    expect(WORKFLOW).toMatch(/triggerlist: npx --yes triggerlist@\d/);
   });
 
   it('fetches enough history for a base...HEAD diff', () => {
     expect(WORKFLOW).toMatch(/fetch-depth: 0/);
-  });
-
-  it('puts the triggered items into the prompt', () => {
-    const prompt = WORKFLOW.slice(WORKFLOW.indexOf('prompt: |'));
-    expect(prompt).toContain('${{ steps.checklist.outputs.items }}');
   });
 
   it('reserves path:line citations for findings, which the hit-rate script counts', () => {
@@ -84,4 +77,25 @@ describe('.claude/settings.json', () => {
       expect(settings.permissions?.deny ?? []).toContain(rule);
     },
   );
+});
+
+// CodeRabbit is rate-limited on most PRs here (21 of 23 measured), so its reviews go only where a
+// reader matters. Each line below is a PR class or path that would spend a review on nothing.
+describe('.coderabbit.yaml', () => {
+  const text = readFileSync(join(ROOT, '.coderabbit.yaml'), 'utf8');
+
+  it.each([
+    "'!apps/docs/src/data/**'",
+    "'!benchmarks/results/**'",
+    "'!**/package-lock.json'",
+    "'chore(release)'",
+    "'[automated]'",
+    'drafts: false',
+  ])('skips %s', (line) => {
+    expect(text).toContain(line);
+  });
+
+  it('leaves to the gates what the gates already report', () => {
+    expect(text).toContain('Report nothing one of them would report');
+  });
 });
