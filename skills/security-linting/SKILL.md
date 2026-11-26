@@ -85,6 +85,7 @@ is the source of truth for dependency signals; the summary:
 | `sequelize`                                                                                                            | `eslint-plugin-sequelize-security`  |
 | `typeorm`                                                                                                              | `eslint-plugin-typeorm-security`    |
 | `@supabase/supabase-js`                                                                                                | `eslint-plugin-supabase-security`   |
+| `@grpc/reflection`, `grpc-server-reflection`                                                                           | `eslint-plugin-grpc-security`       |
 | `@modelcontextprotocol/*`                                                                                              | `eslint-plugin-mcp-sdk-security`    |
 | `openai`, `@openai/agents`                                                                                             | `eslint-plugin-openai-security`     |
 | `@anthropic-ai/sdk`, `@anthropic-ai/claude-agent-sdk`                                                                  | `eslint-plugin-anthropic-security`  |

@@ -46,6 +46,7 @@
     "eslint-plugin-browser-security": "*",
     "eslint-plugin-conventions": "*",
     "eslint-plugin-express-security": "*",
+    "eslint-plugin-grpc-security": "*",
     "eslint-plugin-import-next": "*",
     "eslint-plugin-jwt-security": "*",
     "eslint-plugin-lambda-security": "*",

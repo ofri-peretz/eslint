@@ -37,6 +37,9 @@
       "path": "../../packages/eslint-plugin-gemini-security/tsconfig.lib.json"
     },
     {
+      "path": "../../packages/eslint-plugin-grpc-security/tsconfig.lib.json"
+    },
+    {
       "path": "../../packages/eslint-plugin-import-next/tsconfig.lib.json"
     },
     {

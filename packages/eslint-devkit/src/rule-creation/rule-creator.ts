@@ -517,6 +517,7 @@ const PLUGIN_DOCS_CATEGORY: Readonly<Record<string, 'security' | 'quality'>> = {
   'plugin-gemini-security': 'security',
   'plugin-mcp-sdk-security': 'security',
   'plugin-supabase-security': 'security',
+  'plugin-grpc-security': 'security',
   'plugin-openai-security': 'security',
   'plugin-browser-security': 'security',
   'plugin-drizzle-security': 'security',

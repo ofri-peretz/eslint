@@ -351,6 +351,16 @@ component_management:
         - type: patch
           target: 100%
 
+    - component_id: eslint-plugin-grpc-security
+      name: 'eslint-plugin-grpc-security'
+      paths:
+        - packages/eslint-plugin-grpc-security/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
     - component_id: eslint-plugin-supabase-security
       name: 'eslint-plugin-supabase-security'
       paths:

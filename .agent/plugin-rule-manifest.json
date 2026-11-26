@@ -2755,5 +2755,13 @@
       "confidence": "enforcement",
       "notes": "Instantiates createRequireTlsRule (@interlace/eslint-devkit). TypeORM keeps DataSourceOptions flat; `extra` is the driver passthrough bag."
     }
+  },
+  "eslint-plugin-grpc-security": {
+    "no-unguarded-reflection": {
+      "environment": "grpc",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "`new ReflectionService(def).addToServer(server)` from `@grpc/reflection` or `addReflection(server, …)` from `grpc-server-reflection`, resolved by module binding, with no branch between the registration and the program running. Any branch is a guard; named helpers are followed to their same-file call sites, and a helper with none is left to its caller."
+    }
   }
 }

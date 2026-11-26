@@ -55,6 +55,7 @@ import { plugin as p28 } from '../../../packages/eslint-plugin-sqlite-security/s
 import { plugin as p29 } from '../../../packages/eslint-plugin-supabase-security/src/index';
 import { plugin as p30 } from '../../../packages/eslint-plugin-typeorm-security/src/index';
 import { plugin as p31 } from '../../../packages/eslint-plugin-vercel-ai-security/src/index';
+import { plugin as p32 } from '../../../packages/eslint-plugin-grpc-security/src/index';
 
 export const plugins: TSESLint.FlatConfig.Plugin[] = [
   p0,
@@ -89,4 +90,5 @@ export const plugins: TSESLint.FlatConfig.Plugin[] = [
   p29,
   p30,
   p31,
+  p32,
 ];

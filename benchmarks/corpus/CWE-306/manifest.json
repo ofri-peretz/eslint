@@ -1,0 +1,21 @@
+{
+  "cwe": "CWE-306",
+  "name": "Missing Authentication for Critical Function",
+  "owasp": "A05:2021",
+  "severity": "MEDIUM",
+  "expectedPlugins": ["eslint-plugin-grpc-security"],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "grpc-2-lab-server.js",
+        "description": "security-research protocol-ctf grpc-2 lab server, verbatim: reflection registered on the server that also carries an internal ops service, with no guard"
+      }
+    ],
+    "safe": [
+      {
+        "file": "grpc-2-lab-fixed-server.js",
+        "description": "The lab's reference fix, verbatim: internal service moved to its own server and reflection registered only when NODE_ENV is development"
+      }
+    ]
+  }
+}
