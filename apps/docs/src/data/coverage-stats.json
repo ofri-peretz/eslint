@@ -135,6 +135,13 @@
         "category": "security"
       },
       {
+        "name": "eslint-plugin-grpc-security",
+        "slug": "grpc-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
         "name": "eslint-plugin-sqlite-security",
         "slug": "sqlite-security",
         "coverage": 85,
@@ -228,7 +235,7 @@
     "qualityPlugins": 75
   },
   "meta": {
-    "generatedAt": "2026-10-12T09:46:39.715Z",
+    "generatedAt": "2026-11-26T16:44:48.949Z",
     "source": "estimated",
     "ttl": 14400
   }
