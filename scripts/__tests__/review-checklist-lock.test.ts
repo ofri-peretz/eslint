@@ -5,6 +5,7 @@
  */
 
 /**
+ * @provenBy {"file":".coderabbit.yaml","find":"    - '!apps/docs/src/data/**'\n","replace":""}
  * @provenBy {"file":".github/workflows/claude-code-review.yml","find":"one of them would report","replace":"one of them flags"}
  */
 
@@ -79,4 +80,30 @@ describe('.claude/settings.json', () => {
       expect(settings.permissions?.deny ?? []).toContain(rule);
     },
   );
+});
+
+// CodeRabbit is rate-limited on most PRs here (21 of 23 measured), so its reviews go only where a
+// reader matters. Each line below is a PR class or path that would spend a review on nothing.
+describe('.coderabbit.yaml', () => {
+  const text = readFileSync(join(ROOT, '.coderabbit.yaml'), 'utf8');
+
+  it.each([
+    "'!apps/docs/src/data/**'",
+    "'!benchmarks/results/**'",
+    "'!**/package-lock.json'",
+    "'chore(release)'",
+    "'[automated]'",
+    'drafts: false',
+  ])('skips %s', (line) => {
+    expect(text).toContain(line);
+  });
+
+  // The split: Claude reviews eslint on every PR, CodeRabbit only when asked.
+  it('reviews eslint only on demand', () => {
+    expect(text).toMatch(/auto_review:\n\s+enabled: false/);
+  });
+
+  it('leaves to the gates what the gates already report', () => {
+    expect(text).toContain('Report nothing one of them would report');
+  });
 });

@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit is quota-bound here, not quality-bound: over PRs 1766..1792 it was rate-limited on
+# 21 of 23, while 12 of its 13 findings on the 2 it reviewed needed a reader
+# (docs/review-hit-rate/README.md). So spend its reviews where a reader matters: skip generated
+# data, automated PRs and drafts, and leave lint/format/tests to the gates that already run.
+#
+# Reviewer split by repo volume (2026-11-25): eslint (~200 human merges a week) is Claude's,
+# through the required `review` check; CodeRabbit reviews the low-volume public repos
+# (subagent-gateway, serverless), where its free quota lasts; blog stays on Claude because
+# its REVIEW.md checklist is fed to the Claude reviewer. Here it runs only on demand:
+# comment `@coderabbitai review` on a PR that needs a second reader.
+language: en-US
+reviews:
+  profile: chill
+  high_level_summary: false
+  poem: false
+  sequence_diagrams: false
+  related_prs: false
+  auto_review:
+    enabled: false
+    drafts: false
+    ignore_title_keywords:
+      - 'chore(release)'
+      - '[automated]'
+  path_filters:
+    - '!apps/docs/src/data/**'
+    - '!benchmarks/results/**'
+    - '!docs/review-hit-rate/*.jsonl'
+    - '!**/package-lock.json'
+    - '!**/dist/**'
+  path_instructions:
+    - path: '**'
+      instructions: >-
+        Programs already judge every PR here: oxlint and eslint (including this repo's own
+        security plugins), tsgo typecheck, vitest, CodeQL, oxmutate mutation testing, changeset
+        coverage, the fix-carries-a-test gate, markdownlint, workflow lint and format drift.
+        Report nothing one of them would report. Report logic bugs, rule false positives or
+        negatives, security reasoning across files, and doc claims the code does not back.
