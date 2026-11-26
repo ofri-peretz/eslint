@@ -43,13 +43,14 @@ jobs:
         run: |
           { echo '## Verification scorecard'; echo; echo '```'; cat scorecard.log || echo '(no output)'; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
-  # A measure that leaves its band, or a run that cannot score, files one issue for a person.
+  # A measure that leaves its band, or a run that cannot score, files one issue for a person. A
+  # run that hits its timeout ends `cancelled`, not `failure`, and cannot score either.
   report-failure:
     name: Report a failing scorecard
     needs: [score]
     if: >-
       always() && github.event_name == 'schedule' &&
-      contains(needs.*.result, 'failure')
+      (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
