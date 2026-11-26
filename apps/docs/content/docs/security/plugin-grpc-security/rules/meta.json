@@ -1,11 +1,13 @@
 {
   "title": "Rules",
   "pages": [
+    "no-credential-metadata-logging",
     "no-error-detail-leak",
     "no-identity-from-metadata",
     "no-insecure-channel-credentials",
     "no-insecure-server-credentials",
     "no-unbounded-message-size",
-    "no-unguarded-reflection"
+    "no-unguarded-reflection",
+    "require-call-deadline"
   ]
 }

@@ -1,7 +1,7 @@
 {
   "name": "oxlint-plugin-grpc-security",
   "version": "0.3.0",
-  "description": "Oxlint gRPC security rules — catches server reflection registered with no guard, a caller identity read from client-settable metadata, message size limits removed, caught errors sent to the client, and plaintext transport that is exposed or carries secrets. Same rules and rule IDs as eslint-plugin-grpc-security, for oxlint and Vite+.",
+  "description": "Oxlint gRPC security rules — catches server reflection registered with no guard, a caller identity read from client-settable metadata, message size limits removed, caught errors sent to the client, plaintext transport that is exposed or carries secrets, credentials written to logs, and calls with no deadline. Same rules and rule IDs as eslint-plugin-grpc-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
   "main": "./index.js",

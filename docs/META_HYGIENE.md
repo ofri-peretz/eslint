@@ -29,7 +29,7 @@ Sorted by descending completeness. CWE column counts rules with `meta.docs.cwe` 
 | `eslint-plugin-browser-security` | 46 | 87% | 100% | 100% | 100% | 46/46 | 98% | 2% | 9% |
 | `eslint-plugin-drizzle-security` | 4 | 87% | 100% | 100% | 100% | 4/4 | 100% | 0% | 0% |
 | `eslint-plugin-gemini-security` | 1 | 87% | 100% | 100% | 100% | 1/1 | 100% | 0% | 0% |
-| `eslint-plugin-grpc-security` | 6 | 87% | 100% | 100% | 100% | 6/6 | 100% | 0% | 0% |
+| `eslint-plugin-grpc-security` | 8 | 87% | 100% | 100% | 100% | 8/8 | 100% | 0% | 0% |
 | `eslint-plugin-knex-security` | 5 | 87% | 100% | 100% | 100% | 5/5 | 100% | 0% | 0% |
 | `eslint-plugin-mcp-sdk-security` | 15 | 87% | 100% | 100% | 100% | 15/15 | 100% | 0% | 0% |
 | `eslint-plugin-mysql-security` | 3 | 87% | 100% | 100% | 100% | 3/3 | 100% | 0% | 0% |
@@ -68,4 +68,4 @@ None — every rule that knows its CWE exposes it via `meta.docs.cwe`. ✅
 
 ## Fully-decorated rules (have type + description + url + cwe)
 
-327 of 522 (63%).
+329 of 524 (63%).

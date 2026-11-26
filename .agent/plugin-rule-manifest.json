@@ -2757,6 +2757,12 @@
     }
   },
   "eslint-plugin-grpc-security": {
+    "no-credential-metadata-logging": {
+      "environment": "grpc",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "A console or logging-library call (pino, winston, bunyan, log4js, loglevel, consola, signale, by import or factory result) whose argument contains gRPC Metadata (a handler's call.metadata or a `new Metadata()`), its getMap/toJSON/toHttp2Headers, or a credential header's value (authorization, proxy-authorization, cookie, x-api-key). The Metadata API is the anchor; the header set is the HTTP definition."
+    },
     "no-error-detail-leak": {
       "environment": "grpc",
       "detection": "data-flow-lightweight",
@@ -2792,6 +2798,12 @@
       "detection": "structural-api",
       "confidence": "enforcement",
       "notes": "`new ReflectionService(def).addToServer(server)` from `@grpc/reflection` or `addReflection(server, …)` from `grpc-server-reflection`, resolved by module binding, with no branch between the registration and the program running. Any branch is a guard; named helpers are followed to their same-file call sites, and a helper with none is left to its caller."
+    },
+    "require-call-deadline": {
+      "environment": "grpc",
+      "detection": "structural-api",
+      "confidence": "opt-in",
+      "notes": "Strict only. A method call on a client built with gRPC channel credentials (`new X(target, credentials.create…())`) where no argument is an options object with `deadline`, and every unreadable argument sits where only the request can go. Opt-in because interceptors or wrappers can set deadlines the file cannot see."
     }
   }
 }

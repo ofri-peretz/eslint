@@ -1,7 +1,7 @@
 {
   "name": "interlace",
   "displayName": "Interlace Security Linting",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Adds security linting to a Node.js, TypeScript, React, NestJS or Express project: keeps eslint-plugin-security, writes an ESLint 9/10 flat config, and adds the Interlace plugins that match the stack.",
   "author": {
     "name": "Ofri Peretz",

@@ -518,6 +518,11 @@
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-grpc-security/no-credential-metadata-logging": {
+      "cases": 28,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-grpc-security/no-error-detail-leak": {
       "cases": 24,
       "failed": 0,
@@ -545,6 +550,11 @@
     },
     "eslint-plugin-grpc-security/no-unguarded-reflection": {
       "cases": 47,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-grpc-security/require-call-deadline": {
+      "cases": 21,
       "failed": 0,
       "examples": []
     },

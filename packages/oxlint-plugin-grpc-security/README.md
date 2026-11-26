@@ -22,7 +22,7 @@
 
 ## Covered natively by oxlint
 
-None of these 6 rules has an oxlint built-in equivalent. Every rule here is new to oxlint.
+None of these 8 rules has an oxlint built-in equivalent. Every rule here is new to oxlint.
 
 - **Why** — a linter nobody reads protects nothing. We would rather miss a finding
   than spend your attention on one that was never real.
@@ -52,7 +52,7 @@ export default defineConfig({
   lint: {
     jsPlugins: ['oxlint-plugin-grpc-security'],
     rules: {
-      'grpc-security/no-error-detail-leak': 'error',
+      'grpc-security/no-credential-metadata-logging': 'error',
     },
   },
 });
@@ -64,7 +64,7 @@ export default defineConfig({
 {
   "jsPlugins": ["oxlint-plugin-grpc-security"],
   "rules": {
-    "grpc-security/no-error-detail-leak": "error"
+    "grpc-security/no-credential-metadata-logging": "error"
   }
 }
 ```
@@ -100,12 +100,14 @@ Install [`eslint-plugin-grpc-security`](https://www.npmjs.com/package/eslint-plu
 
 | Rule                                                                                                                                                                                                                      |   CWE   |  OWASP   | CVSS | Description                                                      | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
 | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-----: | :------: | :--: | :--------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
+| [no-credential-metadata-logging](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-credential-metadata-logging?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-grpc-security)   | CWE-532 | A09:2021 |      | Do not log gRPC metadata that carries credentials                | 🟢  |     |     |     |     |     |
 | [no-error-detail-leak](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-error-detail-leak?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-grpc-security)                       | CWE-209 | A05:2021 |      | Do not send a caught error's stack or message to the gRPC client | 🟢  |     |     |     |     |     |
 | [no-identity-from-metadata](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-identity-from-metadata?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-grpc-security)             | CWE-290 | A07:2021 |      | Do not authorize a gRPC caller by an identity read from metadata | 🟢  |     |     |     |     |     |
 | [no-insecure-channel-credentials](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-insecure-channel-credentials?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-grpc-security) | CWE-319 | A02:2021 |      | Do not send credentials over a plaintext gRPC channel            | 🟢  |     |     |     |     |     |
 | [no-insecure-server-credentials](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-insecure-server-credentials?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-grpc-security)   | CWE-319 | A02:2021 |      | Do not serve plaintext gRPC on every interface                   | 🟢  |     |     |     |     |     |
 | [no-unbounded-message-size](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-unbounded-message-size?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-grpc-security)             | CWE-770 | A04:2021 |      | Keep gRPC message size limits bounded                            | 🟢  |     |     |     |     |     |
 | [no-unguarded-reflection](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-unguarded-reflection?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-grpc-security)                 | CWE-306 | A05:2021 |      | Register gRPC server reflection only behind a guard              | 🟢  |     |     |     |     |     |
+| [require-call-deadline](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/require-call-deadline?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-grpc-security)                     | CWE-400 | A04:2021 |      | Give every gRPC client call a deadline                           | 🟢  |     |     |     |     |     |
 
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:START - Do not edit manually -->
 

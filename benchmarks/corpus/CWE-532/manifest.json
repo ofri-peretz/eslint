@@ -1,0 +1,21 @@
+{
+  "cwe": "CWE-532",
+  "name": "Insertion of Sensitive Information into Log File",
+  "owasp": "A09:2021",
+  "severity": "MEDIUM",
+  "expectedPlugins": ["eslint-plugin-grpc-security"],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "grpc-metadata-map-logged.js",
+        "description": "A gRPC handler logs call.metadata.getMap(), which holds the caller's Authorization header"
+      }
+    ],
+    "safe": [
+      {
+        "file": "grpc-request-id-logged.js",
+        "description": "A gRPC handler logs only the x-request-id header, by name"
+      }
+    ]
+  }
+}

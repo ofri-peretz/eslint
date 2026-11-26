@@ -5898,6 +5898,106 @@
         }
       ],
       "peers": []
+    },
+    {
+      "id": "ILB-0207",
+      "added": "2026-11-26",
+      "title": "gRPC metadata dumped into a log",
+      "rationale": "getMap() holds every header the caller sent, Authorization included, so the log store now holds the caller's token.",
+      "cwe": "CWE-532",
+      "severity": {
+        "cvss": 6.5,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"
+      ],
+      "occurrences": [],
+      "code": "server.addService(svc, {\n  Get(call, cb) {\n    console.log({ headers: call.metadata.getMap() });\n  },\n});",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-credential-metadata-logging",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-credential-metadata-logging/no-credential-metadata-logging.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0208",
+      "added": "2026-11-26",
+      "title": "One non-credential gRPC header logged by name",
+      "rationale": "Logging the request id is how tracing works. A rule that reported every metadata read in a log call would be reporting observability, not a leak.",
+      "cwe": "CWE-532",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"
+      ],
+      "occurrences": [],
+      "code": "server.addService(svc, {\n  Get(call, cb) {\n    console.log({ requestId: call.metadata.get('x-request-id')[0] });\n  },\n});",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-credential-metadata-logging",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-credential-metadata-logging/no-credential-metadata-logging.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0209",
+      "added": "2026-11-26",
+      "title": "gRPC client call with no deadline",
+      "rationale": "Without a deadline a call against a stalled server never ends, holding its stream and everything waiting on it.",
+      "cwe": "CWE-400",
+      "severity": {
+        "cvss": 5.3,
+        "vector": null,
+        "source": null
+      },
+      "references": ["https://grpc.io/docs/guides/deadlines/"],
+      "occurrences": [],
+      "code": "const client = new pkg.Orders(target, grpc.credentials.createSsl());\nclient.GetOrder({ id }, (err, order) => {});",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/require-call-deadline",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/require-call-deadline/require-call-deadline.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0210",
+      "added": "2026-11-26",
+      "title": "gRPC client call with a deadline",
+      "rationale": "The remedy: the call options carry a deadline from the caller's time budget.",
+      "cwe": "CWE-400",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": ["https://grpc.io/docs/guides/deadlines/"],
+      "occurrences": [],
+      "code": "const client = new pkg.Orders(target, grpc.credentials.createSsl());\nclient.GetOrder({ id }, { deadline: Date.now() + 5000 }, (err, order) => {});",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/require-call-deadline",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/require-call-deadline/require-call-deadline.test.ts"
+        }
+      ],
+      "peers": []
     }
   ]
 }
