@@ -38,6 +38,9 @@ describe('CharSet', () => {
     expect(CharSet.range(10, 3, 99).ranges).toEqual([3, 10]);
     expect(CharSet.range(10, 11, 12).isEmpty).toBe(true);
     expect(CharSet.range(10, 5, 4).isEmpty).toBe(true);
+    // A single code point is a range of one, including the very last one.
+    expect(CharSet.range(10, 3, 3).ranges).toEqual([3, 3]);
+    expect(CharSet.range(10, 10, 10).ranges).toEqual([10, 10]);
   });
 
   it('has() finds members by binary search', () => {

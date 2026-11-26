@@ -130,6 +130,26 @@ describe('toCharSet', () => {
     expect(mid.has(0x1c5)).toBe(true);
   });
 
+  it('a large class pulls in the case partners that lie outside it', () => {
+    // 192 code points, over the member-by-member threshold; U+0178 (Y with
+    // diaeresis) is inside, its lower-case partner U+00FF is not.
+    const big = set('[\\u0100-\\u01bf]', 'i');
+    expect(has('[\\u0100-\\u01bf]', '\u00ff', 'i')).toBe(true);
+    expect(big.has(0xff)).toBe(true);
+    // ...and only those: e-acute and E-acute are partners of each other, not of anything inside.
+    expect(big.has(0xe9)).toBe(false);
+    expect(big.has(0xc9)).toBe(false);
+    expect(has('[\\u0100-\\u017f]', '\u00ff', 'i')).toBe(true);
+  });
+
+  it('Script and Script_Extensions are different properties', () => {
+    // U+0363 (combining a) has Script=Inherited but Script_Extensions=Latin.
+    expect(has('\\p{scx=Latin}', '\u0363', 'u')).toBe(true);
+    expect(has('\\p{Script_Extensions=Latin}', '\u0363', 'u')).toBe(true);
+    expect(has('\\p{sc=Latin}', '\u0363', 'u')).toBe(false);
+    expect(has('\\p{Script=Latin}', '\u0363', 'u')).toBe(false);
+  });
+
   it('astral members above the maximum are not added in UTF-16 mode', () => {
     expect(set('a', 'i').maximum).toBe(0xffff);
     expect(has('\\u{10400}', '\u{10428}', 'iu')).toBe(true);

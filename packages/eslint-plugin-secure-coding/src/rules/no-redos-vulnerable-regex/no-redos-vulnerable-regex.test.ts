@@ -289,6 +289,7 @@ describe('no-redos-vulnerable-regex', () => {
       {
         valid: [
           {
+            name: 'a RegExp call whose pattern is longer than maxPatternLength is never parsed either',
             code: `new RegExp("${'a'.repeat(600)}+");`,
             options: [{ maxPatternLength: 100 }],
           },
