@@ -22,6 +22,7 @@
  * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"      if (CJS_SUFFIXES.some((s) => present.has(base + s))) continue;","replace":"      continue;"}
  * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"    shadowing.push(file);","replace":""}
  * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"      if (calls !== undefined && !calls.has(spec)) continue;","replace":""}
+ * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"        missingExports.push(","replace":"        void ("}
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -126,5 +127,35 @@ describe('stale-build-artifacts', () => {
 
     expect(code).toBe(1);
     expect(err).toContain('devkit/src/index.js');
+  });
+
+  // 2026-11-25: devkit's dist resolved every require() and still lacked `valueFollow`, which a
+  // plugin's source already imported; `case-registry` crashed minutes into a commit.
+  it('rejects a dist that lacks a value its source index exports', () => {
+    const packages = tree('missing-export', {
+      'devkit/src/index.ts':
+        "export * as valueFollow from './value-follow';\nexport const createRule = 1;\n",
+      'devkit/dist/src/index.js': 'exports.createRule=1;\n',
+    });
+
+    const { code, err } = check(packages);
+
+    expect(code).toBe(1);
+    expect(err).toContain('lacks `valueFollow`');
+    expect(err).toContain('npx turbo run build --filter=./packages/devkit');
+  });
+
+  it('does not count type exports or code inside strings as exports', () => {
+    const packages = tree('types-and-strings', {
+      'devkit/src/index.ts':
+        "export type { Options } from './o';\nexport interface Shape { a: 1 }\n" +
+        "export const sample = 'export const handler = () => 1';\n",
+      'devkit/dist/src/index.js':
+        'exports.sample="export const handler = () => 1";\n',
+    });
+
+    const { code, err } = check(packages);
+
+    expect(code, err).toBe(0);
   });
 });

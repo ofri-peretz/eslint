@@ -26,6 +26,14 @@
  *    is deliberately the cheap symptom rather than an mtime comparison —
  *    mtimes are noise in a worktree, an unresolvable specifier is not.
  *
+ * 3. MISSING EXPORTS — every name a source `index.ts` under `src/` exports is exported by
+ *    its built `index.d.ts`. A dist can resolve all its own requires and still
+ *    be stale: on 2026-11-25 devkit's dist lacked `valueFollow`, which the
+ *    source of node-security's `no-timing-unsafe-compare` already imported, and
+ *    `case-registry` crashed with "Cannot read properties of undefined
+ *    (reading 'follow')" minutes into a commit. Same cheap-symptom reasoning:
+ *    an export the source has and the build lacks proves the build is older.
+ *
  * Wired as the `stale-build-artifacts` step in lefthook's pre-commit.
  *
  * Usage: check-stale-build-artifacts.ts [packagesDir]
@@ -38,6 +46,7 @@ import { createRequire } from 'node:module';
 import process from 'node:process';
 
 import { parse } from 'acorn';
+import ts from 'typescript';
 
 import { walkFiles } from './lib/walk.js';
 
@@ -127,7 +136,67 @@ try {
  */
 const VENDORED_DECLARATIONS = join('eslint-devkit', 'src', 'types', 'estree');
 
+/**
+ * Value (runtime) names a source index exports, read by the TypeScript parser so a code sample
+ * inside a string is not an export. Types vanish at build, so type-only exports are skipped.
+ */
+const sourceValueExports = (text: string): Set<string> => {
+  const names = new Set<string>();
+  const sf = ts.createSourceFile('index.ts', text, ts.ScriptTarget.Latest);
+  const mods = (n: ts.Node) =>
+    ts.canHaveModifiers(n) ? (ts.getModifiers(n) ?? []) : [];
+  const has = (n: ts.Node, k: ts.SyntaxKind) =>
+    mods(n).some((m) => m.kind === k);
+  for (const st of sf.statements) {
+    if (ts.isExportAssignment(st)) names.add('default');
+    if (ts.isExportDeclaration(st) && !st.isTypeOnly && st.exportClause) {
+      if (ts.isNamespaceExport(st.exportClause))
+        names.add(st.exportClause.name.text);
+      else
+        for (const el of st.exportClause.elements)
+          if (!el.isTypeOnly) names.add(el.name.text);
+    }
+    if (
+      !has(st, ts.SyntaxKind.ExportKeyword) ||
+      has(st, ts.SyntaxKind.DeclareKeyword)
+    )
+      continue;
+    if (has(st, ts.SyntaxKind.DefaultKeyword)) {
+      names.add('default');
+      continue;
+    }
+    if (ts.isVariableStatement(st)) {
+      for (const d of st.declarationList.declarations)
+        if (ts.isIdentifier(d.name)) names.add(d.name.text);
+    } else if (
+      (ts.isFunctionDeclaration(st) || ts.isClassDeclaration(st)) &&
+      st.name
+    ) {
+      names.add(st.name.text);
+    } else if (
+      ts.isEnumDeclaration(st) &&
+      !has(st, ts.SyntaxKind.ConstKeyword)
+    ) {
+      names.add(st.name.text);
+    }
+  }
+  return names;
+};
+
+/** Names a built CommonJS module assigns to `exports`. */
+const builtExports = (text: string): Set<string> => {
+  const names = new Set<string>();
+  for (const m of text.matchAll(/\bexports\.([A-Za-z_$][\w$]*)\s*=/g))
+    names.add(m[1]);
+  for (const m of text.matchAll(
+    /defineProperty\(\s*exports\s*,\s*["']([\w$]+)["']/g,
+  ))
+    names.add(m[1]);
+  return names;
+};
+
 const shadowing: string[] = [];
+const missingExports: string[] = [];
 const dangling: string[] = [];
 
 for (const pkgDir of packageDirs) {
@@ -142,6 +211,25 @@ for (const pkgDir of packageDirs) {
 
   const distDir = join(pkgDir, 'dist');
   const present = new Set(walkFiles(distDir, { skipDirs: ['node_modules'] }));
+
+  for (const file of walkFiles(join(pkgDir, 'src'), { extensions: ['.ts'] })) {
+    if (!file.endsWith('/index.ts') || file.endsWith('.d.ts')) continue;
+    const rel = relative(join(pkgDir, 'src'), file).replace(/\.ts$/, '.js');
+    const built = [join(distDir, 'src', rel), join(distDir, rel)].find((f) =>
+      present.has(f),
+    );
+    if (!built) continue; // not built, or not emitted: not this gate's failure mode
+    const have = builtExports(readFileSync(built, 'utf8'));
+    // A bundler that does not emit `exports.x` gives no names to compare: skip, do not guess.
+    if (have.size === 0) continue;
+    const want = sourceValueExports(readFileSync(file, 'utf8'));
+    for (const name of want) {
+      if (!have.has(name))
+        missingExports.push(
+          `${relative(PACKAGES_DIR, built)} lacks \`${name}\``,
+        );
+    }
+  }
 
   for (const file of present) {
     if (!file.endsWith('.js')) continue;
@@ -224,4 +312,22 @@ if (dangling.length > 0) {
   console.error('');
 }
 
-process.exit(shadowing.length + dangling.length === 0 ? 0 : 1);
+if (missingExports.length > 0) {
+  const pkgs = [...new Set(missingExports.map((m) => m.split('/')[0]))];
+  console.error('');
+  console.error(
+    `Stale dist: ${missingExports.length} export(s) the source has and the build lacks:`,
+  );
+  console.error('');
+  list(missingExports);
+  console.error('Anything importing them gets undefined. Rebuild:');
+  console.error('');
+  console.error(
+    `  npx turbo run build ${pkgs.map((p) => `--filter=./packages/${p}`).join(' ')}`,
+  );
+  console.error('');
+}
+
+process.exit(
+  shadowing.length + dangling.length + missingExports.length === 0 ? 0 : 1,
+);
