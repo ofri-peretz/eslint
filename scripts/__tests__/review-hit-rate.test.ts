@@ -13,7 +13,13 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  compareDumps,
   dedupe,
+  kappa,
+  modelFromWorkflow,
+  rate,
+  verdict,
+  wilson,
   findingsInSummary,
   isActedOn,
   latestMerged,
@@ -245,5 +251,75 @@ describe('paging while a PR is reopened between page reads', () => {
 
   it('state=all keeps it: a reopened PR stays listed, so no row shifts', () => {
     expect(latestMerged(read(false), 1)).toEqual([3]);
+  });
+});
+
+describe('uncertainty', () => {
+  it('gives the baseline its Wilson interval: 8/20 is 40% (22–61%)', () => {
+    expect(rate(8, 20)).toBe('8/20 = 40% (22–61%)');
+    const [lo, hi] = wilson(12, 13);
+    expect([Math.round(lo * 100), Math.round(hi * 100)]).toEqual([67, 99]);
+  });
+
+  it('calls a change only when the intervals do not overlap', () => {
+    expect(verdict({ k: 8, n: 20 }, { k: 5, n: 10 })).toBe(
+      'no detectable change',
+    );
+    expect(verdict({ k: 8, n: 20 }, { k: 55, n: 60 })).toBe('improved');
+    expect(verdict({ k: 8, n: 20 }, { k: 0, n: 60 })).toBe('worse');
+  });
+});
+
+describe('kappa', () => {
+  it('is 1 for full agreement and 0 for agreement no better than chance', () => {
+    expect(kappa(['j', 'g', 'n'], ['j', 'g', 'n'])).toBe(1);
+    expect(kappa(['j', 'j', 'g', 'g'], ['j', 'g', 'j', 'g'])).toBe(0);
+  });
+});
+
+describe('compareDumps', () => {
+  const row = (
+    label: string,
+    model = 'claude-sonnet-4-6',
+    promptSha = 'abc',
+  ) => ({
+    label,
+    model,
+    promptSha,
+  });
+
+  it('reports both intervals and a verdict', () => {
+    const out = compareDumps(
+      [row('judgment'), row('noise')],
+      [row('judgment'), row('judgment')],
+    );
+    expect(out).toContain('signal share before 1/2 = 50%');
+    expect(out).toContain('verdict: no detectable change');
+  });
+
+  it('refuses a dump that mixes reviewer prompts', () => {
+    expect(() =>
+      compareDumps(
+        [row('judgment'), row('noise', 'claude-sonnet-4-6', 'def')],
+        [row('judgment')],
+      ),
+    ).toThrow(/mixed reviewer model or prompt/);
+  });
+
+  it('refuses unlabelled rows', () => {
+    expect(() => compareDumps([{ model: 'm' }], [row('judgment')])).toThrow(
+      /no label/,
+    );
+  });
+});
+
+describe('modelFromWorkflow', () => {
+  it('reads the --model the review job asks for', () => {
+    expect(
+      modelFromWorkflow(
+        'claude-args: |\n  --model claude-sonnet-4-6\n  --max-turns 50',
+      ),
+    ).toBe('claude-sonnet-4-6');
+    expect(modelFromWorkflow('no model here')).toBeNull();
   });
 });
