@@ -21,7 +21,7 @@
       "rules": 36,
       "description": "ESLint security rules for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "6.5.3",
+      "version": "6.5.4",
       "published": true
     },
     {
@@ -253,7 +253,7 @@
       "rules": 68,
       "description": "ESLint React hooks and JSX rules — prop-types, JSX correctness, render performance, and class-to-hooks migration for modern React codebases",
       "category": "react",
-      "version": "2.4.5",
+      "version": "2.4.6",
       "published": true
     },
     {
