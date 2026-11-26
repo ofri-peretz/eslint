@@ -140,6 +140,64 @@ describe('empty changesets are not queued releases', () => {
   });
 });
 
+/**
+ * Lock for #1816: this script's own workflow run can sit queued in GitHub
+ * Actions for several minutes before a runner starts it (measured: created
+ * 06:27:34Z, job started 06:35:05Z — about 7.5 minutes). In that window a
+ * second, slightly later push landed, and ITS "version" job was still
+ * running when this check sampled "is a Version PR open" at 06:36:12Z and
+ * got "no". That job opened PR #1817 nineteen seconds later, at 06:36:33Z,
+ * for the exact changeset this check was about to report as stalled.
+ * `workflow_run` on `types: [completed]` (the #849 fix, see
+ * release-liveness-race-lock.test.ts) only rules out a race with THIS run's
+ * own trigger; it says nothing about a different, concurrently in-flight
+ * run. Mirrors `releaseInFlight()` below, used for the same reason against
+ * `release.yml`.
+ */
+describe('a version job still running is not reported as a stall', () => {
+  it('does not flag a queued changeset while changesets-pr.yml has an in-progress push run on main', () => {
+    write(
+      '.changeset/real-release.md',
+      '---\n"eslint-plugin-x": patch\n---\n\na real fix\n',
+    );
+    git('add', '-A');
+    git('commit', '-q', '-m', 'fix: something');
+    // `gh pr list` still answers "no open Version PR" (no PR has landed yet).
+    // `gh run list --workflow changesets-pr.yml` reports one non-completed
+    // push run on main: the version job that would open it is still working.
+    stub(
+      'gh',
+      `case "$*" in
+        *"run list"*"changesets-pr.yml"*) echo 1 ;;
+        *) echo 0 ;;
+      esac`,
+    );
+
+    const { out, status } = run();
+    expect(status).toBe(0);
+    // The held-back checked-message legitimately names the finding kind it
+    // suppressed ("no-version-pr held back: ..."); the finding itself must
+    // not be reported as an `::error::`.
+    expect(out).not.toContain('::error::[no-version-pr]');
+    expect(out).toContain('still in progress');
+  });
+
+  it('still reports the stall once changesets-pr.yml is no longer running', () => {
+    write(
+      '.changeset/real-release.md',
+      '---\n"eslint-plugin-x": patch\n---\n\na real fix\n',
+    );
+    git('add', '-A');
+    git('commit', '-q', '-m', 'fix: something');
+    // Default stub (beforeEach) answers 0 for every `gh` call: no open PR,
+    // and no in-progress version job either. A genuine stall.
+
+    const { out, status } = run();
+    expect(status).toBe(1);
+    expect(out).toContain('no-version-pr');
+  });
+});
+
 describe('changesets are read from main, not the checkout', () => {
   it('ignores a changeset that exists only on a feature branch', () => {
     // Unmerged is not queued. Reading the working tree reports every in-flight

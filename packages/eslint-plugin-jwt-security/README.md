@@ -108,6 +108,17 @@ By structuring errors with specific CWE codes, OWASP categories, and direct fix 
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
+### Supported library versions
+
+The library ranges the rules were written against, as previously declared in `peerDependencies`. They are documentation only: this package installs and requires none of these libraries, and npm no longer warns on a mismatch.
+
+- `jsonwebtoken`: `^8.0.0 || ^9.0.0`
+- `@nestjs/jwt`: `^9.0.0 || ^10.0.0 || ^11.0.0`
+- `express-jwt`: `^7.0.0 || ^8.0.0`
+- `jose`: `^4.0.0 || ^5.0.0 || ^6.0.0`
+- `jwks-rsa`: `^3.0.0 || ^4.0.0`
+- `jwt-decode`: `^3.0.0 || ^4.0.0`
+
 ## Rules
 
 **Legend**

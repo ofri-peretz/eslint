@@ -36,7 +36,7 @@
  */
 import type { TSESLint, TSESTree } from '../types/estree/utils/index';
 import { AST_NODE_TYPES } from '../ast-node-types';
-import { propertyName, staticString } from '../ast/spellings';
+import { objectKeyName, propertyName, staticString } from '../ast/spellings';
 import { unwrapTypeSyntax } from '../ast/type-syntax';
 import {
   type OriginClassifier,
@@ -173,24 +173,90 @@ function isFixedType(type: TSESTree.TypeNode, value: Value): boolean {
   }
 }
 
-/** The member a `TSEnumDeclaration` declares as `key`, when it is one. */
+/**
+ * The member a `TSEnumDeclaration` declares as `key`, with the value to read
+ * its initialiser in. The enum is declared in this file, or in a module this
+ * file imports by a RELATIVE path (`import { TableName } from '../schemas'`,
+ * followed through `export *` barrels); an alias or a package is never opened.
+ */
 function enumMember(
   object: TSESTree.Node,
   key: string,
   value: Value,
-): TSESTree.TSEnumMember | null {
-  if (object.type !== AST_NODE_TYPES.Identifier) return null;
-  const variable = lookup(object.name, value.env.scopeOf(object));
-  const def = variable?.defs[0];
-  if (def?.type !== 'TSEnumName') return null;
-  const declaration = def.node as TSESTree.TSEnumDeclaration;
-  return (
-    declaration.body.members.find(
-      (m) =>
-        (m.id.type === AST_NODE_TYPES.Identifier ? m.id.name : m.id.value) ===
-        key,
-    ) ?? null
+): { member: TSESTree.TSEnumMember; owner: Value } | null {
+  let declaration: TSESTree.TSEnumDeclaration | null = null;
+  let owner = value;
+  if (object.type === AST_NODE_TYPES.Identifier) {
+    const def = lookup(object.name, value.env.scopeOf(object))?.defs[0];
+    if (def?.type === 'TSEnumName') {
+      declaration = def.node as TSESTree.TSEnumDeclaration;
+    }
+  }
+  if (declaration === null) {
+    const followed = follow(valueAt(object, value.env));
+    if (followed.node.type !== AST_NODE_TYPES.TSEnumDeclaration) return null;
+    declaration = followed.node;
+    owner = followed;
+  }
+  const member = declaration.body.members.find(
+    (m) =>
+      (m.id.type === AST_NODE_TYPES.Identifier ? m.id.name : m.id.value) ===
+      key,
   );
+  return member === undefined ? null : { member, owner };
+}
+
+/**
+ * The type a destructured parameter property is declared with, when the
+ * pattern's own annotation is an inline type literal or names an `interface` /
+ * `type` written in this file:
+ *
+ *   interface Opts { limit: number }
+ *   const run = ({ limit }: Opts) => …    // `limit` is typed `number`
+ */
+function destructuredAnnotation(
+  identifier: TSESTree.Node,
+  value: Value,
+): TSESTree.TypeNode | undefined {
+  const property = identifier.parent;
+  if (
+    property?.type !== AST_NODE_TYPES.Property ||
+    property.value !== identifier ||
+    property.parent.type !== AST_NODE_TYPES.ObjectPattern
+  )
+    return undefined;
+  const pattern = property.parent;
+  const key = objectKeyName(property);
+  const written = pattern.typeAnnotation?.typeAnnotation;
+  if (key === null || written === undefined || !isFunctionNode(pattern.parent))
+    return undefined;
+  let members: readonly TSESTree.TypeElement[] = [];
+  if (written.type === AST_NODE_TYPES.TSTypeLiteral) {
+    members = written.members;
+  } else if (
+    written.type === AST_NODE_TYPES.TSTypeReference &&
+    written.typeName.type === AST_NODE_TYPES.Identifier
+  ) {
+    const declaration = lookup(
+      written.typeName.name,
+      value.env.scopeOf(written.typeName),
+    )?.defs[0]?.node;
+    if (declaration?.type === AST_NODE_TYPES.TSInterfaceDeclaration) {
+      members = declaration.body.body;
+    } else if (
+      declaration?.type === AST_NODE_TYPES.TSTypeAliasDeclaration &&
+      declaration.typeAnnotation.type === AST_NODE_TYPES.TSTypeLiteral
+    ) {
+      members = declaration.typeAnnotation.members;
+    }
+  }
+  const signature = members.find(
+    (m): m is TSESTree.TSPropertySignature =>
+      m.type === AST_NODE_TYPES.TSPropertySignature &&
+      !m.computed &&
+      objectKeyName(m as unknown as TSESTree.Property) === key,
+  );
+  return signature?.typeAnnotation?.typeAnnotation;
 }
 
 /** Do two expressions read the same binding path — `a.b.c` and `a.b.c`? */
@@ -415,7 +481,9 @@ export function createSqlSafety(options: SqlSafetyOptions): {
     depth: number,
     seen: Seen,
   ): boolean {
-    const annotation = writtenAnnotation(identifier);
+    const annotation =
+      writtenAnnotation(identifier) ??
+      destructuredAnnotation(identifier, value);
     if (annotation !== undefined && isFixedOrDriverType(annotation, value))
       return true;
     // A parameter's definition node is the function that declares it.
@@ -612,11 +680,11 @@ export function createSqlSafety(options: SqlSafetyOptions): {
     const key = propertyName(node);
     if (key === 'length') return true;
     if (key !== null) {
-      const member = enumMember(node.object, key, value);
-      if (member !== null)
+      const found = enumMember(node.object, key, value);
+      if (found !== null)
         return (
-          member.initializer === undefined ||
-          isSafe(at(member.initializer, value), depth + 1, seen)
+          found.member.initializer === undefined ||
+          isSafe(at(found.member.initializer, found.owner), depth + 1, seen)
         );
     }
     const followed = follow(at(node, value));

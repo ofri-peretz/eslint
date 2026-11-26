@@ -9,8 +9,12 @@
 // handed over as the whole text is always reported, and bindings passed
 // beside an interpolated value do not repair it. Safe: `?` / `:name`
 // bindings, a `??` identifier binding, a `?` placeholder list, a constant, a
-// number, an allowlist lookup or an anchored-regex check, a ternary between
-// two literals, and a plain literal. Files with no knex import are not
+// number, a member of an enum or an `as const` object declared in the file, an
+// allowlist lookup or an anchored-regex check, a ternary between two
+// literals, and a plain literal. An enum member whose initialiser is computed
+// from request data is not a constant, so it is reported. (A member of an enum
+// imported by a relative path is safe too; that needs a second file on disk,
+// so it is locked in the rule's own tests, not sampled here.) Files with no knex import are not
 // judged, and neither are test files.
 module no_unsafe_query {
   type Site =
@@ -21,7 +25,8 @@ module no_unsafe_query {
     | StringCast | BoundButInterpolated | FragmentReq | WholeReq
     | ConstTemplate | NumberTemplate | Literal | Bound | NamedBound
     | Placeholders | FragmentParam | AllowlistMap | RegexChecked
-    | TernaryLiteral | IdentBinding
+    | TernaryLiteral | IdentBinding | EnumTemplate | AsConstTemplate
+    | EnumComputed
   type Pos = V | F | W
 
   pure def pos(s: Shape): Pos = match s {
@@ -37,7 +42,7 @@ module no_unsafe_query {
 
   pure def unsafe(s: Shape): bool = Set(
     TemplateReq, TemplateParam, ConcatReq, PlusAssign, IndirectConcat,
-    StringCast, BoundButInterpolated, FragmentReq, WholeReq,
+    StringCast, BoundButInterpolated, FragmentReq, WholeReq, EnumComputed,
   ).contains(s)
 
   // A whole statement takes every position; whereRaw a condition (values);
@@ -65,7 +70,8 @@ module no_unsafe_query {
       StringCast, BoundButInterpolated, FragmentReq, WholeReq,
       ConstTemplate, NumberTemplate, Literal, Bound, NamedBound,
       Placeholders, FragmentParam, AllowlistMap, RegexChecked,
-      TernaryLiteral, IdentBinding,
+      TernaryLiteral, IdentBinding, EnumTemplate, AsConstTemplate,
+      EnumComputed,
     ).filter(x => applies(st, x)).oneOf()
     all { site' = st, shape' = sh, verdict' = reports(st, sh) }
   }

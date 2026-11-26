@@ -121,6 +121,12 @@ src/db.ts
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
+### Supported library versions
+
+The library ranges the rules were written against, as previously declared in `peerDependencies`. They are documentation only: this package installs and requires none of these libraries, and npm no longer warns on a mismatch.
+
+- `drizzle-orm`: `^0.29.0 || ^0.30.0 || ^1.0.0`
+
 ## Rules
 
 **Legend**

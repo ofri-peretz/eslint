@@ -102,6 +102,12 @@ Every rule runs on [oxlint](https://oxc.rs) as well as ESLint:
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) for the full matrix.
 
+### Supported library versions
+
+The library ranges the rules were written against, as previously declared in `peerDependencies`. They are documentation only: this package installs and requires none of these libraries, and npm no longer warns on a mismatch.
+
+- `@google/genai`: `^1.0.0 || ^2.0.0`
+
 ## Rules
 
 **Legend**

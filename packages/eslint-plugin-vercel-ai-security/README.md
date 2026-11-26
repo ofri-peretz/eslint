@@ -134,6 +134,12 @@ TypeScript/JavaScript are memory-safe languages. Memory corruption vulnerabiliti
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) for the full matrix.
 
+### Supported library versions
+
+The library ranges the rules were written against, as previously declared in `peerDependencies`. They are documentation only: this package installs and requires none of these libraries, and npm no longer warns on a mismatch.
+
+- `ai`: `^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0`
+
 ## Rules
 
 **Legend**
