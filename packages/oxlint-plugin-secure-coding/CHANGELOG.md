@@ -5,6 +5,16 @@ All notable changes to `oxlint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.5.1
+
+### Patch Changes
+
+- **🧹 Refactor** — `no-redos-vulnerable-regex` runs its own backtracking analysis instead of `refa` and `scslre`
+
+  The two packages are gone from the dependency list. What the rule used of them (set algebra over characters, the Unicode property and case-folding data, and `scslre`'s ambiguity detection) now lives in `src/rules/no-redos-vulnerable-regex/analysis/`, trimmed to what the rule calls, with the MIT notices shipped in `THIRD_PARTY_NOTICES.md`. Verdicts are unchanged: the same 400-odd recorded `scslre` answers, 65,000 real-world patterns and 150,000 generated ones agree report for report. `@eslint-community/regexpp` is still used for parsing.
+
+- **🔗 Dependencies** — updated workspace dependencies: `eslint-plugin-secure-coding@6.5.1`
+
 ## 6.5.0
 
 ### Minor Changes

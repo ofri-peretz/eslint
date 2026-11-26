@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-secure-coding",
-  "version": "6.5.0",
+  "version": "6.5.1",
   "description": "ESLint security rules for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs.",
   "type": "commonjs",
   "sideEffects": false,
@@ -89,7 +89,7 @@
     "typecheck": "tsgo -p tsconfig.lib.json --noEmit"
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^2.2.0",
+    "@interlace/eslint-devkit": "^2.4.0",
     "@eslint-community/regexpp": "^4.12.3"
   },
   "devDependencies": {
