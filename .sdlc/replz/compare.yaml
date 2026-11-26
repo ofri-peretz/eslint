@@ -14,4 +14,11 @@ inputs: .sdlc/replz/compare-inputs
 normalize:
   # Node prints its process id in warnings.
   - '\(node:\d+\)'
-approved: []
+approved:
+  # eslint#1826 adds the two grpc-2 lab files to benchmarks/corpus/CWE-306. Every other rule
+  # now also runs over them (import-next/enforce-import-order fires on the fixed server), which
+  # adds lines to the output and shifts the ones after. New corpus inputs; no rule changed.
+  - input: corpus.txt
+    base: d5e037d541b9
+    head: 0343fb708b36
+    reason: grpc-2 lab fixtures added to benchmarks/corpus/CWE-306 (new inputs, no rule behaviour changed)
