@@ -4,6 +4,11 @@
 # 21 of 23, while 12 of its 13 findings on the 2 it reviewed needed a reader
 # (docs/review-hit-rate/README.md). So spend its reviews where a reader matters: skip generated
 # data, automated PRs and drafts, and leave lint/format/tests to the gates that already run.
+#
+# Reviewer split by repo volume (2026-11-25): eslint (~200 human merges a week) is Claude's,
+# through the required `review` check; CodeRabbit reviews the low-volume public repos
+# (subagent-gateway, serverless, blog), where its free quota lasts. Here it runs only on demand:
+# comment `@coderabbitai review` on a PR that needs a second reader.
 language: en-US
 reviews:
   profile: chill
@@ -12,7 +17,7 @@ reviews:
   sequence_diagrams: false
   related_prs: false
   auto_review:
-    enabled: true
+    enabled: false
     drafts: false
     ignore_title_keywords:
       - 'chore(release)'

@@ -95,6 +95,11 @@ describe('.coderabbit.yaml', () => {
     expect(text).toContain(line);
   });
 
+  // The split: Claude reviews eslint on every PR, CodeRabbit only when asked.
+  it('reviews eslint only on demand', () => {
+    expect(text).toMatch(/auto_review:\n\s+enabled: false/);
+  });
+
   it('leaves to the gates what the gates already report', () => {
     expect(text).toContain('Report nothing one of them would report');
   });
