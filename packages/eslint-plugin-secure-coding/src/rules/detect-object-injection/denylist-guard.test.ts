@@ -78,14 +78,40 @@ describe('detect-object-injection — prototype-key denylist guard', () => {
         ),
       },
       {
-        // Not credited as a denylist (its contents cannot be read): the
-        // allowlist arm already treats a free binding as module-owned,
-        // whichever way the test points. Pinned so a change there is seen.
-        name: 'an undeclared membership set is credited by the allowlist arm, not as a denylist',
-        code: merge('if (FORBIDDEN.has(key)) continue;', ''),
+        name: 'a throw is an exit too',
+        code: merge("if (FORBIDDEN.has(key)) throw new Error('bad key');", SET),
+      },
+      {
+        name: 'a block that does something, then continues, still exits',
+        code: merge(
+          'if (FORBIDDEN.has(key)) { skipped.push(key); continue; }',
+          SET,
+        ),
+      },
+      {
+        name: 'a Set built from a frozen array holds the same literal',
+        code: merge(
+          'if (FORBIDDEN.has(key)) continue;',
+          `const FORBIDDEN = new Set(Object.freeze(['__proto__', 'constructor', 'prototype']));`,
+        ),
       },
     ],
     invalid: [
+      {
+        // Was silent: a free binding counted as a module-owned ALLOWLIST
+        // whichever way the test pointed, so a rejection test cleared it.
+        name: 'an undeclared set whose members are skipped is not an allowlist',
+        code: merge('if (FORBIDDEN.has(key)) continue;', ''),
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      {
+        name: 'a module-owned list of safe keys, skipped rather than required, admits every other key',
+        code: merge(
+          'if (SKIP.includes(key)) continue;',
+          `const SKIP = ['id', 'createdAt'];`,
+        ),
+        errors: [{ messageId: 'massAssignment' }],
+      },
       {
         name: 'an imported denylist has contents this file cannot read',
         code: merge(
@@ -115,6 +141,27 @@ describe('detect-object-injection — prototype-key denylist guard', () => {
       {
         name: 'a caller-supplied set is not a denylist this file can read',
         code: merge('if (opts.deny.has(key)) continue;', SET),
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      {
+        name: 'a negated denylist test skips every key EXCEPT the prototype keys',
+        code: merge('if (!FORBIDDEN.has(key)) continue;', SET),
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      {
+        name: 'indexOf is truthy for a miss and 0 for the first entry: not a denylist test',
+        code: merge(
+          'if (BAD.indexOf(key)) continue;',
+          `const BAD = ['__proto__', 'constructor', 'prototype'];`,
+        ),
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      {
+        name: 'a constructor other than Set says nothing about membership',
+        code: merge(
+          'if (FORBIDDEN.has(key)) continue;',
+          `const FORBIDDEN = new Registry(['__proto__', 'constructor', 'prototype']);`,
+        ),
         errors: [{ messageId: 'massAssignment' }],
       },
       {

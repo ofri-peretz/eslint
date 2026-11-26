@@ -26,6 +26,12 @@ run 2) stop reporting, with recall on every existing case unchanged:
 2. `no-improper-sanitization` reported the `'<redacted>'` literal in
    `ws.send(JSON.stringify({ … ? '<redacted>' : CONFIG[m.key] }))` (ws-2).
 
+## Why now
+
+The protocol-ctf labs are the first real code the strict configs were run
+against, and these two reports sat on the FIXED servers: a scanner that flags
+the remediation teaches its users to turn the rule off.
+
 ## Constraints
 
 - Decided from structure, never from names: the denylist is read from what the

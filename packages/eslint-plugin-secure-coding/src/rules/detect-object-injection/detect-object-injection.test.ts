@@ -719,6 +719,7 @@ describe('detect-object-injection', () => {
           `,
           },
           {
+            name: 'filling options from a defaults object copies only keys the defaults spell out',
             code: `
             for (const key of Object.keys(defaults)) {
               if (!(key in options)) options[key] = defaults[key];
