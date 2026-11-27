@@ -431,6 +431,14 @@ const childNodes = (n: TSESTree.Node): TSESTree.Node[] => {
   return out;
 };
 
+/** `continue`, `return` or `throw` — alone or as a statement of a block. */
+const exitsLoopIteration = (n: TSESTree.Statement): boolean =>
+  n.type === AST_NODE_TYPES.BlockStatement
+    ? n.body.some(exitsLoopIteration)
+    : n.type === AST_NODE_TYPES.ContinueStatement ||
+      n.type === AST_NODE_TYPES.ReturnStatement ||
+      n.type === AST_NODE_TYPES.ThrowStatement;
+
 /** Does `n` read the loop variable anywhere inside it? */
 const mentionsKey = (n: TSESTree.Node, keyName: string): boolean => {
   if (n.type === AST_NODE_TYPES.Identifier) return n.name === keyName;
@@ -514,9 +522,11 @@ const bodyGuardsKey = (
   keyName: string,
   {
     isModuleOwnedAllowlist,
+    deniesEveryPollutionKey,
     deferOwnershipGuards = false,
   }: {
     isModuleOwnedAllowlist: (node: TSESTree.Node) => boolean;
+    deniesEveryPollutionKey: (node: TSESTree.Node) => boolean;
     deferOwnershipGuards?: boolean;
   },
 ): boolean => {
@@ -624,7 +634,23 @@ const bodyGuardsKey = (
       ])
         ? n.arguments.slice(0, 1)
         : [n.callee.object];
-      for (const object of tested) creditGuardedObject(object);
+
+      // `if (SET.has(key)) continue;` REJECTS the set's members: the keys
+      // that reach the write are the ones it does not hold, so it is never
+      // an allowlist, whoever owns it. It guards only as a denylist naming
+      // every pollution key, exactly like the `===` spelling below. A call is
+      // never an `if`'s consequent, so a parent `if` means the test.
+      if (
+        namesOneOf(propertyName(n.callee), ['has', 'includes']) &&
+        n.parent.type === AST_NODE_TYPES.IfStatement &&
+        exitsLoopIteration(n.parent.consequent)
+      ) {
+        if (deniesEveryPollutionKey(n.callee.object)) {
+          for (const key of POLLUTION_KEYS) pollutionKeysNamed.add(key);
+        }
+      } else {
+        for (const object of tested) creditGuardedObject(object);
+      }
     }
 
     // `k in schema` — the membership test spelled as an operator.
@@ -3330,7 +3356,14 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // An allowlist inside the body is the remediation — naming the edit that
       // clears this finding is what keeps the rule satisfiable. The guard has to
       // be ON THE KEY, though: see `bodyGuardsKey`.
-      if (bodyGuardsKey(bodyNode, keyName, { isModuleOwnedAllowlist })) return;
+      if (
+        bodyGuardsKey(bodyNode, keyName, {
+          isModuleOwnedAllowlist,
+          deniesEveryPollutionKey,
+        })
+      ) {
+        return;
+      }
 
       // A computed write keyed by the loop/callback variable, anywhere in the body.
       let reported = false;
@@ -3536,23 +3569,60 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * `const seen = options.seen` or `const allow = req.body` is one const
      * definition whose contents the caller chose.
      */
-    const isModuleOwnedAllowlist = (objectNode: TSESTree.Node): boolean => {
-      if (objectNode.type !== AST_NODE_TYPES.Identifier) return false;
+    const constInitOf = (
+      objectNode: TSESTree.Node,
+    ): TSESTree.Expression | null | undefined => {
+      if (objectNode.type !== AST_NODE_TYPES.Identifier) return null;
       const variable = resolvedReference(
         sourceCode.getScope(objectNode),
         objectNode,
       );
       // A free binding is module- or host-owned, never a caller's argument.
-      if (!variable) return true;
+      if (!variable) return undefined;
       // Exactly one definition, and it must be a `const` declaration. A
       // parameter is the caller-supplied case this guards against; a `let`
       // or a re-declared binding cannot be pinned to its initialiser.
-      if (variable.defs.length !== 1) return false;
+      if (variable.defs.length !== 1) return null;
       const def = variable.defs[0];
       if (def.type !== 'Variable' || def.parent?.kind !== 'const') {
-        return false;
+        return null;
       }
-      return isLiteralAllowlist(def.node.init);
+      return def.node.init;
+    };
+
+    const isModuleOwnedAllowlist = (objectNode: TSESTree.Node): boolean => {
+      const init = constInitOf(objectNode);
+      return init === undefined || isLiteralAllowlist(init);
+    };
+
+    /**
+     * Does a denylist this file spelled out REJECT every prototype key?
+     *
+     * The mirror of `isModuleOwnedAllowlist`: there an owned list must admit no
+     * pollution key, here it must name all three, so
+     * `if (DENY.has(key)) continue;` counts exactly as
+     * `if (key === '__proto__' || …) continue;` does. Decided from what the
+     * binding HOLDS — a single `const` initialised to an array literal, that
+     * array frozen, or `new Set(<that array>)` — never from what it is called.
+     * A free binding is false: unlike an allowlist, a denylist is only
+     * evidence once its contents can be read.
+     */
+    const deniesEveryPollutionKey = (objectNode: TSESTree.Node): boolean => {
+      let value = unwrapTypeSyntax(constInitOf(objectNode));
+      // `new Set([...])` and `Object.freeze([...])` hold the same literal.
+      while (
+        (value?.type === AST_NODE_TYPES.NewExpression ||
+          value?.type === AST_NODE_TYPES.CallExpression) &&
+        ['Set', 'Object.freeze'].includes(sourceCode.getText(value.callee))
+      ) {
+        value = unwrapTypeSyntax(value.arguments[0] as TSESTree.Expression);
+      }
+      if (value?.type !== AST_NODE_TYPES.ArrayExpression) return false;
+      // A hole or a spread names nothing; `staticString` returns null for both.
+      const named = new Set(
+        value.elements.map((element) => staticString(element)),
+      );
+      return [...POLLUTION_KEYS].every((key) => named.has(key));
     };
 
     /**
@@ -3686,6 +3756,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       if (
         bodyGuardsKey(node.body, keyName, {
           isModuleOwnedAllowlist,
+          deniesEveryPollutionKey,
           deferOwnershipGuards: true,
         })
       ) {

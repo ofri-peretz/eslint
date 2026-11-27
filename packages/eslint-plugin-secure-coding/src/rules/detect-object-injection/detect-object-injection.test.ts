@@ -82,6 +82,7 @@ describe('detect-object-injection', () => {
           code: 'export function f(usage) { return Object.entries(usage).map(([k, v]) => usage[v]); }',
         },
         {
+          name: 'a read through a caller-supplied key returns a value and writes nothing',
           code: 'export function f(record, columnKey) { return record[columnKey]; }',
         },
 
@@ -718,6 +719,7 @@ describe('detect-object-injection', () => {
           `,
           },
           {
+            name: 'filling options from a defaults object copies only keys the defaults spell out',
             code: `
             for (const key of Object.keys(defaults)) {
               if (!(key in options)) options[key] = defaults[key];

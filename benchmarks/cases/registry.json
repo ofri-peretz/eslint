@@ -5802,6 +5802,54 @@
         }
       ],
       "peers": []
+    },
+    {
+      "id": "ILB-0203",
+      "added": "2026-11-26",
+      "title": "Recursive merge guarded by a Set#has denylist of the three prototype keys",
+      "rationale": "`if (FORBIDDEN.has(key)) continue;` against a module `const` Set holding __proto__, constructor and prototype rejects every key that reaches Object.prototype, exactly as the `key === '__proto__' || …` spelling does. Found dogfooding the protocol-ctf ws-3 fixed server (ofri-peretz/security-research, protocol-ctf/docs/SCANNER-RESULTS.md run 2), reported as massAssignment.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const FORBIDDEN = new Set(['__proto__', 'constructor', 'prototype']);\nexport function merge(target, source) {\n  for (const key of Object.keys(source)) {\n    if (FORBIDDEN.has(key)) continue;\n    const value = source[key];\n    if (value && typeof value === 'object' && !Array.isArray(value)) {\n      if (!target[key] || typeof target[key] !== 'object') target[key] = {};\n      merge(target[key], value);\n    } else { target[key] = value; }\n  }\n}",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/denylist-guard.test.ts"
+        }
+      ],
+      "kind": "false-positive",
+      "peers": []
+    },
+    {
+      "id": "ILB-0204",
+      "added": "2026-11-26",
+      "title": "A placeholder literal serialised by JSON.stringify and sent over a WebSocket",
+      "rationale": "`'<redacted>'` reaches `ws.send` only as a value JSON.stringify quotes; it is author-written JSON data, not markup being composed, and the code has no sanitization step to be improper. Found dogfooding the protocol-ctf ws-2 server (ofri-peretz/security-research, protocol-ctf/docs/SCANNER-RESULTS.md run 2).",
+      "cwe": "CWE-116",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "ws.on('message', (raw) => {\n  const m = JSON.parse(raw);\n  if (m.cmd === 'get') ws.send(JSON.stringify({ key: m.key, value: m.key === 'vaultToken' ? '<redacted>' : CONFIG[m.key] }));\n});",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-improper-sanitization",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/no-improper-sanitization/json-serialised-literal.test.ts"
+        }
+      ],
+      "kind": "false-positive",
+      "peers": []
     }
   ]
 }
