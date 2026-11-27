@@ -278,11 +278,9 @@
     "archiver",
     "extract-zip",
     "gunzip-maybe",
-    "jszip",
     "node-7z",
     "node-stream-zip",
     "tar-fs",
-    "tar-stream",
     "unzip-stream",
     "yazl",
     "zip-stream"

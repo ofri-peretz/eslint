@@ -2,14 +2,14 @@ const { tag } = require('../../lib.cjs');
 
 module.exports = {
   rule: 'no-zip-slip',
-  domain: 54, // 9 shapes x 3 import forms x 2 option values
-  traces: 700,
+  domain: 66, // 11 shapes x 3 import forms x 2 option values
+  traces: 900,
   key: (s) => `${tag(s.shape)}|${tag(s.imp)}|withoutCtx=${s.withoutCtx}`,
   config: (s) => ({ reportWithoutArchiveContext: s.withoutCtx }),
   code: (s) => {
     const sh = tag(s.shape);
     const imp = tag(s.imp);
-    const isTar = sh === 'TarExtract';
+    const isTar = sh === 'TarExtract' || sh === 'TarPreservePaths';
     const head = isTar
       ? {
           EsmImport: "import tar from 'tar';",
@@ -41,6 +41,12 @@ module.exports = {
       TarExtract: noArc
         ? 'const parser = { extract: (o: object) => o };\n  parser.extract({ file, cwd: dest });'
         : 'tar.extract({ file, cwd: dest });',
+      TarPreservePaths: noArc
+        ? 'const parser = { extract: (o: object) => o };\n  parser.extract({ file, cwd: dest, preservePaths: true });'
+        : 'tar.extract({ file, cwd: dest, preservePaths: true });',
+      MessageOnlyJoin: loop(
+        "throw new Error('collision ' + path.join(dest, entry.entryName));",
+      ),
       EntryJoin: loop(
         'const outputPath = path.join(dest, entry.entryName);\n    fs.writeFileSync(outputPath, entry.getData());',
       ),

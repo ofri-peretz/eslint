@@ -1,16 +1,18 @@
 // Model of eslint-plugin-browser-security/require-blob-url-revocation (CWE-401).
 // Contract: a URL.createObjectURL() result must be revoked with
 // URL.revokeObjectURL(<that url>) in the same file. A result never bound to a
-// name cannot be revoked; revoking some OTHER url does not count.
+// name cannot be revoked; revoking some OTHER url does not count. A handle also
+// counts as revoked when it is handed to a function of the file that revokes its
+// argument, or stored in a collection whose every member is revoked.
 module require_blob_url_revocation {
   type Create = UrlCreate | WindowUrlCreate
   type Binding = Const | Direct
-  type Revoke = NoRevoke | RevokeInCallback | RevokeImmediate | RevokeOther
+  type Revoke = NoRevoke | RevokeInCallback | RevokeImmediate | RevokeOther | RevokeViaHelper | RevokeViaStore
   type Scope = TopLevel | InLoop
   type Ctx = Prod | TestDefault | TestFlipped
 
   pure def revokesIt(b: Binding, r: Revoke): bool =
-    b == Const and (r == RevokeInCallback or r == RevokeImmediate)
+    b == Const and (r == RevokeInCallback or r == RevokeImmediate or r == RevokeViaHelper or r == RevokeViaStore)
 
   pure def skipped(c: Ctx): bool = c == TestDefault
 
@@ -27,7 +29,7 @@ module require_blob_url_revocation {
   action step = {
     nondet k = Set(UrlCreate, WindowUrlCreate).oneOf()
     nondet b = Set(Const, Direct).oneOf()
-    nondet r = Set(NoRevoke, RevokeInCallback, RevokeImmediate, RevokeOther).oneOf()
+    nondet r = Set(NoRevoke, RevokeInCallback, RevokeImmediate, RevokeOther, RevokeViaHelper, RevokeViaStore).oneOf()
     nondet s = Set(TopLevel, InLoop).oneOf()
     nondet c = Set(Prod, TestDefault, TestFlipped).oneOf()
     all { create' = k, binding' = b, revoke' = r, scope' = s, ctx' = c, verdict' = reports(k, b, r, s, c) }

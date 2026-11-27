@@ -33,13 +33,19 @@ ruleTester.run('no-innerhtml', noInnerhtml, {
       name: 'writing to stderr is not the DOM',
       code: 'process.stderr.write(`${message}\n`)',
     },
-    { code: 'stdout.write(`Bundling ${extension.localIdentifier}...`)' },
+    {
+      name: 'a bare stdout stream writing a progress line is not a document',
+      code: 'stdout.write(`Bundling ${extension.localIdentifier}...`)',
+    },
     { code: 'options.stdout.write(`done ${name}`)' },
     {
       name: 'a socket write is not a document write',
       code: 'socket.write(payload)',
     },
-    { code: 'res.write(chunk)' },
+    {
+      name: 'an HTTP response write is not a document write',
+      code: 'res.write(chunk)',
+    },
     { code: 'post.write(postData)' },
     { code: 'result.write(item, offset, length)' },
     // A receiver we cannot name at all — a call result, or a computed index —

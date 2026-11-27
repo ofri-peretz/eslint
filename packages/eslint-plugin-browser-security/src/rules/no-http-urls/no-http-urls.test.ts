@@ -47,7 +47,10 @@ ruleTester.run('no-http-urls', noHttpUrls, {
       code: "const scheme = 'http://';",
     },
     // The template form of the same thing, for the same reason.
-    { code: 'const u = `http://`;' },
+    {
+      name: 'a bare scheme in a template names no host',
+      code: 'const u = `http://`;',
+    },
 
     // --- test material states the insecure URL on purpose -------------------
     // 295 of this rule's 328 findings across four large public repositories

@@ -52,6 +52,7 @@ import {
   isTrustworthyLocalUrl,
   isDiscardedUrlBase,
 } from '../../utils/namespace-uris';
+import { isNamespaceArgument } from './namespace-argument';
 import { isReservedExampleUrl } from '../../utils/loopback-hosts';
 import { isProtocolInspection } from '../../utils/protocol-inspection';
 import { isInSchemePrefixTable } from './scheme-prefix-table';
@@ -256,6 +257,13 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
       // it to https breaks the document, so reporting it is worse than noise.
       const declaredAs = declarationName(node);
       if (isXmlNamespaceUri(value, declaredAs)) {
+        return;
+      }
+
+      // A string handed to `getAttributeNS(ns, …)` / `createElementNS(ns, …)`
+      // is a namespace the DOM compares, whoever minted it. Decided by the
+      // call that consumes it, so an unlisted authority is covered too.
+      if (isNamespaceArgument(node, context.sourceCode)) {
         return;
       }
 

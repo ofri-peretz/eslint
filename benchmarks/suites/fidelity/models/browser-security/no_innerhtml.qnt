@@ -2,8 +2,12 @@
 // Contract (docs/rules/no-innerhtml.md): an innerHTML/outerHTML write of a
 // value that is not a literal string (when allowLiteralStrings) and not the
 // result of a trusted sanitizer is reported. textContent is the safe twin.
+// Evidence read from the file also clears a write: a const holding sanitizer
+// output, a local escaper that rewrites all five markup characters, and an
+// inert holder (a <template>) that only ever yields text. A template whose
+// content is appended to the page is not inert, so it reports as innerHTML.
 module no_innerhtml {
-  type Sink = InnerHTML | OuterHTML | ComputedInner | InnerPlusEq | TextContent
+  type Sink = InnerHTML | OuterHTML | ComputedInner | InnerPlusEq | TextContent | InertTemplate | EscapingTemplate
   type Value =
     | Lit            // '<p>Static</p>'
     | TplStatic      // `<p>Static</p>`
@@ -16,11 +20,14 @@ module no_innerhtml {
     | AwaitSanitize  // await sanitize(userInput)
     | CustomSan      // myClean(userInput)
     | ConstLitVar    // const html = '<p>..</p>'; ... = html
+    | ConstSanitized // const clean = DOMPurify.sanitize(userInput); ... = clean
+    | LocalEscaper   // five-replace escaper defined in the file
   type Trusted = DefaultList | WithCustom
   type Ctx = Prod | TestDefault | TestFlipped
 
   pure def isHtmlSink(s: Sink): bool = match s {
     | TextContent => false
+    | InertTemplate => false
     | _ => true
   }
 
@@ -35,6 +42,8 @@ module no_innerhtml {
     | DomPurify => true
     | SanitizeFn => true
     | AwaitSanitize => true
+    | ConstSanitized => true
+    | LocalEscaper => true
     | CustomSan => t == WithCustom
     | _ => false
   }
@@ -60,8 +69,8 @@ module no_innerhtml {
   var verdict: bool
 
   action step = {
-    nondet s = Set(InnerHTML, OuterHTML, ComputedInner, InnerPlusEq, TextContent).oneOf()
-    nondet v = Set(Lit, TplStatic, TplExpr, Concat, Ident, UnknownCall, DomPurify, SanitizeFn, AwaitSanitize, CustomSan, ConstLitVar).oneOf()
+    nondet s = Set(InnerHTML, OuterHTML, ComputedInner, InnerPlusEq, TextContent, InertTemplate, EscapingTemplate).oneOf()
+    nondet v = Set(Lit, TplStatic, TplExpr, Concat, Ident, UnknownCall, DomPurify, SanitizeFn, AwaitSanitize, CustomSan, ConstLitVar, ConstSanitized, LocalEscaper).oneOf()
     nondet a = Set(true, false).oneOf()
     nondet t = Set(DefaultList, WithCustom).oneOf()
     nondet c = Set(Prod, TestDefault, TestFlipped).oneOf()

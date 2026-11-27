@@ -265,6 +265,7 @@ describe('no-zip-slip', () => {
         // to pin — no longer silences every extraction in the file
         // (containment-guard.test.ts).
         {
+          name: 'an @safe annotation directly above the extraction it vouches for',
           code: `
             const AdmZip = require("adm-zip");
             const zip = new AdmZip(file);
