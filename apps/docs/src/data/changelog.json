@@ -5,6 +5,56 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "6.3.6",
+      "date": "2026-11-27T04:57:37Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.3.6`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "6.3.6",
+      "date": "2026-11-27T04:55:46Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-timing-unsafe-compare` no longer reports a comparison against an enum member, a `as const` property or a literal-union value",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "2.5.2",
+      "date": "2026-11-27T04:53:12Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-timing-unsafe-compare` no longer reports a comparison against an enum member, a `as const` property or a literal-union value",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-lambda-security",
       "short": "oxlint-plugin-lambda-security",
       "version": "3.0.8",
@@ -33680,21 +33730,6 @@
       ]
     },
     {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
-      "version": "2.5.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-timing-unsafe-compare` no longer reports a comparison against an enum member, a `as const` property or a literal-union value",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "1.0.1",
@@ -33965,26 +34000,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-node-security",
-      "short": "eslint-plugin-node-security",
-      "version": "6.3.6",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-timing-unsafe-compare` no longer reports a comparison against an enum member, a `as const` property or a literal-union value",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.2`",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-operability",
       "short": "eslint-plugin-operability",
       "version": "5.0.3",
@@ -34220,21 +34235,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `eslint-plugin-modernization@4.0.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-node-security",
-      "short": "oxlint-plugin-node-security",
-      "version": "6.3.6",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.3.6`",
           "pr": null
         }
       ]
