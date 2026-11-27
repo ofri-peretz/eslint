@@ -72,7 +72,7 @@ withCanonicalDocsUrls('plugin-grpc-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-grpc-security',
-    version: '0.3.0',
+    version: '0.4.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

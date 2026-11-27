@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-grpc-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.0
+
+### Minor Changes
+
+- **✨ Feature** — `no-insecure-server-credentials` and `no-insecure-channel-credentials`
+
+  Plaintext gRPC is reported only where the file proves the risk, never by host name. `no-insecure-server-credentials` reports `ServerCredentials.createInsecure()` bound to `0.0.0.0`, `[::]` or a bare port, and stays silent on loopback, unix sockets and configured hosts. `no-insecure-channel-credentials` reports a `credentials.createInsecure()` channel when a call on it sends `Metadata` carrying an `authorization`, `cookie` or API-key header, or a `Bearer` value. Both are in `recommended`.
+
 ## 0.3.0
 
 ### Minor Changes
