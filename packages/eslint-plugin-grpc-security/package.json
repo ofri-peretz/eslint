@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-grpc-security",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "ESLint gRPC security rules — catches server reflection registered with no guard, a caller identity read from client-settable metadata, message size limits removed, caught errors sent to the client, and plaintext transport that is exposed or carries secrets.",
   "type": "commonjs",
   "sideEffects": false,
