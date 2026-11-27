@@ -5,6 +5,96 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "6.5.7",
+      "date": "2026-11-27T05:58:55Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.5.7`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "6.3.7",
+      "date": "2026-11-27T05:57:27Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.3.7`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-lambda-security",
+      "short": "oxlint-plugin-lambda-security",
+      "version": "3.0.9",
+      "date": "2026-11-27T05:57:24Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-lambda-security@3.0.9`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "6.3.7",
+      "date": "2026-11-27T05:55:36Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Test-only: fixtures that kill the mutants the platform-DOMParser, selection-and-timing and conditional-rethrow changes left alive.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "6.5.7",
+      "date": "2026-11-27T05:55:30Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Test-only: fixtures that kill the mutants the platform-DOMParser, selection-and-timing and conditional-rethrow changes left alive.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-lambda-security",
+      "short": "eslint-plugin-lambda-security",
+      "version": "3.0.9",
+      "date": "2026-11-27T05:55:29Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Test-only: fixtures that kill the mutants the platform-DOMParser, selection-and-timing and conditional-rethrow changes left alive.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-node-security",
       "short": "oxlint-plugin-node-security",
       "version": "6.3.6",
@@ -33985,21 +34075,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-lambda-security",
-      "short": "eslint-plugin-lambda-security",
-      "version": "3.0.9",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Test-only: fixtures that kill the mutants the platform-DOMParser, selection-and-timing and conditional-rethrow changes left alive.",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-modernization",
       "short": "eslint-plugin-modernization",
       "version": "4.0.3",
@@ -34010,21 +34085,6 @@
         {
           "kind": "docs",
           "title": "ship an AGENTS.md that tells AI assistants how to enable the plugin and what each preset catches",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-node-security",
-      "short": "eslint-plugin-node-security",
-      "version": "6.3.7",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Test-only: fixtures that kill the mutants the platform-DOMParser, selection-and-timing and conditional-rethrow changes left alive.",
           "pr": null
         }
       ]
@@ -34165,21 +34225,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "6.5.7",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Test-only: fixtures that kill the mutants the platform-DOMParser, selection-and-timing and conditional-rethrow changes left alive.",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-supabase-security",
       "short": "eslint-plugin-supabase-security",
       "version": "1.0.0",
@@ -34270,21 +34315,6 @@
       ]
     },
     {
-      "package": "oxlint-plugin-lambda-security",
-      "short": "oxlint-plugin-lambda-security",
-      "version": "3.0.9",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-lambda-security@3.0.9`",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "oxlint-plugin-modernization",
       "short": "oxlint-plugin-modernization",
       "version": "4.0.3",
@@ -34300,21 +34330,6 @@
       ]
     },
     {
-      "package": "oxlint-plugin-node-security",
-      "short": "oxlint-plugin-node-security",
-      "version": "6.3.7",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.3.7`",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "oxlint-plugin-operability",
       "short": "oxlint-plugin-operability",
       "version": "5.0.3",
@@ -34325,21 +34340,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `eslint-plugin-operability@5.0.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-secure-coding",
-      "short": "oxlint-plugin-secure-coding",
-      "version": "6.5.7",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.5.7`",
           "pr": null
         }
       ]
