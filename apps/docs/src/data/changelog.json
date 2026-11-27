@@ -1,7 +1,7 @@
 {
-  "releaseCount": 1653,
+  "releaseCount": 1657,
   "packageCount": 68,
-  "entryCount": 3574,
+  "entryCount": 3580,
   "oldestYear": 2024,
   "releases": [
     {
@@ -33957,6 +33957,36 @@
     {
       "package": "eslint-plugin-grpc-security",
       "short": "eslint-plugin-grpc-security",
+      "version": "0.4.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`no-insecure-server-credentials` and `no-insecure-channel-credentials`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-grpc-security",
+      "short": "eslint-plugin-grpc-security",
+      "version": "0.3.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`no-unbounded-message-size` and `no-error-detail-leak`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-grpc-security",
+      "short": "eslint-plugin-grpc-security",
       "version": "0.2.0",
       "date": null,
       "isApp": false,
@@ -34300,6 +34330,46 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-grpc-security",
+      "short": "oxlint-plugin-grpc-security",
+      "version": "0.4.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`no-insecure-server-credentials` and `no-insecure-channel-credentials`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-grpc-security@0.4.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-grpc-security",
+      "short": "oxlint-plugin-grpc-security",
+      "version": "0.3.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`no-unbounded-message-size` and `no-error-detail-leak`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-grpc-security@0.3.0`",
           "pr": null
         }
       ]
