@@ -29,8 +29,8 @@
         "description": "Generic client message plus a server-side log of the real error"
       },
       {
-        "file": "grpc-3-lab-server.js",
-        "description": "security-research protocol-ctf grpc-3 lab server, verbatim: call.emit('error') with fixed details"
+        "file": "grpc-fixed-status-details.js",
+        "description": "A gRPC handler logs the caught error and sends fixed status details"
       }
     ]
   }

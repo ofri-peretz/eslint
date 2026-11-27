@@ -20,7 +20,7 @@ const ruleTester = new RuleTester({
 
 const corpus = (file: string): string =>
   fs.readFileSync(
-    path.resolve(__dirname, '../../../../../benchmarks/corpus/CWE-209', file),
+    path.resolve(__dirname, '../../../../../benchmarks/corpus', file),
     'utf8',
   );
 
@@ -33,9 +33,13 @@ const ERR = [{ messageId: 'errorDetailLeak' as const }];
 ruleTester.run('no-error-detail-leak', noErrorDetailLeak, {
   valid: [
     {
+      name: 'CWE-209 corpus: the caught error logged, fixed details sent',
+      code: corpus('CWE-209/safe/grpc-fixed-status-details.js'),
+    },
+    {
       name: 'lab grpc-3: fixed error details on a streaming call',
       // @found ofri-peretz/security-research:protocol-ctf/challenges/grpc/grpc-3/server.mjs
-      code: corpus('safe/grpc-3-lab-server.js'),
+      code: corpus('CWE-094/vulnerable/grpc-3-lab-server.js'),
     },
     {
       name: 'a generic message, the real error logged server-side',

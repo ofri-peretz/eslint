@@ -45,9 +45,10 @@ and a second plugin reporting the same line is a placement defect.
 
 ## Affected users and systems
 
-`eslint-plugin-grpc-security` and its oxlint alias, still unreleased. The CWE-209 and
-CWE-770 corpora gain gRPC fixtures, including the security-research grpc-3 lab server
-verbatim.
+`eslint-plugin-grpc-security` and its oxlint alias. The CWE-209 and CWE-770 corpora gain
+gRPC fixtures. The security-research grpc-3 lab server joins CWE-094 verbatim, as a
+vulnerable fixture: its stream filter reaches `new Function`, while its error details are
+fixed.
 
 ## Constraints
 

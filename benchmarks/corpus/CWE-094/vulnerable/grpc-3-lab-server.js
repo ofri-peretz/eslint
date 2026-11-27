@@ -1,8 +1,9 @@
-// CWE-209: Generation of Error Message Containing Sensitive Information — fixed error details
+// CWE-094: Improper Control of Generation of Code — a stream filter compiled with new Function
 // @author      ofri-peretz
 // @reviewedBy  benchmark-validator
 // @lastReviewed 2026-11-26
-// This MUST NOT be flagged
+// This MUST be detected (the client's filter reaches new Function). Its call.emit('error')
+// calls send fixed details, so grpc-security/no-error-detail-leak must stay silent on it.
 // Verbatim below: ofri-peretz/security-research protocol-ctf/challenges/grpc/grpc-3/server.mjs
 // grpc-3 Stream Filter: a reporting service that streams orders matching a user-supplied filter.
 import path from 'node:path';
