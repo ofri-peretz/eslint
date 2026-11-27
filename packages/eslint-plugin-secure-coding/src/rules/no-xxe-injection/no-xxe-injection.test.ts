@@ -131,6 +131,7 @@ describe('no-xxe-injection', () => {
         // standard a user agent does not fetch external entities, and the
         // input cannot change. The old rule reported the construction alone.
         {
+          name: 'the browser DOMParser on a compiled-in constant carries nothing to leak',
           code: [
             'const SPRITE = \'<svg xmlns="http://www.w3.org/2000/svg"/>\';',
             "export const sheet = new DOMParser().parseFromString(SPRITE, 'image/svg+xml');",

@@ -347,8 +347,13 @@ describe('no-log-injection', () => {
       // ---------------------------------------------------------------
       {
         name: 'console.error with a template',
-        code: 'console.error(`bad path ${req.path}`);',
-        errors: [{ messageId: 'logInjection', data: { source: 'req.path' } }],
+        // `req.path` used to be the vehicle here; the raw request target cannot
+        // hold a CR/LF (see a-raw-request-target-cannot-forge-a-line.test.ts),
+        // so the decoded `req.query.path` carries the same shape.
+        code: 'console.error(`bad path ${req.query.path}`);',
+        errors: [
+          { messageId: 'logInjection', data: { source: 'req.query.path' } },
+        ],
       },
       {
         name: 'a logger held on `this`',
@@ -357,9 +362,9 @@ describe('no-log-injection', () => {
       },
       {
         name: 'a framework logger reached through a property',
-        code: 'fastify.log.info(`url=${request.url}`);',
+        code: 'fastify.log.info(`url=${request.query.url}`);',
         errors: [
-          { messageId: 'logInjection', data: { source: 'request.url' } },
+          { messageId: 'logInjection', data: { source: 'request.query.url' } },
         ],
       },
       {

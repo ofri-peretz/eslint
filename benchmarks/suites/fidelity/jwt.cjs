@@ -55,13 +55,13 @@ const VERIFIERS = {
         },
       ]),
   ),
-  Jose: (opts) => [
-    "import { jwtVerify } from 'jose';",
-    `await jwtVerify(${['token', 'key', opts].filter(Boolean).join(', ')})`,
+  Jose: (opts, key = 'key', extra = '') => [
+    `import { jwtVerify${extra} } from 'jose';`,
+    `await jwtVerify(${['token', key, opts].filter(Boolean).join(', ')})`,
   ],
-  JoseCompact: (opts) => [
-    "import { compactVerify } from 'jose';",
-    `await compactVerify(${['token', 'key', opts].filter(Boolean).join(', ')})`,
+  JoseCompact: (opts, key = 'key', extra = '') => [
+    `import { compactVerify${extra} } from 'jose';`,
+    `await compactVerify(${['token', key, opts].filter(Boolean).join(', ')})`,
   ],
   NestService: (opts) => [
     "import { JwtService } from '@nestjs/jwt';",

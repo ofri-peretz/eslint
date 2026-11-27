@@ -518,6 +518,16 @@
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-grpc-security/no-identity-from-metadata": {
+      "cases": 53,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-grpc-security/no-unguarded-reflection": {
+      "cases": 47,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-import-next/consistent-type-specifier-style": {
       "cases": 24,
       "failed": 0,

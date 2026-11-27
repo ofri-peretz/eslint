@@ -1,10 +1,10 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-11-25",
-  "totalPlugins": 32,
-  "totalRules": 523,
-  "oxlintCompatible": 523,
+  "generatedAt": "2026-11-26",
+  "totalPlugins": 33,
+  "totalRules": 525,
+  "oxlintCompatible": 525,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -713,6 +713,27 @@
         },
         {
           "name": "no-untrusted-content-in-prompt",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-grpc-security",
+      "short": "grpc-security",
+      "shim": "tools/oxlint-plugins/interlace-grpc-security.cjs",
+      "subpath": "eslint-plugin-grpc-security/oxlint",
+      "ruleCount": 2,
+      "rules": [
+        {
+          "name": "no-identity-from-metadata",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unguarded-reflection",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3557,6 +3578,10 @@
       "no-disabled-safety-settings",
       "no-hardcoded-api-key",
       "no-untrusted-content-in-prompt"
+    ],
+    "grpc-security": [
+      "no-identity-from-metadata",
+      "no-unguarded-reflection"
     ],
     "import-next": [
       "consistent-type-specifier-style",

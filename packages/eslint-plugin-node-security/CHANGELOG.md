@@ -5,6 +5,13 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.3.4
+
+### Patch Changes
+
+- **🐛 Fix** — `no-dynamic-algorithm-selection` no longer reports an algorithm name read from a string enum declared in the same file. `createCipheriv(SecretEncryptionAlgo.AES_256_GCM, key, iv)`, and a `const` that holds such a member, can only produce a name the author wrote down, which is the allowlist the rule asks for. A member read by a caller-supplied key (`Algo[name]`), an enum with a numeric or computed member, a merged enum and an imported enum keep being reported. Seen on Infisical.
+- **🐛 Fix** — `no-toctou-vulnerability` no longer reports a check-then-use on a path beneath a directory the code created with `fs.mkdtemp` / `mkdtempSync` (also awaited, and through `path.join` or a template). `mkdtemp` makes a 0700 directory owned by the caller, so no other unprivileged user can create or swap a name inside it: the same absence of a shared namespace the per-user-root exemption already relies on. A path in the shared temp root, a `mkdtemp` that is not `fs`'s, and a path joined from unvalidated input (the Vendure `path.join(importAssetsDir, assetPath)` shape) are still reported. Seen on docmost.
+
 ## 6.3.3
 
 ### Patch Changes

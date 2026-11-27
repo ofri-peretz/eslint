@@ -25,6 +25,7 @@ import {
   isSignatureVerifyOperation,
   resolveCallOptions,
   hasOption,
+  joseKeyBindsAlgorithm,
 } from '../../utils';
 import type { RequireAlgorithmWhitelistOptions } from '../../types';
 
@@ -117,6 +118,15 @@ export const requireAlgorithmWhitelist = createRule<RuleOptions, MessageIds>({
 
         // Need at least token and key arguments
         if (node.arguments.length < 2) {
+          return;
+        }
+
+        /*
+         * jose checks the key against the header algorithm, so a key that is
+         * a key set, raw bytes or an imported key already fixes the family
+         * that can verify, with or without an `algorithms` list.
+         */
+        if (joseKeyBindsAlgorithm(node, sourceCode)) {
           return;
         }
 

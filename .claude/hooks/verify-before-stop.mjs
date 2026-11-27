@@ -12,6 +12,9 @@
 //     passed this session), the turn is sent back once with the reason. The second Stop of the
 //     same turn (`stop_hook_active`) always passes, so Claude can never be stuck here.
 //
+// Only code this session changed is judged: a path its Edit/Write tools wrote, or one whose
+// content changed across one of its Bash calls (PreToolUse snapshots, PostToolUse compares).
+// Another session or a generator rewriting files in the same checkout does not stop this one.
 // Committed work is not judged here: the commit and push hooks are its gate. Docs do not count:
 // `.md`, `.mdx` and `.txt` files, and any glob the repo lists under `verifyIgnore` in
 // .claude/hookset.json. A test run is what stop-after-3 counts as one (vitest, `npm test`,
@@ -23,11 +26,12 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, dirname, join, relative, resolve } from "node:path";
 
 import { commands, globToRegExp } from "./guard-bash.mjs";
 import { isTestCommand } from "./stop-after-3.mjs";
@@ -72,11 +76,12 @@ function rootOf(dir) {
   return r.status === 0 && r.stdout.trim() ? r.stdout.trim() : dir;
 }
 
-/** One hash over every uncommitted code path and its content, or null when there is none. */
-export function fingerprint(cwd, ignore = []) {
+/** One hash over the uncommitted code paths this session owns, or null when there is none. */
+export function fingerprint(cwd, ignore = [], owned = null) {
   const dir = rootOf(cwd);
+  const mine = owned && new Set(owned);
   const paths = changedPaths(dir)
-    .filter((p) => counts(p, ignore))
+    .filter((p) => counts(p, ignore) && (!mine || mine.has(p)))
     .sort();
   if (paths.length === 0) return null;
   const hash = createHash("sha256");
@@ -99,12 +104,71 @@ function stateFile(session) {
   );
 }
 
-function passedHash(session) {
+function readState(session) {
   try {
-    return JSON.parse(readFileSync(stateFile(session), "utf8")).hash ?? null;
+    return JSON.parse(readFileSync(stateFile(session), "utf8")) ?? {};
   } catch {
-    return null;
+    return {};
   }
+}
+
+function writeState(session, state) {
+  writeFileSync(stateFile(session), JSON.stringify(state));
+}
+
+/** Marks paths (absolute, or relative to `dir`) as changed by this session. */
+export function own(session, dir, paths) {
+  const root = rootOf(dir);
+  const state = readState(session);
+  const owned = new Set(state.owned ?? []);
+  for (const p of paths) {
+    const abs = resolve(dir, p);
+    // git prints the real root; a tool may name the file through a symlink (/var → /private/var)
+    // or, on Windows, an 8.3 short name (RUNNER~1). Only the native realpath expands short names.
+    let real = abs;
+    try {
+      real = join(realpathSync.native(dirname(abs)), basename(abs));
+    } catch {
+      // ponytail: the directory is gone; the path as given is the best we have.
+    }
+    owned.add(relative(realpathSync.native(root), real).replaceAll("\\", "/"));
+  }
+  writeState(session, { ...state, owned: [...owned] });
+}
+
+/** Content hash per uncommitted code path, so a Bash call's own edits can be told apart. */
+function contents(dir, ignore) {
+  const root = rootOf(dir);
+  const out = {};
+  for (const p of changedPaths(root).filter((p) => counts(p, ignore))) {
+    const file = join(root, p);
+    out[p] = existsSync(file)
+      ? createHash("sha256").update(readFileSync(file)).digest("hex")
+      : "<deleted>";
+  }
+  return out;
+}
+
+/** PreToolUse (Bash): remember the uncommitted code before the command runs. */
+export function snapshot(session, dir, ignore = []) {
+  writeState(session, { ...readState(session), before: contents(dir, ignore) });
+}
+
+/**
+ * PostToolUse (Bash): every path whose content the command changed is this session's.
+ * ponytail: another writer touching a file during this same call is counted too; per-pid
+ * tracing would close that, and the window is one command long.
+ */
+export function ownChanged(session, dir, ignore = []) {
+  const { before = {} } = readState(session);
+  const after = contents(dir, ignore);
+  own(
+    session,
+    rootOf(dir),
+    Object.keys(after).filter((p) => after[p] !== before[p]),
+  );
+  const { before: _, ...rest } = readState(session);
+  writeState(session, rest);
 }
 
 /**
@@ -134,17 +198,19 @@ export function recordPass(
   ignore = [],
 ) {
   if (failed || background || !provesPass(command)) return;
-  const fp = fingerprint(dir, ignore);
-  // A pass with nothing uncommitted proves the committed tree; forget any older fingerprint.
-  if (fp) writeFileSync(stateFile(session), JSON.stringify({ hash: fp.hash }));
-  else rmSync(stateFile(session), { force: true });
+  const state = readState(session);
+  const fp = fingerprint(dir, ignore, state.owned ?? []);
+  // A pass with nothing of ours uncommitted proves the tree; forget any older fingerprint.
+  const { hash: _, ...rest } = state;
+  writeState(session, fp ? { ...rest, hash: fp.hash } : rest);
 }
 
 /** Stop: the JSON that sends the turn back, or null to let it end. */
 export function decideStop(session, dir, active, ignore = []) {
   if (active) return null;
-  const fp = fingerprint(dir, ignore);
-  if (!fp || fp.hash === passedHash(session)) return null;
+  const state = readState(session);
+  const fp = fingerprint(dir, ignore, state.owned ?? []);
+  if (!fp || fp.hash === (state.hash ?? null)) return null;
   const shown =
     fp.paths.slice(0, 5).join(", ") +
     (fp.paths.length > 5 ? `, and ${fp.paths.length - 5} more` : "");
@@ -201,15 +267,26 @@ function selfTest() {
   );
   const session = `self-test-${process.pid}`;
   rmSync(stateFile(session), { force: true });
+  // An edit made by one of this session's Bash calls.
+  const edit = (rel, text, at = dir) => {
+    snapshot(session, at);
+    writeFileSync(join(dir, rel), text);
+    ownChanged(session, at);
+  };
 
   if (decideStop(session, dir, false))
     bad.push("a clean tree should end the turn");
-  writeFileSync(join(dir, "notes.md"), "x");
+  writeFileSync(join(dir, "other.ts"), "export const o = 1;\n");
+  if (decideStop(session, dir, false))
+    bad.push("code another writer changed should not send the turn back");
+  edit("notes.md", "x");
   if (decideStop(session, dir, false))
     bad.push("a docs-only change should end the turn");
-  writeFileSync(join(dir, "a.ts"), "export const a = 1;\n");
+  edit("a.ts", "export const a = 1;\n");
   if (decideStop(session, dir, false)?.decision !== "block")
     bad.push("untested code should send the turn back");
+  if (decideStop(session, dir, false)?.reason.includes("other.ts"))
+    bad.push("the reason should name only this session's files");
   if (decideStop(session, dir, true))
     bad.push("the second stop of a turn should always pass");
   if (decideStop(session, dir, false, ["*.ts"]))
@@ -222,7 +299,7 @@ function selfTest() {
   recordPass(session, dir, { command: "npx vitest run", failed: false });
   if (decideStop(session, dir, false))
     bad.push("a passing run over this code should end the turn");
-  writeFileSync(join(dir, "a.ts"), "export const a = 2;\n");
+  edit("a.ts", "export const a = 2;\n");
   if (!decideStop(session, dir, false))
     bad.push("an edit after the pass should send the turn back");
   for (const command of [
@@ -239,27 +316,29 @@ function selfTest() {
   if (!decideStop(session, dir, false))
     bad.push("a background launch is not a finished run");
   mkdirSync(join(dir, "pkg"), { recursive: true });
-  writeFileSync(join(dir, "pkg", "b.ts"), "export const b = 1;\n");
+  edit("pkg/b.ts", "export const b = 1;\n", join(dir, "pkg"));
   recordPass(session, join(dir, "pkg"), {
     command: "npx vitest run 2>&1",
     failed: false,
   });
   if (decideStop(session, join(dir, "pkg"), false))
     bad.push("a pass from a package directory should cover the same tree");
-  writeFileSync(join(dir, "pkg", "b.ts"), "export const b = 2;\n");
+  edit("pkg/b.ts", "export const b = 2;\n", join(dir, "pkg"));
   if (!decideStop(session, join(dir, "pkg"), false))
     bad.push("an edit seen from a package directory should send the turn back");
   git("add", "-A");
   git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "code");
-  git("mv", "a.ts", "a.md");
   rmSync(stateFile(session), { force: true });
+  snapshot(session, dir);
+  git("mv", "a.ts", "a.md");
+  ownChanged(session, dir);
   if (!decideStop(session, dir, false))
     bad.push("renaming code to a doc removes code and should send the turn back");
 
   rmSync(stateFile(session), { force: true });
   rmSync(dir, { recursive: true, force: true });
   process.stdout.write(
-    bad.length ? `${bad.join("\n")}\n${bad.length} failing\n` : "ok: 17 cases\n",
+    bad.length ? `${bad.join("\n")}\n${bad.length} failing\n` : "ok: 19 cases\n",
   );
   process.exit(bad.length ? 1 : 0);
 }
@@ -291,6 +370,16 @@ else if (isMain) {
       return;
     }
     const command = payload.tool_input?.command;
+    if (payload.hook_event_name === "PreToolUse") {
+      if (typeof command === "string") snapshot(payload.session_id, dir, ignore);
+      return;
+    }
+    const file = payload.tool_input?.file_path ?? payload.tool_input?.notebook_path;
+    if (typeof command !== "string" && typeof file === "string") {
+      own(payload.session_id, dir, [file]);
+      return;
+    }
+    if (typeof command === "string") ownChanged(payload.session_id, dir, ignore);
     if (typeof command === "string")
       recordPass(
         payload.session_id,

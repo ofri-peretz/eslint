@@ -5602,6 +5602,106 @@
         }
       ],
       "peers": []
+    },
+    {
+      "id": "ILB-0195",
+      "added": "2026-11-26",
+      "title": "gRPC server reflection registered on the public server with no guard",
+      "rationale": "Reflection answers 'which services does this listener serve?' to any client, unauthenticated. Registered unconditionally it ships to production, and `grpcurl list` names every service on the server, the internal ones a team assumed nobody knew about included. Observed in the security-research grpc-2 lab.",
+      "cwe": "CWE-306",
+      "severity": {
+        "cvss": 5.3,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        "https://github.com/grpc/grpc/blob/master/doc/server-reflection.md"
+      ],
+      "occurrences": [],
+      "code": "import { ReflectionService } from '@grpc/reflection';\nconst server = new grpc.Server();\nserver.addService(pkg.ops.Maintenance.service, maintenance);\nnew ReflectionService(def).addToServer(server);",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-unguarded-reflection",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-unguarded-reflection/no-unguarded-reflection.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0196",
+      "added": "2026-11-26",
+      "title": "gRPC server reflection registered only in development",
+      "rationale": "The reference fix for the grpc-2 lab: reflection is registered inside a branch on the environment, so production never serves it. A rule that reported this would be asking for something the code already did.",
+      "cwe": "CWE-306",
+      "severity": {
+        "cvss": 5.3,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        "https://github.com/grpc/grpc/blob/master/doc/server-reflection.md"
+      ],
+      "occurrences": [],
+      "code": "import { ReflectionService } from '@grpc/reflection';\nif (process.env.NODE_ENV === 'development') new ReflectionService(def).addToServer(server);",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-unguarded-reflection",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-unguarded-reflection/no-unguarded-reflection.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0197",
+      "added": "2026-11-26",
+      "title": "gRPC caller identity taken from a forwarded metadata header",
+      "rationale": "A backend behind a gateway trusts an identity header the gateway is supposed to set. Metadata is HTTP/2 headers and the client sets all of them, so once the backend is reachable another way anyone can claim to be anyone. Observed in the security-research grpc-1 lab.",
+      "cwe": "CWE-290",
+      "severity": {
+        "cvss": 8.1,
+        "vector": null,
+        "source": null
+      },
+      "references": ["https://grpc.io/docs/guides/auth/"],
+      "occurrences": [],
+      "code": "function callerOf(md) { return String(md.get('x-authenticated-user')[0]); }\nserver.addService(svc, {\n  GetAccount(call, cb) {\n    const user = callerOf(call.metadata);\n    const acc = ACCOUNTS[call.request.account_id];\n    if (acc.owner !== user) return cb({ code: 7 });\n    cb(null, acc);\n  },\n});",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-identity-from-metadata",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-identity-from-metadata/no-identity-from-metadata.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0198",
+      "added": "2026-11-26",
+      "title": "gRPC caller resolved from a server-side token table",
+      "rationale": "The reference fix for the grpc-1 lab: the presented token is a key into a table the server owns, so the caller is whatever the server says the token belongs to. A rule that reported this would be asking for something the code already did.",
+      "cwe": "CWE-290",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": ["https://grpc.io/docs/guides/auth/"],
+      "occurrences": [],
+      "code": "function callerOf(md) { const auth = String(md.get('authorization')[0] ?? ''); return TOKENS[auth.replace(/^Bearer\\s+/i, '')] ?? null; }\nserver.addService(svc, {\n  GetAccount(call, cb) {\n    const user = callerOf(call.metadata);\n    const acc = ACCOUNTS[call.request.account_id];\n    if (acc.owner !== user) return cb({ code: 7 });\n    cb(null, acc);\n  },\n});",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-identity-from-metadata",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-identity-from-metadata/no-identity-from-metadata.test.ts"
+        }
+      ],
+      "peers": []
     }
   ]
 }

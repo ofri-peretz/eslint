@@ -55,6 +55,7 @@ export const PLUGIN_SEARCH_TITLES: Record<string, string> = {
   'secure-coding': 'OWASP Top 10 checks for JavaScript and TypeScript',
   'sequelize-security': 'SQL injection in raw Sequelize queries',
   'sqlite-security': 'SQL injection in SQLite statements',
+  'grpc-security': 'gRPC reflection with no guard and identity from metadata',
   'supabase-security': 'Supabase service_role key, RPC and storage checks',
   'typeorm-security': 'SQL injection in TypeORM raw queries',
   'vercel-ai-security': 'Vercel AI SDK prompt injection and tool safety',

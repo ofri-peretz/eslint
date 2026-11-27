@@ -3,12 +3,15 @@
 // character (`.replace(/</g, '&lt;')` alone, or a non-global string replace that
 // only rewrites the first occurrence) reaching an output sink is reported. A
 // recognised sanitizer (DOMPurify.sanitize, escape) or a replace chain covering
-// all of < > " ' & is sufficient.
+// all of < > " ' & is sufficient. A `& < >` escaper whose file also ships the
+// quote-escaping half is sufficient for text, and reported once it is used
+// inside a tag.
 module no_improper_sanitization {
   type Sink = InnerHTML | OuterHTML | ResSend
   type Value = PartialReplace | FirstOnlyReplace | FullReplaceChain | DomPurify | EscapeFn
+            | TextEscaper | TextEscaperInTag
 
-  pure def reports(v: Value): bool = Set(PartialReplace, FirstOnlyReplace).contains(v)
+  pure def reports(v: Value): bool = Set(PartialReplace, FirstOnlyReplace, TextEscaperInTag).contains(v)
 
   var sink: Sink
   var value: Value
@@ -16,7 +19,7 @@ module no_improper_sanitization {
 
   action step = {
     nondet k = Set(InnerHTML, OuterHTML, ResSend).oneOf()
-    nondet v = Set(PartialReplace, FirstOnlyReplace, FullReplaceChain, DomPurify, EscapeFn).oneOf()
+    nondet v = Set(PartialReplace, FirstOnlyReplace, FullReplaceChain, DomPurify, EscapeFn, TextEscaper, TextEscaperInTag).oneOf()
     all { sink' = k, value' = v, verdict' = reports(v) }
   }
 

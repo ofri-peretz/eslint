@@ -484,6 +484,63 @@ const TRANSPARENT_WRAPPERS: ReadonlySet<string> = new Set([
   'String',
 ]);
 
+/**
+ * Operators a draw passes through on its way to being an index or a delay.
+ * Arithmetic keeps it a number; `in` and `instanceof` do not.
+ */
+const NUMERIC_OPERATORS: ReadonlySet<string> = new Set([
+  '+',
+  '-',
+  '*',
+  '/',
+  '%',
+  '**',
+  '|',
+  '&',
+  '^',
+  '<<',
+  '>>',
+  '>>>',
+]);
+
+/** A comparison consumes the number and yields a yes or no, never a value. */
+const COMPARISON_OPERATORS: ReadonlySet<string> = new Set([
+  '<',
+  '>',
+  '<=',
+  '>=',
+  '==',
+  '===',
+  '!=',
+  '!==',
+]);
+
+/** `Math.*` functions that turn a number into a number. */
+const NUMERIC_MATH_FUNCTIONS: ReadonlySet<string> = new Set([
+  'floor',
+  'ceil',
+  'round',
+  'trunc',
+  'abs',
+  'min',
+  'max',
+]);
+
+/** Timers whose delay is a number of milliseconds. @protocol-constant */
+const TIMER_FUNCTIONS: ReadonlySet<string> = new Set([
+  'setTimeout',
+  'setInterval',
+]);
+
+/** Wrappers that change a node's type and nothing about its value. */
+const TRANSPARENT_NODE_TYPES: ReadonlySet<string> = new Set([
+  AST_NODE_TYPES.TSAsExpression,
+  AST_NODE_TYPES.TSNonNullExpression,
+  AST_NODE_TYPES.TSSatisfiesExpression,
+  AST_NODE_TYPES.AwaitExpression,
+  AST_NODE_TYPES.ChainExpression,
+]);
+
 /** The name says this function builds a security value. */
 function functionNameSuggestsCrypto(name: string, vocab: Vocabulary): boolean {
   if (!CRYPTO_FUNCTION_PATTERNS.some((pattern) => pattern.test(name)))
@@ -1332,6 +1389,161 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       return null;
     }
 
+    /**
+     * Is this a one-character-at-a-time ALPHABET: a string, a template, an
+     * array of single characters, or `'…'.split('')`, bound once or written
+     * inline? Picking from one of those BUILDS a value out of draws, which is
+     * what CWE-338 is about; picking from anything else chooses among things
+     * that already exist.
+     */
+    function isAlphabet(
+      object: TSESTree.Node,
+      seen: Set<TSESLint.Scope.Variable> = new Set(),
+    ): boolean {
+      if (object.type === AST_NODE_TYPES.Identifier) {
+        const variable = findVariable(sourceCode, object);
+        if (!variable || seen.has(variable)) return false;
+        seen.add(variable);
+        const init = stableDeclarator(object)?.init;
+        return init != null && isAlphabet(init, seen);
+      }
+      if (object.type === AST_NODE_TYPES.TemplateLiteral) return true;
+      if (object.type === AST_NODE_TYPES.Literal) {
+        return typeof object.value === 'string';
+      }
+      if (object.type === AST_NODE_TYPES.ArrayExpression) {
+        return (
+          object.elements.length > 0 &&
+          object.elements.every(
+            (element) =>
+              element?.type === AST_NODE_TYPES.Literal &&
+              typeof element.value === 'string' &&
+              element.value.length <= 1,
+          )
+        );
+      }
+      return (
+        object.type === AST_NODE_TYPES.CallExpression &&
+        object.callee.type === AST_NODE_TYPES.MemberExpression &&
+        propertyName(object.callee) === 'split'
+      );
+    }
+
+    /**
+     * `list[draw]` picks an element that already exists. It is a selection, not a
+     * new value, when the pick is stored, returned or passed on whole: an
+     * accumulator (`token += list[draw]`), a concatenation, a callback body or a
+     * `push` builds a NEW value out of many picks, and an alphabet is a source of
+     * characters rather than of things to choose between.
+     */
+    function isWholePick(member: TSESTree.MemberExpression): boolean {
+      if (isAlphabet(member.object)) return false;
+      let pick: TSESTree.Node = member;
+      for (;;) {
+        const parent: TSESTree.Node = pick.parent as TSESTree.Node;
+        if (
+          TRANSPARENT_NODE_TYPES.has(parent.type) ||
+          (parent.type === AST_NODE_TYPES.MemberExpression &&
+            parent.object === pick)
+        ) {
+          pick = parent;
+          continue;
+        }
+        return (
+          (parent.type === AST_NODE_TYPES.VariableDeclarator &&
+            parent.init === pick) ||
+          parent.type === AST_NODE_TYPES.ReturnStatement ||
+          (parent.type === AST_NODE_TYPES.Property && parent.value === pick) ||
+          (parent.type === AST_NODE_TYPES.AssignmentExpression &&
+            parent.operator === '=' &&
+            parent.right === pick)
+        );
+      }
+    }
+
+    /**
+     * Does every use of this binding select, delay or sample? At least one read,
+     * none of them anything else, and the binding never written again.
+     */
+    function allReadsSelectOrSample(
+      id: TSESTree.Identifier,
+      followed: Set<TSESLint.Scope.Variable>,
+    ): boolean {
+      const variable = findVariable(sourceCode, id);
+      if (!variable || followed.has(variable) || !stableDeclarator(id))
+        return false;
+      followed.add(variable);
+      const reads = variable.references.filter((ref) => !ref.init);
+      return (
+        reads.length > 0 &&
+        reads.every((ref) =>
+          selectsOrSamples(ref.identifier as TSESTree.Node, followed),
+        )
+      );
+    }
+
+    /**
+     * Does this number only ever pick, delay or sample?
+     *
+     * Three consumers turn a draw into a decision rather than a value: an array
+     * INDEX whose pick is stored whole, a timer's DELAY, and a COMPARISON. The
+     * draw may pass through arithmetic, `Math.floor` and friends and a
+     * never-rewritten binding on the way, and EVERY use must end in one of the
+     * three; a number that is also stringified, stored or sent anywhere keeps
+     * the old verdict.
+     */
+    function selectsOrSamples(
+      start: TSESTree.Node,
+      followed: Set<TSESLint.Scope.Variable> = new Set(),
+    ): boolean {
+      let node: TSESTree.Node = start;
+      for (;;) {
+        const parent = node.parent as TSESTree.Node;
+        if (parent.type === AST_NODE_TYPES.BinaryExpression) {
+          if (COMPARISON_OPERATORS.has(parent.operator)) return true;
+          if (!NUMERIC_OPERATORS.has(parent.operator)) return false;
+        } else if (parent.type === AST_NODE_TYPES.UnaryExpression) {
+          if (!['+', '-', '~'].includes(parent.operator)) return false;
+        } else if (TRANSPARENT_NODE_TYPES.has(parent.type)) {
+          // type-only wrapper: climb
+        } else if (parent.type === AST_NODE_TYPES.CallExpression) {
+          const callee = parent.callee;
+          const args = parent.arguments as TSESTree.Node[];
+          if (!args.includes(node)) return false;
+          if (
+            callee.type === AST_NODE_TYPES.MemberExpression &&
+            isMathObject(callee.object) &&
+            NUMERIC_MATH_FUNCTIONS.has(propertyName(callee) ?? '')
+          ) {
+            // a number in, a number out: climb
+          } else {
+            // `setTimeout(fn, delay)`, or `timers/promises`' `setTimeout(delay)`.
+            return (
+              callee.type === AST_NODE_TYPES.Identifier &&
+              TIMER_FUNCTIONS.has(callee.name) &&
+              (args[0] === node || args[1] === node) &&
+              (findVariable(sourceCode, callee)?.defs.length ?? 0) === 0
+            );
+          }
+        } else if (
+          parent.type === AST_NODE_TYPES.MemberExpression &&
+          parent.computed &&
+          parent.property === node
+        ) {
+          return isWholePick(parent);
+        } else if (
+          parent.type === AST_NODE_TYPES.VariableDeclarator &&
+          parent.init === node &&
+          parent.id.type === AST_NODE_TYPES.Identifier
+        ) {
+          return allReadsSelectOrSample(parent.id, followed);
+        } else {
+          return false;
+        }
+        node = parent;
+      }
+    }
+
     return {
       before() {
         const [options = {}] = currentOptions();
@@ -1382,6 +1594,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
           // Check if used in cryptographic context
           if (
             !isShuffleComparator(node) &&
+            !selectsOrSamples(node) &&
             isCryptoContext(node) &&
             !isCsprngFallback(node)
           ) {

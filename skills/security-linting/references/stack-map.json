@@ -229,6 +229,22 @@
       "limits": "Client-code patterns. Row-level security policies live in your database and are not linted."
     },
     {
+      "package": "eslint-plugin-grpc-security",
+      "preset": "recommended",
+      "dependencies": [
+        "@grpc/grpc-js",
+        "@grpc/reflection",
+        "grpc-server-reflection"
+      ],
+      "recommendedIsExactly": [
+        "no-unguarded-reflection",
+        "no-identity-from-metadata"
+      ],
+      "why": "gRPC: server reflection registered with no guard publishes every service on the listener; a caller identity read from metadata lets any client claim to be anyone.",
+      "examples": ["no-unguarded-reflection", "no-identity-from-metadata"],
+      "limits": "Identity is reported only when it meets an equality check against a per-request record, in the same file."
+    },
+    {
       "package": "eslint-plugin-mcp-sdk-security",
       "preset": "recommended",
       "dependencyPrefixes": ["@modelcontextprotocol/"],

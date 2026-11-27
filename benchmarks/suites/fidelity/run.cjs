@@ -65,6 +65,7 @@ const PLUGINS = [
   'prisma-security',
   'sequelize-security',
   'supabase-security',
+  'grpc-security',
   'typeorm-security',
   'knex-security',
   'reliability',

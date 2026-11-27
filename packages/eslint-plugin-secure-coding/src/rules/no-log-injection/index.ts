@@ -164,6 +164,25 @@ const DEFAULT_REQUEST_PROPERTIES = [
 ];
 
 /**
+ * The request members that hold the raw request target, and the roots that
+ * are an HTTP server's request object.
+ *
+ * @protocol-constant `req.url` (Node `http.IncomingMessage`, Fastify, Koa's
+ * `ctx.url`) and `req.path` / `ctx.path` are the request target as it came off
+ * the wire. Node's HTTP parser (llhttp) rejects a request whose target holds a
+ * raw CR or LF, and HTTP/2 refuses the same in `:path`, so a percent-encoded
+ * `%0d%0a` stays encoded in these properties. A forged line cannot start there.
+ * `query`, `params`, `body`, `headers` and `cookies` are decoded or parsed
+ * from other parts of the request, and keep reporting.
+ */
+const RAW_TARGET_ROOTS: ReadonlySet<string> = new Set([
+  'req',
+  'request',
+  'ctx',
+]);
+const RAW_TARGET_PROPERTIES: ReadonlySet<string> = new Set(['url', 'path']);
+
+/**
  * The request field this member expression reads, or `null`.
  *
  * Walks to the root of `req.headers['x-forwarded-for']` and judges *that*,
@@ -197,7 +216,15 @@ function requestFieldOf(
 
   if (root.type !== 'Identifier') return null;
   if (!roots.has(root.name)) return null;
-  if (!properties.some((p) => requestProperties.has(p))) return null;
+  const carried = properties.filter((p) => requestProperties.has(p));
+  if (carried.length === 0) return null;
+  // `req.url` alone: the raw request target cannot hold a literal CR/LF.
+  if (
+    RAW_TARGET_ROOTS.has(root.name) &&
+    carried.every((p) => RAW_TARGET_PROPERTIES.has(p))
+  ) {
+    return null;
+  }
   return `${root.name}.${properties.join('.')}`;
 }
 

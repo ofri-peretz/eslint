@@ -3,11 +3,12 @@
 // and the CWE: a value whose name holds a secret (password, token, api key)
 // reaching console.log (while checkConsoleLog) or an Error message (while
 // checkErrorMessages) is reported. A name whose FINAL segment is a descriptor
-// (passwordError) describes a secret rather than holding one; a non-secret
+// (passwordError) describes a secret rather than holding one, and so does a
+// handle, place or count (tokenId, secretPath, tokenCount); a non-secret
 // name (username) is not sensitive.
 module no_sensitive_data_exposure {
   type Sink = ConsoleLog | ThrowError
-  type Value = Password | ApiKey | AccessToken | Descriptor | Neutral
+  type Value = Password | ApiKey | AccessToken | Descriptor | Handle | Neutral
 
   pure def sensitive(v: Value): bool = Set(Password, ApiKey, AccessToken).contains(v)
 
@@ -22,7 +23,7 @@ module no_sensitive_data_exposure {
 
   action step = {
     nondet k = Set(ConsoleLog, ThrowError).oneOf()
-    nondet v = Set(Password, ApiKey, AccessToken, Descriptor, Neutral).oneOf()
+    nondet v = Set(Password, ApiKey, AccessToken, Descriptor, Handle, Neutral).oneOf()
     nondet c = Set(true, false).oneOf()
     nondet e = Set(true, false).oneOf()
     all { sink' = k, value' = v, checkConsole' = c, checkErrors' = e, verdict' = reports(k, v, c, e) }

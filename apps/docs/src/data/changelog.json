@@ -1,9 +1,1504 @@
 {
-  "releaseCount": 1549,
-  "packageCount": 66,
-  "entryCount": 3410,
+  "releaseCount": 1634,
+  "packageCount": 68,
+  "entryCount": 3554,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "6.5.5",
+      "date": "2026-11-26T17:25:37Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.5.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "6.3.4",
+      "date": "2026-11-26T17:25:24Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.3.4`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-jwt-security",
+      "short": "oxlint-plugin-jwt-security",
+      "version": "4.0.9",
+      "date": "2026-11-26T17:22:43Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-jwt-security@4.0.9`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "4.0.9",
+      "date": "2026-11-26T17:21:11Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`require-algorithm-whitelist` no longer reports a jose verify whose key already fixes the algorithm family. jose checks the key against the header `alg` and refuses `none`, so `jwtVerify(token, createLocalJWKSet({ keys }))`, `jwtVerify(token, new TextEncoder().encode(secret))` and a key from `importSPKI` / `importX509` / `importPKCS8` / `importJWK` cannot be steered to a weaker family by the token. The key is read structurally in the same file (a `const` is followed); a key from a parameter or an unreadable call, a callee that is not imported from jose, and every jsonwebtoken call keep being reported. Seen on Payload and logto.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "6.5.5",
+      "date": "2026-11-26T17:21:07Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-sensitive-data-exposure` no longer reports a name that ends in what a secret is called, where it lives or how much of it there is. The default `descriptorSegments` now also hold `id`, `ids`, `name`, `path`, `count`, `length`, `size`, `type` and `kind`, so `tokenCount` in a usage log, `secretPath` in a webhook log object and `secretName` in an error message are not reported. The comparison is still the whole final segment of the name: `token`, `accessToken`, `passwordHash` and `tokenIdValue` keep reporting, and `descriptorSegments` can drop any of the new ones. Seen on LibreChat, Infisical and Budibase.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-log-injection` no longer reports the raw request target. `req.url`, `request.url`, `ctx.url` and `req.path` / `ctx.path` hold the target as it came off the wire, and Node's HTTP parser rejects a request whose target carries a literal CR or LF (a percent-encoded `%0d%0a` stays encoded), so a forged log line cannot start there. The decoded and parsed parts (`query`, `params`, `body`, `headers`, `cookies`), a `url` read from them, and a `url` on an `event` or `message` root keep reporting. Seen on cal.com and Teable.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "6.3.4",
+      "date": "2026-11-26T17:20:55Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-dynamic-algorithm-selection` no longer reports an algorithm name read from a string enum declared in the same file. `createCipheriv(SecretEncryptionAlgo.AES_256_GCM, key, iv)`, and a `const` that holds such a member, can only produce a name the author wrote down, which is the allowlist the rule asks for. A member read by a caller-supplied key (`Algo[name]`), an enum with a numeric or computed member, a merged enum and an imported enum keep being reported. Seen on Infisical.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-toctou-vulnerability` no longer reports a check-then-use on a path beneath a directory the code created with `fs.mkdtemp` / `mkdtempSync` (also awaited, and through `path.join` or a template). `mkdtemp` makes a 0700 directory owned by the caller, so no other unprivileged user can create or swap a name inside it: the same absence of a shared namespace the per-user-root exemption already relies on. A path in the shared temp root, a `mkdtemp` that is not `fs`'s, and a path joined from unvalidated input (the Vendure `path.join(importAssetsDir, assetPath)` shape) are still reported. Seen on docmost.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-react-features",
+      "short": "oxlint-plugin-react-features",
+      "version": "2.4.6",
+      "date": "2026-11-26T17:01:36Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-react-features@2.4.6`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "2.4.6",
+      "date": "2026-11-26T17:00:08Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "accept eslint-plugin-react's option shapes for six rules airbnb configures",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "6.5.4",
+      "date": "2026-11-26T16:59:30Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.5.4`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "2.5.1",
+      "date": "2026-11-26T16:58:07Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "**✨ New**: `eslint-plugin-grpc-security`, starting with `no-unguarded-reflection`.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "6.5.4",
+      "date": "2026-11-26T16:57:06Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no-graphql-injection stops reading JS object fragments as GraphQL selection sets",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-vercel-ai-security",
+      "short": "oxlint-plugin-vercel-ai-security",
+      "version": "3.0.7",
+      "date": "2026-11-26T12:02:40Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-vercel-ai-security@3.0.7`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-typeorm-security",
+      "short": "oxlint-plugin-typeorm-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:58:13Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-typeorm-security@2.0.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-supabase-security",
+      "short": "oxlint-plugin-supabase-security",
+      "version": "2.0.6",
+      "date": "2026-11-26T11:57:56Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-supabase-security@2.0.6`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-sqlite-security",
+      "short": "oxlint-plugin-sqlite-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:56:45Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-sqlite-security@2.0.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-sequelize-security",
+      "short": "oxlint-plugin-sequelize-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:52:44Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-sequelize-security@2.0.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "6.5.3",
+      "date": "2026-11-26T11:51:43Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-hardcoded-credentials` no longer aborts the whole run on a TypeScript `import x = require('m')`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.5.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-react-features",
+      "short": "oxlint-plugin-react-features",
+      "version": "2.4.5",
+      "date": "2026-11-26T11:50:11Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-react-features@2.4.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-react-a11y",
+      "short": "oxlint-plugin-react-a11y",
+      "version": "3.2.1",
+      "date": "2026-11-26T11:46:24Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-react-a11y@3.2.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-prisma-security",
+      "short": "oxlint-plugin-prisma-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:46:16Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-prisma-security@2.0.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-postgresql-security",
+      "short": "oxlint-plugin-postgresql-security",
+      "version": "3.0.7",
+      "date": "2026-11-26T11:43:38Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-postgresql-security@3.0.7`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-openai-security",
+      "short": "oxlint-plugin-openai-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:42:33Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-openai-security@2.0.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "6.3.3",
+      "date": "2026-11-26T11:40:21Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.3.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-nestjs-security",
+      "short": "oxlint-plugin-nestjs-security",
+      "version": "4.3.2",
+      "date": "2026-11-26T11:40:06Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@4.3.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-mysql-security",
+      "short": "oxlint-plugin-mysql-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:39:29Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-mysql-security@2.0.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-mongodb-security",
+      "short": "oxlint-plugin-mongodb-security",
+      "version": "10.1.4",
+      "date": "2026-11-26T11:37:24Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-mongodb-security@10.1.4`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-mcp-sdk-security",
+      "short": "oxlint-plugin-mcp-sdk-security",
+      "version": "2.1.6",
+      "date": "2026-11-26T11:34:18Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-mcp-sdk-security@2.1.6`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-knex-security",
+      "short": "oxlint-plugin-knex-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:33:49Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-unsafe-query` accepts members of an enum imported by a relative path, and destructured parameters typed `number`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-knex-security@2.0.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-lambda-security",
+      "short": "oxlint-plugin-lambda-security",
+      "version": "3.0.7",
+      "date": "2026-11-26T11:33:49Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-lambda-security@3.0.7`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-jwt-security",
+      "short": "oxlint-plugin-jwt-security",
+      "version": "4.0.8",
+      "date": "2026-11-26T11:33:24Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-jwt-security@4.0.8`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-gemini-security",
+      "short": "oxlint-plugin-gemini-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:32:48Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-gemini-security@2.0.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-express-security",
+      "short": "oxlint-plugin-express-security",
+      "version": "4.4.3",
+      "date": "2026-11-26T11:32:47Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-express-security@4.4.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-drizzle-security",
+      "short": "oxlint-plugin-drizzle-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:32:30Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-drizzle-security@2.0.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-anthropic-security",
+      "short": "oxlint-plugin-anthropic-security",
+      "version": "2.0.6",
+      "date": "2026-11-26T11:30:57Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-anthropic-security@2.0.6`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-vercel-ai-security",
+      "short": "eslint-plugin-vercel-ai-security",
+      "version": "3.0.7",
+      "date": "2026-11-26T11:28:57Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `ai` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-typeorm-security",
+      "short": "eslint-plugin-typeorm-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:26:55Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `typeorm` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-supabase-security",
+      "short": "eslint-plugin-supabase-security",
+      "version": "2.0.6",
+      "date": "2026-11-26T11:26:31Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `@supabase/supabase-js` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sqlite-security",
+      "short": "eslint-plugin-sqlite-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:26:19Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `better-sqlite3`, `sqlite3` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "6.5.3",
+      "date": "2026-11-26T11:24:38Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-hardcoded-credentials` no longer aborts the whole run on a TypeScript `import x = require('m')`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sequelize-security",
+      "short": "eslint-plugin-sequelize-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:24:37Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `sequelize` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "2.4.5",
+      "date": "2026-11-26T11:24:00Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `react` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-a11y",
+      "short": "eslint-plugin-react-a11y",
+      "version": "3.2.1",
+      "date": "2026-11-26T11:23:39Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `react` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-prisma-security",
+      "short": "eslint-plugin-prisma-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:20:42Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `@prisma/client` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "3.0.7",
+      "date": "2026-11-26T11:19:51Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `pg` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-openai-security",
+      "short": "eslint-plugin-openai-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:18:48Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `openai`, `@openai/agents` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "6.3.3",
+      "date": "2026-11-26T11:18:42Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-timing-unsafe-compare` no longer reports an etag check, a record id, or the caller's own `@Body()` value",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-nestjs-security",
+      "short": "eslint-plugin-nestjs-security",
+      "version": "4.3.2",
+      "date": "2026-11-26T11:18:19Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `@nestjs/common`, `@nestjs/throttler`, `class-validator`, `class-transformer` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mysql-security",
+      "short": "eslint-plugin-mysql-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:15:36Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `mysql2` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mongodb-security",
+      "short": "eslint-plugin-mongodb-security",
+      "version": "10.1.4",
+      "date": "2026-11-26T11:13:54Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `mongodb`, `mongoose` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mcp-sdk-security",
+      "short": "eslint-plugin-mcp-sdk-security",
+      "version": "2.1.6",
+      "date": "2026-11-26T11:13:24Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `@modelcontextprotocol/sdk`, `@modelcontextprotocol/server`, `@modelcontextprotocol/client`, `@modelcontextprotocol/core`, `@modelcontextprotocol/node`, `@modelcontextprotocol/express`, `@modelcontextprotocol/hono`, `@modelcontextprotocol/fastify`, `@modelcontextprotocol/server-legacy` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-express-security",
+      "short": "eslint-plugin-express-security",
+      "version": "4.4.3",
+      "date": "2026-11-26T11:13:14Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `express`, `helmet`, `cors`, `csurf`, `express-rate-limit` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-knex-security",
+      "short": "eslint-plugin-knex-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:12:44Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `knex` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-unsafe-query` accepts members of an enum imported by a relative path, and destructured parameters typed `number`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-gemini-security",
+      "short": "eslint-plugin-gemini-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:12:26Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `@google/genai` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-drizzle-security",
+      "short": "eslint-plugin-drizzle-security",
+      "version": "2.0.5",
+      "date": "2026-11-26T11:12:08Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `drizzle-orm` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-lambda-security",
+      "short": "eslint-plugin-lambda-security",
+      "version": "3.0.7",
+      "date": "2026-11-26T11:12:06Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `@aws-sdk/client-lambda`, `@middy/core`, `@middy/http-cors`, `@middy/http-security-headers`, `@middy/validator` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-anthropic-security",
+      "short": "eslint-plugin-anthropic-security",
+      "version": "2.0.6",
+      "date": "2026-11-26T11:06:45Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `@anthropic-ai/sdk`, `@anthropic-ai/claude-agent-sdk` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "2.5.0",
+      "date": "2026-11-26T11:06:40Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-timing-unsafe-compare` no longer reports an etag check, a record id, or the caller's own `@Body()` value",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-unsafe-query` accepts members of an enum imported by a relative path, and destructured parameters typed `number`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "4.0.8",
+      "date": "2026-11-26T11:05:30Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no longer declares `jsonwebtoken`, `@nestjs/jwt`, `express-jwt`, `jose`, `jwks-rsa`, `jwt-decode` as optional `peerDependencies`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "6.5.2",
+      "date": "2026-11-26T07:33:44Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "`no-redos-vulnerable-regex` parses patterns with its own parser instead of `@eslint-community/regexpp`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.5.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "6.5.2",
+      "date": "2026-11-26T07:31:09Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "`no-redos-vulnerable-regex` parses patterns with its own parser instead of `@eslint-community/regexpp`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "6.5.1",
+      "date": "2026-11-26T02:17:58Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "`no-redos-vulnerable-regex` runs its own backtracking analysis instead of `refa` and `scslre`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.5.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "2.4.0",
+      "date": "2026-11-26T02:16:52Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`isSeparatorAnchored` now lives in `@interlace/eslint-devkit`. node-security's file-access rules and mcp-sdk-security's `no-path-traversal-in-tool` each carried their own copy, and the two had to be changed together. Both now import the one shared helper, so a `startsWith` containment guard gets the same verdict from every rule. Rule behaviour does not change.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-mcp-sdk-security",
+      "short": "oxlint-plugin-mcp-sdk-security",
+      "version": "2.1.5",
+      "date": "2026-11-26T02:13:06Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-mcp-sdk-security@2.1.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "6.3.2",
+      "date": "2026-11-26T02:06:50Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.3.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-express-security",
+      "short": "oxlint-plugin-express-security",
+      "version": "4.4.2",
+      "date": "2026-11-26T02:06:15Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-express-security@4.4.2`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-nestjs-security",
+      "short": "oxlint-plugin-nestjs-security",
+      "version": "4.3.1",
+      "date": "2026-11-26T02:00:09Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-nestjs-security@4.3.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mcp-sdk-security",
+      "short": "eslint-plugin-mcp-sdk-security",
+      "version": "2.1.5",
+      "date": "2026-11-26T01:57:19Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`isSeparatorAnchored` now lives in `@interlace/eslint-devkit`. node-security's file-access rules and mcp-sdk-security's `no-path-traversal-in-tool` each carried their own copy, and the two had to be changed together. Both now import the one shared helper, so a `startsWith` containment guard gets the same verdict from every rule. Rule behaviour does not change.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.4.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "6.3.2",
+      "date": "2026-11-26T01:55:33Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-arbitrary-file-access` now decides that a path variable is a function parameter by scope resolution, not by matching its name while walking up the tree. A `catch (file)` binding that shadows an outer `file` parameter fed request input is no longer reported as that parameter.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`isSeparatorAnchored` now lives in `@interlace/eslint-devkit`. node-security's file-access rules and mcp-sdk-security's `no-path-traversal-in-tool` each carried their own copy, and the two had to be changed together. Both now import the one shared helper, so a `startsWith` containment guard gets the same verdict from every rule. Rule behaviour does not change.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-timing-unsafe-compare`: a comparison against `void 0` is a comparison against `undefined`, the spelling bundlers and minifiers emit. `meta?.progressToken === void 0` in a bundled MCP server is a presence check, not a secret comparison. `=== undefined` was already silent. A token compared with a configured secret still reports.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.4.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "6.5.1",
+      "date": "2026-11-26T01:55:16Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-fail-open-auth`: a catch that stores the error in a variable is not fail-open when the next guard reads that variable and throws or returns. The rule now accepts this shape, which FastMCP's stdio authentication uses: `catch (e) { failure = e.message } if (failure !== void 0) throw …`. The write must always run, target a binding declared before the try, and not read its own old value, so a counter like `failures = failures + 1` does not count. The guard must also come before any work. A flag set only on some failures, a compound or member write, and work that runs before the guard still report.",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "`no-redos-vulnerable-regex` runs its own backtracking analysis instead of `refa` and `scslre`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.4.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "2.3.1",
+      "date": "2026-11-26T01:09:40Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "value-follow reads export ownership the way ES modules do",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "value-follow stops at a function or class name that is reassigned",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "no-missing-validation-pipe accepts a project decorator that wraps ValidationPipe",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-express-security",
+      "short": "eslint-plugin-express-security",
+      "version": "4.4.2",
+      "date": "2026-11-26T01:08:24Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no-exposed-debug-endpoints skips routes registered only outside production",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.3.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-nestjs-security",
+      "short": "eslint-plugin-nestjs-security",
+      "version": "4.3.1",
+      "date": "2026-11-26T01:03:14Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no-missing-validation-pipe finds a global pipe registered in a helper main.ts imports",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "no-missing-validation-pipe ignores commented-out helper calls",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "no-missing-validation-pipe names the real problem when a global pipe is registered",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "no-missing-validation-pipe accepts a project decorator that wraps ValidationPipe",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.3.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-react-a11y",
+      "short": "oxlint-plugin-react-a11y",
+      "version": "3.2.0",
+      "date": "2026-11-26T01:01:44Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-react-a11y@3.2.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "6.3.1",
+      "date": "2026-11-26T00:58:37Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.3.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "6.3.1",
+      "date": "2026-11-26T00:56:25Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no-timing-unsafe-compare skips browser code",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "no-timing-unsafe-compare skips imported literal constants and plain digests of request data",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "no-timing-unsafe-compare keeps checking server code that shares a file with JSX",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "no-timing-unsafe-compare checks a .tsx or .jsx file that renders no JSX",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.3.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-a11y",
+      "short": "eslint-plugin-react-a11y",
+      "version": "3.2.0",
+      "date": "2026-11-25T23:39:18Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "register three deprecated jsx-a11y rules as no-ops",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "a package whose `package.json` does not parse now resolves to `null` inside the oxc-free fallback resolver instead of throwing out of it. eslint-plugin-react-a11y only corrects a schema comment on its deprecated stubs.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.3.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-import-next",
+      "short": "oxlint-plugin-import-next",
+      "version": "4.2.1",
+      "date": "2026-11-25T23:38:50Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "drop the hard `oxc-resolver` dependency from import-next",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-import-next@4.2.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "4.2.1",
+      "date": "2026-11-25T23:35:27Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "drop the hard `oxc-resolver` dependency from import-next",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.3.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-reliability",
+      "short": "oxlint-plugin-reliability",
+      "version": "5.1.1",
+      "date": "2026-11-25T23:28:46Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-reliability@5.1.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "5.1.1",
+      "date": "2026-11-25T23:21:55Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-unhandled-promise`: a promise passed as the sole argument to the first parameter of an enclosing `new Promise((resolve) => …)` executor is not reported. `resolve(p)` adopts `p`, so its rejection settles the outer promise, whose handling is that site's report. `reject(p)`, any other call, a second-parameter or shadowed `resolve`, `resolve` outside an executor and a non-`Promise` constructor still report.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.3.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "2.3.0",
+      "date": "2026-11-25T23:21:44Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "resolve imports without `oxc-resolver` instead of throwing",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "a package whose `package.json` does not parse now resolves to `null` inside the oxc-free fallback resolver instead of throwing out of it. eslint-plugin-react-a11y only corrects a schema comment on its deprecated stubs.",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "oxlint-plugin-browser-security",
       "short": "oxlint-plugin-browser-security",
@@ -32170,6 +33665,41 @@
       ]
     },
     {
+      "package": "eslint-plugin-grpc-security",
+      "short": "eslint-plugin-grpc-security",
+      "version": "0.2.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`no-identity-from-metadata` reports a gRPC caller identity read from client-settable metadata",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-grpc-security",
+      "short": "eslint-plugin-grpc-security",
+      "version": "0.1.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "**✨ New**: `eslint-plugin-grpc-security`, starting with `no-unguarded-reflection`.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@2.5.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-import-next",
       "short": "eslint-plugin-import-next",
       "version": "4.1.4",
@@ -32480,6 +34010,46 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-grpc-security",
+      "short": "oxlint-plugin-grpc-security",
+      "version": "0.2.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`no-identity-from-metadata` reports a gRPC caller identity read from client-settable metadata",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-grpc-security@0.2.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-grpc-security",
+      "short": "oxlint-plugin-grpc-security",
+      "version": "0.1.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "**✨ New**: `eslint-plugin-grpc-security`, starting with `no-unguarded-reflection`.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-grpc-security@0.1.0`",
           "pr": null
         }
       ]

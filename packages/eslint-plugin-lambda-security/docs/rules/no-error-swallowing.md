@@ -5,7 +5,7 @@ tags: ['serverless', 'lambda', 'cwe-390', 'logging', 'aws']
 category: security
 severity: medium
 cwe: CWE-390
-owasp: "A09:2021"
+owasp: 'A09:2021'
 autofix: false
 ---
 
@@ -13,8 +13,8 @@ autofix: false
 > **CWE:** [CWE-390](https://cwe.mitre.org/data/definitions/390.html)  
 > **OWASP:** [A09:2021-Security Logging and Monitoring Failures](https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/)
 
-
 <!-- @rule-summary -->
+
 Detect empty catch blocks and missing error logging
 <!-- @/rule-summary -->
 
@@ -143,6 +143,18 @@ try {
 }
 ```
 
+### ✅ Rethrow everything but one class
+
+```typescript
+try {
+  await deleteRunner(id);
+} catch (error) {
+  if (!isNotFound(error)) throw error; // ✅ every other error propagates
+}
+```
+
+A `throw` reached through `if` / `else if` is counted when the test is the negation of something about the caught error (`!pred(e)`, `e.code !== K`, `!(e instanceof K)`, joined by `&&`). The opposite polarity (`if (isFatal(e)) throw e`) swallows every other error, and a test that never reads the error says nothing about it; both keep reporting.
+
 ## Error Logging Best Practices
 
 ### Include Context
@@ -222,7 +234,7 @@ catch (error) {
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `allowWithComment` | `boolean` | `true` | Allow an empty catch block that carries an explanatory comment |
+| Option             | Type      | Default | Description                                                    |
+| ------------------ | --------- | ------- | -------------------------------------------------------------- |
+| `allowInTests`     | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files                |
+| `allowWithComment` | `boolean` | `true`  | Allow an empty catch block that carries an explanatory comment |

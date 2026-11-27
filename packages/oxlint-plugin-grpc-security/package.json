@@ -1,0 +1,71 @@
+{
+  "name": "oxlint-plugin-grpc-security",
+  "version": "0.2.0",
+  "description": "Oxlint gRPC security rules — catches server reflection registered with no guard, and a caller identity read from client-settable metadata and then authorized on. Same rules and rule IDs as eslint-plugin-grpc-security, for oxlint and Vite+.",
+  "type": "commonjs",
+  "sideEffects": false,
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./index.js": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts"
+  },
+  "keywords": [
+    "oxlint",
+    "oxlint-plugin",
+    "vite-plus",
+    "eslint",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "grpc",
+    "grpc-js",
+    "grpc-security",
+    "grpc-reflection",
+    "protobuf",
+    "typescript"
+  ],
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-grpc-security?utm_source=npm&utm_medium=referral&utm_campaign=oxlint-plugin-grpc-security",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/oxlint-plugin-grpc-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "eslint-plugin-grpc-security": "0.2.0"
+  }
+}

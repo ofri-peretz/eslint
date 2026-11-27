@@ -47,6 +47,14 @@
       "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
     },
     {
+      "plugin": "eslint-plugin-grpc-security",
+      "surface": "@grpc/grpc-js, @grpc/reflection, grpc-server-reflection",
+      "surfaceVersion": "@grpc/grpc-js, @grpc/reflection and grpc-server-reflection are not installed in this repository and cannot be loaded, so their surface is not counted",
+      "denominatorTrust": "raw",
+      "denominatorNote": "Not enumerable here. The surface the rules target is two reflection registration calls (`ReflectionService#addToServer`, `addReflection`) and a handler reading `call.metadata.get`, not a set of APIs that can be misused.",
+      "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
+    },
+    {
       "plugin": "eslint-plugin-jwt-security",
       "surface": "jsonwebtoken \u2014 sign / verify / decode + jose / fast-jwt analogues",
       "surfaceVersion": "jsonwebtoken@9.x, jose@5.x",

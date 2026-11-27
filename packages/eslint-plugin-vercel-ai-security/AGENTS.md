@@ -97,6 +97,7 @@ If the project also depends on one of these, add the matching plugin the same wa
 - `sequelize`: `eslint-plugin-sequelize-security`
 - `typeorm`: `eslint-plugin-typeorm-security`
 - `@supabase/supabase-js`: `eslint-plugin-supabase-security`
+- `@grpc/grpc-js`, `@grpc/reflection`, `grpc-server-reflection`: `eslint-plugin-grpc-security`
 - `@modelcontextprotocol/*`: `eslint-plugin-mcp-sdk-security`
 - `openai`, `@openai/agents`: `eslint-plugin-openai-security`
 - `@anthropic-ai/sdk`, `@anthropic-ai/claude-agent-sdk`: `eslint-plugin-anthropic-security`

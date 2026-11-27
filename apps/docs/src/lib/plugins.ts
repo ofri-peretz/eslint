@@ -146,6 +146,12 @@ export const PLUGINS: PluginEntry[] = [
     description: 'OpenAI SDK security',
   },
   {
+    slug: 'grpc-security',
+    package: 'eslint-plugin-grpc-security',
+    pillar: 'security',
+    description: 'gRPC server security',
+  },
+  {
     slug: 'supabase-security',
     package: 'eslint-plugin-supabase-security',
     pillar: 'security',

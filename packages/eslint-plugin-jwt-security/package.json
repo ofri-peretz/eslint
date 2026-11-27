@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-jwt-security",
-  "version": "4.0.8",
+  "version": "4.0.9",
   "description": "ESLint JWT security rules — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify.",
   "type": "commonjs",
   "sideEffects": false,

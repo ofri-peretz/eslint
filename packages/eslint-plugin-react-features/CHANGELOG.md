@@ -5,6 +5,18 @@ All notable changes to `eslint-plugin-react-features` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.4.6
+
+### Patch Changes
+
+- **🐛 Fix** — accept eslint-plugin-react's option shapes for six rules airbnb configures
+
+  `jsx-no-bind`, `prefer-es6-class`, `default-props-match-prop-types`, `state-in-constructor`, `static-property-placement` and `sort-comp` rejected the options `eslint-config-airbnb` 19.0.4 passes, so ESLint refused to load that config. Each schema now accepts every shape eslint-plugin-react 7.37.5 accepts.
+
+  Honoured: `jsx-no-bind` `allowBind`, `ignoreRefs`, `ignoreDOMComponents`; `prefer-es6-class` `"never"`; `state-in-constructor` `"never"`. Accepted, not yet enforced: `jsx-no-bind` `allowArrowFunctions` and `allowFunctions`, `default-props-match-prop-types` `allowRequiredDefaults`, `static-property-placement` placement string and per-property object, `sort-comp` `groups`. The rule docs say so.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@2.5.1`
+
 ## 2.4.5
 
 ### Patch Changes

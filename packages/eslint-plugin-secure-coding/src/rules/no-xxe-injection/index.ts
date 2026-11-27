@@ -194,6 +194,10 @@ const PROVEN_NO_EXTERNAL_ENTITIES = [
   // `/** … */` comment (`nestjs/swagger` `lib/plugin/utils/ast-utils.ts`), and
   // the method name is the only thing it shares with xml2js.
   '@microsoft/tsdoc',
+  // Probed 2026-11-26 with the same canary document: `&xxe;` stays unresolved,
+  // nothing is read. It is the Node stand-in for the browser's DOMParser
+  // (DayuanJiang/next-ai-draw-io installs it as the global).
+  'linkedom',
 ];
 
 /**
@@ -461,6 +465,49 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
     const resolvesToEntityIncapableModule = (node: TSESTree.Node): boolean => {
       const binding = resolveModuleBinding(node, sourceCode.getScope(node));
       return binding !== undefined && incapablePackages.has(binding.module);
+    };
+
+    /**
+     * Is this the PLATFORM `DOMParser`: the global, declared nowhere in the file?
+     *
+     * The HTML standard forbids a user agent's DOMParser to fetch an external
+     * entity, so `new DOMParser().parseFromString(xml, 'text/xml')` on a
+     * caller-supplied diagram is not an XXE. The proof is the scope: the name
+     * resolves to no variable with a definition, so it is neither an import nor
+     * a local that could be anything. A `DOMParser` imported from an
+     * entity-capable package, or declared here, never takes this exit.
+     */
+    const isPlatformDomParser = (node: TSESTree.Node): boolean => {
+      if (node.type !== AST_NODE_TYPES.Identifier || node.name !== 'DOMParser')
+        return false;
+      const variable = variableOf(node);
+      return variable === null || variable.defs.length === 0;
+    };
+
+    /**
+     * `super.parseFromString(…)` inside a class that extends a package proven
+     * unable to resolve an external entity (`class X extends DOMParser` with
+     * `DOMParser` from linkedom): the delegate is that package's own parser.
+     */
+    const extendsIncapableModule = (callee: TSESTree.Node): boolean => {
+      if (
+        callee.type !== AST_NODE_TYPES.MemberExpression ||
+        callee.object.type !== AST_NODE_TYPES.Super
+      ) {
+        return false;
+      }
+      let cls: TSESTree.Node | undefined = callee.parent;
+      while (
+        cls &&
+        cls.type !== AST_NODE_TYPES.ClassDeclaration &&
+        cls.type !== AST_NODE_TYPES.ClassExpression
+      ) {
+        cls = cls.parent;
+      }
+      return (
+        cls?.superClass != null &&
+        resolvesToEntityIncapableModule(cls.superClass)
+      );
     };
 
     /**
@@ -825,8 +872,10 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
         // can reach the filesystem — see DEFAULT_EXTERNAL_ENTITY_MODULES.
         if (
           resolvesToEntityIncapableModule(node.callee) ||
+          extendsIncapableModule(node.callee) ||
           (construction !== undefined &&
-            resolvesToEntityIncapableModule(construction.callee))
+            (resolvesToEntityIncapableModule(construction.callee) ||
+              isPlatformDomParser(construction.callee)))
         ) {
           return;
         }

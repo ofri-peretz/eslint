@@ -14,6 +14,7 @@
     ["eslint-plugin-drizzle-security", "oxlint-plugin-drizzle-security"],
     ["eslint-plugin-express-security", "oxlint-plugin-express-security"],
     ["eslint-plugin-gemini-security", "oxlint-plugin-gemini-security"],
+    ["eslint-plugin-grpc-security", "oxlint-plugin-grpc-security"],
     ["eslint-plugin-import-next", "oxlint-plugin-import-next"],
     ["eslint-plugin-jwt-security", "oxlint-plugin-jwt-security"],
     ["eslint-plugin-knex-security", "oxlint-plugin-knex-security"],

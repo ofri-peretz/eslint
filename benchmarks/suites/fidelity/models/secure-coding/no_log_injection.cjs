@@ -1,8 +1,8 @@
 const { tag } = require('../../lib.cjs');
 
 module.exports = {
-  domain: 144,
-  traces: 1200,
+  domain: 168,
+  traces: 1500,
   rule: 'no-log-injection',
   key: (s) => `${tag(s.recv)}|${tag(s.shape)}|${tag(s.source)}`,
   config: () => ({}),
@@ -21,6 +21,7 @@ module.exports = {
       Wrapped: 'sanitizeForLog(req.body.username)',
       Param: 'username',
       LocalCount: 'name',
+      ReqUrl: 'req.url',
     }[src];
     const recv = {
       Console: 'console',

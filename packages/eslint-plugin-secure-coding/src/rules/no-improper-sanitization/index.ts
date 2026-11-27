@@ -222,6 +222,8 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
     };
     /** `&amp;` `&lt;` `&#039;` `&#x27;` — a replacement that produces markup-safe text. */
     const ENTITY = /&(?:amp|lt|gt|quot|apos|#x[0-9a-f]+|#\d+);/i;
+    /** The entity a quote becomes. */
+    const QUOTE_ENTITY = /^(?:&quot;|&apos;|&#0?3[49];|&#x2[27];)$/i;
 
     /**
      * Does this expression read a value an outside party controls?
@@ -472,6 +474,129 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Does this file ship a link that escapes a QUOTE into an entity: the
+     * attribute-context half of an escaping pair? Collected once per file.
+     */
+    let escapesQuotesSomewhere: boolean | null = null;
+    const fileEscapesQuotes = (): boolean => {
+      if (escapesQuotesSomewhere !== null) return escapesQuotesSomewhere;
+      escapesQuotesSomewhere = false;
+      const keys = sourceCode.visitorKeys;
+      const stack: TSESTree.Node[] = [sourceCode.ast];
+      while (stack.length > 0 && !escapesQuotesSomewhere) {
+        const current = stack.pop() as TSESTree.Node;
+        if (
+          isReplaceCall(current) &&
+          ['"', "'"].includes(staticPattern(current.arguments[0]) ?? '') &&
+          QUOTE_ENTITY.test(staticReplacement(current.arguments[1]) ?? '')
+        ) {
+          escapesQuotesSomewhere = true;
+        }
+        for (const key of keys[current.type] as readonly string[]) {
+          const child = (current as unknown as Record<string, unknown>)[key];
+          for (const item of Array.isArray(child) ? child : [child]) {
+            if (item !== null && typeof item === 'object') {
+              stack.push(item as TSESTree.Node);
+            }
+          }
+        }
+      }
+      return escapesQuotesSomewhere;
+    };
+
+    /** The static text a `+` chain or template contributes, dynamic parts as ''. */
+    const staticText = (node: TSESTree.Node): string => {
+      if (node.type === AST_NODE_TYPES.Literal) return String(node.value);
+      if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+        return node.quasis.map((quasi) => quasi.value.raw).join('');
+      }
+      if (
+        node.type === AST_NODE_TYPES.BinaryExpression &&
+        node.operator === '+'
+      ) {
+        return staticText(node.left) + staticText(node.right);
+      }
+      return '';
+    };
+
+    /**
+     * Does this call sit INSIDE a tag, between `<` and the `>` that closes it?
+     * The text written before it decides: the last `<` after the last `>` means
+     * an attribute value (or a tag name) is being written.
+     */
+    const isInsideTag = (call: TSESTree.CallExpression): boolean => {
+      const parent = call.parent as TSESTree.Node;
+      let before = '';
+      if (parent.type === AST_NODE_TYPES.TemplateLiteral) {
+        before = parent.quasis
+          .slice(0, parent.expressions.indexOf(call) + 1)
+          .map((quasi) => quasi.value.raw)
+          .join('');
+      } else if (
+        parent.type === AST_NODE_TYPES.BinaryExpression &&
+        parent.operator === '+' &&
+        parent.right === call
+      ) {
+        before = staticText(parent.left);
+      }
+      return before.lastIndexOf('<') > before.lastIndexOf('>');
+    };
+
+    /**
+     * A `& < >` escaper that is a function of its own, in a file that also ships
+     * the quote-escaping half, and that this file never calls inside a tag.
+     *
+     * A quote has to be escaped only where it can end an attribute value. A file
+     * that splits the duty (`escapeText` beside `escapeAttribute`) has said which
+     * helper owns attributes, and the evidence that it holds is in the same file:
+     * no call of the text helper sits in a tag. The chain must be the function's
+     * whole return value, and the function a named declaration or a `const`, so
+     * its call sites can be read. A call site the file does not contain (an
+     * export) is not evidence either way, and the exemption is withdrawn the
+     * moment one in-file call writes into a tag.
+     */
+    const isTextEscaperBesideAttributeEscaper = (
+      chain: TSESTree.CallExpression,
+    ): boolean => {
+      const holder = chain.parent as TSESTree.Node | undefined;
+      if (holder === undefined) return false;
+      const fn =
+        holder.type === AST_NODE_TYPES.ReturnStatement
+          ? (holder.parent?.parent as TSESTree.Node | undefined)
+          : holder;
+      if (
+        fn === undefined ||
+        (fn.type !== AST_NODE_TYPES.FunctionDeclaration &&
+          fn.type !== AST_NODE_TYPES.FunctionExpression &&
+          fn.type !== AST_NODE_TYPES.ArrowFunctionExpression)
+      ) {
+        return false;
+      }
+      const binder =
+        fn.type === AST_NODE_TYPES.FunctionDeclaration
+          ? fn
+          : (fn.parent as TSESTree.Node);
+      if (
+        binder.type !== AST_NODE_TYPES.FunctionDeclaration &&
+        binder.type !== AST_NODE_TYPES.VariableDeclarator
+      ) {
+        return false;
+      }
+      const [variable] = sourceCode.getDeclaredVariables(binder);
+      return (
+        variable !== undefined &&
+        fileEscapesQuotes() &&
+        !variable.references.some(
+          (ref) =>
+            !ref.init &&
+            ref.identifier.parent?.type === AST_NODE_TYPES.CallExpression &&
+            ref.identifier.parent.callee === ref.identifier &&
+            isInsideTag(ref.identifier.parent),
+        )
+      );
+    };
+
+    /**
      * Check whether a `.replace()` chain is an INCOMPLETE HTML escaper.
      *
      * Two conditions, both about meaning rather than shape:
@@ -612,6 +737,43 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
       }
     };
 
+    /**
+     * Is this literal itself a value of the object or array a `.json()` call
+     * serialises? The response is `application/json`, so a `<` in a string there
+     * is not markup, and what a SIBLING field holds says nothing about it. A
+     * literal that is one operand of a concatenation or a template is part of a
+     * larger string whose other pieces may be tainted, and is not this.
+     */
+    const isJsonValue = (
+      literal: TSESTree.Node,
+      call: TSESTree.CallExpression,
+    ): boolean => {
+      if (propertyName(call.callee as TSESTree.MemberExpression) !== 'json') {
+        return false;
+      }
+      let current: TSESTree.Node = literal;
+      for (;;) {
+        const parent = current.parent as TSESTree.Node;
+        if (parent === call) {
+          return call.arguments.includes(
+            current as TSESTree.CallExpressionArgument,
+          );
+        }
+        if (
+          (parent.type === AST_NODE_TYPES.Property &&
+            parent.value === current) ||
+          parent.type === AST_NODE_TYPES.ObjectExpression ||
+          parent.type === AST_NODE_TYPES.ArrayExpression ||
+          parent.type === AST_NODE_TYPES.TSAsExpression ||
+          parent.type === AST_NODE_TYPES.TSSatisfiesExpression
+        ) {
+          current = parent;
+          continue;
+        }
+        return false;
+      }
+    };
+
     return {
       before() {
         const options = context.options[0] || {};
@@ -631,6 +793,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
 
         sourceCode = context.sourceCode;
         filename = context.filename;
+        escapesQuotesSomewhere = null;
 
         // Create safety checker for false positive detection
         safetyChecker = createSafetyChecker({
@@ -676,6 +839,9 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
           }
 
           if (isIncompleteReplaceSanitization(node, quoteEscapedLater(node))) {
+            if (isTextEscaperBesideAttributeEscaper(node)) {
+              return;
+            }
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
@@ -810,6 +976,8 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         // Check if this string is used in a dangerous context
         let current: TSESTree.Node | undefined = node;
         let isInDangerousContext = false;
+        let sinkCall: TSESTree.CallExpression | undefined;
+        let crossedConstructor = false;
 
         // Every path that sets `isInDangerousContext = true` is followed by `break`,
         // so the negation in the condition is dead (CodeQL: `js/useless-conditional`).
@@ -833,13 +1001,30 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             ) {
               // Could be response output
               isInDangerousContext = true;
+              sinkCall = current;
               break;
             }
+          } else if (current.type === AST_NODE_TYPES.NewExpression) {
+            // `client.send(new Command({ … }))`: what is inside the constructor
+            // configures the object being built, it is not the text written.
+            crossedConstructor = true;
           }
           current = current.parent as TSESTree.Node;
         }
 
         if (isInDangerousContext) {
+          const carriesDangerousMarkup =
+            /<script[\s>]|<\/script>|\son\w+\s*=|javascript:/i.test(text);
+          // Ordinary constants that are not text written to the sink. Dangerous
+          // markup still reports: there the literal IS the vector.
+          if (
+            !carriesDangerousMarkup &&
+            (crossedConstructor ||
+              (sinkCall !== undefined && isJsonValue(node, sinkCall)))
+          ) {
+            return;
+          }
+
           // A bare literal is developer-authored and carries no taint: nothing
           // an attacker controls reaches it, so `<` in it is markup the author
           // typed, not injection. Same reasoning the innerHTML branch above

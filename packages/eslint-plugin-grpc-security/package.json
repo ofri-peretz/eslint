@@ -1,0 +1,96 @@
+{
+  "name": "eslint-plugin-grpc-security",
+  "version": "0.2.0",
+  "description": "ESLint gRPC security rules — catches server reflection registered with no guard, and a caller identity read from client-settable metadata and then authorized on.",
+  "type": "commonjs",
+  "sideEffects": false,
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./oxlint": {
+      "types": "./dist/src/oxlint.d.ts",
+      "default": "./dist/src/oxlint.js"
+    }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-grpc-security?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/eslint-plugin-grpc-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "AGENTS.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "grpc",
+    "grpc-js",
+    "grpc-security",
+    "grpc-reflection",
+    "protobuf",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "peerDependencies": {
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"
+  },
+  "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@interlace/eslint-devkit": "^2.5.1"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.68.0",
+    "@typescript-eslint/rule-tester": "^8.68.0"
+  },
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsgo -p tsconfig.lib.json --noEmit"
+  },
+  "interlace": {
+    "surface": {
+      "kind": "npm",
+      "modules": [
+        "@grpc/grpc-js",
+        "@grpc/reflection",
+        "grpc-server-reflection"
+      ]
+    }
+  }
+}

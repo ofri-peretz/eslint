@@ -49,6 +49,10 @@ export const PLUGINS: readonly Plugin[] = [
   ['sequelize-security', 'sequelize: raw query injection'],
   ['typeorm-security', 'typeorm: raw query injection'],
   [
+    'grpc-security',
+    '@grpc/grpc-js: unguarded reflection, caller identity read from metadata',
+  ],
+  [
     'supabase-security',
     '@supabase/supabase-js: service_role key in client code',
   ],
