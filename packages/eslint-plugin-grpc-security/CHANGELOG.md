@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-grpc-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.0
+
+### Minor Changes
+
+- **✨ Feature** — `no-identity-from-metadata` reports a gRPC caller identity read from client-settable metadata
+
+  gRPC metadata is HTTP/2 headers, and the client sets every one of them. A backend that takes "who is calling" from a header a gateway is supposed to set (`x-authenticated-user`) trusts the client as soon as the backend is reachable another way. The rule reports a read of a handler's `call.metadata` whose value reaches an equality check against a per-request record (`acc.owner !== user`). Resolving the header through a server-side lookup or a verifier first keeps it silent. It decides from the flow, never from the header's name, and is in `recommended`.
+
 ## 0.1.0
 
 ### Minor Changes
