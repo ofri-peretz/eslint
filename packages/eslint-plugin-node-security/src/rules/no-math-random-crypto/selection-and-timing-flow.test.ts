@@ -157,6 +157,10 @@ ruleTester.run(
         code: `const tokenWake = Math.random() * 500;
           setTimeout(tokenWake);`,
       },
+      {
+        name: 'a pick from a member expression is a selection',
+        code: `export const credential = this.credentials[Math.floor(Math.random() * this.credentials.length)];`,
+      },
     ],
     invalid: [
       {

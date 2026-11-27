@@ -155,7 +155,10 @@ describe('no-math-random-crypto', () => {
          };`,
         // The substring trap this rule was carrying unfired: `/iv/i` matched
         // `div`, `/pin/i` matched `spinner`, `/key/i` matched `monkey`.
-        `const div = Math.random();`,
+        {
+          name: 'div contains iv as a substring but is not the word iv',
+          code: 'const div = Math.random();',
+        },
         `const spinnerFrame = Math.floor(Math.random() * 4);`,
         `const monkeyIndex = Math.floor(Math.random() * 10);`,
       ],

@@ -83,8 +83,28 @@ ruleTester.run('no-error-swallowing (conditional rethrow)', noErrorSwallowing, {
         `try { await del(); } catch (e) { if (e.code != 'ENOENT') throw e; }`,
       ),
     },
+    {
+      name: 'cleans up, then rethrows everything but the expected class',
+      code: asLambda(
+        `try { await del(); } catch (e) { if (!isNotFound(e)) { cleanup(); throw e; } }`,
+      ),
+    },
   ],
   invalid: [
+    {
+      name: 'a rethrow in the else of a test that never reads the error says nothing about it',
+      code: asLambda(
+        `try { await del(); } catch (e) { if (process.env.DEBUG) { cleanup(); } else { throw e; } }`,
+      ),
+      errors: swallowed,
+    },
+    {
+      name: 'a rethrow in the else of a negated test throws only the named class',
+      code: asLambda(
+        `try { await del(); } catch (e) { if (!isNotFound(e)) { cleanup(); } else { throw e; } }`,
+      ),
+      errors: swallowed,
+    },
     {
       name: 'a disjunction of negations is not a classification of one class',
       code: asLambda(
