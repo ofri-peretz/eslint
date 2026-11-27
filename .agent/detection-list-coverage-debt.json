@@ -220,7 +220,6 @@
     "mnemonic",
     "passphrase",
     "passwd",
-    "secrets",
     "signature",
     "verify"
   ],
