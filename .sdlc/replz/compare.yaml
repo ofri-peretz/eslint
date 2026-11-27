@@ -15,10 +15,12 @@ normalize:
   # Node prints its process id in warnings.
   - '\(node:\d+\)'
 approved:
-  # eslint#1831 adds benchmarks/corpus/CWE-319 (the protocol-ctf lib/grpc.mjs verbatim plus
-  # three gRPC fixtures). Every other rule now also runs over them, which adds lines to the
-  # output and shifts the ones after. New corpus inputs; no rule changed.
+  # eslint#1832 adds benchmarks/corpus/CWE-532 and two rules. The full-plugin config this
+  # compare runs also turns on the strict-only grpc-security/require-call-deadline, which
+  # correctly reports the deadline-less call in CWE-319/safe/grpc-bearer-over-tls-channel.js
+  # (safe for CWE-319: the channel is TLS). New corpus inputs and one true finding; no other
+  # rule changed.
   - input: corpus.txt
-    base: fba0819ea40d
-    head: 032b3ff1559f
-    reason: gRPC fixtures added to benchmarks/corpus/CWE-319 (new inputs, no rule behaviour changed)
+    base: 032b3ff1559f
+    head: c7e367b5bac0
+    reason: CWE-532 gRPC fixtures added, and require-call-deadline reports a call with no deadline (new rule, correct finding)
