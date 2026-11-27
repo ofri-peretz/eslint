@@ -22,19 +22,23 @@
 import type { TSESLint } from '@interlace/eslint-devkit';
 import { withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
+import { noCredentialMetadataLogging } from './rules/no-credential-metadata-logging';
 import { noErrorDetailLeak } from './rules/no-error-detail-leak';
 import { noIdentityFromMetadata } from './rules/no-identity-from-metadata';
 import { noInsecureChannelCredentials } from './rules/no-insecure-channel-credentials';
 import { noInsecureServerCredentials } from './rules/no-insecure-server-credentials';
 import { noUnboundedMessageSize } from './rules/no-unbounded-message-size';
 import { noUnguardedReflection } from './rules/no-unguarded-reflection';
+import { requireCallDeadline } from './rules/require-call-deadline';
 
+export { noCredentialMetadataLogging } from './rules/no-credential-metadata-logging';
 export { noErrorDetailLeak } from './rules/no-error-detail-leak';
 export { noIdentityFromMetadata } from './rules/no-identity-from-metadata';
 export { noInsecureChannelCredentials } from './rules/no-insecure-channel-credentials';
 export { noInsecureServerCredentials } from './rules/no-insecure-server-credentials';
 export { noUnboundedMessageSize } from './rules/no-unbounded-message-size';
 export { noUnguardedReflection } from './rules/no-unguarded-reflection';
+export { requireCallDeadline } from './rules/require-call-deadline';
 
 /**
  * gRPC security rules.
@@ -43,12 +47,16 @@ export { noUnguardedReflection } from './rules/no-unguarded-reflection';
  * client the full list of services on the listener, internal ones included;
  * a caller identity read from client-settable metadata and authorized on; an
  * unbounded message size; a caught error's text sent to the client; and
- * plaintext transport where the file proves exposure or a secret on the wire.
+ * plaintext transport where the file proves exposure or a secret on the wire;
+ * credentials written to logs; and, in `strict` only, client calls with no
+ * deadline.
  */
 export const rules: Record<
   string,
   TSESLint.RuleModule<string, readonly unknown[]>
 > = {
+  // CWE-532: Insertion of Sensitive Information into Log File
+  'no-credential-metadata-logging': noCredentialMetadataLogging,
   // CWE-209: Generation of Error Message Containing Sensitive Information
   'no-error-detail-leak': noErrorDetailLeak,
   // CWE-290: Authentication Bypass by Spoofing
@@ -60,6 +68,8 @@ export const rules: Record<
   'no-unguarded-reflection': noUnguardedReflection,
   // CWE-770: Allocation of Resources Without Limits or Throttling
   'no-unbounded-message-size': noUnboundedMessageSize,
+  // CWE-400: Uncontrolled Resource Consumption — strict only
+  'require-call-deadline': requireCallDeadline,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -99,6 +109,7 @@ const recommendedConfig: TSESLint.FlatConfig.Config = {
     'grpc-security/no-error-detail-leak': 'error',
     'grpc-security/no-insecure-server-credentials': 'error',
     'grpc-security/no-insecure-channel-credentials': 'error',
+    'grpc-security/no-credential-metadata-logging': 'error',
   },
 } satisfies TSESLint.FlatConfig.Config;
 

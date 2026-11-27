@@ -4,7 +4,7 @@
 
 Guide for AI coding assistants using this plugin in a project. To change the plugin's own source, read https://github.com/ofri-peretz/eslint/blob/main/AGENTS.md instead.
 
-> ESLint gRPC security rules — catches server reflection registered with no guard, a caller identity read from client-settable metadata, message size limits removed, caught errors sent to the client, and plaintext transport that is exposed or carries secrets.
+> ESLint gRPC security rules — catches server reflection registered with no guard, a caller identity read from client-settable metadata, message size limits removed, caught errors sent to the client, plaintext transport that is exposed or carries secrets, credentials written to logs, and calls with no deadline.
 
 ## Enable it
 
@@ -32,8 +32,8 @@ Use it alongside `eslint-plugin-security`, not instead of it: keep that plugin i
 | Preset        | Rules | Errors | Warnings |
 | ------------- | ----- | ------ | -------- |
 | `minimal`     | 1     | 1      | 0        |
-| `recommended` | 6     | 6      | 0        |
-| `strict`      | 6     | 6      | 0        |
+| `recommended` | 7     | 7      | 0        |
+| `strict`      | 8     | 8      | 0        |
 
 ### `minimal`
 
@@ -43,7 +43,7 @@ Use it alongside `eslint-plugin-security`, not instead of it: keep that plugin i
 
 ### `recommended`
 
-6 rules:
+7 rules:
 
 - `no-unguarded-reflection` (error): Register gRPC server reflection only behind a guard.
 - `no-identity-from-metadata` (error): Do not authorize a gRPC caller by an identity read from metadata.
@@ -51,10 +51,13 @@ Use it alongside `eslint-plugin-security`, not instead of it: keep that plugin i
 - `no-error-detail-leak` (error): Do not send a caught error's stack or message to the gRPC client.
 - `no-insecure-server-credentials` (error): Do not serve plaintext gRPC on every interface.
 - `no-insecure-channel-credentials` (error): Do not send credentials over a plaintext gRPC channel.
+- `no-credential-metadata-logging` (error): Do not log gRPC metadata that carries credentials.
 
 ### `strict`
 
-Same rules as `recommended`.
+Everything in `recommended` plus 1 more:
+
+- `require-call-deadline` (error): Give every gRPC client call a deadline.
 
 ## Other Interlace plugins by dependency
 

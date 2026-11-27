@@ -66,8 +66,8 @@
     },
     {
       "name": "eslint-plugin-grpc-security",
-      "rules": 6,
-      "description": "ESLint gRPC security rules — catches server reflection registered with no guard, a caller identity read from client-settable metadata, message size limits removed, caught errors sent to the client, and plaintext transport that is exposed or carries secrets",
+      "rules": 8,
+      "description": "ESLint gRPC security rules — catches server reflection registered with no guard, a caller identity read from client-settable metadata, message size limits removed, caught errors sent to the client, plaintext transport that is exposed or carries secrets, credentials written to logs, and calls with no deadline",
       "category": "security",
       "version": "0.0.0",
       "published": true
@@ -265,7 +265,7 @@
       "published": true
     }
   ],
-  "totalRules": 525,
+  "totalRules": 527,
   "totalPlugins": 32,
   "allPluginsCount": 33,
   "generatedAt": "2026-11-27"

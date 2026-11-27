@@ -48,9 +48,9 @@
       "files": 10
     },
     "eslint-plugin-grpc-security": {
-      "unpacked": 63,
-      "tarball": 15,
-      "files": 17
+      "unpacked": 74,
+      "tarball": 17,
+      "files": 19
     },
     "eslint-plugin-import-next": {
       "unpacked": 264,
@@ -208,7 +208,7 @@
       "files": 5
     },
     "oxlint-plugin-grpc-security": {
-      "unpacked": 22,
+      "unpacked": 23,
       "tarball": 5,
       "files": 5
     },

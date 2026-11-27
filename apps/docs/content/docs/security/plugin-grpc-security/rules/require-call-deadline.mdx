@@ -1,0 +1,57 @@
+---
+title: require-call-deadline
+description: "Give every gRPC client call a deadline"
+tags: ['security', 'grpc']
+category: security
+severity: medium
+cwe: CWE-400
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> Give every gRPC client call a deadline.
+
+- **CWE:** [CWE-400 — Uncontrolled Resource Consumption](https://cwe.mitre.org/data/definitions/400.html)
+- **OWASP:** A04:2021 — Insecure Design
+- **CVSS:** 5.3 (Medium)
+- **Recommended:** off (`strict` only)
+
+## Why
+
+A gRPC call has no timeout unless the caller sets a `deadline`. Against a slow or stalled server, every call without one holds its stream, its memory and whatever is waiting on it, indefinitely. Under load those pile up until the client runs out of resources, and a single slow dependency takes down everything that calls it.
+
+## Rule details
+
+The rule identifies a client by structure: `new X(target, credentials)` whose second argument is gRPC channel credentials (`credentials.createSsl()`, `createInsecure()`, `combineChannelCredentials(…)`). The credentials can be inline or in a `const`, and `X` can be any generated service client or `Client`.
+
+A method call on that client is reported when:
+
+- no argument is an options object with a `deadline` (inline or through a `const`), and
+- every argument the file can't read sits where only the request can go. An unreadable later argument might be an options object that holds a deadline, so the rule stays silent. The same goes for a single unreadable argument with no callback, which could be a streaming call's options.
+
+`close()`, `getChannel()` and `waitForReady()` aren't calls and are skipped.
+
+This rule is in `strict` only. A deadline can also be set by an interceptor or a wrapper the file can't see, so a missing deadline is a best practice the code doesn't prove, not a defect.
+
+## Incorrect
+
+```js
+const client = new pkg.Orders(target, grpc.credentials.createSsl());
+client.GetOrder({ id }, (err, order) => {});
+```
+
+## Correct
+
+```js
+const client = new pkg.Orders(target, grpc.credentials.createSsl());
+client.GetOrder({ id }, { deadline: Date.now() + 5000 }, (err, order) => {});
+```
+
+## Further reading
+
+- [gRPC deadlines](https://grpc.io/docs/guides/deadlines/)

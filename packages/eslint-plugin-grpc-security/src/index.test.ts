@@ -6,12 +6,14 @@ import { describe, it, expect } from 'vitest';
 
 import plugin, {
   configs,
+  noCredentialMetadataLogging,
   noErrorDetailLeak,
   noIdentityFromMetadata,
   noInsecureChannelCredentials,
   noInsecureServerCredentials,
   noUnboundedMessageSize,
   noUnguardedReflection,
+  requireCallDeadline,
   plugin as namedPlugin,
   rules,
 } from './index';
@@ -19,13 +21,19 @@ import plugin, {
 describe('eslint-plugin-grpc-security', () => {
   it('exposes every rule under its documented id', () => {
     expect(Object.keys(rules).sort()).toEqual([
+      'no-credential-metadata-logging',
       'no-error-detail-leak',
       'no-identity-from-metadata',
       'no-insecure-channel-credentials',
       'no-insecure-server-credentials',
       'no-unbounded-message-size',
       'no-unguarded-reflection',
+      'require-call-deadline',
     ]);
+    expect(rules['no-credential-metadata-logging']).toBe(
+      noCredentialMetadataLogging,
+    );
+    expect(rules['require-call-deadline']).toBe(requireCallDeadline);
     expect(rules['no-error-detail-leak']).toBe(noErrorDetailLeak);
     expect(rules['no-unbounded-message-size']).toBe(noUnboundedMessageSize);
     expect(rules['no-insecure-server-credentials']).toBe(
@@ -64,12 +72,22 @@ describe('eslint-plugin-grpc-security', () => {
       'no-error-detail-leak',
       'no-insecure-server-credentials',
       'no-insecure-channel-credentials',
+      'no-credential-metadata-logging',
     ]) {
       expect(configs.recommended.rules?.[`grpc-security/${rule}`]).toBe(
         'error',
       );
       expect(configs.minimal.rules?.[`grpc-security/${rule}`]).toBeUndefined();
     }
+  });
+
+  it('keeps require-call-deadline in strict only', () => {
+    expect(
+      configs.recommended.rules?.['grpc-security/require-call-deadline'],
+    ).toBeUndefined();
+    expect(configs.strict.rules?.['grpc-security/require-call-deadline']).toBe(
+      'error',
+    );
   });
 
   it('turns every rule on in strict, by name', () => {

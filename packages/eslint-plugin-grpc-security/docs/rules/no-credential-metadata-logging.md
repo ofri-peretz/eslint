@@ -1,0 +1,66 @@
+---
+title: no-credential-metadata-logging
+description: Do not log gRPC metadata that carries credentials
+tags: ['security', 'grpc']
+category: security
+severity: medium
+cwe: CWE-532
+autofix: false
+---
+
+# no-credential-metadata-logging
+
+> Do not log gRPC metadata that carries credentials.
+
+- **CWE:** [CWE-532 — Insertion of Sensitive Information into Log File](https://cwe.mitre.org/data/definitions/532.html)
+- **OWASP:** A09:2021 — Security Logging and Monitoring Failures
+- **CVSS:** 6.5 (Medium)
+- **Recommended:** `error`
+
+## Why
+
+gRPC metadata carries the caller's credentials: the bearer token, the session cookie, the API key. Logging the whole metadata object, a dump of it, or a credential header's value writes those secrets into every log store, aggregator and support export downstream. Anyone with log access can then replay them.
+
+## Rule details
+
+The rule reports an argument of a logging call when it contains any of:
+
+- **The metadata object itself:** a gRPC handler's `call.metadata` (or a destructured `{ metadata }`), or a `new Metadata()` the file builds.
+- **A dump of it:** `getMap()`, `toJSON()` or `toHttp2Headers()`.
+- **A credential header's value:** `get('authorization')` (or its `[0]`), or `getMap().cookie`, for `authorization`, `proxy-authorization`, `cookie` or `x-api-key` in any case.
+
+The rule looks inside objects, arrays, spreads, templates, `+`, `||`, ternaries, consts, `String()` and `JSON.stringify()`.
+
+A logger is the global `console`, or a receiver bound to a logging library: an import of `pino`, `winston`, `bunyan`, `log4js`, `loglevel`, `consola` or `signale`, or the result of calling one (`pino()`, `winston.createLogger()`).
+
+Two choices keep this structural rather than name-based. The Metadata API is the anchor, so only gRPC metadata counts. The header set is the HTTP definition of a credential header (RFC 9110, RFC 6265, plus `x-api-key`), not a guess at a name.
+
+## Incorrect
+
+```js
+server.addService(svc, {
+  GetAccount(call, callback) {
+    logger.info({ headers: call.metadata.getMap() }, 'GetAccount');
+    console.log('auth', call.metadata.get('authorization'));
+  },
+});
+```
+
+## Correct
+
+```js
+server.addService(svc, {
+  GetAccount(call, callback) {
+    logger.info(
+      { requestId: call.metadata.get('x-request-id')[0] },
+      'GetAccount',
+    );
+  },
+});
+```
+
+If a logger receives whole objects, configure its redaction (pino `redact`, a winston format) for those keys as well.
+
+## Further reading
+
+- [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)
