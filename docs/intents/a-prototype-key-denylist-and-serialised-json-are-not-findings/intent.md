@@ -10,7 +10,7 @@ cases:
 
 # Intent — a prototype-key denylist and serialised JSON are not findings
 
-**Status:** shipped · **Opened:** 2026-11-26 · **Owner:** @ofri-peretz
+**Status:** approved · **Opened:** 2026-11-26 · **Owner:** @ofri-peretz
 
 ## What is wanted
 
@@ -43,7 +43,7 @@ the remediation teaches its users to turn the rule off.
   handler, `javascript:`) still reports, as the innerHTML literal path does;
   the same literal reaching a sink without `JSON.stringify` still reports.
 
-## Done when
+## Success criteria
 
 - `denylist-guard.test.ts` and `json-serialised-literal.test.ts` pass, and
   their valid cases fail on the unfixed rules.
