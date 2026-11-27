@@ -1,7 +1,7 @@
 {
-  "releaseCount": 1632,
+  "releaseCount": 1634,
   "packageCount": 68,
-  "entryCount": 3551,
+  "entryCount": 3554,
   "oldestYear": 2024,
   "releases": [
     {
@@ -33667,6 +33667,21 @@
     {
       "package": "eslint-plugin-grpc-security",
       "short": "eslint-plugin-grpc-security",
+      "version": "0.2.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`no-identity-from-metadata` reports a gRPC caller identity read from client-settable metadata",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-grpc-security",
+      "short": "eslint-plugin-grpc-security",
       "version": "0.1.0",
       "date": null,
       "isApp": false,
@@ -33995,6 +34010,26 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-grpc-security",
+      "short": "oxlint-plugin-grpc-security",
+      "version": "0.2.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`no-identity-from-metadata` reports a gRPC caller identity read from client-settable metadata",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-grpc-security@0.2.0`",
           "pr": null
         }
       ]
