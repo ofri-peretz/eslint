@@ -50,7 +50,10 @@ describe('no-math-random-crypto', () => {
         name: 'a scaled draw bound to a plain name is not a credential',
         code: 'const x = Math.random() * width;',
       },
-      { code: 'const index = Math.floor(Math.random() * array.length);' },
+      {
+        name: 'a draw scaled to a list length and bound to index is a position',
+        code: 'const index = Math.floor(Math.random() * array.length);',
+      },
       // Secure alternative
       { code: 'const token = crypto.randomBytes(32).toString("hex");' },
       // Benchmark FP lock: Fisher-Yates shuffle assigns to a non-crypto var (`j`)
@@ -152,7 +155,10 @@ describe('no-math-random-crypto', () => {
          };`,
         // The substring trap this rule was carrying unfired: `/iv/i` matched
         // `div`, `/pin/i` matched `spinner`, `/key/i` matched `monkey`.
-        `const div = Math.random();`,
+        {
+          name: 'div contains iv as a substring but is not the word iv',
+          code: 'const div = Math.random();',
+        },
         `const spinnerFrame = Math.floor(Math.random() * 4);`,
         `const monkeyIndex = Math.floor(Math.random() * 10);`,
       ],

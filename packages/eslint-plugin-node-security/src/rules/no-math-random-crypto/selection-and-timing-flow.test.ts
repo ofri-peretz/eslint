@@ -110,6 +110,57 @@ ruleTester.run(
           this.credential = credentials[Math.floor(Math.random() * credentials.length)];
         }`,
       },
+      {
+        name: 'a pick from an undeclared list is a selection',
+        code: `export const credential = CREDENTIAL_POOL[Math.floor(Math.random() * CREDENTIAL_POOL.length)];`,
+      },
+      {
+        name: 'a pick through a cycle of aliases terminates and is a selection',
+        code: `const a = b;
+          const b = a;
+          export const credential = a[Math.floor(Math.random() * 3)];`,
+      },
+      {
+        name: 'a pick from a number is not an alphabet',
+        code: `export const credential = (123)[Math.floor(Math.random() * 3)];`,
+      },
+      {
+        name: 'a pick from an empty array is not an alphabet',
+        code: `export const credential = [][Math.floor(Math.random() * 3)];`,
+      },
+      {
+        name: 'a pick from an array holding a non-literal is not an alphabet',
+        code: `export const credential = ['a', other][Math.floor(Math.random() * 2)];`,
+      },
+      {
+        name: 'a pick from an array holding a number is not an alphabet',
+        code: `export const credential = ['a', 1][Math.floor(Math.random() * 2)];`,
+      },
+      {
+        name: 'a pick from an array of words is not an alphabet',
+        code: `export const credential = ['alpha', 'beta'][Math.floor(Math.random() * 2)];`,
+      },
+      {
+        name: 'a pick from an array with a hole is not an alphabet',
+        code: `export const credential = [, 'a'][Math.floor(Math.random() * 2)];`,
+      },
+      {
+        name: 'a pick from a call result is not an alphabet',
+        code: `export const credential = getPool()[Math.floor(Math.random() * 2)];`,
+      },
+      {
+        name: 'a pick from a copy of a list is not an alphabet',
+        code: `export const credential = pool.slice()[Math.floor(Math.random() * 2)];`,
+      },
+      {
+        name: 'a delay passed as the only argument of a timer',
+        code: `const tokenWake = Math.random() * 500;
+          setTimeout(tokenWake);`,
+      },
+      {
+        name: 'a pick from a member expression is a selection',
+        code: `export const credential = this.credentials[Math.floor(Math.random() * this.credentials.length)];`,
+      },
     ],
     invalid: [
       {
@@ -222,6 +273,49 @@ ruleTester.run(
       {
         name: 'a draw stringified into a credential slot is not a selection',
         code: `headers.set('X-CSRF-Token', String(Math.floor(Math.random() * 1e9)));`,
+        errors: [{ messageId: 'mathRandomCrypto' }],
+      },
+      {
+        name: 'a pick used as a lookup key is not a whole pick',
+        code: `const credential = table[creds[Math.floor(Math.random() * creds.length)]];`,
+        errors: [{ messageId: 'mathRandomCrypto' }],
+      },
+      {
+        name: 'a pick used as a computed property key is not a whole pick',
+        code: `const credential = { [creds[Math.floor(Math.random() * creds.length)]]: 1 };`,
+        errors: [{ messageId: 'mathRandomCrypto' }],
+      },
+      {
+        name: 'a pick appended with += builds a value',
+        code: `let credential = '';
+          credential += creds[Math.floor(Math.random() * creds.length)];`,
+        errors: [{ messageId: 'mathRandomCrypto' }],
+      },
+      {
+        name: 'a draw through the in operator is not a number that selects',
+        code: `const sessionKey = Math.random() in room;
+          if (sessionKey < 1) go();`,
+        errors: [{ messageId: 'mathRandomCrypto' }],
+      },
+      {
+        name: 'a negated draw read only by a comparison is still not a number',
+        code: `const sessionFlag = !Math.random();
+          if (sessionFlag < 1) go();`,
+        errors: [{ messageId: 'mathRandomCrypto' }],
+      },
+      {
+        name: 'a member named setTimeout is not the platform timer',
+        code: `const sessionTimer = scheduler.setTimeout(fn, Math.random() * 500);`,
+        errors: [{ messageId: 'mathRandomCrypto' }],
+      },
+      {
+        name: 'a draw in the third argument of a timer is not its delay',
+        code: `const sessionTimer = setTimeout(fn, 10, Math.random() * 500);`,
+        errors: [{ messageId: 'mathRandomCrypto' }],
+      },
+      {
+        name: 'a draw indexed into is not a pick',
+        code: `const sessionPart = Math.random()[0];`,
         errors: [{ messageId: 'mathRandomCrypto' }],
       },
     ],

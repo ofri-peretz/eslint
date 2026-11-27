@@ -15,6 +15,7 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import espree from 'espree';
 import { noXxeInjection } from './index';
 
 RuleTester.afterAll = afterAll;
@@ -74,8 +75,60 @@ describe('no-xxe-injection (platform DOMParser)', () => {
           "export const parse = (xml: string) => new DOMParser().parseFromString(xml, 'text/xml');",
         ].join('\n'),
       },
+      {
+        name: 'a class expression extending linkedom delegating to super',
+        code: [
+          "import { DOMParser } from 'linkedom';",
+          'export const XmlDomParser = class extends DOMParser {',
+          '  parseFromString(text, type) {',
+          '    return super.parseFromString(text, type);',
+          '  }',
+          '};',
+        ].join('\n'),
+      },
+      {
+        name: 'the global DOMParser where the scope manager declares no lib globals',
+        languageOptions: {
+          parser: espree,
+          ecmaVersion: 2022,
+          sourceType: 'module',
+        },
+        code: "export const parse = (xml) => new DOMParser().parseFromString(xml, 'text/xml');",
+      },
     ],
     invalid: [
+      {
+        name: 'an undeclared constructor that is not DOMParser is not the platform parser',
+        code: "export const parse = (req) => new Foo().parseFromString(req.body.xml, 'text/xml');",
+        errors: [{ messageId: 'untrustedXmlSource' }],
+      },
+      {
+        name: 'another receiver inside a linkedom subclass is still judged',
+        code: [
+          "import { DOMParser } from 'linkedom';",
+          'class P extends DOMParser {',
+          '  read(req) { return getParser().parseFromString(req.body.xml, "text/xml"); }',
+          '}',
+        ].join('\n'),
+        errors: [{ messageId: 'untrustedXmlSource' }],
+      },
+      {
+        name: 'a bare XML-package call inside a linkedom subclass is still judged',
+        code: [
+          "import { DOMParser } from 'linkedom';",
+          "import { parseString } from '@acme/xml';",
+          'class P extends DOMParser {',
+          '  read(req) { return parseString(req.body.xml); }',
+          '}',
+        ].join('\n'),
+        options: [{ additionalXmlModules: ['@acme/xml'] }],
+        errors: [{ messageId: 'untrustedXmlSource' }],
+      },
+      {
+        name: 'super inside an object-literal method has no class to vouch for',
+        code: 'const o = { read(req) { return super.parseFromString(req.body.xml); } };',
+        errors: [{ messageId: 'untrustedXmlSource' }],
+      },
       {
         name: 'a DOMParser imported from an entity-capable wrapper still reports',
         code: [
