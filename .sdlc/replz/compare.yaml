@@ -15,10 +15,11 @@ normalize:
   # Node prints its process id in warnings.
   - '\(node:\d+\)'
 approved:
-  # eslint#1826 adds the two grpc-2 lab files to benchmarks/corpus/CWE-306. Every other rule
-  # now also runs over them (import-next/enforce-import-order fires on the fixed server), which
-  # adds lines to the output and shifts the ones after. New corpus inputs; no rule changed.
+  # eslint#1830 adds gRPC fixtures to benchmarks/corpus/CWE-209 (including the grpc-3 lab
+  # server verbatim) and CWE-770; the grpc-3 lab joins CWE-094. Every other rule now also runs over them
+  # (import-next/enforce-import-order fires on the grpc-3 server), which adds lines to the
+  # output and shifts the ones after. New corpus inputs; no rule changed.
   - input: corpus.txt
-    base: d5e037d541b9
-    head: 0343fb708b36
-    reason: grpc-2 lab fixtures added to benchmarks/corpus/CWE-306 (new inputs, no rule behaviour changed)
+    base: d3db4c616170
+    head: fba0819ea40d
+    reason: gRPC fixtures added to CWE-209 and CWE-770, grpc-3 lab added to CWE-094 (new inputs, no rule behaviour changed)

@@ -3,8 +3,8 @@
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
   "generatedAt": "2026-11-26",
   "totalPlugins": 33,
-  "totalRules": 525,
-  "oxlintCompatible": 525,
+  "totalRules": 527,
+  "oxlintCompatible": 527,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -724,10 +724,22 @@
       "short": "grpc-security",
       "shim": "tools/oxlint-plugins/interlace-grpc-security.cjs",
       "subpath": "eslint-plugin-grpc-security/oxlint",
-      "ruleCount": 2,
+      "ruleCount": 4,
       "rules": [
         {
+          "name": "no-error-detail-leak",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-identity-from-metadata",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unbounded-message-size",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -3580,7 +3592,9 @@
       "no-untrusted-content-in-prompt"
     ],
     "grpc-security": [
+      "no-error-detail-leak",
       "no-identity-from-metadata",
+      "no-unbounded-message-size",
       "no-unguarded-reflection"
     ],
     "import-next": [

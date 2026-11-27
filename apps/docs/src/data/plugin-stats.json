@@ -81,6 +81,14 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-grpc-security",
+      "rules": 4,
+      "description": "ESLint gRPC security rules — catches server reflection registered with no guard, a caller identity read from client-settable metadata, message size limits removed, and caught errors sent to the client",
+      "category": "security",
+      "version": "0.0.0",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-prisma-security",
       "rules": 4,
       "description": "ESLint Prisma security rules for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
@@ -142,14 +150,6 @@
       "description": "ESLint OpenAI SDK security rules — catches dangerouslyAllowBrowser, hardcoded API keys, and system prompts assembled from untrusted input",
       "category": "security",
       "version": "2.0.5",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-grpc-security",
-      "rules": 2,
-      "description": "ESLint gRPC security rules — catches server reflection registered with no guard, and a caller identity read from client-settable metadata and then authorized on",
-      "category": "security",
-      "version": "0.0.0",
       "published": true
     },
     {
@@ -265,7 +265,7 @@
       "published": true
     }
   ],
-  "totalRules": 521,
+  "totalRules": 523,
   "totalPlugins": 32,
   "allPluginsCount": 33,
   "generatedAt": "2026-11-27"

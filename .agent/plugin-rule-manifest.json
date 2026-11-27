@@ -2757,11 +2757,23 @@
     }
   },
   "eslint-plugin-grpc-security": {
+    "no-error-detail-leak": {
+      "environment": "grpc",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "A status handed to a gRPC handler's callback, `call.emit('error')` or `call.destroy()` whose `details`/`message` is built from a caught error (a `catch` parameter or a `.catch` callback's parameter) through `.stack`, `.message`, `String()`, `toString()`, templates, `+`, `||`, ternaries and consts. The caught error passed as is stays silent."
+    },
     "no-identity-from-metadata": {
       "environment": "grpc",
       "detection": "data-flow-lightweight",
       "confidence": "enforcement",
       "notes": "A `.get(…)` read of a gRPC handler's call metadata (handler = method of the object passed to `.addService`), followed backwards through consts, string wrappers and same-file function returns, that lands on one side of an equality check in an `if`/ternary test against a per-request record field. A lookup keyed by the value or a call that takes it ends the flow; comparisons with `process.env` or module constants are credential checks. Never decided from a header name."
+    },
+    "no-unbounded-message-size": {
+      "environment": "grpc",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "`grpc.max_receive_message_length` / `grpc.max_send_message_length` (gRPC's own channel-argument keys, exact) set to a value that evaluates to a negative number (no limit) or above 100 MiB. Literals, arithmetic, consts, Infinity and Number.MAX_* are evaluated; configuration stays silent."
     },
     "no-unguarded-reflection": {
       "environment": "grpc",

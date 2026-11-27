@@ -1,4 +1,9 @@
 {
   "title": "Rules",
-  "pages": ["no-identity-from-metadata", "no-unguarded-reflection"]
+  "pages": [
+    "no-error-detail-leak",
+    "no-identity-from-metadata",
+    "no-unbounded-message-size",
+    "no-unguarded-reflection"
+  ]
 }

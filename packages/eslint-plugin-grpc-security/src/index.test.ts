@@ -6,7 +6,9 @@ import { describe, it, expect } from 'vitest';
 
 import plugin, {
   configs,
+  noErrorDetailLeak,
   noIdentityFromMetadata,
+  noUnboundedMessageSize,
   noUnguardedReflection,
   plugin as namedPlugin,
   rules,
@@ -15,9 +17,13 @@ import plugin, {
 describe('eslint-plugin-grpc-security', () => {
   it('exposes every rule under its documented id', () => {
     expect(Object.keys(rules).sort()).toEqual([
+      'no-error-detail-leak',
       'no-identity-from-metadata',
+      'no-unbounded-message-size',
       'no-unguarded-reflection',
     ]);
+    expect(rules['no-error-detail-leak']).toBe(noErrorDetailLeak);
+    expect(rules['no-unbounded-message-size']).toBe(noUnboundedMessageSize);
     expect(rules['no-identity-from-metadata']).toBe(noIdentityFromMetadata);
     expect(rules['no-unguarded-reflection']).toBe(noUnguardedReflection);
   });
@@ -41,13 +47,17 @@ describe('eslint-plugin-grpc-security', () => {
     }
   });
 
-  it('turns the identity rule on in recommended but not minimal', () => {
-    expect(
-      configs.recommended.rules?.['grpc-security/no-identity-from-metadata'],
-    ).toBe('error');
-    expect(
-      configs.minimal.rules?.['grpc-security/no-identity-from-metadata'],
-    ).toBeUndefined();
+  it('turns every rule but reflection on in recommended, not minimal', () => {
+    for (const rule of [
+      'no-identity-from-metadata',
+      'no-unbounded-message-size',
+      'no-error-detail-leak',
+    ]) {
+      expect(configs.recommended.rules?.[`grpc-security/${rule}`]).toBe(
+        'error',
+      );
+      expect(configs.minimal.rules?.[`grpc-security/${rule}`]).toBeUndefined();
+    }
   });
 
   it('turns every rule on in strict, by name', () => {

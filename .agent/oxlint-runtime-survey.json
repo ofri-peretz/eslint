@@ -518,8 +518,18 @@
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-grpc-security/no-error-detail-leak": {
+      "cases": 24,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-grpc-security/no-identity-from-metadata": {
       "cases": 53,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-grpc-security/no-unbounded-message-size": {
+      "cases": 28,
       "failed": 0,
       "examples": []
     },

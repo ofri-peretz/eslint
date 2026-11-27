@@ -8,7 +8,8 @@
     "vulnerable": [
       { "file": "vm2-run-user-code.js", "description": "require('vm2') NodeVM running request-supplied code" },
       { "file": "vm-run-user-string.js", "description": "vm.runInNewContext on a user-supplied string" },
-      { "file": "mcp-tool-eval-expression.js", "description": "MCP calculator tool evals its argument (CWE-95)" }
+      { "file": "mcp-tool-eval-expression.js", "description": "MCP calculator tool evals its argument (CWE-95)" },
+      { "file": "grpc-3-lab-server.js", "description": "security-research protocol-ctf grpc-3 lab server, verbatim: a client-supplied stream filter compiled with new Function" }
     ],
     "safe": [
       { "file": "vm-literal-script.js", "description": "vm.runInNewContext with a fully literal script string" },

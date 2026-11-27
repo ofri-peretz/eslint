@@ -457,7 +457,9 @@ knex-security	no-unsafe-query	unaware
 knex-security	no-unscoped-mutation	unaware	
 knex-security	require-tls	unaware	
 sqlite-security	no-unsafe-query	unaware	
+grpc-security	no-error-detail-leak	unaware	
 grpc-security	no-identity-from-metadata	unaware	
+grpc-security	no-unbounded-message-size	unaware	
 grpc-security	no-unguarded-reflection	unaware	
 supabase-security	no-dynamic-rpc-name	unaware	
 supabase-security	no-public-storage-bucket	unaware	
