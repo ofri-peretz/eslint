@@ -50,7 +50,10 @@ describe('no-math-random-crypto', () => {
         name: 'a scaled draw bound to a plain name is not a credential',
         code: 'const x = Math.random() * width;',
       },
-      { code: 'const index = Math.floor(Math.random() * array.length);' },
+      {
+        name: 'a draw scaled to a list length and bound to index is a position',
+        code: 'const index = Math.floor(Math.random() * array.length);',
+      },
       // Secure alternative
       { code: 'const token = crypto.randomBytes(32).toString("hex");' },
       // Benchmark FP lock: Fisher-Yates shuffle assigns to a non-crypto var (`j`)

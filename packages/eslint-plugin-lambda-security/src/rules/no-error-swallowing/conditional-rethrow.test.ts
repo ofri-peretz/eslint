@@ -77,8 +77,35 @@ ruleTester.run('no-error-swallowing (conditional rethrow)', noErrorSwallowing, {
         }
       }`),
     },
+    {
+      name: 'rethrows unless the error code is loosely different',
+      code: asLambda(
+        `try { await del(); } catch (e) { if (e.code != 'ENOENT') throw e; }`,
+      ),
+    },
   ],
   invalid: [
+    {
+      name: 'a disjunction of negations is not a classification of one class',
+      code: asLambda(
+        `try { await del(); } catch (e) { if (!isNotFound(e) || !isConflict(e)) throw e; }`,
+      ),
+      errors: swallowed,
+    },
+    {
+      name: 'a negation that never reads the error says nothing about it',
+      code: asLambda(
+        `try { await del(); } catch (e) { if (!process.env.DEBUG) throw e; }`,
+      ),
+      errors: swallowed,
+    },
+    {
+      name: 'a unary operator other than negation is not a classification',
+      code: asLambda(
+        `try { await del(); } catch (e) { if (-e.code) throw e; }`,
+      ),
+      errors: swallowed,
+    },
     {
       name: 'a rethrow gated on something that is not the error',
       code: asLambda(

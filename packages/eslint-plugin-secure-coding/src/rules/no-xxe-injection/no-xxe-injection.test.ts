@@ -140,6 +140,7 @@ describe('no-xxe-injection', () => {
         // XMLHttpRequest parses nothing. Every browser application that posts
         // JSON with upload progress used to get a CRITICAL here.
         {
+          name: 'an XMLHttpRequest parses nothing, so posting JSON with it is not XML parsing',
           code: "const xhr = new XMLHttpRequest(); xhr.open('POST', '/api/avatar'); xhr.send(payload);",
         },
         {
