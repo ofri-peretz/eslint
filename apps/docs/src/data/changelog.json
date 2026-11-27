@@ -5,6 +5,81 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "6.3.5",
+      "date": "2026-11-27T04:00:00Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.3.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "6.3.5",
+      "date": "2026-11-27T03:58:30Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Four false positives measured on real repositories, each fixed by following where the value goes. `secure-coding/no-xxe-injection` no longer reports the platform `DOMParser` (an undeclared global, which the HTML standard forbids from fetching an external entity) or linkedom, probed against an external-entity canary with no leak; an imported or locally declared `DOMParser` and every entity-capable package keep reporting (23 findings on next-ai-draw-io). `node-security/no-math-random-crypto` no longer reports a draw that only picks an element that already exists, sets a timer delay or is compared, however its binding is named; a pick from an alphabet, an accumulator (`token += CHARS[draw]`) and a draw that is also stored keep reporting (terraform-aws-github-runner, next-ai-draw-io). `secure-coding/no-improper-sanitization` no longer reports a `& < >` text escaper in a file that also ships the quote-escaping half and never calls the text escaper inside a tag, a constant inside `res.json({...})`, or a constant inside `new Command({...})`; dangerous markup, a text escaper used in an attribute, and a string built from request data keep reporting (apostrophe, n8n-mcp, next-ai-draw-io). `lambda-security/no-error-swallowing` no longer reports a catch that rethrows everything a negated test on the error leaves out (`if (!isNotFound(error)) throw error`); the opposite polarity and a test that never reads the error keep reporting (terraform-aws-github-runner).",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-lambda-security",
+      "short": "eslint-plugin-lambda-security",
+      "version": "3.0.8",
+      "date": "2026-11-27T03:56:39Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Four false positives measured on real repositories, each fixed by following where the value goes. `secure-coding/no-xxe-injection` no longer reports the platform `DOMParser` (an undeclared global, which the HTML standard forbids from fetching an external entity) or linkedom, probed against an external-entity canary with no leak; an imported or locally declared `DOMParser` and every entity-capable package keep reporting (23 findings on next-ai-draw-io). `node-security/no-math-random-crypto` no longer reports a draw that only picks an element that already exists, sets a timer delay or is compared, however its binding is named; a pick from an alphabet, an accumulator (`token += CHARS[draw]`) and a draw that is also stored keep reporting (terraform-aws-github-runner, next-ai-draw-io). `secure-coding/no-improper-sanitization` no longer reports a `& < >` text escaper in a file that also ships the quote-escaping half and never calls the text escaper inside a tag, a constant inside `res.json({...})`, or a constant inside `new Command({...})`; dangerous markup, a text escaper used in an attribute, and a string built from request data keep reporting (apostrophe, n8n-mcp, next-ai-draw-io). `lambda-security/no-error-swallowing` no longer reports a catch that rethrows everything a negated test on the error leaves out (`if (!isNotFound(error)) throw error`); the opposite polarity and a test that never reads the error keep reporting (terraform-aws-github-runner).",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-secure-coding",
+      "short": "oxlint-plugin-secure-coding",
+      "version": "6.5.6",
+      "date": "2026-11-27T03:55:25Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.5.6`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "6.5.6",
+      "date": "2026-11-27T03:47:22Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Four false positives measured on real repositories, each fixed by following where the value goes. `secure-coding/no-xxe-injection` no longer reports the platform `DOMParser` (an undeclared global, which the HTML standard forbids from fetching an external entity) or linkedom, probed against an external-entity canary with no leak; an imported or locally declared `DOMParser` and every entity-capable package keep reporting (23 findings on next-ai-draw-io). `node-security/no-math-random-crypto` no longer reports a draw that only picks an element that already exists, sets a timer delay or is compared, however its binding is named; a pick from an alphabet, an accumulator (`token += CHARS[draw]`) and a draw that is also stored keep reporting (terraform-aws-github-runner, next-ai-draw-io). `secure-coding/no-improper-sanitization` no longer reports a `& < >` text escaper in a file that also ships the quote-escaping half and never calls the text escaper inside a tag, a constant inside `res.json({...})`, or a constant inside `new Command({...})`; dangerous markup, a text escaper used in an attribute, and a string built from request data keep reporting (apostrophe, n8n-mcp, next-ai-draw-io). `lambda-security/no-error-swallowing` no longer reports a catch that rethrows everything a negated test on the error leaves out (`if (!isNotFound(error)) throw error`); the opposite polarity and a test that never reads the error keep reporting (terraform-aws-github-runner).",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-secure-coding",
       "short": "oxlint-plugin-secure-coding",
       "version": "6.5.5",
@@ -33845,21 +33920,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-lambda-security",
-      "short": "eslint-plugin-lambda-security",
-      "version": "3.0.8",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Four false positives measured on real repositories, each fixed by following where the value goes. `secure-coding/no-xxe-injection` no longer reports the platform `DOMParser` (an undeclared global, which the HTML standard forbids from fetching an external entity) or linkedom, probed against an external-entity canary with no leak; an imported or locally declared `DOMParser` and every entity-capable package keep reporting (23 findings on next-ai-draw-io). `node-security/no-math-random-crypto` no longer reports a draw that only picks an element that already exists, sets a timer delay or is compared, however its binding is named; a pick from an alphabet, an accumulator (`token += CHARS[draw]`) and a draw that is also stored keep reporting (terraform-aws-github-runner, next-ai-draw-io). `secure-coding/no-improper-sanitization` no longer reports a `& < >` text escaper in a file that also ships the quote-escaping half and never calls the text escaper inside a tag, a constant inside `res.json({...})`, or a constant inside `new Command({...})`; dangerous markup, a text escaper used in an attribute, and a string built from request data keep reporting (apostrophe, n8n-mcp, next-ai-draw-io). `lambda-security/no-error-swallowing` no longer reports a catch that rethrows everything a negated test on the error leaves out (`if (!isNotFound(error)) throw error`); the opposite polarity and a test that never reads the error keep reporting (terraform-aws-github-runner).",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-modernization",
       "short": "eslint-plugin-modernization",
       "version": "4.0.3",
@@ -33870,21 +33930,6 @@
         {
           "kind": "docs",
           "title": "ship an AGENTS.md that tells AI assistants how to enable the plugin and what each preset catches",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-node-security",
-      "short": "eslint-plugin-node-security",
-      "version": "6.3.5",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Four false positives measured on real repositories, each fixed by following where the value goes. `secure-coding/no-xxe-injection` no longer reports the platform `DOMParser` (an undeclared global, which the HTML standard forbids from fetching an external entity) or linkedom, probed against an external-entity canary with no leak; an imported or locally declared `DOMParser` and every entity-capable package keep reporting (23 findings on next-ai-draw-io). `node-security/no-math-random-crypto` no longer reports a draw that only picks an element that already exists, sets a timer delay or is compared, however its binding is named; a pick from an alphabet, an accumulator (`token += CHARS[draw]`) and a draw that is also stored keep reporting (terraform-aws-github-runner, next-ai-draw-io). `secure-coding/no-improper-sanitization` no longer reports a `& < >` text escaper in a file that also ships the quote-escaping half and never calls the text escaper inside a tag, a constant inside `res.json({...})`, or a constant inside `new Command({...})`; dangerous markup, a text escaper used in an attribute, and a string built from request data keep reporting (apostrophe, n8n-mcp, next-ai-draw-io). `lambda-security/no-error-swallowing` no longer reports a catch that rethrows everything a negated test on the error leaves out (`if (!isNotFound(error)) throw error`); the opposite polarity and a test that never reads the error keep reporting (terraform-aws-github-runner).",
           "pr": null
         }
       ]
@@ -34025,21 +34070,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "6.5.6",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "Four false positives measured on real repositories, each fixed by following where the value goes. `secure-coding/no-xxe-injection` no longer reports the platform `DOMParser` (an undeclared global, which the HTML standard forbids from fetching an external entity) or linkedom, probed against an external-entity canary with no leak; an imported or locally declared `DOMParser` and every entity-capable package keep reporting (23 findings on next-ai-draw-io). `node-security/no-math-random-crypto` no longer reports a draw that only picks an element that already exists, sets a timer delay or is compared, however its binding is named; a pick from an alphabet, an accumulator (`token += CHARS[draw]`) and a draw that is also stored keep reporting (terraform-aws-github-runner, next-ai-draw-io). `secure-coding/no-improper-sanitization` no longer reports a `& < >` text escaper in a file that also ships the quote-escaping half and never calls the text escaper inside a tag, a constant inside `res.json({...})`, or a constant inside `new Command({...})`; dangerous markup, a text escaper used in an attribute, and a string built from request data keep reporting (apostrophe, n8n-mcp, next-ai-draw-io). `lambda-security/no-error-swallowing` no longer reports a catch that rethrows everything a negated test on the error leaves out (`if (!isNotFound(error)) throw error`); the opposite polarity and a test that never reads the error keep reporting (terraform-aws-github-runner).",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-supabase-security",
       "short": "eslint-plugin-supabase-security",
       "version": "1.0.0",
@@ -34160,21 +34190,6 @@
       ]
     },
     {
-      "package": "oxlint-plugin-node-security",
-      "short": "oxlint-plugin-node-security",
-      "version": "6.3.5",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.3.5`",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "oxlint-plugin-operability",
       "short": "oxlint-plugin-operability",
       "version": "5.0.3",
@@ -34185,21 +34200,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `eslint-plugin-operability@5.0.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-secure-coding",
-      "short": "oxlint-plugin-secure-coding",
-      "version": "6.5.6",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-secure-coding@6.5.6`",
           "pr": null
         }
       ]
