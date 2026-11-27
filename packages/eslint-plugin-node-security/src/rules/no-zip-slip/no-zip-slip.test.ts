@@ -283,6 +283,7 @@ describe('no-zip-slip', () => {
         },
         // Sanitized paths
         {
+          name: 'a path passed through sanitizePath before it is joined',
           code: `
             const cleanPath = sanitizePath(file.name);
             const outputPath = path.join(destDir, cleanPath);

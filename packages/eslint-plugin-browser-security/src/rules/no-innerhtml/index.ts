@@ -178,8 +178,7 @@ function isSanitized(
     const init = resolveInitializer(node, sourceCode);
     if (
       init === undefined ||
-      init.parent.type !== 'VariableDeclarator' ||
-      init.parent.id.type !== 'Identifier' ||
+      (init.parent as TSESTree.VariableDeclarator).id.type !== 'Identifier' ||
       resolving.has(init)
     ) {
       return false;

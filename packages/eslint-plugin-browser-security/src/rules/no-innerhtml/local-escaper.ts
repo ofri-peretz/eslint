@@ -74,15 +74,12 @@ function escapedCharacters(
   // `String(param)`: anything else escapes some other value.
   if (
     current.type === 'CallExpression' &&
-    current.callee.type === 'Identifier' &&
-    current.callee.name === 'String' &&
+    (current.callee as TSESTree.Identifier).name === 'String' &&
     current.arguments.length === 1
   ) {
     current = current.arguments[0];
   }
-  return current.type === 'Identifier' && current.name === parameter
-    ? rewritten
-    : null;
+  return (current as TSESTree.Identifier).name === parameter ? rewritten : null;
 }
 
 /** The one expression a function returns, or null if it can return otherwise. */
@@ -94,16 +91,12 @@ export function returnedExpression(
 ): TSESTree.Node | null {
   if (fn.body.type !== 'BlockStatement') return fn.body;
   const statements = fn.body.body;
-  const last = statements[statements.length - 1];
-  // A single trailing `return <expr>` and nothing that could return earlier.
-  if (
-    statements.length !== 1 ||
-    last.type !== 'ReturnStatement' ||
-    last.argument == null
-  ) {
-    return null;
-  }
-  return last.argument;
+  // A single `return <expr>` and nothing that could return earlier. A bare
+  // `return;` has no argument, which reads as `null`.
+  const only = statements[0];
+  return statements.length === 1 && only.type === 'ReturnStatement'
+    ? only.argument
+    : null;
 }
 
 /** Does this function provably escape all five markup characters? */
@@ -113,10 +106,8 @@ export function isProvenEscaper(
     | TSESTree.FunctionExpression
     | TSESTree.FunctionDeclaration,
 ): boolean {
-  const parameter = fn.params[0];
-  if (parameter === undefined || parameter.type !== 'Identifier') {
-    return false;
-  }
+  const parameter = fn.params[0] as TSESTree.Parameter | undefined;
+  if (parameter?.type !== 'Identifier') return false;
   const returned = returnedExpression(fn);
   if (returned === null) return false;
   const rewritten = escapedCharacters(returned, parameter.name);

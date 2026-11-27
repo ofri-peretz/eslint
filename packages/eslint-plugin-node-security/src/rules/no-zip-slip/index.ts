@@ -201,6 +201,12 @@ const TEXT_SINKS: ReadonlySet<string> = new Set([
   'AggregateError',
 ]);
 
+/**
+ * @protocol-constant The two names node-tar exports its extraction under,
+ * `extract` and its alias `x`, as documented by node-tar itself.
+ */
+const NODE_TAR_EXTRACT: ReadonlySet<string> = new Set(['extract', 'x']);
+
 /** Extractor methods whose FIRST argument is the destination directory. */
 const DESTINATION_FIRST: ReadonlySet<string> = new Set([
   'extractAllTo',
@@ -537,32 +543,23 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       // A node with no parent is not part of a program this rule can follow.
       if (parent === undefined) return false;
       if (parent.type === 'ThrowStatement') return true;
+      // `Error(...)` and `new Error(...)`: only an identifier has a `name`, so
+      // a method called `Error` reads `undefined` and matches nothing.
       if (
         (parent.type === 'NewExpression' || parent.type === 'CallExpression') &&
-        parent.callee.type === 'Identifier' &&
-        TEXT_SINKS.has(parent.callee.name) &&
-        isGlobalName(parent.callee) &&
-        (parent.arguments as TSESTree.Node[]).includes(current)
+        TEXT_SINKS.has((parent.callee as TSESTree.Identifier).name) &&
+        isGlobalName(parent.callee as TSESTree.Identifier)
       ) {
         return true;
       }
-      if (
-        parent.type === 'CallExpression' &&
-        parent.callee.type === 'MemberExpression' &&
-        parent.callee.object.type === 'Identifier' &&
-        parent.callee.object.name === 'console' &&
-        isGlobalName(parent.callee.object) &&
-        (parent.arguments as TSESTree.Node[]).includes(current)
-      ) {
-        return true;
-      }
-      if (
-        parent.type !== 'VariableDeclarator' ||
-        parent.init !== current ||
-        parent.id.type !== 'Identifier'
-      ) {
-        return false;
-      }
+      // `console.warn(...)`: the object of a member call, if it is the global.
+      const logger = (
+        parent.type === 'CallExpression'
+          ? (parent.callee as TSESTree.MemberExpression).object
+          : undefined
+      ) as TSESTree.Identifier | undefined;
+      if (logger?.name === 'console' && isGlobalName(logger)) return true;
+      if (parent.type !== 'VariableDeclarator') return false;
       const reads = context.sourceCode
         .getDeclaredVariables(parent)
         .flatMap((variable) => variable.references)
@@ -872,10 +869,11 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         node.callee,
         context.sourceCode.getScope(node.callee),
       );
+      // `tar.extract` and `tar.x`; a longer path (`tar.extract.call`) is some
+      // other member of the module.
       if (
         binding?.module !== 'tar' ||
-        binding.path.length !== 1 ||
-        !['extract', 'x'].includes(binding.path[0])
+        !NODE_TAR_EXTRACT.has(binding.path.join('.'))
       ) {
         return false;
       }
@@ -887,8 +885,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
             property.type === 'Property' &&
             objectKeyName(property) !== null &&
             (objectKeyName(property) !== 'preservePaths' ||
-              (property.value.type === 'Literal' &&
-                property.value.value === false)),
+              (property.value as TSESTree.Literal).value === false),
         )
       );
     };

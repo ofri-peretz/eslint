@@ -46,7 +46,10 @@ ruleTester.run('no-innerhtml', noInnerhtml, {
       name: 'an HTTP response write is not a document write',
       code: 'res.write(chunk)',
     },
-    { code: 'post.write(postData)' },
+    {
+      name: 'writing a request body is not a document write',
+      code: 'post.write(postData)',
+    },
     { code: 'result.write(item, offset, length)' },
     // A receiver we cannot name at all — a call result, or a computed index —
     // is not a document, so it confers no sink.

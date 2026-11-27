@@ -129,6 +129,74 @@ describe('no-innerhtml: an inert holder that only yields text', () => {
     ],
     invalid: [
       {
+        name: 'a template name declared twice, so it has no single meaning',
+        code: `function text(html, other) {
+          var t = document.createElement('template');
+          var t = other;
+          t.innerHTML = html;
+          return t.content.textContent;
+        }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a holder imported from another module',
+        code: `import { holder } from './holder';
+        function show(html) { holder.innerHTML = html; return holder.textContent; }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'the content of a template taken out by destructuring is not the template',
+        code: `function show(html) {
+          const { content: t } = document.createElement('template');
+          t.innerHTML = html;
+          document.body.append(t);
+        }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a DOMParser called without new, which builds nothing inert',
+        code: `function text(html) {
+          const parser = DOMParser();
+          const doc = parser.parseFromString('', 'text/html');
+          doc.body.innerHTML = html;
+          return doc.body.textContent;
+        }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a DOMParser reached through a namespace, which is not the global',
+        code: `function text(html) {
+          const parser = new lib.DOMParser();
+          const doc = parser.parseFromString('', 'text/html');
+          doc.body.innerHTML = html;
+          return doc.body.textContent;
+        }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a node cloned out of the template, which is not known to stay inside',
+        code: `function text(html) {
+          const t = document.createElement('template');
+          t.innerHTML = html;
+          return t.content.cloneNode(true).textContent;
+        }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'querySelector passed on as a value to a call whose result is read',
+        code: `function text(html) {
+          const t = document.createElement('template');
+          t.innerHTML = html;
+          return wrap(t.content.querySelector).textContent;
+        }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a template written through a createContextualFragment call',
+        code: `function show(html) { document.createElement('template').createContextualFragment(html); }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
         name: 'a node holder reached through a property of this',
         code: `class V { show(html) { this.node.innerHTML = html; } }`,
         errors: [{ messageId: 'dangerousInnerHTML' }],
@@ -302,6 +370,18 @@ describe('no-innerhtml: a value proven sanitised inside the file', () => {
   ruleTester.run('proven-sanitised', noInnerhtml, {
     valid: [
       {
+        name: 'a sanitiser output used twice in one value',
+        code: `${IMPORT}function f(el, html) {
+          const clean = DOMPurify.sanitize(html);
+          el.innerHTML = '<p>' + clean + '</p>' + clean;
+        }`,
+      },
+      {
+        name: 'a local wrapper used twice in one value',
+        code: `${IMPORT}function wrap(html) { return DOMPurify.sanitize(html); }
+        function f(el, a, b) { el.innerHTML = wrap(a) + wrap(b); }`,
+      },
+      {
         // @source triliumnext/trilium services/office_renderer.ts
         name: 'a const holding the sanitiser output',
         code: `${IMPORT}function f(el, html) {
@@ -344,6 +424,80 @@ describe('no-innerhtml: a value proven sanitised inside the file', () => {
       },
     ],
     invalid: [
+      {
+        name: 'a local escaper whose chain has one extra multi-character pattern',
+        code: `function escapeHtml(s) { return s${FIVE_REPLACES}.replace(/ab/g, '&amp;'); }
+        function f(el, name) { el.innerHTML = escapeHtml(name); }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a local escaper whose chain has one extra multi-character string pattern',
+        code: `function escapeHtml(s) { return s${FIVE_REPLACES}.replaceAll('ab', '&amp;'); }
+        function f(el, name) { el.innerHTML = escapeHtml(name); }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a local escaper whose chain has one pattern held in a variable',
+        code: `function escapeHtml(s) { return s${FIVE_REPLACES}.replace(pattern, '&amp;'); }
+        function f(el, name) { el.innerHTML = escapeHtml(name); }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a local escaper whose chain has one replacement held in a variable',
+        code: `function escapeHtml(s) { return s${FIVE_REPLACES}.replace(/x/g, other); }
+        function f(el, name) { el.innerHTML = escapeHtml(name); }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a local escaper whose chain has one replacement that is not an entity',
+        code: `function escapeHtml(s) { return s${FIVE_REPLACES}.replace(/x/g, 'y'); }
+        function f(el, name) { el.innerHTML = escapeHtml(name); }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a local escaper applied to a conversion that is not String',
+        code: `function escapeHtml(s) { return Number(s)${FIVE_REPLACES}; }
+        function f(el, name) { el.innerHTML = escapeHtml(name); }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a local escaper applied to String called with two arguments',
+        code: `function escapeHtml(s) { return String(s, 2)${FIVE_REPLACES}; }
+        function f(el, name) { el.innerHTML = escapeHtml(name); }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a local escaper whose body is a statement that returns nothing',
+        code: `function escapeHtml(s) { log(s); }
+        function f(el, name) { el.innerHTML = escapeHtml(name); }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a local escaper whose only statement throws the escaped text',
+        code: `function escapeHtml(s) { throw s${FIVE_REPLACES}; }
+        function f(el, name) { el.innerHTML = escapeHtml(name); }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a local escaper whose only statement is a bare return',
+        code: `function escapeHtml(s) { return; }
+        function f(el, name) { el.innerHTML = escapeHtml(name); }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a local escaper whose parameter has a default',
+        code: `const escapeHtml = (s = '') => s${FIVE_REPLACES};
+        function f(el, name) { el.innerHTML = escapeHtml(name); }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
+      {
+        name: 'a sanitiser output used twice, so the walk is not cut short by the first use',
+        code: `${IMPORT}function f(el, html, other) {
+          const clean = DOMPurify.sanitize(html);
+          el.innerHTML = clean + other;
+        }`,
+        errors: [{ messageId: 'dangerousInnerHTML' }],
+      },
       {
         name: 'a const whose value is only sometimes sanitised',
         code: `${IMPORT}function f(el, html, trusted) {

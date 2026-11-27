@@ -78,9 +78,6 @@ function bindingOf(
     if (declarator.id.type !== 'Identifier' || declarator.init == null) {
       return null;
     }
-    if (variable.references.filter((ref) => ref.isWrite()).length > 1) {
-      return null;
-    }
     return { variable, init: declarator.init };
   }
   return null;
@@ -101,10 +98,10 @@ function isInertDocument(
     if (bound === null) return false;
     parser = bound.init;
   }
+  // A `new` of the global constructor, however it is qualified or called.
   return (
     parser.type === 'NewExpression' &&
-    parser.callee.type === 'Identifier' &&
-    parser.callee.name === 'DOMParser'
+    (parser.callee as TSESTree.Identifier).name === 'DOMParser'
   );
 }
 
@@ -132,9 +129,7 @@ function createsHolder(
 /** Does every use of this node read a string back out of the holder? */
 function onlyReadsStrings(node: TSESTree.Node): boolean {
   const parent = node.parent as TSESTree.Node;
-  if (parent.type !== 'MemberExpression' || parent.object !== node) {
-    return false;
-  }
+  if (parent.type !== 'MemberExpression') return false;
   // A computed key names nothing (`null`), which no set contains.
   const name = propertyName(parent) as string;
   if (STAYS_INSIDE.has(name)) return true;

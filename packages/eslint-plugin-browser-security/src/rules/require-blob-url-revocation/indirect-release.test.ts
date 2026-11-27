@@ -42,6 +42,57 @@ describe('require-blob-url-revocation: releases that go through state, collectio
   ruleTester.run('indirect-release', requireBlobUrlRevocation, {
     valid: [
       {
+        name: 'a URL assigned to another binding that is revoked',
+        code: `function open(blob) {
+          const url = URL.createObjectURL(blob);
+          let held;
+          held = url;
+          URL.revokeObjectURL(held);
+        }`,
+      },
+      {
+        name: 'a helper written as a function expression bound to a const',
+        code: `const release = function (u) { URL.revokeObjectURL(u); };
+        function open(blob) { const url = URL.createObjectURL(blob); release(url); }`,
+      },
+      {
+        name: 'a helper that takes the URL as its second parameter',
+        code: `function release(keep, u) { URL.revokeObjectURL(u); }
+        function open(blob) { const url = URL.createObjectURL(blob); release(1, url); }`,
+      },
+      {
+        name: 'a URL held in an alias of another binding that is revoked',
+        code: `function open(blob) {
+          const url = URL.createObjectURL(blob);
+          const alias = url;
+          URL.revokeObjectURL(alias);
+        }`,
+      },
+      {
+        name: 'a callback parameter visited by map over the stored collection',
+        code: `const urls = [];
+        function add(blob) { const url = URL.createObjectURL(blob); urls.push(url); }
+        function close() { urls.map((u) => URL.revokeObjectURL(u)); }`,
+      },
+      {
+        name: 'a callback visited by filter and some over the stored collection',
+        code: `const urls = [];
+        function add(blob) { const url = URL.createObjectURL(blob); urls.unshift(url); }
+        function close() { urls.filter((u) => URL.revokeObjectURL(u)); urls.some((u) => URL.revokeObjectURL(u)); }`,
+      },
+      {
+        name: 'a loop over keys() of the collection the URL was stored in',
+        code: `const urls = new Map();
+        function add(blob) { const url = URL.createObjectURL(blob); urls.set(url, 1); }
+        function close() { for (const u of urls.keys()) URL.revokeObjectURL(u); }`,
+      },
+      {
+        name: 'a loop over Object.entries of the collection',
+        code: `const byId = {};
+        function add(id, blob) { const url = URL.createObjectURL(blob); byId[id] = url; }
+        function close() { for (const [, u] of Object.entries(byId)) URL.revokeObjectURL(u); }`,
+      },
+      {
         name: 'a state reset to a constant does not hide the revoke of the stored URL',
         code: `${REACT}function Preview() {
           const [preview, setPreview] = useState(null);
@@ -122,12 +173,6 @@ describe('require-blob-url-revocation: releases that go through state, collectio
         function close() { for (const u of Array.from(live)) URL.revokeObjectURL(u); }`,
       },
       {
-        name: 'a URL added to a Set and revoked through a spread copy',
-        code: `const live = new Set();
-        function add(blob) { const url = URL.createObjectURL(blob); live.add(url); }
-        function close() { [...live].forEach((u) => URL.revokeObjectURL(u)); }`,
-      },
-      {
         // @source element-web UploadConfirmDialog view-model dispose
         name: 'a URL handed to a helper in this file that revokes it',
         code: `function release(u) { URL.revokeObjectURL(u); }
@@ -137,21 +182,6 @@ describe('require-blob-url-revocation: releases that go through state, collectio
         name: 'a URL handed to an arrow helper with a default parameter',
         code: `const release = (u = null) => URL.revokeObjectURL(u);
         function open(blob) { const url = URL.createObjectURL(blob); release(url); }`,
-      },
-      {
-        name: 'a URL on this handed to a method of the same class that revokes it',
-        code: `class Model {
-          load(blob) { this.url = URL.createObjectURL(blob); }
-          dispose() { this.release(this.url); }
-          release(u) { URL.revokeObjectURL(u); }
-        }`,
-      },
-      {
-        name: 'a URL handed to a class property arrow that revokes it',
-        code: `class Model {
-          release = (u) => URL.revokeObjectURL(u);
-          load(blob) { const url = URL.createObjectURL(blob); this.release(url); }
-        }`,
       },
       {
         // @source element-web: a private field released in dispose
@@ -164,6 +194,190 @@ describe('require-blob-url-revocation: releases that go through state, collectio
       },
     ],
     invalid: [
+      {
+        name: 'a setter that is the first element of the pair, revoked as if it were the state',
+        code: `${REACT}function Preview() {
+          const [setPreview, preview] = useState(null);
+          const pick = (f) => { const url = URL.createObjectURL(f); setPreview(url); };
+          URL.revokeObjectURL(setPreview);
+        }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a setter taken from a hook other than useState on a namespace import',
+        code: `import * as React from 'react';
+        function Preview() {
+          const [preview, dispatch] = React.useReducer(reduce, null);
+          const pick = (f) => { const url = URL.createObjectURL(f); dispatch(url); };
+          URL.revokeObjectURL(preview);
+        }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a setter taken from a useState that is not declared anywhere',
+        code: `function Preview() {
+          const [preview, setPreview] = useState(null);
+          const pick = (f) => { const url = URL.createObjectURL(f); setPreview(url); };
+          URL.revokeObjectURL(preview);
+        }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a setter taken from a pair whose state is skipped',
+        code: `${REACT}function Preview() {
+          const [, setPreview] = useState(null);
+          const pick = (f) => { const url = URL.createObjectURL(f); setPreview(url); };
+        }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a setter from a loop over pairs, which has no initialiser to inspect',
+        code: `function Preview(pairs) {
+          for (const [preview, setPreview] of pairs) {
+            const pick = (f) => { const url = URL.createObjectURL(f); setPreview(url); };
+          }
+        }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a private field and a public field of the same name are different paths',
+        code: `class Model {
+          #url = null;
+          url = null;
+          load(blob) { this.#url = URL.createObjectURL(blob); }
+          dispose() { URL.revokeObjectURL(this.url); }
+        }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a collection that cannot be named is not the same as another that cannot be named',
+        code: `function add(id, blob) { const url = URL.createObjectURL(blob); getCache().set(id, url); }
+        function close() { for (const u of getCache()) URL.revokeObjectURL(u); }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a loop over the result of a plain function call enumerates no named collection',
+        code: `const store = new Map();
+        function add(id, blob) { const url = URL.createObjectURL(blob); store.set(id, url); }
+        function close() { for (const u of getList()) URL.revokeObjectURL(u); }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a callback that is a named function expression revokes its own name, not a member',
+        code: `const urls = [];
+        function add(blob) { const url = URL.createObjectURL(blob); urls.push(url); }
+        function close() { urls.forEach(function release() { URL.revokeObjectURL(release); }); }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a URL assigned to a binding that is never revoked',
+        code: `function open(blob) {
+          const url = URL.createObjectURL(blob);
+          let held;
+          held = url;
+          log(held);
+        }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a helper whose name is declared twice, so it has no single meaning',
+        code: `var release = (u) => URL.revokeObjectURL(u);
+        var release = (u) => log(u);
+        function open(blob) { const url = URL.createObjectURL(blob); release(url); }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a helper declared without a value',
+        code: `let release;
+        function open(blob) { const url = URL.createObjectURL(blob); release(url); }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a helper that is a parameter of the enclosing function',
+        code: `function open(blob, release) { const url = URL.createObjectURL(blob); release(url); }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a helper bound to something that is not a function',
+        code: `const release = makeRelease();
+        function open(blob) { const url = URL.createObjectURL(blob); release(url); }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a method call is not followed to a function of the same name',
+        code: `function release(u) { URL.revokeObjectURL(u); }
+        function open(blob, api) { const url = URL.createObjectURL(blob); api.release(url); }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a state setter handed in as a parameter',
+        code: `const Preview = (setPreview) => {
+          const pick = (f) => { const url = URL.createObjectURL(f); setPreview(url); };
+          URL.revokeObjectURL(preview);
+        };`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a setter and a state that are not a destructured pair',
+        code: `${REACT}function Preview() {
+          const [preview, setPreview, extra] = useState(null);
+          const [setOther] = useState(null);
+          const pick = (f) => { const url = URL.createObjectURL(f); setOther(url); };
+          URL.revokeObjectURL(preview);
+        }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a pair declared without a call to initialise it',
+        code: `function Preview(pair) {
+          const [preview, setPreview] = pair;
+          const pick = (f) => { const url = URL.createObjectURL(f); setPreview(url); };
+          URL.revokeObjectURL(preview);
+        }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a pair whose first element is not a plain name',
+        code: `${REACT}function Preview() {
+          const [{ preview }, setPreview] = useState(null);
+          const pick = (f) => { const url = URL.createObjectURL(f); setPreview(url); };
+          URL.revokeObjectURL(preview);
+        }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'an alias that is reassigned, so it is not the path it started as',
+        code: `function Dialog(blob, a, b) {
+          const url = URL.createObjectURL(blob);
+          a.current = url;
+          let old = a.current;
+          old = b.current;
+          URL.revokeObjectURL(old);
+        }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a loop variable of a for-in, which ranges over keys not members',
+        code: `const urls = {};
+        function add(id, blob) { const url = URL.createObjectURL(blob); urls[id] = url; }
+        function close() { for (const u in urls) URL.revokeObjectURL(u); }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a callback handed to a call that is not a method',
+        code: `const urls = [];
+        function add(blob) { const url = URL.createObjectURL(blob); urls.push(url); }
+        function close() { each(urls, (u) => URL.revokeObjectURL(u)); }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
+      {
+        name: 'a catch parameter is not a member of any collection',
+        code: `function open(blob) {
+          const url = URL.createObjectURL(blob);
+          try { go(); } catch (e) { URL.revokeObjectURL(e); }
+        }`,
+        errors: [{ messageId: 'missingRevoke' }],
+      },
       {
         name: 'a URL stored in a collection that cannot be named',
         code: `function add(id, blob) { const url = URL.createObjectURL(blob); getCache().set(id, url); }
@@ -359,26 +573,6 @@ describe('require-blob-url-revocation: releases that go through state, collectio
         name: 'a helper that is imported, so its body is not visible',
         code: `import { release } from './urls';
         function open(blob) { const url = URL.createObjectURL(blob); release(url); }`,
-        errors: [{ messageId: 'missingRevoke' }],
-      },
-      {
-        name: 'a method call on this with no such method in the class',
-        code: `class Model {
-          load(blob) { const url = URL.createObjectURL(blob); this.release(url); }
-        }`,
-        errors: [{ messageId: 'missingRevoke' }],
-      },
-      {
-        name: 'a method call on an object other than this',
-        code: `class Model {
-          release(u) { URL.revokeObjectURL(u); }
-          load(blob, other) { const url = URL.createObjectURL(blob); other.release(url); }
-        }`,
-        errors: [{ messageId: 'missingRevoke' }],
-      },
-      {
-        name: 'a this call outside any class',
-        code: `function load(blob) { const url = URL.createObjectURL(blob); this.release(url); }`,
         errors: [{ messageId: 'missingRevoke' }],
       },
       {

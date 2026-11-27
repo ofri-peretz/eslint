@@ -25,6 +25,7 @@ import {
 import { resolveGlobalObject } from '../../utils/global-object';
 import {
   COLLECTION_ADDERS,
+  aliasedExpression,
   calledFunction,
   enumeratedCollection,
   parameterIndex,
@@ -195,26 +196,42 @@ export const requireBlobUrlRevocation = createRule<RuleOptions, MessageIds>({
     let byOwner: Map<HandleOwner, TSESTree.Node>;
     let byPath: Map<string, TSESTree.Node>;
     let unreachable: TSESTree.Node[];
-    let revokedOwners: Set<HandleOwner>;
-    let revokedPaths: Set<string>;
-    /** Collections (by path) whose every member some loop or callback revokes. */
-    let revokedCollections: Set<string>;
-    /** Collections and property paths a handle was stored in, per handle. */
-    let storedIn: Map<HandleOwner, Set<string>>;
-    let parkedAt: Map<HandleOwner, Set<string>>;
+    /**
+     * Everything revoked, in one key space: a binding, a property path
+     * (`ref.current`), or a collection written `[]cache` whose every member a
+     * loop or callback revokes.
+     */
+    let released: Set<HandleOwner | null>;
+    /** Other keys whose release also releases this handle. */
+    let releasedWith: Map<HandleOwner, Set<HandleOwner>>;
     /** Functions defined here that revoke the argument at a given position. */
     let helperRevokes: Map<FunctionNode, Set<number>>;
     /** Every call with an argument, for the helper and setter routes. */
     let calls: TSESTree.CallExpression[];
 
-    function remember(
-      into: Map<HandleOwner, Set<string>>,
-      owner: HandleOwner,
-      key: string,
-    ): void {
-      const keys = into.get(owner) ?? new Set<string>();
-      keys.add(key);
-      into.set(owner, keys);
+    /** The key an expression is released under: its binding, or its path. */
+    function keyOf(node: TSESTree.Node): HandleOwner | null {
+      return node.type === AST_NODE_TYPES.Identifier
+        ? ownerOf(node, sourceCode)
+        : pathKey(node);
+    }
+
+    /** The key of a collection, so that revoking its members releases them. */
+    function collectionKey(node: TSESTree.Node): string | null {
+      const key = pathKey(node);
+      return key === null ? null : `[]${key}`;
+    }
+
+    /** A key that names nothing is `null`: no handle is ever released as `null`. */
+    function mark(key: HandleOwner | null): void {
+      released.add(key);
+    }
+
+    /** `key` being released releases `handle` too. */
+    function releaseWith(handle: HandleOwner, key: HandleOwner | null): void {
+      if (key === null) return;
+      const keys = releasedWith.get(handle) ?? new Set<HandleOwner>();
+      releasedWith.set(handle, keys.add(key));
     }
 
     /** Record where a freshly created object URL was stored, if anywhere. */
@@ -252,39 +269,24 @@ export const requireBlobUrlRevocation = createRule<RuleOptions, MessageIds>({
     function trackRevocation(node: TSESTree.CallExpression): void {
       const arg = node.arguments[0];
       if (arg === undefined) return;
-      if (arg.type === AST_NODE_TYPES.Identifier) {
-        revokedOwners.add(ownerOf(arg, sourceCode));
-        const variable = variableOf(arg, sourceCode);
-        if (variable === null) return;
-        // `const u = ref.current; URL.revokeObjectURL(u)` revokes the path.
-        const def = variable.defs[0];
-        if (
-          variable.defs.length === 1 &&
-          def.type === 'Variable' &&
-          def.node.init != null &&
-          variable.references.filter((ref) => ref.isWrite()).length === 1
-        ) {
-          const alias = pathKey(def.node.init);
-          if (alias !== null) revokedPaths.add(alias);
-        }
-        // `for (const u of cache.values()) URL.revokeObjectURL(u)` revokes
-        // every handle the collection holds.
-        const range = rangesOver(variable);
-        const collection =
-          range === null ? null : pathKey(enumeratedCollection(range));
-        if (collection !== null) revokedCollections.add(collection);
-        // `function dispose(u) { URL.revokeObjectURL(u) }` revokes whatever
-        // its callers pass.
-        const parameter = parameterIndex(variable);
-        if (parameter !== null) {
-          const positions = helperRevokes.get(parameter.fn) ?? new Set();
-          positions.add(parameter.index);
-          helperRevokes.set(parameter.fn, positions);
-        }
-        return;
+      mark(keyOf(arg));
+      // A path has no binding: its `name` is `undefined`, which matches none.
+      const variable = variableOf(arg as TSESTree.Identifier, sourceCode);
+      if (variable === null) return;
+      // `const u = ref.current; URL.revokeObjectURL(u)` revokes the path.
+      const alias = aliasedExpression(variable);
+      if (alias !== null) mark(keyOf(alias));
+      // `for (const u of cache.values()) URL.revokeObjectURL(u)` revokes
+      // every handle the collection holds.
+      const range = rangesOver(variable);
+      if (range !== null) mark(collectionKey(enumeratedCollection(range)));
+      // `function release(u) { URL.revokeObjectURL(u) }` revokes whatever its
+      // callers pass.
+      const parameter = parameterIndex(variable);
+      if (parameter !== null) {
+        const positions = helperRevokes.get(parameter.fn) ?? new Set<number>();
+        helperRevokes.set(parameter.fn, positions.add(parameter.index));
       }
-      const key = pathKey(arg);
-      if (key !== null) revokedPaths.add(key);
     }
 
     /** `cache.set(k, url)`, `list.push(url)`: the handle now lives in a collection. */
@@ -295,75 +297,59 @@ export const requireBlobUrlRevocation = createRule<RuleOptions, MessageIds>({
       ) {
         return;
       }
-      const collection = pathKey(node.callee.object);
-      if (collection === null) return;
+      const collection = collectionKey(node.callee.object);
       for (const arg of node.arguments) {
-        if (arg.type === AST_NODE_TYPES.Identifier) {
-          remember(storedIn, ownerOf(arg, sourceCode), collection);
-        }
+        // A literal or a path has no binding: its owner is `undefined`, which
+        // no revoke ever names.
+        releaseWith(
+          ownerOf(arg as TSESTree.Identifier, sourceCode),
+          collection,
+        );
       }
     }
 
     /** `ref.current = url`, `cache[k] = url`: the handle is parked somewhere. */
     function trackParking(node: TSESTree.AssignmentExpression): void {
-      if (
-        node.right.type !== AST_NODE_TYPES.Identifier ||
-        node.left.type !== AST_NODE_TYPES.MemberExpression
-      ) {
-        return;
-      }
-      const owner = ownerOf(node.right, sourceCode);
-      if (node.left.computed) {
-        const collection = pathKey(node.left.object);
-        if (collection !== null) remember(storedIn, owner, collection);
-        return;
-      }
-      const path = pathKey(node.left);
-      if (path !== null) remember(parkedAt, owner, path);
+      if (node.right.type !== AST_NODE_TYPES.Identifier) return;
+      const target = node.left;
+      // Only a member can be computed; any other target reads `undefined`.
+      const member = target as TSESTree.MemberExpression;
+      releaseWith(
+        ownerOf(node.right, sourceCode),
+        member.computed ? collectionKey(member.object) : keyOf(target),
+      );
     }
 
     /**
-     * Fold the routes that need the whole file into the revoked sets: a call
+     * Fold the routes that need the whole file into the released set: a call
      * to a function that revokes its argument, and a state setter whose state
      * is revoked.
      */
-    function resolveIndirectRevocations(): Map<HandleOwner, Set<HandleOwner>> {
-      const setterStates = new Map<HandleOwner, Set<HandleOwner>>();
+    function resolveIndirectRevocations(): void {
       for (const call of calls) {
-        const fn = calledFunction(call, sourceCode);
-        const positions = fn === null ? undefined : helperRevokes.get(fn);
-        if (positions !== undefined) {
-          for (const position of positions) {
-            // `release()` with fewer arguments than the helper takes passes
-            // nothing at this position.
-            const arg = call.arguments[position] as TSESTree.Node | undefined;
-            if (arg === undefined) continue;
-            if (arg.type === AST_NODE_TYPES.Identifier) {
-              revokedOwners.add(ownerOf(arg, sourceCode));
-              continue;
-            }
-            const key = pathKey(arg);
-            if (key !== null) revokedPaths.add(key);
-          }
+        const fn = calledFunction(call, sourceCode) as FunctionNode;
+        for (const position of helperRevokes.get(fn) ?? []) {
+          // A call with fewer arguments than the helper takes passes nothing
+          // at this position.
+          const arg = call.arguments[position] as TSESTree.Node | undefined;
+          if (arg !== undefined) mark(keyOf(arg));
         }
-        if (call.callee.type !== AST_NODE_TYPES.Identifier) continue;
-        const setter = variableOf(call.callee, sourceCode);
+        const setter = variableOf(
+          call.callee as TSESTree.Identifier,
+          sourceCode,
+        );
         const state =
           setter === null ? null : stateOfSetter(setter, sourceCode);
-        if (state === null) continue;
         for (const arg of call.arguments) {
-          if (arg.type !== AST_NODE_TYPES.Identifier) continue;
-          const owner = ownerOf(arg, sourceCode);
-          const states = setterStates.get(owner) ?? new Set<HandleOwner>();
-          states.add(state);
-          setterStates.set(owner, states);
+          releaseWith(ownerOf(arg as TSESTree.Identifier, sourceCode), state);
         }
       }
-      return setterStates;
     }
 
-    const anyIn = <T>(items: Iterable<T> | undefined, wanted: Set<T>) =>
-      items !== undefined && [...items].some((item) => wanted.has(item));
+    const isReleased = (handle: HandleOwner): boolean =>
+      [handle, ...(releasedWith.get(handle) ?? [])].some((key) =>
+        released.has(key),
+      );
 
     return {
       before() {
@@ -385,11 +371,8 @@ export const requireBlobUrlRevocation = createRule<RuleOptions, MessageIds>({
         /** Handles nothing in this file can ever reach again. */
         unreachable = [];
 
-        revokedOwners = new Set<HandleOwner>();
-        revokedPaths = new Set<string>();
-        revokedCollections = new Set<string>();
-        storedIn = new Map();
-        parkedAt = new Map();
+        released = new Set<HandleOwner>();
+        releasedWith = new Map();
         helperRevokes = new Map();
         calls = [];
         return true;
@@ -403,19 +386,14 @@ export const requireBlobUrlRevocation = createRule<RuleOptions, MessageIds>({
       AssignmentExpression: trackParking,
 
       'Program:exit'() {
-        const setterStates = resolveIndirectRevocations();
+        resolveIndirectRevocations();
         for (const [owner, site] of byOwner) {
-          const released =
-            revokedOwners.has(owner) ||
-            anyIn(storedIn.get(owner), revokedCollections) ||
-            anyIn(parkedAt.get(owner), revokedPaths) ||
-            anyIn(setterStates.get(owner), revokedOwners);
-          if (!released) {
+          if (!isReleased(owner)) {
             context.report({ node: site, messageId: 'missingRevoke' });
           }
         }
         for (const [key, site] of byPath) {
-          if (!revokedPaths.has(key)) {
+          if (!isReleased(key)) {
             context.report({ node: site, messageId: 'missingRevoke' });
           }
         }

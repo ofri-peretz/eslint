@@ -57,6 +57,7 @@ ruleTester.run('require-blob-url-revocation', requireBlobUrlRevocation, {
     },
     // Used but not revoked
     {
+      name: 'a named URL assigned to an image source and never revoked',
       code: `
         const blobUrl = URL.createObjectURL(file);
         img.src = blobUrl;

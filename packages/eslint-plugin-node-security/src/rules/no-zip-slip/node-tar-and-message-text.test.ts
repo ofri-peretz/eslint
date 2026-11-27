@@ -36,6 +36,14 @@ describe('no-zip-slip — node-tar sanitises, and a path that is only text', () 
   ruleTester.run('node-tar-and-message-text', noZipSlip, {
     valid: [
       {
+        name: 'a path inside a template passed to an Error called without new',
+        code: `import path from 'path'; import JSZip from 'jszip';
+          export function check(cwd, attachment) {
+            throw Error('bad ' + path.join(cwd, attachment.path));
+          }
+          export const build = () => new JSZip();`,
+      },
+      {
         // @source budibase/budibase packages/server/src/sdk/workspace/backups/imports.ts:154
         // @found real-source scan
         name: 'FP: tar.extract with an options literal that leaves preservePaths off',
@@ -92,6 +100,64 @@ describe('no-zip-slip — node-tar sanitises, and a path that is only text', () 
       },
     ],
     invalid: [
+      {
+        name: 'a joined path that is multiplied into an Error argument is not text composition',
+        code: `import path from 'path'; import JSZip from 'jszip';
+          export function check(cwd, attachment) {
+            return new Error(1 * path.join(cwd, attachment.path));
+          }
+          export const build = () => new JSZip();`,
+        errors: [{ messageId: 'unvalidatedArchivePath' }],
+      },
+      {
+        name: 'a method named Error on some object is not the global constructor',
+        code: `import path from 'path'; import JSZip from 'jszip';
+          export function check(cwd, attachment, factory) {
+            factory.Error(path.join(cwd, attachment.path));
+          }
+          export const build = () => new JSZip();`,
+        errors: [{ messageId: 'unvalidatedArchivePath' }],
+      },
+      {
+        name: 'a console property of another object is not the global console',
+        code: `import path from 'path'; import JSZip from 'jszip';
+          export function check(cwd, attachment, tools) {
+            tools.console.log(path.join(cwd, attachment.path));
+          }
+          export const build = () => new JSZip();`,
+        errors: [{ messageId: 'unvalidatedArchivePath' }],
+      },
+      {
+        name: 'a console that the file declares itself is not the global console',
+        code: `import path from 'path'; import JSZip from 'jszip';
+          export function check(cwd, attachment, console) {
+            console.log(path.join(cwd, attachment.path));
+          }
+          export const build = () => new JSZip();`,
+        errors: [{ messageId: 'unvalidatedArchivePath' }],
+      },
+      {
+        name: 'a path passed to a method of the console object that is not a call',
+        code: `import path from 'path'; import JSZip from 'jszip';
+          export function check(cwd, attachment) {
+            const sink = console.log;
+            sink(path.join(cwd, attachment.path));
+          }
+          export const build = () => new JSZip();`,
+        errors: [{ messageId: 'unvalidatedArchivePath' }],
+      },
+      {
+        name: 'node-tar extract called with no options at all',
+        code: `import * as tar from 'tar';
+          export async function restore() { await tar.extract(); }`,
+        errors: [{ messageId: 'unsafeArchiveExtraction' }],
+      },
+      {
+        name: 'a longer member path of node-tar is not extract',
+        code: `import * as tar from 'tar';
+          export async function restore(file) { await tar.extract.extract({ file }); }`,
+        errors: [{ messageId: 'unsafeArchiveExtraction' }],
+      },
       {
         name: 'node-tar with preservePaths: true, which turns the protection off',
         code: `import * as tar from 'tar';
