@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-lambda-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.0.8
+
+### Patch Changes
+
+- **🐛 Fix** — Four false positives measured on real repositories, each fixed by following where the value goes. `secure-coding/no-xxe-injection` no longer reports the platform `DOMParser` (an undeclared global, which the HTML standard forbids from fetching an external entity) or linkedom, probed against an external-entity canary with no leak; an imported or locally declared `DOMParser` and every entity-capable package keep reporting (23 findings on next-ai-draw-io). `node-security/no-math-random-crypto` no longer reports a draw that only picks an element that already exists, sets a timer delay or is compared, however its binding is named; a pick from an alphabet, an accumulator (`token += CHARS[draw]`) and a draw that is also stored keep reporting (terraform-aws-github-runner, next-ai-draw-io). `secure-coding/no-improper-sanitization` no longer reports a `& < >` text escaper in a file that also ships the quote-escaping half and never calls the text escaper inside a tag, a constant inside `res.json({...})`, or a constant inside `new Command({...})`; dangerous markup, a text escaper used in an attribute, and a string built from request data keep reporting (apostrophe, n8n-mcp, next-ai-draw-io). `lambda-security/no-error-swallowing` no longer reports a catch that rethrows everything a negated test on the error leaves out (`if (!isNotFound(error)) throw error`); the opposite polarity and a test that never reads the error keep reporting (terraform-aws-github-runner).
+
 ## 3.0.7
 
 ### Patch Changes
