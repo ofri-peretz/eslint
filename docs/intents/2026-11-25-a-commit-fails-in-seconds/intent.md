@@ -10,7 +10,7 @@ cases: []
 > Stage 1 artifact. Opened from the AI-SDLC alignment work on eslint#1795 and
 > [interlace#219](https://github.com/ofri-peretz/interlace/pull/219) (`AI_SDLC_PHILOSOPHY.md`).
 
-**Status:** approved · **Opened:** 2026-11-25 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-11-25 · **Closed:** 2026-11-27 · **Owner:** @ofri-peretz
 
 ---
 
@@ -68,3 +68,19 @@ it lands in burgee.
   in a lock test.
 - Re-measured over the next 20 agent commits: failed attempts drop from 33% to under 10%, and no
   failure is caused by message format or stale output. The method: grep the hook logs, as above.
+
+## Outcome (2026-11-27)
+
+- **Criteria 1–2** shipped in hookset 1.4.1 (burgee), vendored here in 6f9814b09 (2026-11-26
+  13:49Z) as the `commit-message` station of `.claude/hooks/guard-bash.mjs`; burgee's hook test
+  feeds the invalid-scope and no-receipt calls and asserts the deny.
+- **Criterion 3** shipped in #1818 (assertion 4 of `scripts/check-stale-build-artifacts.ts`).
+- **Criterion 4** re-measured with [`measure-commits.py`](./measure-commits.py) over every agent
+  `git commit` in the eslint session transcripts since the station landed: **71 attempts**.
+  0 failed on message format, 0 on stale build output (the 5 the script tags `stale` exited 0:
+  their output only names the `stale-build-artifacts` step). 7 (9.9%) were guard denies that cost
+  under a second and ran no hook (`hooked-timeout` 5, `no-verify` 1, `hooks-path` 1). 2 failed
+  after the commit on `gh pr create`, not on the commit. 11 ran in the background and exited 0,
+  but a piped `tail` can mask the commit's exit code, so they are counted as unknown, not passed.
+  Failed attempts: 9.9% at most, against 33% before.
+- Caveat: the method greps tool output, so a failure that printed nothing recognisable is missed.
