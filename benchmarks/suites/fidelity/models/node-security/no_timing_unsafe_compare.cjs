@@ -3,7 +3,7 @@ const { tag } = require('../../lib.cjs');
 module.exports = {
   pkg: 'eslint-plugin-node-security',
   rule: 'no-timing-unsafe-compare',
-  domain: 540, // 6 left x 10 right x 3 ops x 3 option sets
+  domain: 648, // 6 left x 12 right x 3 ops x 3 option sets
   traces: 6400,
   key: (s) => `${tag(s.left)}|${tag(s.right)}|${tag(s.op)}|${tag(s.opt)}`,
   config: (s) =>
@@ -33,13 +33,15 @@ module.exports = {
       ContentDigest: "createHash('sha1').update('asset').digest('hex')",
       HmacDigest:
         "createHmac('sha256', expected).update('asset').digest('hex')",
+      EnumMember: 'Grant.SecretKind',
+      UnionTyped: 'kind',
     }[tag(s.right)];
     const cmp = {
       StrictEq: `${l} === ${r}`,
       LooseNe: `${l} != ${r}`,
       TimingSafe: `timingSafeEqual(Buffer.from(String(${l})), Buffer.from(String(${r})))`,
     }[tag(s.op)];
-    return `import { createHash, createHmac, timingSafeEqual } from 'node:crypto';\nexport function check(req: any, ctx: any, userToken: string, submitted: string, storedToken: string, expectedHmac: string, tokenCount: number, authorId: string, expected: string, localAuthId: string, sessionId: string) {\n  if (${cmp}) {\n    return true;\n  }\n  return false;\n}\n`;
+    return `import { createHash, createHmac, timingSafeEqual } from 'node:crypto';\nenum Grant { SecretKind = 'secret' }\nexport function check(req: any, ctx: any, userToken: string, submitted: string, storedToken: string, expectedHmac: string, tokenCount: number, authorId: string, expected: string, localAuthId: string, sessionId: string, kind: 'access' | 'refresh') {\n  if (${cmp}) {\n    return true;\n  }\n  return false;\n}\n`;
   },
   model: (s) => s.verdict,
 };

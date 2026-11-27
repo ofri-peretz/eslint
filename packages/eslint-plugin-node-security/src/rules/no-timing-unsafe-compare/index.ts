@@ -536,6 +536,9 @@ const BOOLEAN_PREDICATE_NAME = /^(?:is|has|should|can|did|was|will|does)[A-Z]/;
  */
 const NAMED_CONSTANT = /^[A-Z][A-Z0-9_]*$/;
 
+/** How many `type A = B` hops a type annotation is followed through. */
+const MAX_ALIAS_DEPTH = 4;
+
 /**
  * Roots an attacker actually controls in a Node process.
  *
@@ -588,6 +591,43 @@ function isNamedConstant(node: TSESTree.Node): boolean {
   const constant = propertyName(node);
   if (constant === null) return false;
   return NAMESPACE_NAME.test(node.object.name) && NAMED_CONSTANT.test(constant);
+}
+
+/**
+ * Is an enum member's value written out in the source: no initialiser (the
+ * member counts up), a literal, or a literal expression built from literals?
+ *
+ * A TypeScript `enum` may also hold a COMPUTED member, `Token = readPin()`,
+ * and a value that comes out of a call is not written anywhere a reader can
+ * see. Those members are not exempt.
+ */
+function isLiteralEnumInitializer(node: TSESTree.Node | undefined): boolean {
+  if (node === undefined) return true;
+  switch (node.type) {
+    case AST_NODE_TYPES.Literal:
+      return true;
+    case AST_NODE_TYPES.TemplateLiteral:
+      return node.expressions.length === 0;
+    case AST_NODE_TYPES.UnaryExpression:
+      return isLiteralEnumInitializer(node.argument);
+    case AST_NODE_TYPES.BinaryExpression:
+      return (
+        isLiteralEnumInitializer(node.left) &&
+        isLiteralEnumInitializer(node.right)
+      );
+    default:
+      return false;
+  }
+}
+
+/** `as const`: the assertion that makes an object literal readonly literals. */
+function isConstAssertion(node: TSESTree.Node | null | undefined): boolean {
+  return (
+    node?.type === AST_NODE_TYPES.TSAsExpression &&
+    node.typeAnnotation.type === AST_NODE_TYPES.TSTypeReference &&
+    node.typeAnnotation.typeName.type === AST_NODE_TYPES.Identifier &&
+    node.typeAnnotation.typeName.name === 'const'
+  );
 }
 
 /**
@@ -826,6 +866,13 @@ const CRYPTO_DERIVATIONS: ReadonlySet<string> = new Set([
 const DIGEST_CHAIN_METHODS: ReadonlySet<string | null> = new Set<string | null>(
   ['digest', 'toString', 'toLowerCase', 'toUpperCase'],
 );
+
+/** `String.prototype` cuts that return part of the receiver and add nothing. */
+const TRUNCATING_METHODS: ReadonlySet<string> = new Set([
+  'slice',
+  'substring',
+  'substr',
+]);
 
 /**
  * Comparison APIs that are memcmp wearing a method name.
@@ -1960,7 +2007,21 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     }
 
     /** `createHash(…)`, then `.update(…)` calls, ending in `.digest(…)`. */
-    function isDigestChain(node: TSESTree.Node): boolean {
+    function isDigestChain(start: TSESTree.Node): boolean {
+      // `.digest('hex').slice(0, 32)` (Langfuse `elk-worker.ts:36`): a prefix
+      // of a digest is as public as the digest. Only cuts by a literal count
+      // qualify; one by a computed index is read as the call it is.
+      let node: TSESTree.Node = start;
+      while (
+        node.type === AST_NODE_TYPES.CallExpression &&
+        node.callee.type === AST_NODE_TYPES.MemberExpression &&
+        TRUNCATING_METHODS.has(propertyName(node.callee) ?? '') &&
+        node.arguments.every(
+          (argument) => argument.type === AST_NODE_TYPES.Literal,
+        )
+      ) {
+        node = node.callee.object;
+      }
       if (
         node.type !== AST_NODE_TYPES.CallExpression ||
         node.callee.type !== AST_NODE_TYPES.MemberExpression ||
@@ -2061,11 +2122,109 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     function isResolvedConstant(node: TSESTree.Node): boolean {
       if (isSourceConstant(node)) return true;
       if (node.type === AST_NODE_TYPES.MemberExpression) {
-        return isImportedConstant(node);
+        return isFollowedConstant(node) || isEnumMemberConstant(node);
       }
       if (node.type !== AST_NODE_TYPES.Identifier) return false;
       if (constLiteralOf(sourceCode, node) !== undefined) return true;
-      return isImportedConstant(node);
+      return isFollowedConstant(node);
+    }
+
+    /**
+     * A member of a TypeScript `enum` the project declares, in this file or in
+     * a module it imports by a RELATIVE path:
+     *
+     * ```ts
+     * // webhook-types.ts
+     * export enum WebhookEvents { SecretModified = 'secret.modified' }
+     * // webhook-fns.ts
+     * if (event.type === WebhookEvents.SecretModified) { … }
+     * ```
+     *
+     * Infisical `webhook-fns.ts:159` and Logto `actor-token.ts:20` were reported
+     * because the enum MEMBER is spelled `SecretModified` / `AccessToken`. An
+     * enum member is a value the declaration writes out, so the comparison is
+     * against a constant exactly as `=== 'secret.modified'` is. The enum has to
+     * be found and has to contain the member with a written-out value: an
+     * import from a package or a path alias is never opened, and stays judged
+     * by its spelling as before.
+     */
+    function isEnumMemberConstant(node: TSESTree.MemberExpression): boolean {
+      const key = propertyName(node);
+      if (key === null) return false;
+      const found = valueFollow.enumMember(
+        node.object,
+        key,
+        valueFollow.valueAt(node, valueFollow.envOf(context)),
+      );
+      return (
+        found !== null && isLiteralEnumInitializer(found.member.initializer)
+      );
+    }
+
+    /**
+     * Is the value of this operand drawn from a set the source writes out?
+     *
+     * A name declared with a literal union or an `enum` type
+     * (`kind: 'access' | 'refresh'`, `status: Status`) holds one of the listed
+     * values, the same set a reader finds by reading the type.
+     *
+     * Only the annotation on the binding itself counts, and a name that is
+     * merely imported does not: its type is not in this file to read.
+     */
+    function hasClosedDomain(node: TSESTree.Node): boolean {
+      if (node.type !== AST_NODE_TYPES.Identifier) return false;
+      const variable = findVariable(sourceCode, node);
+      if (variable === null || variable.defs.length !== 1) return false;
+      const declared = variable.defs[0].name as TSESTree.Identifier;
+      const annotation = declared.typeAnnotation?.typeAnnotation;
+      return annotation !== undefined && isClosedType(annotation, 0);
+    }
+
+    /** Is every value of this type written out: literals, `null`, an enum? */
+    function isClosedType(type: TSESTree.TypeNode, depth: number): boolean {
+      switch (type.type) {
+        case AST_NODE_TYPES.TSLiteralType:
+        case AST_NODE_TYPES.TSNullKeyword:
+        case AST_NODE_TYPES.TSUndefinedKeyword:
+          return true;
+        case AST_NODE_TYPES.TSUnionType:
+          return type.types.every((member) => isClosedType(member, depth));
+        case AST_NODE_TYPES.TSTypeReference: {
+          if (type.typeName.type !== AST_NODE_TYPES.Identifier) return false;
+          const name = type.typeName;
+          const def = valueFollow.lookup(name.name, sourceCode.getScope(name))
+            ?.defs[0];
+          if (def?.type === 'TSEnumName') return true;
+          // `type Status = 'active' | 'pending'`, written in this file. Bounded:
+          // an alias that names itself must not loop.
+          if (def?.node.type === AST_NODE_TYPES.TSTypeAliasDeclaration) {
+            return (
+              depth < MAX_ALIAS_DEPTH &&
+              isClosedType(def.node.typeAnnotation, depth + 1)
+            );
+          }
+          // An enum imported by a relative path.
+          return (
+            valueFollow.follow(
+              valueFollow.valueAt(name, valueFollow.envOf(context)),
+            ).node.type === AST_NODE_TYPES.TSEnumDeclaration
+          );
+        }
+        default:
+          return false;
+      }
+    }
+
+    /** Is this identifier a `const` bound to `{ … } as const` in this file? */
+    function isConstAssertedObject(node: TSESTree.Identifier): boolean {
+      const variable = findVariable(sourceCode, node);
+      if (variable === null || variable.defs.length !== 1) return false;
+      const def = variable.defs[0];
+      return (
+        def.type === 'Variable' &&
+        def.parent.kind === 'const' &&
+        isConstAssertion(def.node.init)
+      );
     }
 
     /**
@@ -2085,15 +2244,21 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
      * reportable. A package or a path alias is out of reach and is judged as
      * before.
      */
-    function isImportedConstant(
+    function isFollowedConstant(
       node: TSESTree.Identifier | TSESTree.MemberExpression,
     ): boolean {
       // `ROUTES.resetPassword`, with `ROUTES` an imported object of literals
       // (Ghost `server/auth/better-auth/routes.ts`): the import decides, and
-      // the property is read where the object is written.
+      // the property is read where the object is written. The same holds for
+      // an object this file declares `as const` — `Role.Admin` after
+      // `const Role = { Admin: 'admin' } as const` — which TypeScript makes
+      // readonly.
       let root: TSESTree.Node = node;
       while (root.type === AST_NODE_TYPES.MemberExpression) root = root.object;
-      if (root.type !== AST_NODE_TYPES.Identifier || !isImportedBinding(root))
+      if (
+        root.type !== AST_NODE_TYPES.Identifier ||
+        !(isImportedBinding(root) || isConstAssertedObject(root))
+      )
         return false;
       const landed = valueFollow.follow(
         valueFollow.valueAt(node, valueFollow.envOf(context)),
@@ -2370,6 +2535,12 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       // being compared against is not one an attacker is trying to discover.
 
       if (isResolvedConstant(left) || isResolvedConstant(right)) {
+        return;
+      }
+
+      // …or a value the source lists in full: a name typed with a literal
+      // union or an enum.
+      if (hasClosedDomain(left) || hasClosedDomain(right)) {
         return;
       }
 

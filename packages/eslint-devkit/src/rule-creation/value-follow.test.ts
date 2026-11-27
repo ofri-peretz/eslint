@@ -17,6 +17,7 @@ import { afterAll, describe, expect, it, vi } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import type { TSESTree } from '@typescript-eslint/utils';
 import {
+  enumMember,
   envOf,
   exportedValue,
   follow,
@@ -570,5 +571,76 @@ describe('follow', () => {
     expect(
       landsOn("import { fixed } from './helper';\nprobe(fixed);", extra),
     ).toBe('6');
+  });
+});
+
+describe('enumMember', () => {
+  /** The member `Enum.key` of the probe's `Enum.key` argument, by where it is declared. */
+  function memberOf(
+    code: string,
+    extra: Record<string, string> = {},
+  ): { member: string | null; owner: string } {
+    const dir = files({ 'main.ts': code, ...extra });
+    const module = load(dir, 'main.ts');
+    const value = probe(module);
+    const access = value.node as TSESTree.MemberExpression;
+    const key = (access.property as TSESTree.Identifier).name;
+    const found = enumMember(access.object, key, value);
+    return {
+      member:
+        found === null ? null : (found.member.id as TSESTree.Identifier).name,
+      owner: found === null ? '' : path.basename(found.owner.env.file),
+    };
+  }
+
+  it('finds a member of an enum declared in the same file', () => {
+    expect(
+      memberOf(`enum Mode { Fast, Slow }\nprobe(Mode.Slow);`),
+    ).toStrictEqual({ member: 'Slow', owner: 'main.ts' });
+  });
+
+  it('finds a member of an enum in a relatively imported module', () => {
+    expect(
+      memberOf(`import { Mode } from './mode.js';\nprobe(Mode.Slow);`, {
+        'mode.ts': `export enum Mode { Fast = 'fast', Slow = 'slow' }`,
+      }),
+    ).toStrictEqual({ member: 'Slow', owner: 'mode.ts' });
+  });
+
+  it('follows an export-star barrel to the enum', () => {
+    expect(
+      memberOf(`import { Mode } from './barrel';\nprobe(Mode.Fast);`, {
+        'barrel.ts': `export * from './mode';`,
+        'mode.ts': `export enum Mode { Fast, Slow }`,
+      }),
+    ).toStrictEqual({ member: 'Fast', owner: 'mode.ts' });
+  });
+
+  it('returns null for a member the enum does not declare', () => {
+    expect(memberOf(`enum Mode { Fast }\nprobe(Mode.Slow);`).member).toBeNull();
+  });
+
+  it('returns null when the object is not an enum', () => {
+    expect(
+      memberOf(`const Mode = { Fast: 1 };\nprobe(Mode.Fast);`).member,
+    ).toBeNull();
+    expect(memberOf(`probe(Unknown.Fast);`).member).toBeNull();
+  });
+
+  it('reads a member declared with a quoted name', () => {
+    const dir = files({
+      'main.ts': `enum Mode { 'fast-lane' = 1 }\nprobe(Mode['fast-lane']);`,
+    });
+    const value = probe(load(dir, 'main.ts'));
+    const access = value.node as TSESTree.MemberExpression;
+    const found = enumMember(access.object, 'fast-lane', value);
+    expect(found).not.toBeNull();
+    expect((found!.member.id as TSESTree.Literal).value).toBe('fast-lane');
+  });
+
+  it('does not open a package import', () => {
+    expect(
+      memberOf(`import { Mode } from '@scope/pkg';\nprobe(Mode.Fast);`).member,
+    ).toBeNull();
   });
 });

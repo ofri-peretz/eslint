@@ -634,6 +634,7 @@ ruleTester.run(
     ],
     invalid: [
       {
+        name: 'a webhook signature header cast to string against the configured signature',
         code: `const sig = req.headers['x-hub-signature-256'] as string; if (sig === process.env.GH_SIGNATURE) { ok(); }`,
         errors: [{ messageId: 'timingUnsafeCompare' }],
       },
@@ -682,12 +683,14 @@ ruleTester.run(
     invalid: [
       // The headline: `|| ''` on the header, compared against an env secret.
       {
+        name: 'a service key header with a default empty string against the env key',
         code: `const serviceApiKey = process.env.SERVICE_API_KEY; function authorize(req) { const providedKey = req.headers['x-service-key'] || ''; if (providedKey === serviceApiKey) { return { ok: true }; } return { ok: false }; }`,
         errors: [{ messageId: 'timingUnsafeCompare' }],
       },
       // The same idiom one hop deeper, inside the wrapper that made it necessary
       // in the first place: `String(raw || '').trim()`.
       {
+        name: 'a service key header trimmed through String against the env key',
         code: `const serviceApiKey = process.env.SERVICE_API_KEY; function authorize(req) { const raw = req.headers['x-service-key']; const providedKey = String(raw || '').trim(); if (providedKey === serviceApiKey) { return { ok: true }; } return { ok: false }; }`,
         errors: [{ messageId: 'timingUnsafeCompare' }],
       },

@@ -49,6 +49,7 @@ import { isGlobal } from './request-source';
 import {
   type Value,
   MAX_FOLLOW_DEPTH,
+  enumMember,
   follow,
   importSpecifierOf,
   isRelativeSpecifier,
@@ -171,39 +172,6 @@ function isFixedType(type: TSESTree.TypeNode, value: Value): boolean {
     default:
       return false;
   }
-}
-
-/**
- * The member a `TSEnumDeclaration` declares as `key`, with the value to read
- * its initialiser in. The enum is declared in this file, or in a module this
- * file imports by a RELATIVE path (`import { TableName } from '../schemas'`,
- * followed through `export *` barrels); an alias or a package is never opened.
- */
-function enumMember(
-  object: TSESTree.Node,
-  key: string,
-  value: Value,
-): { member: TSESTree.TSEnumMember; owner: Value } | null {
-  let declaration: TSESTree.TSEnumDeclaration | null = null;
-  let owner = value;
-  if (object.type === AST_NODE_TYPES.Identifier) {
-    const def = lookup(object.name, value.env.scopeOf(object))?.defs[0];
-    if (def?.type === 'TSEnumName') {
-      declaration = def.node as TSESTree.TSEnumDeclaration;
-    }
-  }
-  if (declaration === null) {
-    const followed = follow(valueAt(object, value.env));
-    if (followed.node.type !== AST_NODE_TYPES.TSEnumDeclaration) return null;
-    declaration = followed.node;
-    owner = followed;
-  }
-  const member = declaration.body.members.find(
-    (m) =>
-      (m.id.type === AST_NODE_TYPES.Identifier ? m.id.name : m.id.value) ===
-      key,
-  );
-  return member === undefined ? null : { member, owner };
 }
 
 /**
