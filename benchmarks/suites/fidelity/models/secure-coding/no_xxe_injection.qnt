@@ -4,9 +4,10 @@
 // dangerous option set true (noent: true) turns expansion on and is reported;
 // an XML literal declaring an external SYSTEM entity is reported; packages that
 // cannot resolve an external entity (xml2js, fast-xml-parser) are never reported
-// for parsing untrusted input.
+// for parsing untrusted input. So is the platform `DOMParser` (an undeclared
+// global: the HTML standard forbids it to fetch an external entity).
 module no_xxe_injection {
-  type Parser = LibxmlNs | LibxmlDestr | Xml2js | FastXml
+  type Parser = LibxmlNs | LibxmlDestr | Xml2js | FastXml | PlatformDom
   type Input = Untrusted | ConstXml | ConstEntity
   type Opts = NoOpts | NoentTrue | NoentFalse
   type Spelling = Require | Import
@@ -24,7 +25,7 @@ module no_xxe_injection {
   var verdict: bool
 
   action step = {
-    nondet p = Set(LibxmlNs, LibxmlDestr, Xml2js, FastXml).oneOf()
+    nondet p = Set(LibxmlNs, LibxmlDestr, Xml2js, FastXml, PlatformDom).oneOf()
     nondet i = Set(Untrusted, ConstXml, ConstEntity).oneOf()
     nondet o = (if (entityCapable(p)) Set(NoOpts, NoentTrue, NoentFalse) else Set(NoOpts)).oneOf()
     nondet sp = Set(Require, Import).oneOf()

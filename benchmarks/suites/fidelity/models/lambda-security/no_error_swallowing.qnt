@@ -7,21 +7,24 @@
 // with an error response. An EMPTY block whose comment explains that the
 // swallowing is intentional is allowed while `allowWithComment` (default true)
 // is on; a comment that explains nothing (`// TODO`) never is. Only in Lambda
-// files. `allowInTests` (default true) exempts test files.
+// files. `allowInTests` (default true) exempts test files. A catch that throws
+// every error a test on the error leaves out (`if (!isNotFound(e)) throw e`)
+// handles one class and propagates the rest; the same test with the opposite
+// polarity (`if (isFatal(e)) throw e`) swallows everything else.
 module no_error_swallowing {
   type TestCtx = Prod | TestDefault | TestFlip
   pure def exempt(t: TestCtx): bool = t == TestDefault
 
   type Body = Empty | EmptyIntentional | EmptyTodo | ConsoleError | PowertoolsError | Rethrow
             | WrapThrow | ReturnSuccess | ReturnServerError | ReturnNull | BareReturn | ReturnTrue
-            | CallbackError | CallbackSuccess | LogInCallback
+            | CallbackError | CallbackSuccess | LogInCallback | RethrowAllButKnown | ThrowOnlyKnown
   type Binding = Named | Short | Unbound
   type Gate = ExportConst | ExportsDot | ModuleExports | FnDecl | Renamed | Middy
             | SdkImport | SdkRequire | NoEvidence
   type Focus = Bodies | Bindings | Gates
 
   pure def swallows(b: Body): bool =
-    Set(Empty, EmptyTodo, ReturnSuccess, ReturnNull, BareReturn, ReturnTrue, CallbackSuccess).contains(b)
+    Set(Empty, EmptyTodo, ReturnSuccess, ReturnNull, BareReturn, ReturnTrue, CallbackSuccess, ThrowOnlyKnown).contains(b)
   pure def reports(b: Body, commentOff: bool, g: Gate): bool =
     g != NoEvidence and (swallows(b) or (b == EmptyIntentional and commentOff))
 
@@ -38,7 +41,7 @@ module no_error_swallowing {
     nondet b = (if (fo == Bodies)
                   Set(Empty, EmptyIntentional, EmptyTodo, ConsoleError, PowertoolsError, Rethrow,
                       WrapThrow, ReturnSuccess, ReturnServerError, ReturnNull, BareReturn, ReturnTrue,
-                      CallbackError, CallbackSuccess, LogInCallback)
+                      CallbackError, CallbackSuccess, LogInCallback, RethrowAllButKnown, ThrowOnlyKnown)
                 else Set(Empty, ConsoleError)).oneOf()
     nondet bi = (if (fo == Bindings) Set(Named, Short, Unbound) else Set(Named)).oneOf()
     nondet c = (if (fo == Bodies) Set(true, false) else Set(false)).oneOf()

@@ -46,7 +46,10 @@ describe('no-math-random-crypto', () => {
         code: 'const position = Math.random();',
         name: 'a random position is not a credential',
       },
-      { code: 'const x = Math.random() * width;' },
+      {
+        name: 'a scaled draw bound to a plain name is not a credential',
+        code: 'const x = Math.random() * width;',
+      },
       { code: 'const index = Math.floor(Math.random() * array.length);' },
       // Secure alternative
       { code: 'const token = crypto.randomBytes(32).toString("hex");' },

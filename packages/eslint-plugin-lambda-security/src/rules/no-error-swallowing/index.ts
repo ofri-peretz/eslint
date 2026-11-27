@@ -287,6 +287,61 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
     }
 
     /**
+     * Is this test the NEGATION of something about the caught error?
+     * `!pred(e)`, `!(e instanceof K)`, `e.code !== K`, or `&&` of such tests, so
+     * the branch it guards runs for every error the test does not name.
+     */
+    function isNegatedErrorTest(
+      test: TSESTree.Node,
+      caughtName: string,
+    ): boolean {
+      if (test.type === AST_NODE_TYPES.LogicalExpression) {
+        return (
+          test.operator === '&&' &&
+          isNegatedErrorTest(test.left, caughtName) &&
+          isNegatedErrorTest(test.right, caughtName)
+        );
+      }
+      if (test.type === AST_NODE_TYPES.UnaryExpression) {
+        return test.operator === '!' && mentions([test.argument], caughtName);
+      }
+      return (
+        test.type === AST_NODE_TYPES.BinaryExpression &&
+        (test.operator === '!==' || test.operator === '!=') &&
+        mentions([test.left, test.right], caughtName)
+      );
+    }
+
+    /**
+     * Does a `throw` run for every error a classification of the caught error
+     * leaves out? Followed through blocks and `if` / `else if` only: a throw in a
+     * nested function does not run in the catch.
+     *
+     * The branch taken when a NEGATED test holds, or the `else` of a test that
+     * names the error positively, is the rest of the errors. The opposite pairing
+     * throws the one named class and swallows everything else.
+     */
+    function rethrowsTheRest(
+      statement: TSESTree.Node | null | undefined,
+      caughtName: string,
+    ): boolean {
+      if (!statement) return false;
+      if (statement.type === AST_NODE_TYPES.ThrowStatement) return true;
+      if (statement.type === AST_NODE_TYPES.BlockStatement) {
+        return statement.body.some((inner) =>
+          rethrowsTheRest(inner, caughtName),
+        );
+      }
+      if (statement.type !== AST_NODE_TYPES.IfStatement) return false;
+      const negated = isNegatedErrorTest(statement.test, caughtName);
+      const names = mentions([statement.test], caughtName);
+      return (
+        (negated && rethrowsTheRest(statement.consequent, caughtName)) ||
+        (names && !negated && rethrowsTheRest(statement.alternate, caughtName))
+      );
+    }
+
+    /**
      * A `return <value>` from a catch handles the error only when it **fails
      * closed**. The distinction is not whether a value comes back — it is
      * what that value grants:
@@ -416,6 +471,17 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
 
         // Has throw - OK, error is propagated
         if (hasThrow(body)) {
+          return;
+        }
+
+        // `if (!isNotFound(error)) throw error;`: every error but the named
+        // class is thrown, which is handling one case, not swallowing.
+        if (
+          node.param?.type === AST_NODE_TYPES.Identifier &&
+          body.body.some((stmt) =>
+            rethrowsTheRest(stmt, (node.param as TSESTree.Identifier).name),
+          )
+        ) {
           return;
         }
 

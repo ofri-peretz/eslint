@@ -2,7 +2,9 @@
 // Math.random() is reported when its value lands in a security-named variable
 // or property, or is returned from a function whose name says it generates a
 // credential. Correlation ids (requestId) and benign randomness (jitter, a
-// slot index) are not. Every way of reaching Math.random counts.
+// slot index) are not. Every way of reaching Math.random counts. Where the draw
+// GOES also decides: one that only picks an element, sets a timer delay or is
+// compared (a sampling decision) is not a value, whatever its binding is called.
 module no_math_random_crypto {
   // allowInTests (default true): a test file is skipped unless the option is turned
   // off. TestDefault = src/app.test.ts with the option at its default
@@ -13,6 +15,7 @@ module no_math_random_crypto {
   type Spelling = Direct | Bracket | Destructured | GlobalThis
   type Name = SessionToken | Salt | Iv | Nonce | RequestId | JitterMs | Slot
   type Context = VarDecl | PropAssign | ReturnFrom
+  type Flow = Plain | Selection | Timer | Sampling
 
   pure def secretName(n: Name): bool = match n {
     | SessionToken => true
@@ -22,11 +25,12 @@ module no_math_random_crypto {
     | _ => false
   }
 
-  pure def reports(sp: Spelling, n: Name, c: Context): bool = secretName(n)
+  pure def reports(sp: Spelling, n: Name, c: Context, f: Flow): bool = secretName(n) and f == Plain
 
   var spelling: Spelling
   var name: Name
   var context: Context
+  var flow: Flow
   var verdict: bool
 
   action step = {
@@ -34,7 +38,11 @@ module no_math_random_crypto {
     nondet n = Set(SessionToken, Salt, Iv, Nonce, RequestId, JitterMs, Slot).oneOf()
     nondet c = Set(VarDecl, PropAssign, ReturnFrom).oneOf()
     nondet tc = Set(Prod, TestDefault, TestFlip).oneOf()
-    all { spelling' = sp, name' = n, context' = c, testCtx' = tc, verdict' = (reports(sp, n, c) and not(exempt(tc))) }
+    // The flow varies on one anchor only, so the domain stays small.
+    nondet f = (if (sp == Direct and n == SessionToken and c == VarDecl)
+                  Set(Plain, Selection, Timer, Sampling)
+                else Set(Plain)).oneOf()
+    all { spelling' = sp, name' = n, context' = c, flow' = f, testCtx' = tc, verdict' = (reports(sp, n, c, f) and not(exempt(tc))) }
   }
 
   action init = step

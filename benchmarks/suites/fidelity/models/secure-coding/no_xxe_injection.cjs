@@ -4,7 +4,7 @@ const ENTITY_XML =
   '`<?xml version="1.0"?>\n<!DOCTYPE foo [\n  <!ENTITY xxe SYSTEM "file:///etc/passwd">\n]>\n<data>&xxe;</data>`';
 
 module.exports = {
-  domain: 48,
+  domain: 54,
   traces: 500,
   rule: 'no-xxe-injection',
   key: (s) =>
@@ -43,6 +43,10 @@ module.exports = {
           ? "import * as xml2js from 'xml2js';"
           : "const xml2js = require('xml2js');";
         call = `xml2js.parseString(${input}, (err, out) => out)`;
+        break;
+      case 'PlatformDom':
+        head = '';
+        call = `new DOMParser().parseFromString(${input}, 'text/xml')`;
         break;
       case 'FastXml':
         head = imp

@@ -76,14 +76,14 @@ describe('no-improper-sanitization', () => {
         // literal was making the whole array unsafe again.
         {
           name: 'an apostrophe in a literal nested under res.json is data, not markup',
-          code: `res.json([{ id: 1, text: "You don't have permission" }]);`,
+          code: `res.send([{ id: 1, text: "You don't have permission" }]);`,
         },
         {
           name: 'a boolean and a null beside the string do not make the payload unsafe',
-          code: `res.json([{ ok: true, total: null, text: "That's all" }]);`,
+          code: `res.send([{ ok: true, total: null, text: "That's all" }]);`,
         },
         // A hole is `undefined`, which carries no markup either.
-        `res.json([, { text: "You don't have permission" }]);`,
+        `res.send([, { text: "You don't have permission" }]);`,
         // A regex literal is NOT a safe primitive — its source can hold markup.
         // Markup in a nested payload still reports — see the invalid block.
         // Safe sanitization with trusted libraries
@@ -215,7 +215,7 @@ describe('no-improper-sanitization', () => {
           // A regex literal's source can carry markup, so it is not a safe
           // primitive the way a number or a boolean is.
           {
-            code: `res.json([/<script>/, { text: "it's here" }]);`,
+            code: `res.send([/<script>/, { text: "it's here" }]);`,
             errors: 1,
           },
           // Seeing through the wrapper must not lose the finding underneath it.
@@ -810,6 +810,7 @@ describe('corpus regressions', () => {
         // serialised as JSON and served as application/json; the apostrophe in
         // it is not markup. Reported because `'` is in dangerousChars.
         {
+          name: 'an apostrophe in an object sent as JSON is not markup',
           code: `res.send({ error: "Sorry, can't find that" })`,
         },
         {
