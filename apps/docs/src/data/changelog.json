@@ -5,6 +5,66 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "oxlint-plugin-node-security",
+      "short": "oxlint-plugin-node-security",
+      "version": "6.3.8",
+      "date": "2026-11-27T09:54:12Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.3.8`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "oxlint-plugin-browser-security",
+      "short": "oxlint-plugin-browser-security",
+      "version": "3.1.8",
+      "date": "2026-11-27T09:53:59Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `eslint-plugin-browser-security@3.1.8`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "6.3.8",
+      "date": "2026-11-27T09:49:46Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no-zip-slip no longer reports node-tar extract or a path used as text",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "3.1.8",
+      "date": "2026-11-27T09:49:39Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "three adoption-scan false positives, read from the file",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "oxlint-plugin-secure-coding",
       "short": "oxlint-plugin-secure-coding",
       "version": "6.5.7",
@@ -33895,21 +33955,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-browser-security",
-      "short": "eslint-plugin-browser-security",
-      "version": "3.1.8",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "three adoption-scan false positives, read from the file",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-grpc-security",
       "short": "eslint-plugin-grpc-security",
       "version": "0.2.0",
@@ -34105,21 +34150,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-node-security",
-      "short": "eslint-plugin-node-security",
-      "version": "6.3.8",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "no-zip-slip no longer reports node-tar extract or a path used as text",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-operability",
       "short": "eslint-plugin-operability",
       "version": "5.0.3",
@@ -34275,21 +34305,6 @@
       ]
     },
     {
-      "package": "oxlint-plugin-browser-security",
-      "short": "oxlint-plugin-browser-security",
-      "version": "3.1.8",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-browser-security@3.1.8`",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "oxlint-plugin-grpc-security",
       "short": "oxlint-plugin-grpc-security",
       "version": "0.2.0",
@@ -34370,21 +34385,6 @@
         {
           "kind": "deps",
           "title": "updated workspace dependencies: `eslint-plugin-modernization@4.0.3`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "oxlint-plugin-node-security",
-      "short": "oxlint-plugin-node-security",
-      "version": "6.3.8",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `eslint-plugin-node-security@6.3.8`",
           "pr": null
         }
       ]
