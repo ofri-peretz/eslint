@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-grpc-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.0
+
+### Minor Changes
+
+- **✨ Feature** — `no-unbounded-message-size` and `no-error-detail-leak`
+
+  `no-unbounded-message-size` reports `grpc.max_receive_message_length` or `grpc.max_send_message_length` set to `-1` (no limit) or above 100 MiB, so one message cannot make the server allocate without bound. `no-error-detail-leak` reports a gRPC status whose `details` are built from a caught error's stack or message, which would otherwise reach the client. Both are in `recommended`.
+
 ## 0.2.0
 
 ### Minor Changes

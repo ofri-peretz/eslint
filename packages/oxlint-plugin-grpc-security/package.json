@@ -1,6 +1,6 @@
 {
   "name": "oxlint-plugin-grpc-security",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Oxlint gRPC security rules — catches server reflection registered with no guard, a caller identity read from client-settable metadata, message size limits removed, and caught errors sent to the client. Same rules and rule IDs as eslint-plugin-grpc-security, for oxlint and Vite+.",
   "type": "commonjs",
   "sideEffects": false,
@@ -66,6 +66,6 @@
     "access": "public"
   },
   "dependencies": {
-    "eslint-plugin-grpc-security": "0.2.0"
+    "eslint-plugin-grpc-security": "0.3.0"
   }
 }
