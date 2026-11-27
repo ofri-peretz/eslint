@@ -65,6 +65,13 @@
         "category": "security"
       },
       {
+        "name": "eslint-plugin-grpc-security",
+        "slug": "grpc-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
         "name": "eslint-plugin-knex-security",
         "slug": "knex-security",
         "coverage": 85,
@@ -74,13 +81,6 @@
       {
         "name": "eslint-plugin-drizzle-security",
         "slug": "drizzle-security",
-        "coverage": 85,
-        "status": "production",
-        "category": "security"
-      },
-      {
-        "name": "eslint-plugin-grpc-security",
-        "slug": "grpc-security",
         "coverage": 85,
         "status": "production",
         "category": "security"
@@ -235,7 +235,7 @@
     "qualityPlugins": 75
   },
   "meta": {
-    "generatedAt": "2026-11-27T10:43:35.328Z",
+    "generatedAt": "2026-11-27T12:58:58.910Z",
     "source": "estimated",
     "ttl": 14400
   }
