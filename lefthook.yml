@@ -147,7 +147,8 @@ pre-commit:
 # ready_for_review PR has already passed. Use `npm run ci:local` for the same
 # battery outside the git-push flow.
 pre-push:
-  parallel: true
+  # Sequential, stopping at the first failure: hookset's preset sets `piped: true`, and lefthook
+  # refuses `parallel` beside it. A red step ends the push instead of waiting on the rest.
   commands:
     # build and test in ONE turbo invocation, deliberately.
     #
