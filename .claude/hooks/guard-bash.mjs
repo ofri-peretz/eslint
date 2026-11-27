@@ -470,7 +470,7 @@ function receiptProblem(message, dir) {
     .join("\n")
     .replace(/\n[ \t]+/g, " ")
     .split("\n");
-  if (/^Merge /.test(lines.join("\n"))) return null;
+  if (lines[0].startsWith("Merge ")) return null;
   const values = lines.flatMap((l) => /^Verified-by:(.*)/i.exec(l)?.slice(1) ?? []).map((v) => v.trim());
   const fix = "add a trailer `Verified-by: <command> -> exit 0` (or `Verified-by: none (<why no check applies>)`)";
   if (!values.length) return `✖ no Verified-by: line: ${fix}`;
