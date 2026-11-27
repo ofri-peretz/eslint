@@ -16,10 +16,10 @@ normalize:
   - '\(node:\d+\)'
 approved:
   # eslint#1830 adds gRPC fixtures to benchmarks/corpus/CWE-209 (including the grpc-3 lab
-  # server verbatim) and CWE-770. Every other rule now also runs over them
+  # server verbatim) and CWE-770; the grpc-3 lab joins CWE-094. Every other rule now also runs over them
   # (import-next/enforce-import-order fires on the grpc-3 server), which adds lines to the
   # output and shifts the ones after. New corpus inputs; no rule changed.
   - input: corpus.txt
-    base: 075a2e6834d9
-    head: 5c48237df0f5
-    reason: gRPC fixtures added to benchmarks/corpus/CWE-209 and CWE-770 (new inputs, no rule behaviour changed)
+    base: d3db4c616170
+    head: fba0819ea40d
+    reason: gRPC fixtures added to CWE-209 and CWE-770, grpc-3 lab added to CWE-094 (new inputs, no rule behaviour changed)
