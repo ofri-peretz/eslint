@@ -48,10 +48,10 @@
     },
     {
       "plugin": "eslint-plugin-grpc-security",
-      "surface": "@grpc/reflection, grpc-server-reflection",
-      "surfaceVersion": "@grpc/reflection and grpc-server-reflection are not installed in this repository and cannot be loaded, so their surface is not counted",
+      "surface": "@grpc/grpc-js, @grpc/reflection, grpc-server-reflection",
+      "surfaceVersion": "@grpc/grpc-js, @grpc/reflection and grpc-server-reflection are not installed in this repository and cannot be loaded, so their surface is not counted",
       "denominatorTrust": "raw",
-      "denominatorNote": "Not enumerable here. The surface the rule targets is two registration calls, `ReflectionService#addToServer` and `addReflection`, not a set of APIs that can be misused.",
+      "denominatorNote": "Not enumerable here. The surface the rules target is two reflection registration calls (`ReflectionService#addToServer`, `addReflection`) and a handler reading `call.metadata.get`, not a set of APIs that can be misused.",
       "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
     },
     {

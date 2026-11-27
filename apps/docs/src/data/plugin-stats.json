@@ -146,8 +146,8 @@
     },
     {
       "name": "eslint-plugin-grpc-security",
-      "rules": 1,
-      "description": "ESLint gRPC security rules — catches server reflection registered with no guard, which publishes every service on the listener, internal ones included",
+      "rules": 2,
+      "description": "ESLint gRPC security rules — catches server reflection registered with no guard, and a caller identity read from client-settable metadata and then authorized on",
       "category": "security",
       "version": "0.0.0",
       "published": true
@@ -265,7 +265,7 @@
       "published": true
     }
   ],
-  "totalRules": 520,
+  "totalRules": 521,
   "totalPlugins": 32,
   "allPluginsCount": 33,
   "generatedAt": "2026-11-26"

@@ -231,11 +231,18 @@
     {
       "package": "eslint-plugin-grpc-security",
       "preset": "recommended",
-      "dependencies": ["@grpc/reflection", "grpc-server-reflection"],
-      "recommendedIsExactly": ["no-unguarded-reflection"],
-      "why": "gRPC: server reflection registered with no guard publishes every service on the listener.",
-      "examples": ["no-unguarded-reflection"],
-      "limits": "One rule. Any branch counts as a guard; whether a guard is the right one is your call."
+      "dependencies": [
+        "@grpc/grpc-js",
+        "@grpc/reflection",
+        "grpc-server-reflection"
+      ],
+      "recommendedIsExactly": [
+        "no-unguarded-reflection",
+        "no-identity-from-metadata"
+      ],
+      "why": "gRPC: server reflection registered with no guard publishes every service on the listener; a caller identity read from metadata lets any client claim to be anyone.",
+      "examples": ["no-unguarded-reflection", "no-identity-from-metadata"],
+      "limits": "Identity is reported only when it meets an equality check against a per-request record, in the same file."
     },
     {
       "package": "eslint-plugin-mcp-sdk-security",

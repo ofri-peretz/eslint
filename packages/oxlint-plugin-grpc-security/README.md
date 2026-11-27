@@ -22,7 +22,7 @@
 
 ## Covered natively by oxlint
 
-None of these 1 rules has an oxlint built-in equivalent. Every rule here is new to oxlint.
+None of these 2 rules has an oxlint built-in equivalent. Every rule here is new to oxlint.
 
 - **Why** — a linter nobody reads protects nothing. We would rather miss a finding
   than spend your attention on one that was never real.
@@ -52,7 +52,7 @@ export default defineConfig({
   lint: {
     jsPlugins: ['oxlint-plugin-grpc-security'],
     rules: {
-      'grpc-security/no-unguarded-reflection': 'error',
+      'grpc-security/no-identity-from-metadata': 'error',
     },
   },
 });
@@ -64,7 +64,7 @@ export default defineConfig({
 {
   "jsPlugins": ["oxlint-plugin-grpc-security"],
   "rules": {
-    "grpc-security/no-unguarded-reflection": "error"
+    "grpc-security/no-identity-from-metadata": "error"
   }
 }
 ```
@@ -98,9 +98,10 @@ Install [`eslint-plugin-grpc-security`](https://www.npmjs.com/package/eslint-plu
 |  🟡  | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
 |  🟠  | **Type-aware (graceful)**: requires TS program; silent without it.        |
 
-| Rule                                                                                                                                                                                                      |   CWE   |  OWASP   | CVSS | Description                                         | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-----: | :------: | :--: | :-------------------------------------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
-| [no-unguarded-reflection](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-unguarded-reflection?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-grpc-security) | CWE-306 | A05:2021 |      | Register gRPC server reflection only behind a guard | 🟢  |     |     |     |     |     |
+| Rule                                                                                                                                                                                                          |   CWE   |  OWASP   | CVSS | Description                                                      | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-----: | :------: | :--: | :--------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
+| [no-identity-from-metadata](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-identity-from-metadata?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-grpc-security) | CWE-290 | A07:2021 |      | Do not authorize a gRPC caller by an identity read from metadata | 🟢  |     |     |     |     |     |
+| [no-unguarded-reflection](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-unguarded-reflection?utm_source=github&utm_medium=referral&utm_campaign=oxlint-plugin-grpc-security)     | CWE-306 | A05:2021 |      | Register gRPC server reflection only behind a guard              | 🟢  |     |     |     |     |     |
 
 <!-- AUTO-GENERATED:ECOSYSTEM_TABLE:START - Do not edit manually -->
 

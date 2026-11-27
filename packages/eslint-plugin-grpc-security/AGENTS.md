@@ -4,7 +4,7 @@
 
 Guide for AI coding assistants using this plugin in a project. To change the plugin's own source, read https://github.com/ofri-peretz/eslint/blob/main/AGENTS.md instead.
 
-> ESLint gRPC security rules — catches server reflection registered with no guard, which publishes every service on the listener, internal ones included.
+> ESLint gRPC security rules — catches server reflection registered with no guard, and a caller identity read from client-settable metadata and then authorized on.
 
 ## Enable it
 
@@ -32,18 +32,21 @@ Use it alongside `eslint-plugin-security`, not instead of it: keep that plugin i
 | Preset        | Rules | Errors | Warnings |
 | ------------- | ----- | ------ | -------- |
 | `minimal`     | 1     | 1      | 0        |
-| `recommended` | 1     | 1      | 0        |
-| `strict`      | 1     | 1      | 0        |
+| `recommended` | 2     | 2      | 0        |
+| `strict`      | 2     | 2      | 0        |
 
 ### `minimal`
-
-Same rules as `recommended`.
-
-### `recommended`
 
 1 rule:
 
 - `no-unguarded-reflection` (error): Register gRPC server reflection only behind a guard.
+
+### `recommended`
+
+2 rules:
+
+- `no-unguarded-reflection` (error): Register gRPC server reflection only behind a guard.
+- `no-identity-from-metadata` (error): Do not authorize a gRPC caller by an identity read from metadata.
 
 ### `strict`
 

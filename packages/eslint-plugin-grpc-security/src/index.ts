@@ -9,9 +9,12 @@
  *
  * Security rules for Node gRPC servers (`@grpc/grpc-js` and its ecosystem).
  *
- * Scope promise: every rule here gates on a gRPC package being imported in the
- * file and on the binding a call resolves to, never on a method name alone.
- * `addToServer` is an ordinary method name.
+ * Scope promise: every rule here gates on gRPC structure, never on a method
+ * name alone. `no-unguarded-reflection` resolves the call to a reflection
+ * package's export. `no-identity-from-metadata` needs a handler registered
+ * with `.addService(service, implementation)` reading its call's `metadata`;
+ * servers often load `@grpc/grpc-js` through a wrapper, so the import itself
+ * is not required.
  *
  * @see https://grpc.io/docs/guides/auth/
  */
@@ -19,20 +22,25 @@
 import type { TSESLint } from '@interlace/eslint-devkit';
 import { withCanonicalDocsUrls } from '@interlace/eslint-devkit';
 
+import { noIdentityFromMetadata } from './rules/no-identity-from-metadata';
 import { noUnguardedReflection } from './rules/no-unguarded-reflection';
 
+export { noIdentityFromMetadata } from './rules/no-identity-from-metadata';
 export { noUnguardedReflection } from './rules/no-unguarded-reflection';
 
 /**
  * gRPC security rules.
  *
  * 0.1.x scope: server reflection registered with no guard, which hands any
- * client the full list of services on the listener, internal ones included.
+ * client the full list of services on the listener, internal ones included;
+ * and a caller identity read from client-settable metadata and authorized on.
  */
 export const rules: Record<
   string,
   TSESLint.RuleModule<string, readonly unknown[]>
 > = {
+  // CWE-290: Authentication Bypass by Spoofing
+  'no-identity-from-metadata': noIdentityFromMetadata,
   // CWE-306: Missing Authentication for Critical Function
   'no-unguarded-reflection': noUnguardedReflection,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
@@ -69,6 +77,7 @@ const recommendedConfig: TSESLint.FlatConfig.Config = {
   },
   rules: {
     'grpc-security/no-unguarded-reflection': 'error',
+    'grpc-security/no-identity-from-metadata': 'error',
   },
 } satisfies TSESLint.FlatConfig.Config;
 
