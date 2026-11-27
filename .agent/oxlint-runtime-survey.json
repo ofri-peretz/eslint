@@ -528,6 +528,16 @@
       "failed": 0,
       "examples": []
     },
+    "eslint-plugin-grpc-security/no-insecure-channel-credentials": {
+      "cases": 23,
+      "failed": 0,
+      "examples": []
+    },
+    "eslint-plugin-grpc-security/no-insecure-server-credentials": {
+      "cases": 28,
+      "failed": 0,
+      "examples": []
+    },
     "eslint-plugin-grpc-security/no-unbounded-message-size": {
       "cases": 28,
       "failed": 0,

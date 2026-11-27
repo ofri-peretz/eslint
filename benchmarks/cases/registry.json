@@ -5802,6 +5802,102 @@
         }
       ],
       "peers": []
+    },
+    {
+      "id": "ILB-0203",
+      "added": "2026-11-26",
+      "title": "Plaintext gRPC server bound to every interface",
+      "rationale": "ServerCredentials.createInsecure() bound to 0.0.0.0: every network the host is on can read and alter the server's traffic, credentials included.",
+      "cwe": "CWE-319",
+      "severity": {
+        "cvss": 7.4,
+        "vector": null,
+        "source": null
+      },
+      "references": ["https://grpc.io/docs/guides/auth/"],
+      "occurrences": [],
+      "code": "server.bindAsync('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(), () => server.start());",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-insecure-server-credentials",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-insecure-server-credentials/no-insecure-server-credentials.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0204",
+      "added": "2026-11-26",
+      "title": "Plaintext gRPC server bound to loopback",
+      "rationale": "Insecure credentials on 127.0.0.1, as every security-research protocol-ctf lab binds: the socket is not reachable from the network, which is what the address says, not a guess.",
+      "cwe": "CWE-319",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": ["https://grpc.io/docs/guides/auth/"],
+      "occurrences": [],
+      "code": "server.bindAsync('127.0.0.1:50051', grpc.ServerCredentials.createInsecure(), () => server.start());",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-insecure-server-credentials",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-insecure-server-credentials/no-insecure-server-credentials.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0205",
+      "added": "2026-11-26",
+      "title": "Bearer token sent over a plaintext gRPC channel",
+      "rationale": "A client built with credentials.createInsecure() attaches an Authorization header, so the token crosses the network in cleartext and can be replayed by anyone on the path.",
+      "cwe": "CWE-319",
+      "severity": {
+        "cvss": 7.4,
+        "vector": null,
+        "source": null
+      },
+      "references": ["https://grpc.io/docs/guides/auth/"],
+      "occurrences": [],
+      "code": "const client = new pkg.Accounts(target, grpc.credentials.createInsecure());\nconst md = new grpc.Metadata();\nmd.add('authorization', `Bearer ${token}`);\nclient.GetAccount({ id }, md, cb);",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-insecure-channel-credentials",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-insecure-channel-credentials/no-insecure-channel-credentials.test.ts"
+        }
+      ],
+      "peers": []
+    },
+    {
+      "id": "ILB-0206",
+      "added": "2026-11-26",
+      "title": "Plaintext gRPC channel that carries no secret",
+      "rationale": "A sidecar or health-check channel without TLS that sends no credential. Deciding this by the target's host name would be a guess; the credential flow says there is nothing to protect.",
+      "cwe": "CWE-319",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": ["https://grpc.io/docs/guides/auth/"],
+      "occurrences": [],
+      "code": "const client = new pkg.Health(target, grpc.credentials.createInsecure());\nclient.Check({ service: '' }, cb);",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "grpc-security/no-insecure-channel-credentials",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-grpc-security/src/rules/no-insecure-channel-credentials/no-insecure-channel-credentials.test.ts"
+        }
+      ],
+      "peers": []
     }
   ]
 }

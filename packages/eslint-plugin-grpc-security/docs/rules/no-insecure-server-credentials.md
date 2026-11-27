@@ -1,0 +1,64 @@
+---
+title: no-insecure-server-credentials
+description: Do not serve plaintext gRPC on every interface
+tags: ['security', 'grpc']
+category: security
+severity: high
+cwe: CWE-319
+autofix: false
+---
+
+# no-insecure-server-credentials
+
+> Do not serve plaintext gRPC on every interface.
+
+- **CWE:** [CWE-319 — Cleartext Transmission of Sensitive Information](https://cwe.mitre.org/data/definitions/319.html)
+- **OWASP:** A02:2021 — Cryptographic Failures
+- **CVSS:** 7.4 (High)
+- **Recommended:** `error`
+
+## Why
+
+`ServerCredentials.createInsecure()` turns TLS off. Every message, token and credential the server receives crosses the network in cleartext, where anything on the path can read and alter it. Bound to a wildcard address, the server is reachable from every network the host sits on.
+
+## Rule details
+
+The rule reports `server.bindAsync(address, credentials, …)` (and the older `server.bind`) when:
+
+- the credentials are `ServerCredentials.createInsecure()` (directly, through a `const`, or through an imported `ServerCredentials`), and
+- the address proves the server listens on every interface: a wildcard host (`0.0.0.0`, `[::]`, `::`) or a bare port (`:50051`, `'50051'`).
+
+The address is read from literals, templates, `+` and consts. A host can be fixed while the port is not: in `` `0.0.0.0:${process.env.PORT}` `` the host is still known.
+
+The rule decides from what the address itself proves:
+
+- **Loopback (`127.0.0.0/8`, `[::1]`) and `unix:` sockets** aren't reachable from the network. That's how the address works, not a guess.
+- **A named host, or a host from the environment or configuration,** stays silent. Whether it's exposed is a deployment fact the file doesn't hold, and this repository's rules don't decide by matching host names.
+
+## Incorrect
+
+```js
+server.bindAsync('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(), cb);
+server.bindAsync(`[::]:${PORT}`, grpc.ServerCredentials.createInsecure(), cb);
+```
+
+## Correct
+
+```js
+server.bindAsync(
+  '0.0.0.0:50051',
+  grpc.ServerCredentials.createSsl(rootCerts, [{ private_key, cert_chain }]),
+  cb,
+);
+
+// Plaintext behind a TLS-terminating proxy on the same host.
+server.bindAsync(
+  '127.0.0.1:50051',
+  grpc.ServerCredentials.createInsecure(),
+  cb,
+);
+```
+
+## Further reading
+
+- [gRPC authentication guide](https://grpc.io/docs/guides/auth/)

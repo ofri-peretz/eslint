@@ -43,7 +43,7 @@ Using oxlint or Vite+? Install `oxlint-plugin-grpc-security`: the same rules und
 
 ## Description
 
-Security rules for Node gRPC servers (unguarded server reflection, caller identity read from metadata, unbounded message sizes, caught errors sent to the client).
+Security rules for Node gRPC servers and clients (unguarded reflection, identity read from metadata, unbounded message sizes, error details sent to clients, plaintext transport).
 
 They target servers built on [@grpc/grpc-js](https://www.npmjs.com/package/@grpc/grpc-js).
 
@@ -54,6 +54,8 @@ The first rule is `no-unguarded-reflection`. Server reflection answers "which se
 `no-identity-from-metadata` catches the backend that believes a header a gateway was supposed to set. A value read from a handler's `call.metadata` that reaches an equality check against a per-request record (`acc.owner !== user`) is the caller's identity, and any client can send it. Resolving the header through a server-side lookup or a verifier ends the flow, so the rule stays silent on a verified token.
 
 `no-unbounded-message-size` reports `grpc.max_receive_message_length` / `grpc.max_send_message_length` set to `-1` or above 100 MiB, evaluated from literals, arithmetic and consts. `no-error-detail-leak` reports a status sent through a handler's callback or call object whose `details` are built from a caught error's stack or message.
+
+`no-insecure-server-credentials` reports `ServerCredentials.createInsecure()` bound to a wildcard address or a bare port, and stays silent on loopback, unix sockets and configured hosts. `no-insecure-channel-credentials` reports a `credentials.createInsecure()` channel only when the file sends a credential header over it.
 
 <!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->
 
@@ -145,12 +147,14 @@ The library ranges the rules were written against. Documentation only: this pack
 
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 
-| Rule                                                                                                                                                                                                          |   CWE   |  OWASP   | CVSS | Description                                                      | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-----: | :------: | :--: | :--------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
-| [no-error-detail-leak](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-error-detail-leak?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security)           | CWE-209 | A05:2021 |      | Do not send a caught error's stack or message to the gRPC client | 🟢  |     |     |     |     |     |
-| [no-identity-from-metadata](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-identity-from-metadata?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security) | CWE-290 | A07:2021 |      | Do not authorize a gRPC caller by an identity read from metadata | 🟢  |     |     |     |     |     |
-| [no-unbounded-message-size](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-unbounded-message-size?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security) | CWE-770 | A04:2021 |      | Keep gRPC message size limits bounded                            | 🟢  |     |     |     |     |     |
-| [no-unguarded-reflection](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-unguarded-reflection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security)     | CWE-306 | A05:2021 |      | Register gRPC server reflection only behind a guard              | 🟢  |     |     |     |     |     |
+| Rule                                                                                                                                                                                                                      |   CWE   |  OWASP   | CVSS | Description                                                      | 🧠  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-----: | :------: | :--: | :--------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
+| [no-error-detail-leak](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-error-detail-leak?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security)                       | CWE-209 | A05:2021 |      | Do not send a caught error's stack or message to the gRPC client | 🟢  |     |     |     |     |     |
+| [no-identity-from-metadata](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-identity-from-metadata?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security)             | CWE-290 | A07:2021 |      | Do not authorize a gRPC caller by an identity read from metadata | 🟢  |     |     |     |     |     |
+| [no-insecure-channel-credentials](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-insecure-channel-credentials?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security) | CWE-319 | A02:2021 |      | Do not send credentials over a plaintext gRPC channel            | 🟢  |     |     |     |     |     |
+| [no-insecure-server-credentials](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-insecure-server-credentials?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security)   | CWE-319 | A02:2021 |      | Do not serve plaintext gRPC on every interface                   | 🟢  |     |     |     |     |     |
+| [no-unbounded-message-size](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-unbounded-message-size?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security)             | CWE-770 | A04:2021 |      | Keep gRPC message size limits bounded                            | 🟢  |     |     |     |     |     |
+| [no-unguarded-reflection](https://eslint.interlace.tools/docs/security/plugin-grpc-security/rules/no-unguarded-reflection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-grpc-security)                 | CWE-306 | A05:2021 |      | Register gRPC server reflection only behind a guard              | 🟢  |     |     |     |     |     |
 
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 <!-- INTERLACE:STAR_CTA:START -->

@@ -65,6 +65,14 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-grpc-security",
+      "rules": 6,
+      "description": "ESLint gRPC security rules — catches server reflection registered with no guard, a caller identity read from client-settable metadata, message size limits removed, caught errors sent to the client, and plaintext transport that is exposed or carries secrets",
+      "category": "security",
+      "version": "0.0.0",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-knex-security",
       "rules": 5,
       "description": "ESLint Knex security rules — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
@@ -78,14 +86,6 @@
       "description": "ESLint Drizzle ORM security rules — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
       "version": "2.0.5",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-grpc-security",
-      "rules": 4,
-      "description": "ESLint gRPC security rules — catches server reflection registered with no guard, a caller identity read from client-settable metadata, message size limits removed, and caught errors sent to the client",
-      "category": "security",
-      "version": "0.0.0",
       "published": true
     },
     {
@@ -265,7 +265,7 @@
       "published": true
     }
   ],
-  "totalRules": 523,
+  "totalRules": 525,
   "totalPlugins": 32,
   "allPluginsCount": 33,
   "generatedAt": "2026-11-27"

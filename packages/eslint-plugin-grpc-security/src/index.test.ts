@@ -8,6 +8,8 @@ import plugin, {
   configs,
   noErrorDetailLeak,
   noIdentityFromMetadata,
+  noInsecureChannelCredentials,
+  noInsecureServerCredentials,
   noUnboundedMessageSize,
   noUnguardedReflection,
   plugin as namedPlugin,
@@ -19,11 +21,19 @@ describe('eslint-plugin-grpc-security', () => {
     expect(Object.keys(rules).sort()).toEqual([
       'no-error-detail-leak',
       'no-identity-from-metadata',
+      'no-insecure-channel-credentials',
+      'no-insecure-server-credentials',
       'no-unbounded-message-size',
       'no-unguarded-reflection',
     ]);
     expect(rules['no-error-detail-leak']).toBe(noErrorDetailLeak);
     expect(rules['no-unbounded-message-size']).toBe(noUnboundedMessageSize);
+    expect(rules['no-insecure-server-credentials']).toBe(
+      noInsecureServerCredentials,
+    );
+    expect(rules['no-insecure-channel-credentials']).toBe(
+      noInsecureChannelCredentials,
+    );
     expect(rules['no-identity-from-metadata']).toBe(noIdentityFromMetadata);
     expect(rules['no-unguarded-reflection']).toBe(noUnguardedReflection);
   });
@@ -52,6 +62,8 @@ describe('eslint-plugin-grpc-security', () => {
       'no-identity-from-metadata',
       'no-unbounded-message-size',
       'no-error-detail-leak',
+      'no-insecure-server-credentials',
+      'no-insecure-channel-credentials',
     ]) {
       expect(configs.recommended.rules?.[`grpc-security/${rule}`]).toBe(
         'error',
