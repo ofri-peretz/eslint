@@ -224,6 +224,25 @@ read still reports, and so does any property of an object its module writes to a
 (`KEYS.api = process.env.KEY`, `Object.assign(KEYS, …)`, `delete KEYS.api`): the literal was a
 placeholder.
 
+A member of a TypeScript `enum` is a constant too, whatever the member is called. The rule finds the
+enum in the same file, or in a module imported by a relative path (through `export *` barrels), and
+reads the member where it is declared. An enum from a package or a path alias cannot be opened, so a
+comparison against it is judged by its spelling as before; a member whose initializer is a call
+(`Token = readPin()`) is not a constant and still reports:
+
+```ts
+// webhook-types.ts: export enum WebhookEvents { SecretModified = 'secret.modified' }
+import { WebhookEvents } from './webhook-types';
+if (event.type === WebhookEvents.SecretModified) { ... }  // not a secret
+```
+
+A property of an object this file declares `as const` is a constant on the same terms
+(`const Role = { Secret: 'secret' } as const`). A name annotated with a literal union or an enum
+(`expected: 'access' | 'refresh'`, `expected: Kind` with `type Kind = …` written in the file) holds
+one of the listed values, so comparing it is comparing a constant. An annotation the file cannot read
+(`string`, a union that also admits `string`, a type imported from a package) proves nothing and still
+reports.
+
 A plain digest (`createHash`) of what the caller sent is a value the caller can compute too, so
 comparing it with a digest the client supplied leaks nothing. A digest that also takes something
 the caller did not send, or any keyed derivation (`createHmac`), is still a secret. So is an input
@@ -383,7 +402,8 @@ word (`tokenId`) or remove `id` from `nonSecretTails`.
 - An `If-None-Match` / `If-Match` header compared with an etag is not reported.
   The etag went out in the `ETag` response header, so every client has it,
   even when it is a hash of the content. The etag is a keyless
-  `createHash(…).update(…).digest(…)` chain under any name (quoted with string
+  `createHash(…).update(…).digest(…)` chain under any name, cut to a prefix with `slice` /
+  `substring` / `substr` (quoted with string
   literals at most), or a value neither named as a secret nor derived with
   crypto. Only a binding written once is followed. The same header compared
   with a stored secret (`storedToken`), an HMAC under any name, a digest with
