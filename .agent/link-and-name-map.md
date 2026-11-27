@@ -28,7 +28,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | npm package | v | prefix | alias | docs slug | pillar | logo | docs | OG | codecov |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :-: | :-: | :-: |
 | `eslint-plugin-anthropic-security` | 2.0.6 | `anthropic-security/` | — | `plugin-anthropic-security` | security | `claude` | ✅ | ✅ | ✅ |
-| `eslint-plugin-browser-security` | 3.1.7 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
+| `eslint-plugin-browser-security` | 3.1.8 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
 | `eslint-plugin-conventions` | 7.3.0 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-drizzle-security` | 2.0.5 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
 | `eslint-plugin-express-security` | 4.4.3 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
@@ -45,7 +45,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-mongodb-security` | 10.1.4 | `mongodb-security/` | — | `plugin-mongodb-security` | security | `mongodb` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mysql-security` | 2.0.5 | `mysql-security/` | — | `plugin-mysql-security` | security | `mysql` | ✅ | ✅ | ✅ |
 | `eslint-plugin-nestjs-security` | 4.3.2 | `nestjs-security/` | — | `plugin-nestjs-security` | security | `nestjs` | ✅ | ✅ | ✅ |
-| `eslint-plugin-node-security` | 6.3.7 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
+| `eslint-plugin-node-security` | 6.3.8 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
 | `eslint-plugin-openai-security` | 2.0.5 | `openai-security/` | — | `plugin-openai-security` | security | `openai` | ✅ | ✅ | ✅ |
 | `eslint-plugin-operability` | 5.0.8 | `operability/` | — | `plugin-operability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-postgresql-security` | 3.0.7 | `postgresql-security/` | `pg/` | `plugin-postgresql-security` | security | `postgresql` | ✅ | ✅ | ✅ |

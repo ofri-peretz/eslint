@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.3.8
+
+### Patch Changes
+
+- **🐛 Fix** — no-zip-slip no longer reports node-tar extract or a path used as text
+
+  `no-zip-slip` no longer reports `tar.extract` from node-tar called with an options literal that leaves `preservePaths` off, or a joined path that only becomes error or console text. `preservePaths: true`, options held in a variable, and a path that also opens a file keep reporting (Budibase, oracle).
+
 ## 6.3.7
 
 ### Patch Changes
