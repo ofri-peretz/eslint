@@ -15,8 +15,8 @@ const DEFAULT_SANITIZERS = [
 let filename = 'src/app.ts';
 
 module.exports = {
-  domain: 660,
-  traces: 7000,
+  domain: 1092,
+  traces: 14000,
   pkg: 'eslint-plugin-browser-security',
   rule: 'no-innerhtml',
   get filename() {
@@ -45,6 +45,8 @@ module.exports = {
       AwaitSanitize: 'await sanitize(userInput)',
       CustomSan: 'myClean(userInput)',
       ConstLitVar: 'html',
+      ConstSanitized: 'clean',
+      LocalEscaper: 'escapeMarkup(userInput)',
     }[tag(s.value)];
     const stmt = {
       InnerHTML: `el.innerHTML = ${v};`,
@@ -52,12 +54,16 @@ module.exports = {
       ComputedInner: `el['innerHTML'] = ${v};`,
       InnerPlusEq: `el.innerHTML += ${v};`,
       TextContent: `el.textContent = ${v};`,
+      InertTemplate: `const tpl = document.createElement('template'); tpl.innerHTML = ${v}; return tpl.content.textContent;`,
+      EscapingTemplate: `const tpl = document.createElement('template'); tpl.innerHTML = ${v}; document.body.append(tpl.content);`,
     }[tag(s.sink)];
     return [
       "import DOMPurify from 'dompurify';",
       "import { sanitize, myClean, getUserContent } from './lib';",
       'export async function render(el: HTMLElement, userInput: string) {',
       "  const html = '<p>Static content</p>';",
+      '  const clean = DOMPurify.sanitize(userInput);',
+      "  const escapeMarkup = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');",
       `  ${stmt}`,
       '  return html;',
       '}',

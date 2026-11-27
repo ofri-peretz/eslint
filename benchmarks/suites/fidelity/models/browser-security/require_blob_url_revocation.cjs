@@ -3,8 +3,8 @@ const { tag } = require('../../lib.cjs');
 let filename = 'src/app.ts';
 
 module.exports = {
-  domain: 96,
-  traces: 1000,
+  domain: 144,
+  traces: 1500,
   pkg: 'eslint-plugin-browser-security',
   rule: 'require-blob-url-revocation',
   get filename() {
@@ -29,6 +29,8 @@ module.exports = {
       RevokeInCallback: ['img.onload = () => URL.revokeObjectURL(url);'],
       RevokeImmediate: ['URL.revokeObjectURL(url);'],
       RevokeOther: ['URL.revokeObjectURL(otherUrl);'],
+      RevokeViaHelper: ['release(url);'],
+      RevokeViaStore: ['urls.push(url);'],
     }[tag(s.revoke)];
     const body = [...use, ...rev].join(' ');
     const head = [
@@ -36,6 +38,9 @@ module.exports = {
       'declare const otherUrl: string;',
       'declare const files: Blob[];',
       'declare const blob: Blob;',
+      'declare const urls: string[];',
+      'function release(u: string) { URL.revokeObjectURL(u); }',
+      'export function closeAll() { for (const u of urls) URL.revokeObjectURL(u); }',
     ];
     if (tag(s.binding) === 'Direct') head.push('declare const url: string;');
     const wrapped =

@@ -44,6 +44,7 @@ ruleTester.run('require-blob-url-revocation', requireBlobUrlRevocation, {
     },
     // Not a createObjectURL call
     {
+      name: 'a URL built by some other function is not an object URL',
       code: `const url = someOtherFunction(blob);`,
     },
   ],
@@ -56,6 +57,7 @@ ruleTester.run('require-blob-url-revocation', requireBlobUrlRevocation, {
     },
     // Used but not revoked
     {
+      name: 'a named URL assigned to an image source and never revoked',
       code: `
         const blobUrl = URL.createObjectURL(file);
         img.src = blobUrl;

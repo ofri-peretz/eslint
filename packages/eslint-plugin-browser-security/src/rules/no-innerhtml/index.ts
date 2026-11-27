@@ -26,6 +26,8 @@ import {
 } from '@interlace/eslint-devkit';
 import { createPayloadResolver } from '../../utils/payload-source';
 import { resolveInitializer } from '../../utils/resolve-binding';
+import { isInertHolder } from './inert-holder';
+import { isProvenEscaper, returnedExpression } from './local-escaper';
 
 /**
  * `useSanitizer` is gone.
@@ -168,6 +170,27 @@ function isSanitized(
     );
   }
 
+  // `const clean = DOMPurify.sanitize(html); el.innerHTML = clean;` — the value
+  // is a binding written once, so what it holds is what it was declared with.
+  // Judged exactly like the initialiser would be at the sink. A parameter, an
+  // import or a re-assigned binding has no single value and stays unproven.
+  if (node.type === 'Identifier') {
+    const init = resolveInitializer(node, sourceCode);
+    if (
+      init === undefined ||
+      (init.parent as TSESTree.VariableDeclarator).id.type !== 'Identifier' ||
+      resolving.has(init)
+    ) {
+      return false;
+    }
+    resolving.add(init);
+    try {
+      return isSanitized(init, sourceCode, sanitizers);
+    } finally {
+      resolving.delete(init);
+    }
+  }
+
   // `DOMPurify?.sanitize(x)` is a ChainExpression wrapping the call. Without
   // this the optional spelling of a sanitiser read as no sanitiser at all.
   if (node.type === 'ChainExpression') {
@@ -215,18 +238,24 @@ function isSanitized(
   // the rule AFTER tuning it, not before.
   //
   // A real sanitiser is imported: DOMPurify, sanitize-html, escape-html. A
-  // local definition is the user's own code, and the rule cannot know what it
-  // does — so it does not get the benefit of the doubt.
+  // local definition is the user's own code, so its NAME buys nothing — only
+  // what its body provably does can: it returns a trusted sanitiser's output,
+  // or it rewrites all five markup characters itself (see `isProvenEscaper`).
   if (node.callee.type === 'Identifier') {
-    const local = resolveInitializer(node.callee, sourceCode);
-    if (
-      local !== undefined &&
-      (local.type === 'ArrowFunctionExpression' ||
-        local.type === 'FunctionExpression')
-    ) {
-      return false;
+    const local = localFunction(node.callee, sourceCode);
+    if (local !== undefined) {
+      if (resolving.has(local)) return false;
+      resolving.add(local);
+      try {
+        const value = returnedExpression(local);
+        return (
+          isProvenEscaper(local) ||
+          (value !== null && isSanitized(value, sourceCode, sanitizers))
+        );
+      } finally {
+        resolving.delete(local);
+      }
     }
-    if (isLocallyDeclaredFunction(node.callee, sourceCode)) return false;
   }
 
   if (trusted(names(node.callee))) return true;
@@ -287,27 +316,45 @@ function everyWriteIsStatic(
   return false;
 }
 
-/** Was this identifier declared as a function in this file (not imported)? */
-function isLocallyDeclaredFunction(
+type LocalFunction =
+  | TSESTree.ArrowFunctionExpression
+  | TSESTree.FunctionExpression
+  | TSESTree.FunctionDeclaration;
+
+/**
+ * Values being judged right now, so a binding that refers back to itself
+ * (`const a = f(a)`, `function f(x) { return f(x); }`) ends the walk instead of
+ * recursing forever.
+ */
+const resolving = new Set<TSESTree.Node>();
+
+/**
+ * The function this identifier names, when this file defines it.
+ *
+ * Only a `function name() {}` declaration or a `const name = () => {}` binding
+ * counts. A name that points at an import (`const purify = DOMPurify.sanitize`)
+ * is a reference to someone else's code, not a local body, and returns
+ * `undefined` so the caller can judge the alias instead.
+ */
+function localFunction(
   node: TSESTree.Identifier,
   sourceCode: TSESLint.SourceCode,
-): boolean {
+): LocalFunction | undefined {
   let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
   while (scope) {
     const variable = scope.variables.find((v) => v.name === node.name);
     if (variable) {
-      // ONLY a `function name() {}` declaration.
-      //
-      // Including `Variable` defs here also rejected
-      // `const purify = DOMPurify.sanitize` — an ALIAS to an imported
-      // sanitiser, which is sanitised code. The distinction that matters is
-      // implementation versus reference: a local function BODY is opaque to
-      // this rule, a local name pointing at an import is not.
-      return variable.defs.some((d) => d.type === 'FunctionName');
+      const def = variable.defs.find((d) => d.type === 'FunctionName');
+      if (def !== undefined) return def.node as TSESTree.FunctionDeclaration;
+      const init = resolveInitializer(node, sourceCode);
+      return init?.type === 'ArrowFunctionExpression' ||
+        init?.type === 'FunctionExpression'
+        ? init
+        : undefined;
     }
     scope = scope.upper;
   }
-  return false;
+  return undefined;
 }
 
 /**
@@ -522,6 +569,8 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
        * member of it.
        */
       siblingCanSee: boolean,
+      /** The object the markup is written to, when the sink has one. */
+      receiver: TSESTree.Node | null,
     ) {
       // Owned by a source-specific rule? Then this is not ours. The two tests
       // are complements — a source rule reports only what it can attribute, we
@@ -558,6 +607,9 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
       }
       // A number or a boolean is not markup, whatever the configuration.
       if (cannotCarryMarkup(taintedNode)) return;
+      // A holder that loads nothing and never reaches the page: the parse is
+      // the point (reading text out of a string), not an injection.
+      if (receiver !== null && isInertHolder(receiver, sourceCode)) return;
       // Allow if sanitized via a trusted sanitiser call.
       if (isSanitized(taintedNode, sourceCode, trustedSanitizers)) return;
       // Determine source type for the diagnostic message.
@@ -632,7 +684,13 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
         }
 
         // A computed key is invisible to the source-specific siblings.
-        reportSink(node, sinkName, node.right, !node.left.computed);
+        reportSink(
+          node,
+          sinkName,
+          node.right,
+          !node.left.computed,
+          node.left.object,
+        );
       },
 
       // element.insertAdjacentHTML(position, htmlString) — same XSS class
@@ -669,7 +727,13 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
                     : null;
               if (key !== null && dangerousProperties.has(key)) {
                 // Object.assign is invisible to the siblings.
-                reportSink(node, key, prop.value as TSESTree.Node, false);
+                reportSink(
+                  node,
+                  key,
+                  prop.value as TSESTree.Node,
+                  false,
+                  node.arguments[0],
+                );
               }
             }
           }
@@ -699,6 +763,7 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
           property.name,
           tainted,
           property.name !== 'createContextualFragment',
+          property.name === 'insertAdjacentHTML' ? node.callee.object : null,
         );
       },
     };

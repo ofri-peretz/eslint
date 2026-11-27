@@ -26,6 +26,7 @@ import {
   namesOneOf,
   propertyName,
   resolveModuleBinding,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { constInitializerOf } from '../../utils/const-value';
@@ -180,6 +181,31 @@ const DEFAULT_ARCHIVE_MODULES = [
   '7zip-min',
   'node-7z',
 ];
+
+/**
+ * Global constructors and functions whose argument becomes message text.
+ * Read only when the name is the unshadowed global.
+ *
+ * @protocol-constant The error constructors the ECMAScript specification
+ * defines. The list is closed by the language, not chosen by a project, and a
+ * project's own error class is a local binding that is judged by its body.
+ */
+const TEXT_SINKS: ReadonlySet<string> = new Set([
+  'Error',
+  'TypeError',
+  'RangeError',
+  'SyntaxError',
+  'ReferenceError',
+  'EvalError',
+  'URIError',
+  'AggregateError',
+]);
+
+/**
+ * @protocol-constant The two names node-tar exports its extraction under,
+ * `extract` and its alias `x`, as documented by node-tar itself.
+ */
+const NODE_TAR_EXTRACT: ReadonlySet<string> = new Set(['extract', 'x']);
 
 /** Extractor methods whose FIRST argument is the destination directory. */
 const DESTINATION_FIRST: ReadonlySet<string> = new Set([
@@ -474,6 +500,77 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         current = call;
       }
     };
+    /**
+     * Is this value only ever read as TEXT: part of a message that is thrown,
+     * passed to an Error constructor or printed? A path that only ever appears
+     * in a sentence opens no file, so it cannot write outside a directory.
+     *
+     * @source steipete/oracle src/browser/prompt.ts:252 — `path.resolve(cwd,
+     * attachment.path)` formatted into a collision error, in a file that also
+     * builds zip archives.
+     *
+     * Followed through a `const` that is written once and read only as text.
+     * Anything else the value reaches (a call, a return, an export, an object)
+     * is a use this rule cannot see the end of, so it stays reported.
+     */
+    const isGlobalName = (node: TSESTree.Identifier): boolean => {
+      for (
+        let scope: TSESLint.Scope.Scope | null =
+          context.sourceCode.getScope(node);
+        scope;
+        scope = scope.upper
+      ) {
+        const variable = scope.variables.find((v) => v.name === node.name);
+        if (variable) return variable.defs.length === 0;
+      }
+      return true;
+    };
+    const consumedAsText = (
+      start: TSESTree.Node,
+      seen: Set<TSESTree.Node> = new Set(),
+    ): boolean => {
+      if (seen.has(start)) return false;
+      seen.add(start);
+      let current = start;
+      while (
+        current.parent?.type === 'TemplateLiteral' ||
+        (current.parent?.type === 'BinaryExpression' &&
+          current.parent.operator === '+')
+      ) {
+        current = current.parent;
+      }
+      const parent = current.parent;
+      // A node with no parent is not part of a program this rule can follow.
+      if (parent === undefined) return false;
+      if (parent.type === 'ThrowStatement') return true;
+      // `Error(...)` and `new Error(...)`: only an identifier has a `name`, so
+      // a method called `Error` reads `undefined` and matches nothing.
+      if (
+        (parent.type === 'NewExpression' || parent.type === 'CallExpression') &&
+        TEXT_SINKS.has((parent.callee as TSESTree.Identifier).name) &&
+        isGlobalName(parent.callee as TSESTree.Identifier)
+      ) {
+        return true;
+      }
+      // `console.warn(...)`: the object of a member call, if it is the global.
+      const logger = (
+        parent.type === 'CallExpression'
+          ? (parent.callee as TSESTree.MemberExpression).object
+          : undefined
+      ) as TSESTree.Identifier | undefined;
+      if (logger?.name === 'console' && isGlobalName(logger)) return true;
+      if (parent.type !== 'VariableDeclarator') return false;
+      const reads = context.sourceCode
+        .getDeclaredVariables(parent)
+        .flatMap((variable) => variable.references)
+        .filter((ref) => !ref.init);
+      return (
+        reads.length > 0 &&
+        reads.every(
+          (ref) => ref.isRead() && consumedAsText(ref.identifier, seen),
+        )
+      );
+    };
     const namesArchive = (node: TSESTree.Node): boolean => {
       if (node.type === 'Identifier') return ARCHIVE_NAME.test(node.name);
       if (node.type === 'MemberExpression') {
@@ -755,6 +852,45 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * node-tar's `extract` / `x`, which refuses `..` segments and absolute
+     * paths unless the caller opts out with `preservePaths: true`.
+     *
+     * Judged from the module binding (`import * as tar from 'tar'`,
+     * `import { extract } from 'tar'`, `require('tar')`), never from the name
+     * `tar`, and only when the options are an object literal that visibly
+     * leaves `preservePaths` off: options held in a variable, a spread, or
+     * `preservePaths: true` may switch the protection off, so they report.
+     *
+     * @source budibase/budibase packages/backend-core/src/objectStore: four
+     * `tar.extract({ file, cwd })` calls reported as unvalidated extraction.
+     */
+    const isNodeTarExtraction = (node: TSESTree.CallExpression): boolean => {
+      const binding = resolveModuleBinding(
+        node.callee,
+        context.sourceCode.getScope(node.callee),
+      );
+      // `tar.extract` and `tar.x`; a longer path (`tar.extract.call`) is some
+      // other member of the module.
+      if (
+        binding?.module !== 'tar' ||
+        !NODE_TAR_EXTRACT.has(binding.path.join('.'))
+      ) {
+        return false;
+      }
+      const options = node.arguments[0] as TSESTree.Node | undefined;
+      return (
+        options?.type === 'ObjectExpression' &&
+        options.properties.every(
+          (property) =>
+            property.type === 'Property' &&
+            objectKeyName(property) !== null &&
+            (objectKeyName(property) !== 'preservePaths' ||
+              (property.value as TSESTree.Literal).value === false),
+        )
+      );
+    };
+
+    /**
      * Check if this uses a safe library
      * Safe libraries have built-in path validation or are known to be secure
      */
@@ -879,7 +1015,11 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         if (namesArchive(node.callee) && !isProjectLocalBinding(node.callee)) {
           hasArchiveContext = true;
         }
-        if (isArchiveExtraction(node) && !isSafeLibrary(node)) {
+        if (
+          isArchiveExtraction(node) &&
+          !isSafeLibrary(node) &&
+          !isNodeTarExtraction(node)
+        ) {
           // An `@safe` annotation covers the statement it sits directly above
           // — and everything inside it, so one on a function covers that
           // function. It used to be ANY block comment containing `@safe`
@@ -993,7 +1133,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
               // `fs.readdirSync` Dirent, whose name the local filesystem
               // authored, and `require.resolve(args.path)` is not an archive
               // at all.
-              if (!isPathValidated(arg)) {
+              if (!isPathValidated(arg) && !consumedAsText(node)) {
                 pending.push(() => {
                   if (!hasArchiveContext) return;
                   if (isCanonicalizedInPlace(arg)) return;
