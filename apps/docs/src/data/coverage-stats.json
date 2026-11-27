@@ -79,6 +79,13 @@
         "category": "security"
       },
       {
+        "name": "eslint-plugin-grpc-security",
+        "slug": "grpc-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
         "name": "eslint-plugin-prisma-security",
         "slug": "prisma-security",
         "coverage": 85,
@@ -130,13 +137,6 @@
       {
         "name": "eslint-plugin-openai-security",
         "slug": "openai-security",
-        "coverage": 85,
-        "status": "production",
-        "category": "security"
-      },
-      {
-        "name": "eslint-plugin-grpc-security",
-        "slug": "grpc-security",
         "coverage": 85,
         "status": "production",
         "category": "security"
@@ -235,7 +235,7 @@
     "qualityPlugins": 75
   },
   "meta": {
-    "generatedAt": "2026-11-26T16:44:48.949Z",
+    "generatedAt": "2026-11-27T10:43:35.328Z",
     "source": "estimated",
     "ttl": 14400
   }
