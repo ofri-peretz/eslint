@@ -54,7 +54,7 @@ describe('no-improper-sanitization (mutation edges)', () => {
       },
       {
         name: 'a bigint beside a string literal carries no markup',
-        code: 'res.json({ id: 10n, msg: "don\'t" });',
+        code: 'res.send({ id: 10n, msg: "don\'t" });',
       },
       {
         name: 'an expression-free template is developer text',
@@ -129,12 +129,12 @@ describe('no-improper-sanitization (mutation edges)', () => {
       },
       {
         name: 'one user field in a response object taints it',
-        code: 'res.json({ msg: "don\'t", name: req.query.name });',
+        code: 'res.send({ msg: "don\'t", name: req.query.name });',
         errors: unsafe,
       },
       {
         name: 'a spread in a response object is not developer text',
-        code: 'res.json({ ...extra, msg: "don\'t" });',
+        code: 'res.send({ ...extra, msg: "don\'t" });',
         errors: unsafe,
       },
       {

@@ -23,6 +23,12 @@ const BODY = {
   ReturnTrue: () => ['return true;'],
   CallbackError: (e) => [`return callback(${e ?? "new Error('failed')"});`],
   CallbackSuccess: () => ['return callback(null, { statusCode: 200 });'],
+  RethrowAllButKnown: (e) => [
+    `if (!isNotFound(${e ?? 'event'})) throw ${e ?? 'event'};`,
+  ],
+  ThrowOnlyKnown: (e) => [
+    `if (isFatal(${e ?? 'event'})) throw ${e ?? 'event'};`,
+  ],
   LogInCallback: (e) => [
     `setImmediate(() => console.error('Process failed', ${e ?? 'event'}));`,
   ],
@@ -31,8 +37,8 @@ const BINDING = { Named: 'error', Short: 'e', Unbound: undefined };
 
 const base = {
   rule: 'no-error-swallowing',
-  // Bodies 15 x allowWithComment on/off; Bindings 3 x 2 bodies; Gates 9 x 2 bodies.
-  domain: 30 + 6 + 18,
+  // Bodies 17 x allowWithComment on/off; Bindings 3 x 2 bodies; Gates 9 x 2 bodies.
+  domain: 34 + 6 + 18,
   traces: 1000,
   key: (s) =>
     ['focus', 'body', 'binding', 'commentOff', 'gate']

@@ -73,6 +73,10 @@ not reported.
 Not reported: a `.sort(() => Math.random() - 0.5)` shuffle, jitter, colours, and keys qualified as `dom`, `element`,
 `item`, `list`, `component`, `render`, `color` or `data`.
 
+### Where the draw goes
+
+A draw is a decision, not a value, when every use of it picks an element that already exists (`credentials[Math.floor(Math.random() * credentials.length)]`, stored or returned whole), sets a `setTimeout` / `setInterval` delay, or is compared (`Math.random() < 0.1`). Its binding's name does not matter. A pick from an alphabet (a string, or an array of single characters), a pick appended to a growing value (`token += CHARS[draw]`, a `push`, a callback body) and a draw that is also stored or stringified keep reporting.
+
 ## Options
 
 | Option               | Type       | Default                                                                                                                                                                                                                                                      | Description                                                                                              |
